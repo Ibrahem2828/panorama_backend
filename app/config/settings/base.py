@@ -1,24 +1,20 @@
 from datetime import timedelta
 from pathlib import Path
 
-from decouple import Csv, config
+from decouple import config
+
+from .env import get_bool_env, get_csv_env
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
 
 def config_bool(name: str, default: bool = False) -> bool:
-    value = config(name, default=str(default))
-    normalized = str(value).strip().lower()
-    if normalized in {"1", "true", "t", "yes", "y", "on"}:
-        return True
-    if normalized in {"0", "false", "f", "no", "n", "off"}:
-        return False
-    return default
+    return get_bool_env(name, default=default)
 
 
 SECRET_KEY = config("SECRET_KEY", default="unsafe-development-secret-key")
-DEBUG = config_bool("DEBUG", default=False)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+DEBUG = get_bool_env("DEBUG", "DJANGO_DEBUG", default=False)
+ALLOWED_HOSTS = get_csv_env("ALLOWED_HOSTS", "DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 LOCAL_APPS = [
     "apps.common",
@@ -123,10 +119,10 @@ MEDIA_ROOT = ROOT_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ALLOWED_ORIGINS = config(
+CORS_ALLOWED_ORIGINS = get_csv_env(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://localhost:5173",
-    cast=Csv(),
+    "DJANGO_CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:3000", "http://localhost:5173"],
 )
 CORS_ALLOW_CREDENTIALS = True
 

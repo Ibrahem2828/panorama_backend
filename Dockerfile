@@ -10,12 +10,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/ ./requirements/
-RUN pip install --no-cache-dir -r requirements/local.txt
+RUN pip install --no-cache-dir -r requirements/production.txt
 
 COPY . .
+RUN chmod +x /app/docker/entrypoint.sh
 
 WORKDIR /app/app
 
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
