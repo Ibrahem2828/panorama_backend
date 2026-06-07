@@ -1,3 +1,4 @@
+from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -51,15 +52,17 @@ class GroupMessageDeleteView(APIView):
 
     @extend_schema(tags=["Chat"])
     def delete(self, request, group_id: int, message_id: int):
-        group = Group.objects.get(pk=group_id, is_deleted=False)
-        message = Message.objects.get(pk=message_id, group=group)
-        if not ChatPermissionService.can_moderate_messages(request.user, group) and message.sender_id != request.user.id:
-            from rest_framework.exceptions import PermissionDenied
+        with transaction.atomic():
+            group = Group.objects.get(pk=group_id, is_deleted=False)
+            message = Message.objects.select_for_update().get(pk=message_id, group=group)
+            if not ChatPermissionService.can_moderate_messages(request.user, group) and message.sender_id != request.user.id:
+                from rest_framework.exceptions import PermissionDenied
 
-            raise PermissionDenied("You cannot delete this message.")
-        ChatPermissionService.enforce_group_chat_access(request.user, group)
-        message.soft_delete(request.user)
-        AuditLogService.log(actor=request.user, action=AuditAction.MESSAGE_DELETED, target=message)
+                raise PermissionDenied("You cannot delete this message.")
+            ChatPermissionService.enforce_group_chat_access(request.user, group)
+            if not message.is_deleted:
+                message.soft_delete(request.user)
+                AuditLogService.log(actor=request.user, action=AuditAction.MESSAGE_DELETED, target=message)
         return success_response(message="Message deleted successfully")
 
 
@@ -68,10 +71,11 @@ class GroupMessageReportView(APIView):
 
     @extend_schema(tags=["Chat"], request=MessageReportSerializer, responses={201: MessageReportSerializer})
     def post(self, request, group_id: int, message_id: int):
-        group = Group.objects.get(pk=group_id, is_deleted=False)
-        ChatPermissionService.enforce_group_chat_access(request.user, group)
-        message = Message.objects.get(pk=message_id, group=group, is_deleted=False)
-        serializer = MessageReportSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        report = MessageReport.objects.create(message=message, reported_by=request.user, reason=serializer.validated_data["reason"])
+        with transaction.atomic():
+            group = Group.objects.get(pk=group_id, is_deleted=False)
+            ChatPermissionService.enforce_group_chat_access(request.user, group)
+            message = Message.objects.select_for_update().get(pk=message_id, group=group, is_deleted=False)
+            serializer = MessageReportSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            report = MessageReport.objects.create(message=message, reported_by=request.user, reason=serializer.validated_data["reason"])
         return success_response(data=MessageReportSerializer(report).data, message="Message reported successfully", status_code=status.HTTP_201_CREATED)

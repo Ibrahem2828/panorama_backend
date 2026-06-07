@@ -19,7 +19,9 @@ class SupportTicketService:
         return ticket
 
     @staticmethod
+    @transaction.atomic
     def add_message(ticket: SupportTicket, sender, message: str, attachment=None) -> SupportTicketMessage:
+        ticket = SupportTicket.objects.select_for_update().get(pk=ticket.pk, is_deleted=False)
         if ticket.status in {SupportTicketStatus.RESOLVED, SupportTicketStatus.CLOSED}:
             raise ValidationError("Cannot add messages to a resolved or closed ticket.")
         ticket_message = SupportTicketMessage.objects.create(ticket=ticket, sender=sender, message=message, attachment=attachment)
@@ -43,6 +45,7 @@ class SupportTicketService:
     @staticmethod
     @transaction.atomic
     def update_status(ticket: SupportTicket, status: str, actor) -> SupportTicket:
+        ticket = SupportTicket.objects.select_for_update().get(pk=ticket.pk, is_deleted=False)
         old_status = ticket.status
         ticket.status = status
         ticket.close_if_needed()

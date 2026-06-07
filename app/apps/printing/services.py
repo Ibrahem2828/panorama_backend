@@ -64,6 +64,7 @@ class PrintStatusService:
     @staticmethod
     @transaction.atomic
     def change_status(order: PrintOrder, new_status: str, changed_by, note: str = "", rejected_reason: str = "") -> PrintOrder:
+        order = PrintOrder.objects.select_for_update().select_related("user").get(pk=order.pk, is_deleted=False)
         allowed = VALID_TRANSITIONS.get(order.status, set())
         if new_status not in allowed:
             raise ValidationError({"status": f"Invalid transition from {order.status} to {new_status}."})

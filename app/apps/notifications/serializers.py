@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import IntegrityError, transaction
 
 from .models import DeviceToken, Notification
 
@@ -20,12 +21,17 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         token = validated_data["token"]
-        device, _ = DeviceToken.objects.update_or_create(
-            token=token,
-            defaults={
-                "user": self.context["request"].user,
-                "platform": validated_data["platform"],
-                "is_active": True,
-            },
-        )
+        defaults = {
+            "user": self.context["request"].user,
+            "platform": validated_data["platform"],
+            "is_active": True,
+        }
+        try:
+            with transaction.atomic():
+                device, _ = DeviceToken.objects.update_or_create(token=token, defaults=defaults)
+        except IntegrityError:
+            device = DeviceToken.objects.get(token=token)
+            for field, value in defaults.items():
+                setattr(device, field, value)
+            device.save(update_fields=["user", "platform", "is_active", "updated_at"])
         return device

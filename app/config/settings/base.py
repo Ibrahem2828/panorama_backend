@@ -246,6 +246,13 @@ CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "panorama-local-cache",
+    }
+}
+
 MAX_OTP_VERIFY_ATTEMPTS = config("MAX_OTP_VERIFY_ATTEMPTS", default=5, cast=int)
 MAX_CHAT_MESSAGE_LENGTH = config("MAX_CHAT_MESSAGE_LENGTH", default=4000, cast=int)
 MAX_IMAGE_UPLOAD_SIZE_MB = config("MAX_IMAGE_UPLOAD_SIZE_MB", default=5, cast=int)

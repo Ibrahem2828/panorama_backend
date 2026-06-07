@@ -1,4 +1,5 @@
 from django.db.models import Count, Prefetch, Q
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, status
@@ -177,18 +178,19 @@ class MembershipRoleUpdateView(APIView):
 
     @extend_schema(tags=["Dashboard"], request=GroupMembershipRoleUpdateSerializer, responses={200: GroupMembershipSerializer})
     def patch(self, request, pk: int):
-        membership = GroupMembership.objects.select_related("group", "user").get(pk=pk, is_deleted=False)
-        serializer = GroupMembershipRoleUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        old_role = membership.role
-        membership.role = serializer.validated_data["role"]
-        membership.save(update_fields=["role", "updated_at"])
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.GROUP_MEMBERSHIP_ROLE_CHANGED,
-            target=membership,
-            old_value={"role": old_role},
-            new_value={"role": membership.role},
-            request=request,
-        )
+        with transaction.atomic():
+            membership = GroupMembership.objects.select_for_update().select_related("group", "user").get(pk=pk, is_deleted=False)
+            serializer = GroupMembershipRoleUpdateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            old_role = membership.role
+            membership.role = serializer.validated_data["role"]
+            membership.save(update_fields=["role", "updated_at"])
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.GROUP_MEMBERSHIP_ROLE_CHANGED,
+                target=membership,
+                old_value={"role": old_role},
+                new_value={"role": membership.role},
+                request=request,
+            )
         return success_response(data=GroupMembershipSerializer(membership).data, message="Membership role updated successfully")

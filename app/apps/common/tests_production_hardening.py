@@ -55,6 +55,7 @@ def test_production_settings_accept_django_allowed_hosts(monkeypatch):
     monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("DATABASE_SSL_REQUIRE", "True")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
@@ -72,6 +73,7 @@ def test_production_settings_reject_placeholder_secret_key(monkeypatch):
     monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
     sys.modules.pop("config.settings.production", None)
@@ -86,6 +88,7 @@ def test_production_settings_reject_debug_true(monkeypatch):
     monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
     sys.modules.pop("config.settings.production", None)
@@ -100,6 +103,7 @@ def test_production_settings_require_explicit_origins(monkeypatch):
     monkeypatch.delenv("DJANGO_CSRF_TRUSTED_ORIGINS", raising=False)
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
     sys.modules.pop("config.settings.production", None)

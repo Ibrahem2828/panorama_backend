@@ -82,6 +82,8 @@ For repository hygiene, production configuration notes, and API contract lock de
 
 For Phase 2 security hardening, access-control notes, and upload validation rules, see `docs/31_PHASE_2_SECURITY_HARDENING_AND_ACCESS_CONTROL.md`.
 
+For Phase 3 reliability, performance, Redis/cache readiness, and data-integrity notes, see `docs/32_PHASE_3_RELIABILITY_PERFORMANCE_AND_DATA_INTEGRITY.md`.
+
 ## API Documentation
 
 - Swagger UI: `http://localhost:8000/api/docs/`

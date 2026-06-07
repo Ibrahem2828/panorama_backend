@@ -42,6 +42,10 @@ try {
         & $Python "app\manage.py" check
     }
 
+    Invoke-ValidationStep "Django migration check" {
+        & $Python "app\manage.py" makemigrations --check --dry-run
+    }
+
     if ($DeployCheck) {
         $deployEnv = @{}
         Set-ValidationDefault "SECRET_KEY" "validation-only-secret-key-not-for-runtime-please-replace-1234567890" $deployEnv

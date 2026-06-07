@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
@@ -31,13 +32,14 @@ def is_student_eligible_for_group(user, group: Group) -> bool:
 
 class GroupMembershipService:
     @staticmethod
+    @transaction.atomic
     def join(user, group: Group) -> GroupMembership:
         if not group.is_active or group.is_deleted:
             raise ValidationError("Group is not active.")
         if not is_student_eligible_for_group(user, group):
             raise ValidationError("You are not eligible to join this group.")
 
-        membership = GroupMembership.objects.filter(group=group, user=user).first()
+        membership = GroupMembership.objects.select_for_update().filter(group=group, user=user).first()
         if membership and membership.status == GroupMembershipStatus.BLOCKED:
             raise ValidationError("You are blocked from this group.")
         if membership and membership.status in {GroupMembershipStatus.PENDING, GroupMembershipStatus.APPROVED}:
@@ -53,14 +55,17 @@ class GroupMembershipService:
         return GroupMembership.objects.create(group=group, user=user, status=status, joined_at=joined_at)
 
     @staticmethod
+    @transaction.atomic
     def leave(user, group: Group) -> GroupMembership:
-        membership = GroupMembership.objects.get(group=group, user=user, status=GroupMembershipStatus.APPROVED)
+        membership = GroupMembership.objects.select_for_update().get(group=group, user=user, status=GroupMembershipStatus.APPROVED)
         membership.status = GroupMembershipStatus.LEFT
         membership.save(update_fields=["status", "updated_at"])
         return membership
 
     @staticmethod
+    @transaction.atomic
     def review(membership: GroupMembership, reviewer, status: str) -> GroupMembership:
+        membership = GroupMembership.objects.select_for_update().select_related("group", "user").get(pk=membership.pk, is_deleted=False)
         old_status = membership.status
         if status == GroupMembershipStatus.APPROVED:
             membership.approve(reviewer)

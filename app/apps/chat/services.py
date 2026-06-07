@@ -1,5 +1,6 @@
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.conf import settings
+from django.db import transaction
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.common.upload_validation import validate_document_upload, validate_image_upload
@@ -59,6 +60,7 @@ class ChatPermissionService:
 
 class ChatMessageService:
     @staticmethod
+    @transaction.atomic
     def create_message(group, sender, content: str = "", message_type: str = MessageType.TEXT, attachment=None, reply_to=None) -> Message:
         ChatPermissionService.enforce_group_chat_access(sender, group)
         ChatPermissionService.enforce_can_send_message(sender, group)

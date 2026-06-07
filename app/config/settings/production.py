@@ -50,6 +50,23 @@ else:
     for db_env_name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT"):
         _require_env(db_env_name, message=f"Production requires DATABASE_URL or {db_env_name}.")
 
+REDIS_URL = _require_env("REDIS_URL", message="Production requires REDIS_URL for cache, throttling, Celery, and Channels.")
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": config("CACHE_DEFAULT_TIMEOUT", default=300, cast=int),
+    }
+}
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
+
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = config("SECURE_REFERRER_POLICY", default="same-origin")

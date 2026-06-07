@@ -42,7 +42,11 @@ class MyPrintOrderViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return PrintOrder.objects.none()
-        return PrintOrder.objects.filter(user=self.request.user, is_deleted=False).prefetch_related("items", "status_history")
+        return (
+            PrintOrder.objects.filter(user=self.request.user, is_deleted=False)
+            .select_related("user", "assigned_to")
+            .prefetch_related("items__source_file", "status_history__changed_by")
+        )
 
 
 class PrintOrderCancelView(APIView):
@@ -65,7 +69,11 @@ class DashboardPrintOrderViewSet(StandardReadOnlyModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return PrintOrder.objects.filter(is_deleted=False).select_related("user", "assigned_to").prefetch_related("items", "status_history")
+        return (
+            PrintOrder.objects.filter(is_deleted=False)
+            .select_related("user", "assigned_to")
+            .prefetch_related("items__source_file", "status_history__changed_by")
+        )
 
 
 class DashboardPrintAssignView(APIView):

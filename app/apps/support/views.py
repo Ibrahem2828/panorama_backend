@@ -41,7 +41,11 @@ class MySupportTicketViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return SupportTicket.objects.none()
-        return SupportTicket.objects.filter(user=self.request.user, is_deleted=False).prefetch_related("messages")
+        return (
+            SupportTicket.objects.filter(user=self.request.user, is_deleted=False)
+            .select_related("user", "assigned_to")
+            .prefetch_related("messages__sender")
+        )
 
 
 class SupportTicketMessageView(APIView):
@@ -68,7 +72,11 @@ class DashboardSupportTicketViewSet(StandardReadOnlyModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return SupportTicket.objects.filter(is_deleted=False).select_related("user", "assigned_to").prefetch_related("messages")
+        return (
+            SupportTicket.objects.filter(is_deleted=False)
+            .select_related("user", "assigned_to")
+            .prefetch_related("messages__sender")
+        )
 
 
 class DashboardSupportStatusView(APIView):

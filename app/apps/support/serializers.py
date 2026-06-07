@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import transaction
 
 from apps.accounts.choices import UserRole
 from apps.accounts.models import User
@@ -94,18 +95,19 @@ class SupportTicketPrioritySerializer(serializers.Serializer):
     priority = serializers.ChoiceField(choices=SupportTicketPriority.choices)
 
     def save(self, **kwargs):
-        ticket = self.context["ticket"]
-        old_priority = ticket.priority
-        ticket.priority = self.validated_data["priority"]
-        ticket.save(update_fields=["priority", "updated_at"])
-        AuditLogService.log(
-            actor=self.context.get("request").user if self.context.get("request") else None,
-            action=AuditAction.SUPPORT_TICKET_PRIORITY_CHANGED,
-            target=ticket,
-            old_value={"priority": old_priority},
-            new_value={"priority": ticket.priority},
-            request=self.context.get("request"),
-        )
+        with transaction.atomic():
+            ticket = SupportTicket.objects.select_for_update().get(pk=self.context["ticket"].pk, is_deleted=False)
+            old_priority = ticket.priority
+            ticket.priority = self.validated_data["priority"]
+            ticket.save(update_fields=["priority", "updated_at"])
+            AuditLogService.log(
+                actor=self.context.get("request").user if self.context.get("request") else None,
+                action=AuditAction.SUPPORT_TICKET_PRIORITY_CHANGED,
+                target=ticket,
+                old_value={"priority": old_priority},
+                new_value={"priority": ticket.priority},
+                request=self.context.get("request"),
+            )
         return ticket
 
 
@@ -113,16 +115,17 @@ class SupportTicketAssignSerializer(serializers.Serializer):
     assigned_to = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(role__in=[UserRole.ADMIN, UserRole.IT_SUPPORT]))
 
     def save(self, **kwargs):
-        ticket = self.context["ticket"]
-        old_assigned_to = ticket.assigned_to_id
-        ticket.assigned_to = self.validated_data["assigned_to"]
-        ticket.save(update_fields=["assigned_to", "updated_at"])
-        AuditLogService.log(
-            actor=self.context.get("request").user if self.context.get("request") else None,
-            action=AuditAction.SUPPORT_TICKET_ASSIGNED,
-            target=ticket,
-            old_value={"assigned_to": old_assigned_to},
-            new_value={"assigned_to": ticket.assigned_to_id},
-            request=self.context.get("request"),
-        )
+        with transaction.atomic():
+            ticket = SupportTicket.objects.select_for_update().get(pk=self.context["ticket"].pk, is_deleted=False)
+            old_assigned_to = ticket.assigned_to_id
+            ticket.assigned_to = self.validated_data["assigned_to"]
+            ticket.save(update_fields=["assigned_to", "updated_at"])
+            AuditLogService.log(
+                actor=self.context.get("request").user if self.context.get("request") else None,
+                action=AuditAction.SUPPORT_TICKET_ASSIGNED,
+                target=ticket,
+                old_value={"assigned_to": old_assigned_to},
+                new_value={"assigned_to": ticket.assigned_to_id},
+                request=self.context.get("request"),
+            )
         return ticket

@@ -1,5 +1,6 @@
 import json
 
+from django.db import transaction
 from rest_framework import serializers
 
 from apps.accounts.choices import UserRole
@@ -125,18 +126,19 @@ class PrintOrderAssignSerializer(serializers.Serializer):
     )
 
     def save(self, **kwargs):
-        order = self.context["order"]
-        old_assigned_to = order.assigned_to_id
-        order.assigned_to = self.validated_data["assigned_to"]
-        order.save(update_fields=["assigned_to", "updated_at"])
-        AuditLogService.log(
-            actor=self.context.get("request").user if self.context.get("request") else None,
-            action=AuditAction.PRINT_ORDER_ASSIGNED,
-            target=order,
-            old_value={"assigned_to": old_assigned_to},
-            new_value={"assigned_to": order.assigned_to_id},
-            request=self.context.get("request"),
-        )
+        with transaction.atomic():
+            order = PrintOrder.objects.select_for_update().get(pk=self.context["order"].pk, is_deleted=False)
+            old_assigned_to = order.assigned_to_id
+            order.assigned_to = self.validated_data["assigned_to"]
+            order.save(update_fields=["assigned_to", "updated_at"])
+            AuditLogService.log(
+                actor=self.context.get("request").user if self.context.get("request") else None,
+                action=AuditAction.PRINT_ORDER_ASSIGNED,
+                target=order,
+                old_value={"assigned_to": old_assigned_to},
+                new_value={"assigned_to": order.assigned_to_id},
+                request=self.context.get("request"),
+            )
         return order
 
 
@@ -144,14 +146,15 @@ class PrintOrderNoteSerializer(serializers.Serializer):
     internal_notes = serializers.CharField()
 
     def save(self, **kwargs):
-        order = self.context["order"]
-        order.internal_notes = self.validated_data["internal_notes"]
-        order.save(update_fields=["internal_notes", "updated_at"])
-        AuditLogService.log(
-            actor=self.context.get("request").user if self.context.get("request") else None,
-            action=AuditAction.PRINT_ORDER_NOTE_UPDATED,
-            target=order,
-            new_value={"internal_notes": "[REDACTED]"},
-            request=self.context.get("request"),
-        )
+        with transaction.atomic():
+            order = PrintOrder.objects.select_for_update().get(pk=self.context["order"].pk, is_deleted=False)
+            order.internal_notes = self.validated_data["internal_notes"]
+            order.save(update_fields=["internal_notes", "updated_at"])
+            AuditLogService.log(
+                actor=self.context.get("request").user if self.context.get("request") else None,
+                action=AuditAction.PRINT_ORDER_NOTE_UPDATED,
+                target=order,
+                new_value={"internal_notes": "[REDACTED]"},
+                request=self.context.get("request"),
+            )
         return order

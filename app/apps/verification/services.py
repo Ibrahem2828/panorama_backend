@@ -15,6 +15,11 @@ class VerificationService:
     @staticmethod
     @transaction.atomic
     def review(verification: VerificationRequest, reviewer, status: str, rejection_reason: str = "", admin_note: str = ""):
+        verification = (
+            VerificationRequest.objects.select_for_update()
+            .select_related("user", "student_profile", "university", "faculty", "major", "academic_year", "semester")
+            .get(pk=verification.pk, is_deleted=False)
+        )
         if verification.status != VerificationStatus.PENDING:
             raise ValidationError("Only pending verification requests can be reviewed.")
         if verification.user_id == reviewer.id:

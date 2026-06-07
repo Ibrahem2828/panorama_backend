@@ -329,6 +329,7 @@ def test_production_settings_disable_development_otp_and_set_security_headers(mo
     monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
     sys.modules.pop("config.settings.production", None)
