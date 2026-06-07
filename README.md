@@ -70,6 +70,16 @@ pytest
 
 The testing settings use an in-memory SQLite database for fast local feedback. The default application settings use PostgreSQL.
 
+## Validation
+
+Run the Phase 1 backend validation entry point from the repository root:
+
+```powershell
+.\scripts\validate_backend.ps1
+```
+
+For repository hygiene, production configuration notes, and API contract lock details, see `docs/30_PHASE_1_REPOSITORY_CLEANUP_AND_API_CONTRACT_LOCK.md`.
+
 ## API Documentation
 
 - Swagger UI: `http://localhost:8000/api/docs/`

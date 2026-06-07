@@ -1,13 +1,58 @@
-__pycache__/
-*.py[cod]
-*.sqlite3
-.pytest_cache/
-.coverage
-htmlcov/
+# Environment and secrets
 .env
+.env.*
+!.env.example
+
+# Python bytecode and caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+.pytest_cache/
+pytest-cache-files-*/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local databases and runtime output
+db.sqlite3
+*.sqlite3
 media/
 staticfiles/
+logs/
+*.log
+
+# Virtual environments and dependencies
 venv/
 .venv/
-*.log
+env/
+node_modules/
+
+# IDE and OS files
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Temporary, backup, upload, and archive artifacts
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.orig
+*.zip
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.7z

@@ -49,9 +49,11 @@ def test_get_bool_env_supports_django_debug_fallback(monkeypatch):
 
 
 def test_production_settings_accept_django_allowed_hosts(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-for-production-settings")
     monkeypatch.delenv("ALLOWED_HOSTS", raising=False)
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "coolify.sslip.io,localhost")
+    monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
     monkeypatch.setenv("DATABASE_SSL_REQUIRE", "True")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
@@ -62,6 +64,47 @@ def test_production_settings_accept_django_allowed_hosts(monkeypatch):
     assert production.ALLOWED_HOSTS == ["coolify.sslip.io", "localhost"]
     assert production.DEBUG is False
     assert production.DATABASES["default"]["OPTIONS"] == {"sslmode": "require"}
+
+
+def test_production_settings_reject_placeholder_secret_key(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "replace-with-a-generated-django-secret-key")
+    monkeypatch.setenv("ALLOWED_HOSTS", "api.example.com")
+    monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
+
+    sys.modules.pop("config.settings.production", None)
+    with pytest.raises(ImproperlyConfigured, match="SECRET_KEY must be replaced"):
+        importlib.import_module("config.settings.production")
+
+
+def test_production_settings_reject_debug_true(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "test-secret-for-production-settings")
+    monkeypatch.setenv("DEBUG", "True")
+    monkeypatch.setenv("ALLOWED_HOSTS", "api.example.com")
+    monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.com")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
+
+    sys.modules.pop("config.settings.production", None)
+    with pytest.raises(ImproperlyConfigured, match="DEBUG must be False"):
+        importlib.import_module("config.settings.production")
+
+
+def test_production_settings_require_explicit_origins(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "test-secret-for-production-settings")
+    monkeypatch.setenv("ALLOWED_HOSTS", "api.example.com")
+    monkeypatch.delenv("CSRF_TRUSTED_ORIGINS", raising=False)
+    monkeypatch.delenv("DJANGO_CSRF_TRUSTED_ORIGINS", raising=False)
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.com")
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
+
+    sys.modules.pop("config.settings.production", None)
+    with pytest.raises(ImproperlyConfigured, match="CSRF_TRUSTED_ORIGINS"):
+        importlib.import_module("config.settings.production")
 
 
 def test_health_endpoint_is_public():

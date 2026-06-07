@@ -4,8 +4,31 @@ from django.core.exceptions import ImproperlyConfigured
 from .base import *  # noqa: F403
 from .env import database_from_url, get_bool_env, get_csv_env, get_env
 
-SECRET_KEY = config("SECRET_KEY")
+UNSAFE_SECRET_KEYS = {
+    "unsafe-development-secret-key",
+    "change-me",
+    "changeme",
+    "change_me",
+    "replace-me",
+    "replace-with-a-generated-django-secret-key",
+}
+
+
+def _require_env(name: str, *, message: str | None = None) -> str:
+    value = get_env(name)
+    if not value:
+        raise ImproperlyConfigured(message or f"Production requires {name}.")
+    return value
+
+
+SECRET_KEY = _require_env("SECRET_KEY", message="Production requires SECRET_KEY.")
+if SECRET_KEY.strip().lower() in UNSAFE_SECRET_KEYS:
+    raise ImproperlyConfigured("Production SECRET_KEY must be replaced with a generated secret.")
+
 DEBUG = get_bool_env("DEBUG", "DJANGO_DEBUG", default=False)
+if DEBUG:
+    raise ImproperlyConfigured("Production DEBUG must be False.")
+
 RETURN_DEVELOPMENT_OTP = False
 ALLOWED_HOSTS = get_csv_env(
     "ALLOWED_HOSTS",
@@ -23,9 +46,14 @@ database_url = get_env("DATABASE_URL")
 DATABASE_SSL_REQUIRE = get_bool_env("DATABASE_SSL_REQUIRE", default=False)
 if database_url:
     DATABASES["default"] = database_from_url(database_url, ssl_require=DATABASE_SSL_REQUIRE)  # noqa: F405
+else:
+    for db_env_name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT"):
+        _require_env(db_env_name, message=f"Production requires DATABASE_URL or {db_env_name}.")
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+# These flags are environment-driven because some managed platforms terminate
+# TLS before Django. Use True when the application directly sees HTTPS.
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=False)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
 SECURE_HSTS_PRELOAD = get_bool_env("SECURE_HSTS_PRELOAD", default=False)
@@ -34,8 +62,16 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = get_bool_env("USE_X_FORWARDED_HOST", "DJANGO_USE_X_FORWARDED_HOST", default=True)
 SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", "DJANGO_SESSION_COOKIE_SECURE", default=False)
 CSRF_COOKIE_SECURE = get_bool_env("CSRF_COOKIE_SECURE", "DJANGO_CSRF_COOKIE_SECURE", default=False)
-CSRF_TRUSTED_ORIGINS = get_csv_env("CSRF_TRUSTED_ORIGINS", "DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
-CORS_ALLOWED_ORIGINS = get_csv_env("CORS_ALLOWED_ORIGINS", "DJANGO_CORS_ALLOWED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = get_csv_env(
+    "CSRF_TRUSTED_ORIGINS",
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    required_message="Production requires CSRF_TRUSTED_ORIGINS or DJANGO_CSRF_TRUSTED_ORIGINS.",
+)
+CORS_ALLOWED_ORIGINS = get_csv_env(
+    "CORS_ALLOWED_ORIGINS",
+    "DJANGO_CORS_ALLOWED_ORIGINS",
+    required_message="Production requires CORS_ALLOWED_ORIGINS or DJANGO_CORS_ALLOWED_ORIGINS.",
+)
 
 LOG_LEVEL = config("LOG_LEVEL", default="INFO")
 LOGGING = {
