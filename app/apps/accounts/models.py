@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -148,6 +149,8 @@ class OTPCode(BaseModel):
 
     def verify_code(self, raw_code: str) -> bool:
         if self.is_expired() or self.is_used:
+            return False
+        if self.attempts_count >= settings.MAX_OTP_VERIFY_ATTEMPTS:
             return False
         is_valid = check_password(raw_code, self.code_hash)
         if not is_valid:

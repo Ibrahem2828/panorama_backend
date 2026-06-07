@@ -7,6 +7,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
 from apps.common.responses import error_response, success_response
 
 from .serializers import (
@@ -57,6 +59,7 @@ class StudentRegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
+    throttle_scope = "auth_login"
 
     @extend_schema(request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
     def post(self, request):
@@ -96,6 +99,7 @@ class LogoutView(APIView):
             RefreshToken(refresh_token).blacklist()
         except TokenError:
             return error_response(message="Invalid token", errors={"refresh": "Invalid or expired refresh token."})
+        AuditLogService.log(actor=request.user, action=AuditAction.USER_LOGGED_OUT, target=request.user, request=request)
         return success_response(message="Logged out successfully")
 
 
@@ -116,6 +120,7 @@ class CurrentUserView(APIView):
 
 class ChangePasswordView(APIView):
     serializer_class = ChangePasswordSerializer
+    throttle_scope = "change_password"
 
     @extend_schema(request=ChangePasswordSerializer)
     def post(self, request):
@@ -128,6 +133,7 @@ class ChangePasswordView(APIView):
 class SendOTPView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = SendOTPSerializer
+    throttle_scope = "otp_send"
 
     @extend_schema(request=SendOTPSerializer)
     def post(self, request):
@@ -143,6 +149,7 @@ class SendOTPView(APIView):
 class VerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = VerifyOTPSerializer
+    throttle_scope = "otp_verify"
 
     @extend_schema(request=VerifyOTPSerializer)
     def post(self, request):
@@ -155,14 +162,15 @@ class VerifyOTPView(APIView):
 class RequestPasswordResetView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = RequestPasswordResetSerializer
+    throttle_scope = "password_reset"
 
     @extend_schema(request=RequestPasswordResetSerializer)
     def post(self, request):
         serializer = RequestPasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         otp, raw_code = serializer.save()
-        data = {"expires_at": otp.expires_at}
-        if settings.RETURN_DEVELOPMENT_OTP and raw_code:
+        data = {"expires_at": otp.expires_at} if otp else {}
+        if otp and settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
         return success_response(data=data, message="Password reset OTP sent successfully")
 
@@ -170,6 +178,7 @@ class RequestPasswordResetView(APIView):
 class ConfirmPasswordResetView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = ConfirmPasswordResetSerializer
+    throttle_scope = "password_reset"
 
     @extend_schema(request=ConfirmPasswordResetSerializer)
     def post(self, request):

@@ -136,6 +136,19 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPageNumberPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.ScopedRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "auth_login": config("THROTTLE_AUTH_LOGIN", default="10/minute"),
+        "otp_send": config("THROTTLE_OTP_SEND", default="5/minute"),
+        "otp_verify": config("THROTTLE_OTP_VERIFY", default="10/minute"),
+        "password_reset": config("THROTTLE_PASSWORD_RESET", default="5/minute"),
+        "change_password": config("THROTTLE_CHANGE_PASSWORD", default="5/minute"),
+        "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/minute"),
+        "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="20/minute"),
+        "print_order": config("THROTTLE_PRINT_ORDER", default="10/minute"),
+    },
 }
 
 SIMPLE_JWT = {
@@ -232,6 +245,19 @@ REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
+
+MAX_OTP_VERIFY_ATTEMPTS = config("MAX_OTP_VERIFY_ATTEMPTS", default=5, cast=int)
+MAX_CHAT_MESSAGE_LENGTH = config("MAX_CHAT_MESSAGE_LENGTH", default=4000, cast=int)
+MAX_IMAGE_UPLOAD_SIZE_MB = config("MAX_IMAGE_UPLOAD_SIZE_MB", default=5, cast=int)
+MAX_DOCUMENT_UPLOAD_SIZE_MB = config("MAX_DOCUMENT_UPLOAD_SIZE_MB", default=25, cast=int)
+ALLOWED_IMAGE_EXTENSIONS = get_csv_env(
+    "ALLOWED_IMAGE_EXTENSIONS",
+    default=["jpg", "jpeg", "png", "gif", "webp"],
+)
+ALLOWED_DOCUMENT_EXTENSIONS = get_csv_env(
+    "ALLOWED_DOCUMENT_EXTENSIONS",
+    default=["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "jpg", "jpeg", "png"],
+)
 
 CHANNEL_LAYERS = {
     "default": {

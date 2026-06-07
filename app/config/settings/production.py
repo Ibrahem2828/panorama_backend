@@ -52,6 +52,8 @@ else:
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = config("SECURE_REFERRER_POLICY", default="same-origin")
+X_FRAME_OPTIONS = config("X_FRAME_OPTIONS", default="DENY")
 # These flags are environment-driven because some managed platforms terminate
 # TLS before Django. Use True when the application directly sees HTTPS.
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=False)

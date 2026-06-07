@@ -22,6 +22,7 @@ from .services import PrintStatusService
 class PrintOrderCreateView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = PrintOrderCreateSerializer
+    throttle_scope = "print_order"
 
     @extend_schema(tags=["Printing"], request=PrintOrderCreateSerializer, responses={201: PrintOrderSerializer})
     def post(self, request):
@@ -74,7 +75,7 @@ class DashboardPrintAssignView(APIView):
     @extend_schema(tags=["Dashboard"], request=PrintOrderAssignSerializer, responses={200: PrintOrderSerializer})
     def patch(self, request, pk: int):
         order = PrintOrder.objects.get(pk=pk, is_deleted=False)
-        serializer = PrintOrderAssignSerializer(data=request.data, context={"order": order})
+        serializer = PrintOrderAssignSerializer(data=request.data, context={"request": request, "order": order})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
         return success_response(data=PrintOrderSerializer(order).data, message="Print order assigned successfully")
@@ -100,7 +101,7 @@ class DashboardPrintNoteView(APIView):
     @extend_schema(tags=["Dashboard"], request=PrintOrderNoteSerializer, responses={200: PrintOrderSerializer})
     def post(self, request, pk: int):
         order = PrintOrder.objects.get(pk=pk, is_deleted=False)
-        serializer = PrintOrderNoteSerializer(data=request.data, context={"order": order})
+        serializer = PrintOrderNoteSerializer(data=request.data, context={"request": request, "order": order})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
         return success_response(data=PrintOrderSerializer(order).data, message="Print order note updated successfully")

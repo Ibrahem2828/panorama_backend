@@ -5,6 +5,8 @@ from rest_framework import filters, status
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdminOrITSupport, IsVerifiedStudent
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
@@ -93,7 +95,16 @@ class DashboardGroupViewSet(StandardModelViewSet):
         ).annotate(members_count=Count("memberships", filter=Q(memberships__status=GroupMembershipStatus.APPROVED)))
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        group = serializer.save(created_by=self.request.user)
+        AuditLogService.log(actor=self.request.user, action=AuditAction.GROUP_CREATED, target=group, request=self.request)
+
+    def perform_update(self, serializer):
+        group = serializer.save()
+        AuditLogService.log(actor=self.request.user, action=AuditAction.GROUP_UPDATED, target=group, request=self.request)
+
+    def perform_destroy(self, instance):
+        AuditLogService.log(actor=self.request.user, action=AuditAction.GROUP_DELETED, target=instance, request=self.request)
+        super().perform_destroy(instance)
 
 
 class GroupJoinView(APIView):
@@ -169,6 +180,15 @@ class MembershipRoleUpdateView(APIView):
         membership = GroupMembership.objects.select_related("group", "user").get(pk=pk, is_deleted=False)
         serializer = GroupMembershipRoleUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        old_role = membership.role
         membership.role = serializer.validated_data["role"]
         membership.save(update_fields=["role", "updated_at"])
+        AuditLogService.log(
+            actor=request.user,
+            action=AuditAction.GROUP_MEMBERSHIP_ROLE_CHANGED,
+            target=membership,
+            old_value={"role": old_role},
+            new_value={"role": membership.role},
+            request=request,
+        )
         return success_response(data=GroupMembershipSerializer(membership).data, message="Membership role updated successfully")

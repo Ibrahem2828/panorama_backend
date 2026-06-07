@@ -26,7 +26,14 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
-        payload = json.loads(text_data or "{}")
+        try:
+            payload = json.loads(text_data or "{}")
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({"type": "error", "error": "Invalid message payload."}))
+            return
+        if not isinstance(payload, dict):
+            await self.send(text_data=json.dumps({"type": "error", "error": "Invalid message payload."}))
+            return
         event_type = payload.get("type")
         if event_type == "typing":
             await self.channel_layer.group_send(
@@ -37,8 +44,8 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         if event_type == "message":
             try:
                 data = await self.create_message(payload.get("content", ""))
-            except Exception as exc:
-                await self.send(text_data=json.dumps({"type": "error", "error": str(exc)}))
+            except Exception:
+                await self.send(text_data=json.dumps({"type": "error", "error": "Message could not be sent."}))
                 return
             await self.channel_layer.group_send(self.room_group_name, {"type": "message_event", "data": data})
 

@@ -2,6 +2,11 @@ import json
 
 from rest_framework import serializers
 
+from apps.accounts.choices import UserRole
+from apps.accounts.models import User
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+from apps.common.upload_validation import validate_document_upload
 from apps.files.models import FileResource
 
 from .models import PrintOrder, PrintOrderItem, PrintOrderStatus, PrintOrderStatusHistory
@@ -10,6 +15,7 @@ from .services import PrintOrderService, PrintStatusService
 
 class PrintOrderItemSerializer(serializers.ModelSerializer):
     source_file = serializers.PrimaryKeyRelatedField(queryset=FileResource.objects.all(), required=False, allow_null=True)
+    uploaded_file = serializers.FileField(required=False, allow_null=True, validators=[validate_document_upload])
 
     class Meta:
         model = PrintOrderItem
@@ -114,12 +120,23 @@ class PrintStatusUpdateSerializer(serializers.Serializer):
 
 
 class PrintOrderAssignSerializer(serializers.Serializer):
-    assigned_to = serializers.PrimaryKeyRelatedField(queryset=PrintOrder._meta.get_field("user").remote_field.model.objects.all())
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role__in=[UserRole.PRINT_STAFF, UserRole.ADMIN, UserRole.IT_SUPPORT])
+    )
 
     def save(self, **kwargs):
         order = self.context["order"]
+        old_assigned_to = order.assigned_to_id
         order.assigned_to = self.validated_data["assigned_to"]
         order.save(update_fields=["assigned_to", "updated_at"])
+        AuditLogService.log(
+            actor=self.context.get("request").user if self.context.get("request") else None,
+            action=AuditAction.PRINT_ORDER_ASSIGNED,
+            target=order,
+            old_value={"assigned_to": old_assigned_to},
+            new_value={"assigned_to": order.assigned_to_id},
+            request=self.context.get("request"),
+        )
         return order
 
 
@@ -130,4 +147,11 @@ class PrintOrderNoteSerializer(serializers.Serializer):
         order = self.context["order"]
         order.internal_notes = self.validated_data["internal_notes"]
         order.save(update_fields=["internal_notes", "updated_at"])
+        AuditLogService.log(
+            actor=self.context.get("request").user if self.context.get("request") else None,
+            action=AuditAction.PRINT_ORDER_NOTE_UPDATED,
+            target=order,
+            new_value={"internal_notes": "[REDACTED]"},
+            request=self.context.get("request"),
+        )
         return order

@@ -3,6 +3,9 @@ import logging
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+
 from .choices import OTPPurpose
 from .models import OTPCode, User
 
@@ -49,7 +52,23 @@ class OTPService:
             raise ValidationError({"code": "Invalid or expired OTP code."})
         if otp.is_expired():
             raise ValidationError({"code": "OTP code has expired."})
+        if otp.attempts_count >= settings.MAX_OTP_VERIFY_ATTEMPTS:
+            AuditLogService.log(
+                actor=otp.user,
+                action=AuditAction.OTP_VERIFICATION_FAILED,
+                target=otp.user,
+                new_value={"purpose": purpose, "reason": "max_attempts"},
+            )
+            raise ValidationError({"code": "Maximum OTP verification attempts exceeded."})
         if not otp.verify_code(code):
+            otp.refresh_from_db(fields=["attempts_count"])
+            if otp.attempts_count >= settings.MAX_OTP_VERIFY_ATTEMPTS:
+                AuditLogService.log(
+                    actor=otp.user,
+                    action=AuditAction.OTP_VERIFICATION_FAILED,
+                    target=otp.user,
+                    new_value={"purpose": purpose, "reason": "max_attempts"},
+                )
             raise ValidationError({"code": "Invalid OTP code."})
         otp.mark_used()
         return otp

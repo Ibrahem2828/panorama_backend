@@ -1,9 +1,15 @@
+from pathlib import Path
+
+from django.http import FileResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdminOrITSupport
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 from apps.groups.models import GroupMembershipStatus
 
@@ -72,4 +78,42 @@ class DashboardFileResourceViewSet(StandardModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(uploaded_by=self.request.user)
+        file_resource = serializer.save(uploaded_by=self.request.user)
+        AuditLogService.log(actor=self.request.user, action=AuditAction.FILE_UPLOADED, target=file_resource, request=self.request)
+
+    def perform_update(self, serializer):
+        file_resource = serializer.save()
+        AuditLogService.log(actor=self.request.user, action=AuditAction.FILE_UPDATED, target=file_resource, request=self.request)
+
+    def perform_destroy(self, instance):
+        AuditLogService.log(actor=self.request.user, action=AuditAction.FILE_DELETED, target=instance, request=self.request)
+        super().perform_destroy(instance)
+
+
+class FileResourceProtectedView(APIView):
+    serializer_class = FileResourceSerializer
+
+    @extend_schema(tags=["Files"], responses={200: bytes})
+    def get(self, request, pk: int):
+        file_resource = FileResource.objects.filter(pk=pk, is_deleted=False).first()
+        if file_resource is None:
+            raise NotFound("File not found.")
+        if not user_can_access_file(request.user, file_resource):
+            raise PermissionDenied("You do not have access to this file.")
+        if not file_resource.file:
+            raise NotFound("File not found.")
+        try:
+            file_handle = file_resource.file.open("rb")
+        except FileNotFoundError as exc:
+            raise NotFound("File not found.") from exc
+
+        AuditLogService.log(
+            actor=request.user,
+            action=AuditAction.FILE_ACCESSED,
+            target=file_resource,
+            new_value={"file_id": file_resource.id, "file_type": file_resource.file_type},
+            request=request,
+        )
+        response = FileResponse(file_handle, as_attachment=False, filename=Path(file_resource.file.name).name)
+        response["X-Content-Type-Options"] = "nosniff"
+        return response

@@ -47,6 +47,7 @@ class MySupportTicketViewSet(StandardReadOnlyModelViewSet):
 class SupportTicketMessageView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = SupportTicketAddMessageSerializer
+    throttle_scope = "support_message"
 
     @extend_schema(tags=["Support"], request=SupportTicketAddMessageSerializer, responses={201: SupportTicketSerializer})
     def post(self, request, pk: int):
@@ -90,7 +91,7 @@ class DashboardSupportPriorityView(APIView):
     @extend_schema(tags=["Dashboard"], request=SupportTicketPrioritySerializer, responses={200: SupportTicketSerializer})
     def patch(self, request, pk: int):
         ticket = SupportTicket.objects.get(pk=pk, is_deleted=False)
-        serializer = SupportTicketPrioritySerializer(data=request.data, context={"ticket": ticket})
+        serializer = SupportTicketPrioritySerializer(data=request.data, context={"request": request, "ticket": ticket})
         serializer.is_valid(raise_exception=True)
         ticket = serializer.save()
         return success_response(data=SupportTicketSerializer(ticket).data, message="Support ticket priority updated")
@@ -103,7 +104,7 @@ class DashboardSupportAssignView(APIView):
     @extend_schema(tags=["Dashboard"], request=SupportTicketAssignSerializer, responses={200: SupportTicketSerializer})
     def post(self, request, pk: int):
         ticket = SupportTicket.objects.get(pk=pk, is_deleted=False)
-        serializer = SupportTicketAssignSerializer(data=request.data, context={"ticket": ticket})
+        serializer = SupportTicketAssignSerializer(data=request.data, context={"request": request, "ticket": ticket})
         serializer.is_valid(raise_exception=True)
         ticket = serializer.save()
         return success_response(data=SupportTicketSerializer(ticket).data, message="Support ticket assigned")
@@ -113,6 +114,7 @@ class DashboardSupportMessageView(APIView):
     permission_classes = [IsAdminOrITSupport]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = SupportTicketAddMessageSerializer
+    throttle_scope = "support_message"
 
     @extend_schema(tags=["Dashboard"], request=SupportTicketAddMessageSerializer, responses={201: SupportTicketSerializer})
     def post(self, request, pk: int):

@@ -32,6 +32,12 @@ class SupportTicketService:
                     type=NotificationType.SYSTEM,
                     data={"support_ticket_id": ticket.id},
                 )
+                AuditLogService.log(
+                    actor=sender,
+                    action=AuditAction.SUPPORT_TICKET_STAFF_REPLY,
+                    target=ticket,
+                    new_value={"message_id": ticket_message.id},
+                )
         return ticket_message
 
     @staticmethod

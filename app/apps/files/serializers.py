@@ -1,12 +1,16 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
+from apps.common.upload_validation import validate_document_upload
 from apps.universities.models import validate_academic_hierarchy
 
 from .models import FileResource, FileVisibility
 
 
 class FileResourceSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(validators=[validate_document_upload])
     uploaded_by_name = serializers.CharField(source="uploaded_by.full_name", read_only=True)
+    secure_file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = FileResource
@@ -15,6 +19,7 @@ class FileResourceSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "file",
+            "secure_file_url",
             "file_type",
             "file_size",
             "uploaded_by",
@@ -33,6 +38,12 @@ class FileResourceSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "file_type", "file_size", "uploaded_by", "created_at", "updated_at"]
+
+    @extend_schema_field(serializers.CharField())
+    def get_secure_file_url(self, obj):
+        request = self.context.get("request")
+        path = f"/api/v1/files/{obj.id}/view/"
+        return request.build_absolute_uri(path) if request else path
 
     def validate(self, attrs):
         instance = self.instance

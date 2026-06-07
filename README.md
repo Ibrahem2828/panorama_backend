@@ -80,6 +80,8 @@ Run the Phase 1 backend validation entry point from the repository root:
 
 For repository hygiene, production configuration notes, and API contract lock details, see `docs/30_PHASE_1_REPOSITORY_CLEANUP_AND_API_CONTRACT_LOCK.md`.
 
+For Phase 2 security hardening, access-control notes, and upload validation rules, see `docs/31_PHASE_2_SECURITY_HARDENING_AND_ACCESS_CONTROL.md`.
+
 ## API Documentation
 
 - Swagger UI: `http://localhost:8000/api/docs/`

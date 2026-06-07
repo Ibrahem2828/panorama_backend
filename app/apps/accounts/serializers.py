@@ -1,9 +1,13 @@
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+from apps.common.upload_validation import validate_image_upload
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
     AcademicYearSerializer,
@@ -20,7 +24,18 @@ from .student_number import StudentNumberParser, apply_student_number_parse
 from .student_number import FACULTY_CODE_LABELS
 
 
+def validate_phone_number_format(value: str) -> str:
+    phone_number = value.strip()
+    if not phone_number or len(phone_number) > 32:
+        raise serializers.ValidationError(_("Enter a valid phone number."))
+    normalized = phone_number[1:] if phone_number.startswith("+") else phone_number
+    if not normalized.isdigit() or len(normalized) < 7:
+        raise serializers.ValidationError(_("Enter a valid phone number."))
+    return phone_number
+
+
 class StudentProfileSerializer(serializers.ModelSerializer):
+    card_image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_upload])
     university_detail = UniversitySerializer(source="university", read_only=True)
     faculty_detail = FacultySerializer(source="faculty", read_only=True)
     major_detail = MajorSerializer(source="major", read_only=True)
@@ -202,7 +217,7 @@ class NormalUserRegisterSerializer(BaseRegisterSerializer):
 
 class StudentRegisterSerializer(BaseRegisterSerializer):
     student_number = serializers.CharField(required=False, allow_blank=True, max_length=64)
-    card_image = serializers.ImageField(required=False, allow_null=True)
+    card_image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_upload])
 
     class Meta(BaseRegisterSerializer.Meta):
         fields = BaseRegisterSerializer.Meta.fields + ["student_number", "card_image"]
@@ -279,6 +294,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password", "updated_at"])
+        AuditLogService.log(actor=user, action=AuditAction.PASSWORD_CHANGED, target=user)
         return user
 
 
@@ -317,11 +333,14 @@ class VerifyOTPSerializer(serializers.Serializer):
 class RequestPasswordResetSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
 
+    def validate_phone_number(self, value: str) -> str:
+        return validate_phone_number_format(value)
+
     def save(self, **kwargs):
         phone_number = self.validated_data["phone_number"].strip()
         user = User.objects.filter(phone_number=phone_number).first()
         if user is None:
-            raise serializers.ValidationError({"phone_number": "No account exists with this phone number."})
+            return None, None
         return OTPService.send_otp(phone_number, OTPPurpose.RESET_PASSWORD, user=user)
 
 
@@ -330,6 +349,9 @@ class ConfirmPasswordResetSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6, min_length=6)
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate_phone_number(self, value: str) -> str:
+        return validate_phone_number_format(value)
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["new_password_confirm"]:
@@ -349,4 +371,5 @@ class ConfirmPasswordResetSerializer(serializers.Serializer):
             raise serializers.ValidationError({"phone_number": "No account exists with this phone number."})
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password", "updated_at"])
+        AuditLogService.log(actor=user, action=AuditAction.PASSWORD_RESET_CONFIRMED, target=user)
         return user

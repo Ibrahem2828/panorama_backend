@@ -16,6 +16,11 @@ PASSWORD_HASHERS = [
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+    scope: "1000/minute"
+    for scope in REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
+}
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",

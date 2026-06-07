@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
+from apps.accounts.choices import UserRole
 from apps.accounts.models import User
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+from apps.common.upload_validation import validate_document_upload
 
 from .models import SupportTicket, SupportTicketMessage, SupportTicketPriority, SupportTicketStatus
 from .services import SupportTicketService
@@ -44,7 +48,12 @@ class SupportTicketCreateSerializer(serializers.Serializer):
     category = serializers.ChoiceField(choices=SupportTicket._meta.get_field("category").choices)
     subject = serializers.CharField(max_length=255)
     message = serializers.CharField()
-    attachment = serializers.FileField(required=False, allow_null=True)
+    attachment = serializers.FileField(required=False, allow_null=True, validators=[validate_document_upload])
+
+    def validate_message(self, value: str) -> str:
+        if not value.strip():
+            raise serializers.ValidationError("Message cannot be empty.")
+        return value.strip()
 
     def save(self, **kwargs):
         return SupportTicketService.create_ticket(
@@ -58,7 +67,12 @@ class SupportTicketCreateSerializer(serializers.Serializer):
 
 class SupportTicketAddMessageSerializer(serializers.Serializer):
     message = serializers.CharField()
-    attachment = serializers.FileField(required=False, allow_null=True)
+    attachment = serializers.FileField(required=False, allow_null=True, validators=[validate_document_upload])
+
+    def validate_message(self, value: str) -> str:
+        if not value.strip():
+            raise serializers.ValidationError("Message cannot be empty.")
+        return value.strip()
 
     def save(self, **kwargs):
         return SupportTicketService.add_message(
@@ -81,16 +95,34 @@ class SupportTicketPrioritySerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         ticket = self.context["ticket"]
+        old_priority = ticket.priority
         ticket.priority = self.validated_data["priority"]
         ticket.save(update_fields=["priority", "updated_at"])
+        AuditLogService.log(
+            actor=self.context.get("request").user if self.context.get("request") else None,
+            action=AuditAction.SUPPORT_TICKET_PRIORITY_CHANGED,
+            target=ticket,
+            old_value={"priority": old_priority},
+            new_value={"priority": ticket.priority},
+            request=self.context.get("request"),
+        )
         return ticket
 
 
 class SupportTicketAssignSerializer(serializers.Serializer):
-    assigned_to = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    assigned_to = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(role__in=[UserRole.ADMIN, UserRole.IT_SUPPORT]))
 
     def save(self, **kwargs):
         ticket = self.context["ticket"]
+        old_assigned_to = ticket.assigned_to_id
         ticket.assigned_to = self.validated_data["assigned_to"]
         ticket.save(update_fields=["assigned_to", "updated_at"])
+        AuditLogService.log(
+            actor=self.context.get("request").user if self.context.get("request") else None,
+            action=AuditAction.SUPPORT_TICKET_ASSIGNED,
+            target=ticket,
+            old_value={"assigned_to": old_assigned_to},
+            new_value={"assigned_to": ticket.assigned_to_id},
+            request=self.context.get("request"),
+        )
         return ticket

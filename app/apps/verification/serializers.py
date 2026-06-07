@@ -5,6 +5,9 @@ from rest_framework import serializers
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.models import StudentProfile
 from apps.accounts.student_number import FACULTY_CODE_LABELS, StudentNumberParser, apply_student_number_parse
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+from apps.common.upload_validation import validate_image_upload
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
     AcademicYearSerializer,
@@ -18,6 +21,7 @@ from .models import VerificationRequest, VerificationStatus
 
 
 class VerificationRequestSerializer(serializers.ModelSerializer):
+    card_image = serializers.ImageField(validators=[validate_image_upload])
     user_name = serializers.CharField(source="user.full_name", read_only=True)
     user_email = serializers.EmailField(source="user.email", read_only=True)
     university_detail = UniversitySerializer(source="university", read_only=True)
@@ -137,6 +141,13 @@ class VerificationRequestSerializer(serializers.ModelSerializer):
         profile.card_image = verification.card_image
         apply_student_number_parse(profile, verification.student_number, auto_link_faculty=False)
         profile.save()
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.VERIFICATION_SUBMITTED,
+            target=verification,
+            new_value={"status": verification.status, "student_number": verification.student_number},
+            request=self.context.get("request"),
+        )
         return verification
 
 

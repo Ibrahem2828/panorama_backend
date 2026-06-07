@@ -1,12 +1,14 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.common.upload_validation import validate_image_upload
 from apps.universities.models import validate_academic_hierarchy
 
 from .models import Group, GroupMembership, GroupMembershipRole, GroupMembershipStatus
 
 
 class GroupSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_upload])
     membership_status = serializers.SerializerMethodField()
     current_user_membership_status = serializers.SerializerMethodField()
     current_user_group_role = serializers.SerializerMethodField()

@@ -17,9 +17,15 @@ from .services import ChatPermissionService
 
 class GroupMessageViewSet(StandardReadOnlyModelViewSet):
     serializer_class = MessageSerializer
+    throttle_scope = "chat_message"
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["created_at"]
     ordering = ["created_at"]
+
+    def get_throttles(self):
+        if getattr(self, "action", None) != "create":
+            return []
+        return super().get_throttles()
 
     def get_group(self):
         group = Group.objects.get(pk=self.kwargs["group_id"], is_deleted=False)

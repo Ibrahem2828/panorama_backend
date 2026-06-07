@@ -40,12 +40,15 @@ class StandardResponseMixin:
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        self.perform_destroy(instance)
+        return success_response(message=self.delete_success_message)
+
+    def perform_destroy(self, instance):
         if hasattr(instance, "is_deleted"):
             instance.is_deleted = True
         if hasattr(instance, "is_active"):
             instance.is_active = False
         instance.save()
-        return success_response(message=self.delete_success_message)
 
 
 class StandardModelViewSet(StandardResponseMixin, viewsets.ModelViewSet):

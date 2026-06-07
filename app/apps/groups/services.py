@@ -2,6 +2,8 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
@@ -59,6 +61,7 @@ class GroupMembershipService:
 
     @staticmethod
     def review(membership: GroupMembership, reviewer, status: str) -> GroupMembership:
+        old_status = membership.status
         if status == GroupMembershipStatus.APPROVED:
             membership.approve(reviewer)
             title = "Group request approved"
@@ -77,4 +80,17 @@ class GroupMembershipService:
             type=NotificationType.GROUP,
             data={"group_id": membership.group_id, "membership_id": membership.id, "status": status},
         )
+        action = {
+            GroupMembershipStatus.APPROVED: AuditAction.GROUP_MEMBERSHIP_APPROVED,
+            GroupMembershipStatus.REJECTED: AuditAction.GROUP_MEMBERSHIP_REJECTED,
+            GroupMembershipStatus.BLOCKED: AuditAction.GROUP_MEMBERSHIP_BLOCKED,
+        }.get(status)
+        if action:
+            AuditLogService.log(
+                actor=reviewer,
+                action=action,
+                target=membership,
+                old_value={"status": old_status},
+                new_value={"status": status},
+            )
         return membership
