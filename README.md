@@ -1,6 +1,6 @@
 # Panorama Backend
 
-Panorama is a Django REST backend for a student services mobile application and future admin dashboard. The backend is MVP v1 feature-complete for React Native and dashboard integration. Phase 1 provides the foundation, Phase 2 adds the academic platform, Phase 3 adds printing/chat/support/audit/stats, and the final hardening pass adds seed data, API collections, integration docs, and group messaging controls.
+Panorama is a Django REST backend for a student services mobile application and future admin dashboard. The backend is MVP v1 feature-complete for React Native and dashboard integration, with phased production hardening for repository hygiene, security, reliability, quality gates, and observability.
 
 ## Tech Stack
 
@@ -72,10 +72,16 @@ The testing settings use an in-memory SQLite database for fast local feedback. T
 
 ## Validation
 
-Run the Phase 1 backend validation entry point from the repository root:
+Run the backend validation entry point from the repository root:
 
 ```powershell
-.\scripts\validate_backend.ps1
+.\scripts\validate_backend.ps1 -DeployCheck
+```
+
+Shell equivalent:
+
+```bash
+bash scripts/validate_backend.sh --deploy-check
 ```
 
 For repository hygiene, production configuration notes, and API contract lock details, see `docs/30_PHASE_1_REPOSITORY_CLEANUP_AND_API_CONTRACT_LOCK.md`.
@@ -83,6 +89,10 @@ For repository hygiene, production configuration notes, and API contract lock de
 For Phase 2 security hardening, access-control notes, and upload validation rules, see `docs/31_PHASE_2_SECURITY_HARDENING_AND_ACCESS_CONTROL.md`.
 
 For Phase 3 reliability, performance, Redis/cache readiness, and data-integrity notes, see `docs/32_PHASE_3_RELIABILITY_PERFORMANCE_AND_DATA_INTEGRITY.md`.
+
+For Phase 4 testing, quality gates, request correlation, and observability notes, see `docs/33_PHASE_4_TESTING_QUALITY_GATES_AND_OBSERVABILITY.md`.
+
+For deployment operations, see `docs/RUNBOOK.md` and `docs/OBSERVABILITY.md`.
 
 ## API Documentation
 

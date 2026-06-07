@@ -18,7 +18,11 @@ function Invoke-ValidationStep {
 
     Write-Host ""
     Write-Host "== $Name =="
+    $global:LASTEXITCODE = 0
     & $Command
+    if ($LASTEXITCODE -ne 0) {
+        throw "Validation step failed: $Name"
+    }
 }
 
 function Set-ValidationDefault {
@@ -38,12 +42,16 @@ try {
     Set-Location $RepoRoot
     [Environment]::SetEnvironmentVariable("PYTHONPATH", (Join-Path $RepoRoot "app"), "Process")
 
+    Invoke-ValidationStep "Python syntax check" {
+        & $Python -c "from pathlib import Path; [compile(path.read_text(encoding='utf-8'), str(path), 'exec') for path in sorted(Path('app').rglob('*.py')) if '__pycache__' not in path.parts]; print('Python syntax check passed')"
+    }
+
     Invoke-ValidationStep "Django system check" {
         & $Python "app\manage.py" check
     }
 
     Invoke-ValidationStep "Django migration check" {
-        & $Python "app\manage.py" makemigrations --check --dry-run
+        & $Python "app\manage.py" makemigrations --check --dry-run --settings config.settings.testing
     }
 
     if ($DeployCheck) {
@@ -60,7 +68,7 @@ try {
         Set-ValidationDefault "CSRF_COOKIE_SECURE" "True" $deployEnv
         Set-ValidationDefault "SECURE_HSTS_SECONDS" "31536000" $deployEnv
         Set-ValidationDefault "SECURE_HSTS_INCLUDE_SUBDOMAINS" "True" $deployEnv
-        Set-ValidationDefault "SECURE_HSTS_PRELOAD" "False" $deployEnv
+        Set-ValidationDefault "SECURE_HSTS_PRELOAD" "True" $deployEnv
 
         Invoke-ValidationStep "Django deploy check" {
             & $Python "app\manage.py" check --deploy --settings config.settings.production
@@ -69,6 +77,38 @@ try {
 
     Invoke-ValidationStep "API collection JSON validation" {
         & $Python -c "import json, pathlib; [json.loads(pathlib.Path(p).read_text(encoding='utf-8')) for p in ('docs/api/mobile_api_collection.json', 'docs/api/dashboard_api_collection.json')]; print('API collections are valid JSON')"
+    }
+
+    Invoke-ValidationStep "OpenAPI schema validation" {
+        $SchemaPath = Join-Path ([System.IO.Path]::GetTempPath()) "panorama_openapi_$PID.yml"
+        try {
+            & $Python "app\manage.py" spectacular --file $SchemaPath --validate --settings config.settings.testing
+        }
+        finally {
+            Remove-Item -LiteralPath $SchemaPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    Invoke-ValidationStep "focused pytest: API contract" {
+        & $Python -m pytest "app\apps\common\tests_api_contract_collections.py"
+    }
+
+    Invoke-ValidationStep "focused pytest: production hardening" {
+        & $Python -m pytest "app\apps\common\tests_production_hardening.py"
+    }
+
+    Invoke-ValidationStep "focused pytest: Phase 2 security" {
+        & $Python -m pytest "app\apps\common\tests_phase2_security.py"
+    }
+
+    Invoke-ValidationStep "focused pytest: Phase 3 reliability" {
+        & $Python -m pytest "app\apps\common\tests_phase3_reliability.py"
+    }
+
+    if (Test-Path "app\apps\common\tests_phase4_observability.py") {
+        Invoke-ValidationStep "focused pytest: Phase 4 observability" {
+            & $Python -m pytest "app\apps\common\tests_phase4_observability.py"
+        }
     }
 
     Invoke-ValidationStep "pytest" {
