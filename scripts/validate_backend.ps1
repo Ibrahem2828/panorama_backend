@@ -111,6 +111,12 @@ try {
         }
     }
 
+    if (Test-Path "app\apps\common\tests_phase5_deployment.py") {
+        Invoke-ValidationStep "focused pytest: Phase 5 deployment" {
+            & $Python -m pytest "app\apps\common\tests_phase5_deployment.py"
+        }
+    }
+
     Invoke-ValidationStep "pytest" {
         & $Python -m pytest
     }

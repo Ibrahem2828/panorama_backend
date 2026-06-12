@@ -93,5 +93,10 @@ if [[ -f app/apps/common/tests_phase4_observability.py ]]; then
     "${PYTHON}" -m pytest app/apps/common/tests_phase4_observability.py
 fi
 
+if [[ -f app/apps/common/tests_phase5_deployment.py ]]; then
+    step "focused pytest: Phase 5 deployment"
+    "${PYTHON}" -m pytest app/apps/common/tests_phase5_deployment.py
+fi
+
 step "pytest"
 "${PYTHON}" -m pytest

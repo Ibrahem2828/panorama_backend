@@ -94,6 +94,15 @@ For Phase 4 testing, quality gates, request correlation, and observability notes
 
 For deployment operations, see `docs/RUNBOOK.md` and `docs/OBSERVABILITY.md`.
 
+For Coolify production deployment readiness, see:
+
+- `docs/COOLIFY_DEPLOYMENT.md`
+- `docs/ENVIRONMENT_PRODUCTION.md`
+- `docs/BACKUP_RESTORE.md`
+- `docs/PRODUCTION_SECURITY_CHECKLIST.md`
+- `docs/PRODUCTION_SMOKE_TESTS.md`
+- `docs/34_PHASE_5_COOLIFY_PRODUCTION_DEPLOYMENT_READINESS.md`
+
 ## API Documentation
 
 - Swagger UI: `http://localhost:8000/api/docs/`

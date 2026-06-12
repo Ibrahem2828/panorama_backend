@@ -80,5 +80,5 @@ This command is idempotent and can be run by a future scheduled worker or platfo
 
 - External APM/error tracking is not configured.
 - Slow-query monitoring depends on the production database/runtime tooling.
-- Full Celery worker and beat scheduling remain future work.
-- Object storage and signed media delivery remain future work.
+- Celery worker and beat are deployment-ready but must be enabled as separate production services if needed.
+- Object storage and signed media delivery remain future work; MVP production uses a persistent media volume.

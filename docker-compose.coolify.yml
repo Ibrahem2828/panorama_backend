@@ -1,0 +1,155 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: panorama-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      DEBUG: "False"
+      DJANGO_DEBUG: "False"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
+      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
+      DATABASE_SSL_REQUIRE: ${DATABASE_SSL_REQUIRE:-False}
+      REDIS_URL: redis://redis:6379/0
+      PORT: ${PORT:-8000}
+      HEALTHCHECK_HOST: ${HEALTHCHECK_HOST:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-True}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-True}
+      CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-True}
+      SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:-31536000}
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: ${SECURE_HSTS_INCLUDE_SUBDOMAINS:-True}
+      SECURE_HSTS_PRELOAD: ${SECURE_HSTS_PRELOAD:-False}
+      USE_X_FORWARDED_HOST: ${USE_X_FORWARDED_HOST:-True}
+      RUN_DEPLOY_CHECK: ${RUN_DEPLOY_CHECK:-True}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-True}
+      RUN_COLLECTSTATIC: ${RUN_COLLECTSTATIC:-True}
+      RUN_SETUP_ADMIN_ACCOUNTS: ${RUN_SETUP_ADMIN_ACCOUNTS:-False}
+      RUN_SEED_DATA: ${RUN_SEED_DATA:-False}
+      WAIT_FOR_DATABASE: ${WAIT_FOR_DATABASE:-True}
+      WAIT_FOR_REDIS: ${WAIT_FOR_REDIS:-True}
+      WAIT_TIMEOUT_SECONDS: ${WAIT_TIMEOUT_SECONDS:-60}
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
+      JWT_ACCESS_TOKEN_LIFETIME_MINUTES: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-60}
+      JWT_REFRESH_TOKEN_LIFETIME_DAYS: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-14}
+      CACHE_DEFAULT_TIMEOUT: ${CACHE_DEFAULT_TIMEOUT:-300}
+      MAX_OTP_VERIFY_ATTEMPTS: ${MAX_OTP_VERIFY_ATTEMPTS:-5}
+      MAX_CHAT_MESSAGE_LENGTH: ${MAX_CHAT_MESSAGE_LENGTH:-4000}
+      MAX_IMAGE_UPLOAD_SIZE_MB: ${MAX_IMAGE_UPLOAD_SIZE_MB:-5}
+      MAX_DOCUMENT_UPLOAD_SIZE_MB: ${MAX_DOCUMENT_UPLOAD_SIZE_MB:-25}
+      OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+    healthcheck:
+      test: ["CMD", "python", "-c", "import http.client, os, sys; port=int(os.environ.get('PORT', '8000')); host=os.environ.get('HEALTHCHECK_HOST') or (os.environ.get('ALLOWED_HOSTS') or os.environ.get('DJANGO_ALLOWED_HOSTS') or 'localhost').split(',')[0].strip(); conn=http.client.HTTPConnection('127.0.0.1', port, timeout=3); conn.request('GET', '/api/v1/health/ready/', headers={'Host': host}); response=conn.getresponse(); sys.exit(0 if response.status < 500 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  worker:
+    image: panorama-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    profiles: ["celery"]
+    command: celery -A config worker --loglevel=${CELERY_LOG_LEVEL:-INFO}
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      DEBUG: "False"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
+      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      RUN_DEPLOY_CHECK: "False"
+      RUN_MIGRATIONS: "False"
+      RUN_COLLECTSTATIC: "False"
+      RUN_SETUP_ADMIN_ACCOUNTS: "False"
+      RUN_SEED_DATA: "False"
+      WAIT_FOR_DATABASE: "True"
+      WAIT_FOR_REDIS: "True"
+      OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+    healthcheck:
+      disable: true
+
+  beat:
+    image: panorama-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    profiles: ["celery"]
+    command: celery -A config beat --loglevel=${CELERY_LOG_LEVEL:-INFO}
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      DEBUG: "False"
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
+      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      RUN_DEPLOY_CHECK: "False"
+      RUN_MIGRATIONS: "False"
+      RUN_COLLECTSTATIC: "False"
+      RUN_SETUP_ADMIN_ACCOUNTS: "False"
+      RUN_SEED_DATA: "False"
+      WAIT_FOR_DATABASE: "True"
+      WAIT_FOR_REDIS: "True"
+      OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:
+  static_data:

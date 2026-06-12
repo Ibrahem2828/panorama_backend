@@ -245,6 +245,17 @@ SPECTACULAR_SETTINGS = {
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = config("CELERY_TASK_TIME_LIMIT", default=300, cast=int)
+OTP_CLEANUP_RETENTION_DAYS = config("OTP_CLEANUP_RETENTION_DAYS", default=1, cast=int)
+CELERY_BEAT_SCHEDULE = {
+    "cleanup-expired-otp-daily": {
+        "task": "apps.common.tasks.cleanup_expired_otp",
+        "schedule": config("OTP_CLEANUP_INTERVAL_SECONDS", default=86400, cast=int),
+        "kwargs": {"retention_days": OTP_CLEANUP_RETENTION_DAYS},
+    },
+}
 FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
 
 CACHES = {
