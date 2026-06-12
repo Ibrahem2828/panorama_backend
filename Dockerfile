@@ -27,6 +27,5 @@ USER panorama
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD python -c "import http.client; c=http.client.HTTPConnection('127.0.0.1', 8000, timeout=5); c.request('GET','/api/health/'); r=c.getresponse(); exit(0 if 200 <= r.status < 400 else 1)"
-ENTRYPOINT ["/app/docker/entrypoint.sh"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD python -c "import http.client; c=http.client.HTTPConnection('127.0.0.1', 8000, timeout=5); c.request('GET','/api/v1/health/'); r=c.getresponse(); exit(0 if 200 <= r.status < 400 else 1)"ENTRYPOINT ["/app/docker/entrypoint.sh"]
 CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
