@@ -22,6 +22,7 @@ from .serializers import (
 class SupportTicketCreateView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = SupportTicketCreateSerializer
+    throttle_scope = "support_ticket_create"
 
     @extend_schema(tags=["Support"], request=SupportTicketCreateSerializer, responses={201: SupportTicketSerializer})
     def post(self, request):

@@ -1,8 +1,7 @@
-from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
-from .env import database_from_url, get_bool_env, get_csv_env, get_env
+from .env import database_from_url, get_bool_env, get_csv_env, get_env, get_int_env, get_required_env
 
 UNSAFE_SECRET_KEYS = {
     "unsafe-development-secret-key",
@@ -15,10 +14,7 @@ UNSAFE_SECRET_KEYS = {
 
 
 def _require_env(name: str, *, message: str | None = None) -> str:
-    value = get_env(name)
-    if not value:
-        raise ImproperlyConfigured(message or f"Production requires {name}.")
-    return value
+    return get_required_env(name, message=message)
 
 
 SECRET_KEY = _require_env("SECRET_KEY", message="Production requires SECRET_KEY.")
@@ -55,7 +51,7 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
-        "TIMEOUT": config("CACHE_DEFAULT_TIMEOUT", default=300, cast=int),
+        "TIMEOUT": get_int_env("CACHE_DEFAULT_TIMEOUT", default=300),
     }
 }
 CELERY_BROKER_URL = REDIS_URL
@@ -69,15 +65,18 @@ CHANNEL_LAYERS = {
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_REFERRER_POLICY = config("SECURE_REFERRER_POLICY", default="same-origin")
-X_FRAME_OPTIONS = config("X_FRAME_OPTIONS", default="DENY")
+SECURE_REFERRER_POLICY = get_env("SECURE_REFERRER_POLICY", default="same-origin")
+X_FRAME_OPTIONS = get_env("X_FRAME_OPTIONS", default="DENY")
 # These flags are environment-driven because some managed platforms terminate
 # TLS before Django. Use True when the application directly sees HTTPS.
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=False)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
 SECURE_HSTS_PRELOAD = get_bool_env("SECURE_HSTS_PRELOAD", default=False)
-SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=0, cast=int)
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_HSTS_SECONDS = get_int_env("SECURE_HSTS_SECONDS", default=0)
+if get_bool_env("SECURE_PROXY_SSL_HEADER", "DJANGO_SECURE_PROXY_SSL_HEADER", default=True):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+else:
+    SECURE_PROXY_SSL_HEADER = None
 USE_X_FORWARDED_HOST = get_bool_env("USE_X_FORWARDED_HOST", "DJANGO_USE_X_FORWARDED_HOST", default=True)
 SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", "DJANGO_SESSION_COOKIE_SECURE", default=False)
 CSRF_COOKIE_SECURE = get_bool_env("CSRF_COOKIE_SECURE", "DJANGO_CSRF_COOKIE_SECURE", default=False)
@@ -92,7 +91,7 @@ CORS_ALLOWED_ORIGINS = get_csv_env(
     required_message="Production requires CORS_ALLOWED_ORIGINS or DJANGO_CORS_ALLOWED_ORIGINS.",
 )
 
-LOG_LEVEL = config("LOG_LEVEL", default="INFO")
+LOG_LEVEL = get_env("LOG_LEVEL", default="INFO")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

@@ -21,6 +21,8 @@ htmlcov/
 # Local databases and runtime output
 db.sqlite3
 *.sqlite3
+*.sqlite
+*.db
 media/
 staticfiles/
 logs/
@@ -31,6 +33,8 @@ venv/
 .venv/
 env/
 node_modules/
+build/
+dist/
 
 # IDE and OS files
 .DS_Store

@@ -1,18 +1,24 @@
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.conf import settings
+from django.core import signing
 from django.db import transaction
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.common.upload_validation import validate_document_upload, validate_image_upload
-from apps.groups.models import GroupMembershipRole, GroupMembershipStatus
+from apps.groups.models import Group, GroupMembershipRole, GroupMembershipStatus
 
 from .models import Message, MessageType
+
+
+GROUP_CHAT_WS_TOKEN_SALT = "panorama.group_chat_ws.v1"
 
 
 class ChatPermissionService:
     @staticmethod
     def can_access_group_chat(user, group) -> bool:
         if not user or not user.is_authenticated:
+            return False
+        if getattr(group, "is_deleted", False) or not getattr(group, "is_active", True):
             return False
         if user.role in {UserRole.ADMIN, UserRole.IT_SUPPORT}:
             return True
@@ -85,3 +91,48 @@ class ChatMessageService:
             attachment=attachment,
             reply_to=reply_to,
         )
+
+
+class ChatWebSocketTokenService:
+    purpose = "group_chat_ws"
+
+    @staticmethod
+    def create_token(user, group: Group, request=None) -> dict:
+        ChatPermissionService.enforce_group_chat_access(user, group)
+        expires_in = int(settings.GROUP_CHAT_WS_TOKEN_TTL_SECONDS)
+        payload = {
+            "user_id": user.id,
+            "group_id": group.id,
+            "purpose": ChatWebSocketTokenService.purpose,
+            "expires_in": expires_in,
+        }
+        ws_token = signing.dumps(payload, salt=GROUP_CHAT_WS_TOKEN_SALT)
+        host = request.get_host() if request is not None else "localhost:8000"
+        scheme = "wss" if request is not None and request.is_secure() else "ws"
+        websocket_url = f"{scheme}://{host}/ws/v1/groups/{group.id}/chat/?token={ws_token}"
+        return {"ws_token": ws_token, "expires_in": expires_in, "websocket_url": websocket_url}
+
+    @staticmethod
+    def validate_token(token: str) -> dict:
+        if not token:
+            raise PermissionDenied("Missing WebSocket token.")
+        try:
+            payload = signing.loads(
+                token,
+                salt=GROUP_CHAT_WS_TOKEN_SALT,
+                max_age=settings.GROUP_CHAT_WS_TOKEN_TTL_SECONDS,
+            )
+        except signing.SignatureExpired as exc:
+            raise PermissionDenied("WebSocket token has expired.") from exc
+        except signing.BadSignature as exc:
+            raise PermissionDenied("Invalid WebSocket token.") from exc
+        if payload.get("purpose") != ChatWebSocketTokenService.purpose:
+            raise PermissionDenied("Invalid WebSocket token.")
+        try:
+            return {
+                "user_id": int(payload["user_id"]),
+                "group_id": int(payload["group_id"]),
+                "purpose": payload["purpose"],
+            }
+        except (KeyError, TypeError, ValueError) as exc:
+            raise PermissionDenied("Invalid WebSocket token.") from exc

@@ -12,15 +12,21 @@ from .models import SupportTicket, SupportTicketMessage, SupportTicketStatus
 class SupportTicketService:
     @staticmethod
     @transaction.atomic
-    def create_ticket(user, category: str, subject: str, message: str, attachment=None) -> SupportTicket:
+    def create_ticket(user, category: str, subject: str, message: str, attachment=None, request=None) -> SupportTicket:
         ticket = SupportTicket.objects.create(user=user, category=category, subject=subject)
         SupportTicketMessage.objects.create(ticket=ticket, sender=user, message=message, attachment=attachment)
-        AuditLogService.log(actor=user, action=AuditAction.SUPPORT_TICKET_CREATED, target=ticket, new_value={"category": category})
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.SUPPORT_TICKET_CREATED,
+            target=ticket,
+            new_value={"category": category},
+            request=request,
+        )
         return ticket
 
     @staticmethod
     @transaction.atomic
-    def add_message(ticket: SupportTicket, sender, message: str, attachment=None) -> SupportTicketMessage:
+    def add_message(ticket: SupportTicket, sender, message: str, attachment=None, request=None) -> SupportTicketMessage:
         ticket = SupportTicket.objects.select_for_update().get(pk=ticket.pk, is_deleted=False)
         if ticket.status in {SupportTicketStatus.RESOLVED, SupportTicketStatus.CLOSED}:
             raise ValidationError("Cannot add messages to a resolved or closed ticket.")
@@ -39,12 +45,13 @@ class SupportTicketService:
                     action=AuditAction.SUPPORT_TICKET_STAFF_REPLY,
                     target=ticket,
                     new_value={"message_id": ticket_message.id},
+                    request=request,
                 )
         return ticket_message
 
     @staticmethod
     @transaction.atomic
-    def update_status(ticket: SupportTicket, status: str, actor) -> SupportTicket:
+    def update_status(ticket: SupportTicket, status: str, actor, request=None) -> SupportTicket:
         ticket = SupportTicket.objects.select_for_update().get(pk=ticket.pk, is_deleted=False)
         old_status = ticket.status
         ticket.status = status
@@ -63,5 +70,6 @@ class SupportTicketService:
             target=ticket,
             old_value={"status": old_status},
             new_value={"status": status},
+            request=request,
         )
         return ticket

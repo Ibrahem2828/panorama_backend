@@ -1,6 +1,9 @@
 from django.db.models import Q
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+from apps.common.protected_media import ProtectedMediaService
 from apps.groups.models import GroupMembershipStatus
 
 from .models import FileResource, FileVisibility
@@ -50,3 +53,47 @@ def accessible_files_for_user(user):
             base |= Q(visibility=FileVisibility.MAJOR_ONLY, major=profile.major, academic_year=profile.academic_year)
             base |= Q(visibility=FileVisibility.GROUP_ONLY, group_id__in=group_ids)
     return queryset.filter(base).distinct()
+
+
+class FileAccessService:
+    @staticmethod
+    def create_download_token(user, file_resource: FileResource, request=None) -> dict:
+        if not user_can_access_file(user, file_resource):
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("You do not have access to this file.")
+        token, expires_in = ProtectedMediaService.create_token(
+            user=user,
+            object_type="file_resource",
+            object_id=file_resource.id,
+            purpose="file_download",
+        )
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.FILE_DOWNLOAD_TOKEN_CREATED,
+            target=file_resource,
+            new_value={"purpose": "file_download", "expires_in": expires_in},
+            request=request,
+        )
+        return {"url": ProtectedMediaService.build_url(request, token), "expires_in": expires_in}
+
+    @staticmethod
+    def create_dashboard_preview_token(user, file_resource: FileResource, request=None) -> dict:
+        if user.role not in {UserRole.ADMIN, UserRole.IT_SUPPORT}:
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("You do not have access to this file.")
+        token, expires_in = ProtectedMediaService.create_token(
+            user=user,
+            object_type="file_resource",
+            object_id=file_resource.id,
+            purpose="file_preview",
+        )
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.FILE_PREVIEW_TOKEN_CREATED,
+            target=file_resource,
+            new_value={"purpose": "file_preview", "expires_in": expires_in},
+            request=request,
+        )
+        return {"url": ProtectedMediaService.build_url(request, token), "expires_in": expires_in}

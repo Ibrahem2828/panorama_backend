@@ -62,6 +62,8 @@ See `.env.example` for the full list:
 - `REDIS_URL`
 - `FCM_SERVER_KEY`
 
+Before deploying, review `docs/PRODUCTION_ENV_VALUES_TO_REPLACE.md` for the exact production values that must replace placeholders, including current HTTP sslip values, final HTTPS examples, protected media TTL, and WebSocket token settings.
+
 ## Tests
 
 ```bash
@@ -86,6 +88,10 @@ bash scripts/validate_backend.sh --deploy-check
 
 For repository hygiene, production configuration notes, and API contract lock details, see `docs/30_PHASE_1_REPOSITORY_CLEANUP_AND_API_CONTRACT_LOCK.md`.
 
+For current production foundation hardening rules, including release hygiene, response contract, request IDs, JWT rotation, and throttling, see `docs/backend_hardening.md`.
+
+Production release packages must never include `.env`, `.git`, `__pycache__/`, local `media/`, logs, or local database files.
+
 For Phase 2 security hardening, access-control notes, and upload validation rules, see `docs/31_PHASE_2_SECURITY_HARDENING_AND_ACCESS_CONTROL.md`.
 
 For Phase 3 reliability, performance, Redis/cache readiness, and data-integrity notes, see `docs/32_PHASE_3_RELIABILITY_PERFORMANCE_AND_DATA_INTEGRITY.md`.
@@ -107,8 +113,10 @@ For Coolify production deployment readiness, see:
 
 - Swagger UI: `http://localhost:8000/api/docs/`
 - OpenAPI schema: `http://localhost:8000/api/schema/`
-- Mobile API JSON: `docs/api/mobile_api_collection.json`
-- Dashboard API JSON: `docs/api/dashboard_api_collection.json`
+- Legacy mobile API JSON: `docs/api/mobile_api_collection.json`
+- Legacy dashboard API JSON: `docs/api/dashboard_api_collection.json`
+- Mobile API JSON v2 production: `docs/api/panorama_mobile_api_collection_v2_production.json`
+- Dashboard API JSON v2 production: `docs/api/panorama_dashboard_api_collection_v2_production.json`
 - Mobile integration guide: `FRONTEND_INTEGRATION.md`
 - Dashboard integration guide: `DASHBOARD_INTEGRATION.md`
 
@@ -277,10 +285,11 @@ POST /api/v1/groups/{group_id}/messages/{message_id}/report/
 WebSocket:
 
 ```text
-ws://localhost:8000/ws/v1/groups/{group_id}/chat/?token=<access_token>
+POST /api/v1/groups/{group_id}/chat/ws-token/
+ws://localhost:8000/ws/v1/groups/{group_id}/chat/?token=<ws_token>
 ```
 
-Only approved verified students can read group messages. Sending also depends on `send_messages_permission`. Admin/IT can moderate. Moderators and group admins can delete inappropriate messages.
+Only approved verified students can read group messages. Sending also depends on `send_messages_permission`. Admin/IT can moderate. Moderators and group admins can delete inappropriate messages. Production clients must not use JWT access tokens directly in WebSocket URLs.
 
 ## Support Flow
 

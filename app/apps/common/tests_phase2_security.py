@@ -191,7 +191,7 @@ def test_password_reset_request_is_enumeration_safe(api_client, normal_user):
 @pytest.mark.django_db
 def test_login_throttle_returns_unified_envelope(api_client, normal_user, monkeypatch):
     cache.clear()
-    monkeypatch.setitem(ScopedRateThrottle.THROTTLE_RATES, "auth_login", "1/minute")
+    monkeypatch.setitem(ScopedRateThrottle.THROTTLE_RATES, "login", "1/minute")
     first = api_client.post("/api/v1/auth/login/", {"identifier": normal_user.email, "password": "bad"}, format="json")
     second = api_client.post("/api/v1/auth/login/", {"identifier": normal_user.email, "password": "bad"}, format="json")
 

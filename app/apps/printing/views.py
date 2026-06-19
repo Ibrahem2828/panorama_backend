@@ -16,20 +16,24 @@ from .serializers import (
     PrintOrderSerializer,
     PrintStatusUpdateSerializer,
 )
-from .services import PrintStatusService
+from .services import PrintFileAccessService, PrintStatusService
 
 
 class PrintOrderCreateView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = PrintOrderCreateSerializer
-    throttle_scope = "print_order"
+    throttle_scope = "print_order_create"
 
     @extend_schema(tags=["Printing"], request=PrintOrderCreateSerializer, responses={201: PrintOrderSerializer})
     def post(self, request):
         serializer = PrintOrderCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        return success_response(data=PrintOrderSerializer(order).data, message="Print order created successfully", status_code=status.HTTP_201_CREATED)
+        return success_response(
+            data=PrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order created successfully",
+            status_code=status.HTTP_201_CREATED,
+        )
 
 
 class MyPrintOrderViewSet(StandardReadOnlyModelViewSet):
@@ -55,8 +59,17 @@ class PrintOrderCancelView(APIView):
     @extend_schema(tags=["Printing"])
     def post(self, request, pk: int):
         order = PrintOrder.objects.get(pk=pk, user=request.user, is_deleted=False)
-        order = PrintStatusService.change_status(order, PrintOrderStatus.CANCELLED, request.user, note="Cancelled by user")
-        return success_response(data=PrintOrderSerializer(order).data, message="Print order cancelled successfully")
+        order = PrintStatusService.change_status(
+            order,
+            PrintOrderStatus.CANCELLED,
+            request.user,
+            note="Cancelled by user",
+            request=request,
+        )
+        return success_response(
+            data=PrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order cancelled successfully",
+        )
 
 
 class DashboardPrintOrderViewSet(StandardReadOnlyModelViewSet):
@@ -86,7 +99,10 @@ class DashboardPrintAssignView(APIView):
         serializer = PrintOrderAssignSerializer(data=request.data, context={"request": request, "order": order})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        return success_response(data=PrintOrderSerializer(order).data, message="Print order assigned successfully")
+        return success_response(
+            data=PrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order assigned successfully",
+        )
 
 
 class DashboardPrintStatusView(APIView):
@@ -99,7 +115,10 @@ class DashboardPrintStatusView(APIView):
         serializer = PrintStatusUpdateSerializer(data=request.data, context={"request": request, "order": order})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        return success_response(data=PrintOrderSerializer(order).data, message="Print order status updated successfully")
+        return success_response(
+            data=PrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order status updated successfully",
+        )
 
 
 class DashboardPrintNoteView(APIView):
@@ -112,4 +131,24 @@ class DashboardPrintNoteView(APIView):
         serializer = PrintOrderNoteSerializer(data=request.data, context={"request": request, "order": order})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        return success_response(data=PrintOrderSerializer(order).data, message="Print order note updated successfully")
+        return success_response(
+            data=PrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order note updated successfully",
+        )
+
+
+class DashboardPrintFilePreviewTokenView(APIView):
+    permission_classes = [IsPrintStaffOrAdmin]
+    serializer_class = PrintOrderSerializer
+
+    @extend_schema(tags=["Dashboard"])
+    def post(self, request, pk: int):
+        order = PrintOrder.objects.get(pk=pk, is_deleted=False)
+        item_id = request.data.get("item_id") if hasattr(request.data, "get") else None
+        data = PrintFileAccessService.create_order_file_preview_token(
+            order,
+            request.user,
+            item_id=item_id,
+            request=request,
+        )
+        return success_response(data=data, message="Print order file preview token created")

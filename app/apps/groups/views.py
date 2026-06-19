@@ -13,7 +13,12 @@ from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelView
 
 from .models import Group, GroupMembership, GroupMembershipStatus
 from .serializers import GroupMembershipRoleUpdateSerializer, GroupMembershipSerializer, GroupSerializer
-from .services import GroupMembershipService, is_student_eligible_for_group
+from .services import (
+    GroupMembershipService,
+    is_student_eligible_for_group,
+    notify_group_membership_role_changed,
+    notify_group_permission_changed,
+)
 
 
 class AvailableGroupViewSet(StandardReadOnlyModelViewSet):
@@ -100,8 +105,11 @@ class DashboardGroupViewSet(StandardModelViewSet):
         AuditLogService.log(actor=self.request.user, action=AuditAction.GROUP_CREATED, target=group, request=self.request)
 
     def perform_update(self, serializer):
+        old_send_permission = serializer.instance.send_messages_permission
         group = serializer.save()
         AuditLogService.log(actor=self.request.user, action=AuditAction.GROUP_UPDATED, target=group, request=self.request)
+        if old_send_permission != group.send_messages_permission:
+            notify_group_permission_changed(group.id, group.send_messages_permission)
 
     def perform_destroy(self, instance):
         AuditLogService.log(actor=self.request.user, action=AuditAction.GROUP_DELETED, target=instance, request=self.request)
@@ -156,7 +164,7 @@ class MembershipReviewView(APIView):
     @extend_schema(tags=["Dashboard"], responses={200: GroupMembershipSerializer})
     def post(self, request, pk: int):
         membership = GroupMembership.objects.select_related("group", "user").get(pk=pk, is_deleted=False)
-        membership = GroupMembershipService.review(membership, request.user, self.target_status)
+        membership = GroupMembershipService.review(membership, request.user, self.target_status, request=request)
         return success_response(data=GroupMembershipSerializer(membership).data, message="Membership updated successfully", status_code=status.HTTP_200_OK)
 
 
@@ -193,4 +201,5 @@ class MembershipRoleUpdateView(APIView):
                 new_value={"role": membership.role},
                 request=request,
             )
+            notify_group_membership_role_changed(membership.group_id, membership.user_id, membership.role)
         return success_response(data=GroupMembershipSerializer(membership).data, message="Membership role updated successfully")

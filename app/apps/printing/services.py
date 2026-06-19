@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.protected_media import ProtectedMediaService
 from apps.files.services import user_can_access_file
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
@@ -33,7 +34,7 @@ def default_priority_for_user(user) -> str:
 class PrintOrderService:
     @staticmethod
     @transaction.atomic
-    def create_order(user, items_data: list[dict], user_notes: str = "") -> PrintOrder:
+    def create_order(user, items_data: list[dict], user_notes: str = "", request=None) -> PrintOrder:
         if not items_data:
             raise ValidationError({"items": "At least one print item is required."})
         order = PrintOrder.objects.create(user=user, priority=default_priority_for_user(user), user_notes=user_notes)
@@ -56,14 +57,27 @@ class PrintOrderService:
             type=NotificationType.SYSTEM,
             data={"print_order_id": order.id, "status": order.status},
         )
-        AuditLogService.log(actor=user, action=AuditAction.PRINT_ORDER_CREATED, target=order, new_value={"status": order.status})
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.PRINT_ORDER_CREATED,
+            target=order,
+            new_value={"status": order.status},
+            request=request,
+        )
         return order
 
 
 class PrintStatusService:
     @staticmethod
     @transaction.atomic
-    def change_status(order: PrintOrder, new_status: str, changed_by, note: str = "", rejected_reason: str = "") -> PrintOrder:
+    def change_status(
+        order: PrintOrder,
+        new_status: str,
+        changed_by,
+        note: str = "",
+        rejected_reason: str = "",
+        request=None,
+    ) -> PrintOrder:
         order = PrintOrder.objects.select_for_update().select_related("user").get(pk=order.pk, is_deleted=False)
         allowed = VALID_TRANSITIONS.get(order.status, set())
         if new_status not in allowed:
@@ -91,5 +105,26 @@ class PrintStatusService:
             target=order,
             old_value={"status": old_status},
             new_value={"status": new_status},
+            request=request,
         )
         return order
+
+
+class PrintFileAccessService:
+    @staticmethod
+    def create_order_file_preview_token(order: PrintOrder, user, item_id=None, request=None) -> dict:
+        token, expires_in = ProtectedMediaService.create_token(
+            user=user,
+            object_type="print_order",
+            object_id=order.id,
+            purpose="print_file_preview",
+            extra={"item_id": item_id} if item_id else {},
+        )
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.PRINT_FILE_PREVIEW_TOKEN_CREATED,
+            target=order,
+            new_value={"purpose": "print_file_preview", "expires_in": expires_in, "item_id": item_id},
+            request=request,
+        )
+        return {"url": ProtectedMediaService.build_url(request, token), "expires_in": expires_in}

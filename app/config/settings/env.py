@@ -35,6 +35,24 @@ def get_bool_env(primary_name: str, fallback_name: str | None = None, default: b
     return default
 
 
+def get_int_env(primary_name: str, fallback_name: str | None = None, default: int = 0) -> int:
+    value = get_env(primary_name, fallback_name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def get_required_env(primary_name: str, fallback_name: str | None = None, *, message: str | None = None) -> str:
+    value = get_env(primary_name, fallback_name)
+    if not value:
+        names = primary_name if fallback_name is None else f"{primary_name} or {fallback_name}"
+        raise ImproperlyConfigured(message or f"Production requires {names}.")
+    return value
+
+
 def get_csv_env(
     primary_name: str,
     fallback_name: str | None = None,

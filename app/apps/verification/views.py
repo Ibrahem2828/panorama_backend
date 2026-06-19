@@ -17,6 +17,7 @@ class SubmitVerificationView(APIView):
     permission_classes = [IsStudent]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = VerificationRequestSerializer
+    throttle_scope = "verification_submit"
 
     @extend_schema(tags=["Verification"], request=VerificationRequestSerializer, responses={201: VerificationRequestStudentSerializer})
     def post(self, request):
@@ -76,6 +77,7 @@ class VerificationReviewView(APIView):
             status=self.target_status,
             rejection_reason=serializer.validated_data.get("rejection_reason", ""),
             admin_note=serializer.validated_data.get("admin_note", ""),
+            request=request,
         )
         return success_response(data=VerificationRequestSerializer(verification).data, message="Verification reviewed successfully")
 
@@ -90,3 +92,14 @@ class RejectVerificationView(VerificationReviewView):
 
 class NeedsUpdateVerificationView(VerificationReviewView):
     target_status = VerificationStatus.NEEDS_UPDATE
+
+
+class VerificationCardPreviewTokenView(APIView):
+    permission_classes = [IsAdminOrITSupport]
+    serializer_class = VerificationRequestSerializer
+
+    @extend_schema(tags=["Dashboard"])
+    def post(self, request, pk: int):
+        verification = VerificationRequest.objects.get(pk=pk, is_deleted=False)
+        data = VerificationService.create_card_preview_token(verification, request.user, request=request)
+        return success_response(data=data, message="Verification card preview token created")

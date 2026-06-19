@@ -38,6 +38,11 @@ class PrintOrderItemSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "original_file_name", "file_type", "file_size", "created_at"]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["uploaded_file"] = None
+        return data
+
 
 class PrintOrderStatusHistorySerializer(serializers.ModelSerializer):
     changed_by_name = serializers.CharField(source="changed_by.full_name", read_only=True)
@@ -77,6 +82,14 @@ class PrintOrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated or user.role not in {UserRole.PRINT_STAFF, UserRole.ADMIN, UserRole.IT_SUPPORT}:
+            data["internal_notes"] = ""
+        return data
+
 
 class PrintOrderCreateSerializer(serializers.Serializer):
     user_notes = serializers.CharField(required=False, allow_blank=True)
@@ -102,6 +115,7 @@ class PrintOrderCreateSerializer(serializers.Serializer):
             self.context["request"].user,
             self.validated_data["items"],
             self.validated_data.get("user_notes", ""),
+            request=self.context.get("request"),
         )
 
 
@@ -117,6 +131,7 @@ class PrintStatusUpdateSerializer(serializers.Serializer):
             self.context["request"].user,
             note=self.validated_data.get("note", ""),
             rejected_reason=self.validated_data.get("rejected_reason", ""),
+            request=self.context.get("request"),
         )
 
 

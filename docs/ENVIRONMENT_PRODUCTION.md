@@ -2,6 +2,8 @@
 
 Use Coolify environment variables or secrets for production values. Do not commit `.env`, real credentials, private keys, dumps, or media files.
 
+For a deployment-owner checklist with exact current sslip values, final HTTPS examples, and replacement notes, see `docs/PRODUCTION_ENV_VALUES_TO_REPLACE.md`.
+
 ## Required Core Settings
 
 - `DJANGO_SETTINGS_MODULE=config.settings.production`
@@ -44,6 +46,22 @@ Production uses Redis for Django cache, DRF throttling, Channels, Celery broker,
 - `JWT_ACCESS_TOKEN_LIFETIME_MINUTES=60`
 - `JWT_REFRESH_TOKEN_LIFETIME_DAYS=14`
 
+Refresh tokens rotate on use, old refresh tokens are blacklisted after rotation, and successful JWT auth updates `last_login`.
+
+## Throttling
+
+- `THROTTLE_LOGIN=5/minute`
+- `THROTTLE_REGISTER=5/hour`
+- `THROTTLE_OTP_SEND=3/10min`
+- `THROTTLE_OTP_VERIFY=5/10min`
+- `THROTTLE_PASSWORD_RESET=3/15min`
+- `THROTTLE_VERIFICATION_SUBMIT=3/hour`
+- `THROTTLE_CHAT_MESSAGE=30/minute`
+- `THROTTLE_SUPPORT_TICKET_CREATE=5/hour`
+- `THROTTLE_PRINT_ORDER_CREATE=10/hour`
+
+Production throttling uses the Django Redis cache configured by `REDIS_URL`.
+
 ## Security
 
 - `SECURE_SSL_REDIRECT=True` after HTTPS is configured.
@@ -53,6 +71,7 @@ Production uses Redis for Django cache, DRF throttling, Channels, Celery broker,
 - `SECURE_HSTS_INCLUDE_SUBDOMAINS=True` only when every subdomain is HTTPS-ready.
 - `SECURE_HSTS_PRELOAD=True` only when the domain is ready for browser preload requirements.
 - `USE_X_FORWARDED_HOST=True` for Coolify reverse proxy deployments.
+- `SECURE_PROXY_SSL_HEADER=True` when the proxy sends `X-Forwarded-Proto=https`.
 - `SECURE_REFERRER_POLICY=same-origin`
 - `X_FRAME_OPTIONS=DENY`
 
@@ -70,6 +89,38 @@ Media files:
 - `MEDIA_ROOT=/app/media` in the production image.
 - Mount a persistent volume to `/app/media`.
 - Do not expose `/media/` directly through the proxy for private files.
+- Sensitive media is accessed through short-lived protected URLs from token endpoints.
+
+Protected media settings:
+
+- `PROTECTED_MEDIA_TOKEN_TTL_SECONDS=300`
+
+Current protected media endpoints:
+
+- `POST /api/v1/files/{file_id}/download-token/`
+- `POST /api/v1/dashboard/files/{file_id}/preview-token/`
+- `POST /api/v1/dashboard/verifications/{id}/card-preview-token/`
+- `POST /api/v1/dashboard/printing/orders/{id}/file-preview-token/`
+- `GET /api/v1/protected-media/{token}/`
+
+## WebSocket Tokens
+
+- `GROUP_CHAT_WS_TOKEN_TTL_SECONDS=120`
+- `ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH=False`
+
+Production clients must request a short-lived token with:
+
+```text
+POST /api/v1/groups/{group_id}/chat/ws-token/
+```
+
+Then connect with:
+
+```text
+ws://host/ws/v1/groups/{group_id}/chat/?token={ws_token}
+```
+
+Use `wss://` after HTTPS/TLS is configured. Do not use JWT access tokens directly in production WebSocket URLs.
 
 ## Runtime
 

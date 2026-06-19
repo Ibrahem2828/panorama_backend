@@ -8,12 +8,13 @@ def success_response(
     message: str = "Operation completed successfully",
     status_code: int = 200,
 ) -> Response:
+    payload = {
+        "success": True,
+        "message": message,
+        "data": {} if data is None else data,
+    }
     return Response(
-        {
-            "success": True,
-            "message": message,
-            "data": {} if data is None else data,
-        },
+        payload,
         status=status_code,
     )
 
@@ -22,12 +23,13 @@ def error_response(
     message: str = "An error occurred",
     errors: Any = None,
     status_code: int = 400,
+    request_id: str | None = None,
 ) -> Response:
-    return Response(
-        {
-            "success": False,
-            "message": message,
-            "errors": {} if errors is None else errors,
-        },
-        status=status_code,
-    )
+    payload = {
+        "success": False,
+        "message": message,
+        "errors": {} if errors is None else errors,
+    }
+    if request_id:
+        payload["request_id"] = request_id
+    return Response(payload, status=status_code)

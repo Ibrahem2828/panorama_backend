@@ -10,12 +10,13 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsAdminOrITSupport
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.responses import success_response
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 from apps.groups.models import GroupMembershipStatus
 
 from .models import FileResource
 from .serializers import FileResourceSerializer
-from .services import accessible_files_for_user, user_can_access_file
+from .services import FileAccessService, accessible_files_for_user, user_can_access_file
 
 
 class FileResourceViewSet(StandardReadOnlyModelViewSet):
@@ -82,12 +83,45 @@ class DashboardFileResourceViewSet(StandardModelViewSet):
         AuditLogService.log(actor=self.request.user, action=AuditAction.FILE_UPLOADED, target=file_resource, request=self.request)
 
     def perform_update(self, serializer):
+        old_visibility = serializer.instance.visibility
         file_resource = serializer.save()
-        AuditLogService.log(actor=self.request.user, action=AuditAction.FILE_UPDATED, target=file_resource, request=self.request)
+        AuditLogService.log(
+            actor=self.request.user,
+            action=AuditAction.FILE_UPDATED,
+            target=file_resource,
+            old_value={"visibility": old_visibility},
+            new_value={"visibility": file_resource.visibility},
+            request=self.request,
+        )
 
     def perform_destroy(self, instance):
         AuditLogService.log(actor=self.request.user, action=AuditAction.FILE_DELETED, target=instance, request=self.request)
         super().perform_destroy(instance)
+
+
+class FileDownloadTokenView(APIView):
+    serializer_class = FileResourceSerializer
+
+    @extend_schema(tags=["Files"])
+    def post(self, request, pk: int):
+        file_resource = FileResource.objects.filter(pk=pk, is_deleted=False).first()
+        if file_resource is None:
+            raise NotFound("File not found.")
+        data = FileAccessService.create_download_token(request.user, file_resource, request=request)
+        return success_response(data=data, message="File download token created")
+
+
+class DashboardFilePreviewTokenView(APIView):
+    permission_classes = [IsAdminOrITSupport]
+    serializer_class = FileResourceSerializer
+
+    @extend_schema(tags=["Dashboard"])
+    def post(self, request, pk: int):
+        file_resource = FileResource.objects.filter(pk=pk, is_deleted=False).first()
+        if file_resource is None:
+            raise NotFound("File not found.")
+        data = FileAccessService.create_dashboard_preview_token(request.user, file_resource, request=request)
+        return success_response(data=data, message="File preview token created")
 
 
 class FileResourceProtectedView(APIView):

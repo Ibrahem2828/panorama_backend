@@ -85,4 +85,9 @@ class ReadinessCheckView(APIView):
         }
         if ready:
             return success_response(message="OK", data=data)
-        return error_response(message="Service is not ready", errors=data, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return error_response(
+            message="Service is not ready",
+            errors=data,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            request_id=getattr(request, "request_id", None),
+        )

@@ -1,0 +1,490 @@
+{
+  "name": "Panorama Dashboard API Collection",
+  "version": "2.0-production",
+  "base_url": "http://eby52x8qksscjvfeqxf0eob7.76.13.155.172.sslip.io",
+  "auth": {
+    "type": "bearer",
+    "header": "Authorization: Bearer {{access_token}}",
+    "notes": "Dashboard REST APIs use JWT bearer access tokens. Refresh tokens rotate on use."
+  },
+  "response_contract": {
+    "success_response": {
+      "success": true,
+      "message": "OK",
+      "data": {}
+    },
+    "error_response": {
+      "success": false,
+      "message": "Permission denied",
+      "errors": {},
+      "request_id": "{{request_id}}"
+    },
+    "pagination": {
+      "success": true,
+      "message": "OK",
+      "data": {
+        "count": 0,
+        "next": null,
+        "previous": null,
+        "results": []
+      }
+    }
+  },
+  "roles": {
+    "it_support": "All dashboard modules.",
+    "admin": "Operational dashboard modules except IT-only areas if introduced later.",
+    "print_staff": "Printing dashboard, notifications, settings, and own me endpoints only.",
+    "student": "Denied from dashboard endpoints.",
+    "normal_user": "Denied from dashboard endpoints."
+  },
+  "frontend_notes": [
+    "Use X-Request-ID for support correlation.",
+    "Do not render direct media paths for sensitive files. Use preview-token endpoints.",
+    "Do not include real secrets or tokens in saved API clients."
+  ],
+  "endpoints": [
+    {
+      "section": "Dashboard Auth",
+      "name": "Login",
+      "method": "POST",
+      "path": "/api/v1/auth/login/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "identifier": "admin@example.com",
+        "password": "StrongPass123!"
+      }
+    },
+    {
+      "section": "Dashboard Auth",
+      "name": "Refresh",
+      "method": "POST",
+      "path": "/api/v1/auth/token/refresh/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "refresh": "{{refresh_token}}"
+      }
+    },
+    {
+      "section": "Dashboard Auth",
+      "name": "Logout",
+      "method": "POST",
+      "path": "/api/v1/auth/logout/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"],
+      "request_body": {
+        "refresh": "{{refresh_token}}"
+      }
+    },
+    {
+      "section": "Dashboard Auth",
+      "name": "Me",
+      "method": "GET",
+      "path": "/api/v1/auth/me/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    },
+    {
+      "section": "Dashboard Stats",
+      "name": "Stats",
+      "method": "GET",
+      "path": "/api/v1/dashboard/stats/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Academic Management",
+      "name": "Universities CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/universities/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "name": "University",
+        "code": "UNI"
+      }
+    },
+    {
+      "section": "Academic Management",
+      "name": "Faculties CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/faculties/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "university": "{{university_id}}",
+        "name": "Faculty",
+        "code": "2"
+      }
+    },
+    {
+      "section": "Academic Management",
+      "name": "Majors CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/majors/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "faculty": "{{faculty_id}}",
+        "name": "Major",
+        "code": "MAJ"
+      }
+    },
+    {
+      "section": "Academic Management",
+      "name": "Academic Years CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/academic-years/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "name": "Year 1",
+        "order": 1
+      }
+    },
+    {
+      "section": "Academic Management",
+      "name": "Semesters CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/semesters/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "name": "Semester 1",
+        "order": 1
+      }
+    },
+    {
+      "section": "Academic Management",
+      "name": "Subjects CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/subjects/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "major": "{{major_id}}",
+        "semester": "{{semester_id}}",
+        "name": "Subject",
+        "code": "SUB"
+      }
+    },
+    {
+      "section": "Verification",
+      "name": "List Requests",
+      "method": "GET",
+      "path": "/api/v1/dashboard/verifications/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Verification",
+      "name": "Request Detail",
+      "method": "GET",
+      "path": "/api/v1/dashboard/verifications/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Verification",
+      "name": "Approve",
+      "method": "POST",
+      "path": "/api/v1/dashboard/verifications/{{id}}/approve/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "admin_note": "Approved"
+      }
+    },
+    {
+      "section": "Verification",
+      "name": "Reject",
+      "method": "POST",
+      "path": "/api/v1/dashboard/verifications/{{id}}/reject/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "rejection_reason": "Card is unreadable",
+        "admin_note": "Ask student to upload a clearer card"
+      }
+    },
+    {
+      "section": "Verification",
+      "name": "Needs Update",
+      "method": "POST",
+      "path": "/api/v1/dashboard/verifications/{{id}}/needs-update/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "rejection_reason": "Please update academic year"
+      }
+    },
+    {
+      "section": "Verification",
+      "name": "Card Preview Token",
+      "method": "POST",
+      "path": "/api/v1/dashboard/verifications/{{id}}/card-preview-token/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "success_response_example": {
+        "success": true,
+        "message": "Verification card preview token created",
+        "data": {
+          "url": "/api/v1/protected-media/{{token}}/",
+          "expires_in": 300
+        }
+      }
+    },
+    {
+      "section": "Groups",
+      "name": "Groups CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/groups/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Groups",
+      "name": "Memberships",
+      "method": "GET",
+      "path": "/api/v1/dashboard/groups/{{group_id}}/memberships/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Groups",
+      "name": "Join Requests",
+      "method": "GET",
+      "path": "/api/v1/dashboard/groups/{{group_id}}/join-requests/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Groups",
+      "name": "Approve Membership",
+      "method": "POST",
+      "path": "/api/v1/dashboard/group-memberships/{{id}}/approve/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Groups",
+      "name": "Reject Membership",
+      "method": "POST",
+      "path": "/api/v1/dashboard/group-memberships/{{id}}/reject/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Groups",
+      "name": "Block Membership",
+      "method": "POST",
+      "path": "/api/v1/dashboard/group-memberships/{{id}}/block/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Groups",
+      "name": "Update Membership Role",
+      "method": "PATCH",
+      "path": "/api/v1/dashboard/group-memberships/{{id}}/role/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "role": "moderator"
+      }
+    },
+    {
+      "section": "Files",
+      "name": "Files CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/files/{{file_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "content_type": "multipart/form-data",
+      "request_body": {
+        "title": "Lecture",
+        "file": "{{document_file}}",
+        "visibility": "verified_students_only"
+      }
+    },
+    {
+      "section": "Files",
+      "name": "File Preview Token",
+      "method": "POST",
+      "path": "/api/v1/dashboard/files/{{file_id}}/preview-token/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "notes": "print_staff is denied for general dashboard file preview."
+    },
+    {
+      "section": "Announcements",
+      "name": "Announcements CRUD",
+      "method": "GET|POST|PATCH|DELETE",
+      "path": "/api/v1/dashboard/announcements/{{id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Printing",
+      "name": "Print Orders",
+      "method": "GET",
+      "path": "/api/v1/dashboard/printing/orders/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    },
+    {
+      "section": "Printing",
+      "name": "Print Order Detail",
+      "method": "GET",
+      "path": "/api/v1/dashboard/printing/orders/{{order_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    },
+    {
+      "section": "Printing",
+      "name": "Assign Print Order",
+      "method": "PATCH",
+      "path": "/api/v1/dashboard/printing/orders/{{order_id}}/assign/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"],
+      "request_body": {
+        "assigned_to": "{{print_staff_user_id}}"
+      }
+    },
+    {
+      "section": "Printing",
+      "name": "Update Print Status",
+      "method": "PATCH",
+      "path": "/api/v1/dashboard/printing/orders/{{order_id}}/status/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"],
+      "request_body": {
+        "status": "under_review",
+        "note": "Accepted by print desk"
+      }
+    },
+    {
+      "section": "Printing",
+      "name": "Add Internal Print Note",
+      "method": "POST",
+      "path": "/api/v1/dashboard/printing/orders/{{order_id}}/note/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"],
+      "request_body": {
+        "internal_notes": "Staple after printing"
+      }
+    },
+    {
+      "section": "Printing",
+      "name": "Print Order File Preview Token",
+      "method": "POST",
+      "path": "/api/v1/dashboard/printing/orders/{{order_id}}/file-preview-token/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"],
+      "request_body": {
+        "item_id": "{{print_order_item_id}}"
+      }
+    },
+    {
+      "section": "Support",
+      "name": "Tickets List",
+      "method": "GET",
+      "path": "/api/v1/dashboard/support/tickets/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Support",
+      "name": "Ticket Detail",
+      "method": "GET",
+      "path": "/api/v1/dashboard/support/tickets/{{ticket_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Support",
+      "name": "Update Ticket Status",
+      "method": "PATCH",
+      "path": "/api/v1/dashboard/support/tickets/{{ticket_id}}/status/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "status": "in_progress"
+      }
+    },
+    {
+      "section": "Support",
+      "name": "Update Ticket Priority",
+      "method": "PATCH",
+      "path": "/api/v1/dashboard/support/tickets/{{ticket_id}}/priority/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "priority": "high"
+      }
+    },
+    {
+      "section": "Support",
+      "name": "Assign Ticket",
+      "method": "POST",
+      "path": "/api/v1/dashboard/support/tickets/{{ticket_id}}/assign/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "assigned_to": "{{admin_or_it_user_id}}"
+      }
+    },
+    {
+      "section": "Support",
+      "name": "Reply To Ticket",
+      "method": "POST",
+      "path": "/api/v1/dashboard/support/tickets/{{ticket_id}}/messages/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"],
+      "request_body": {
+        "message": "We are reviewing your issue."
+      }
+    },
+    {
+      "section": "Audit",
+      "name": "Audit Logs",
+      "method": "GET",
+      "path": "/api/v1/dashboard/audit-logs/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin"]
+    },
+    {
+      "section": "Notifications",
+      "name": "List Notifications",
+      "method": "GET",
+      "path": "/api/v1/notifications/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Unread Count",
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Mark Read",
+      "method": "POST",
+      "path": "/api/v1/notifications/{{notification_id}}/mark-read/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Read All",
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all/",
+      "auth_required": true,
+      "allowed_roles": ["it_support", "admin", "print_staff"]
+    }
+  ]
+}

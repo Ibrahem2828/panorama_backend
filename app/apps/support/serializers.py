@@ -19,6 +19,11 @@ class SupportTicketMessageSerializer(serializers.ModelSerializer):
         fields = ["id", "ticket", "sender", "sender_name", "message", "attachment", "created_at"]
         read_only_fields = ["id", "ticket", "sender", "created_at"]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["attachment"] = None
+        return data
+
 
 class SupportTicketSerializer(serializers.ModelSerializer):
     messages = SupportTicketMessageSerializer(many=True, read_only=True)
@@ -63,6 +68,7 @@ class SupportTicketCreateSerializer(serializers.Serializer):
             self.validated_data["subject"],
             self.validated_data["message"],
             self.validated_data.get("attachment"),
+            request=self.context.get("request"),
         )
 
 
@@ -81,6 +87,7 @@ class SupportTicketAddMessageSerializer(serializers.Serializer):
             self.context["request"].user,
             self.validated_data["message"],
             self.validated_data.get("attachment"),
+            request=self.context.get("request"),
         )
 
 
@@ -88,7 +95,12 @@ class SupportTicketStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=SupportTicketStatus.choices)
 
     def save(self, **kwargs):
-        return SupportTicketService.update_status(self.context["ticket"], self.validated_data["status"], self.context["request"].user)
+        return SupportTicketService.update_status(
+            self.context["ticket"],
+            self.validated_data["status"],
+            self.context["request"].user,
+            request=self.context.get("request"),
+        )
 
 
 class SupportTicketPrioritySerializer(serializers.Serializer):

@@ -14,7 +14,7 @@ class StandardPageNumberPagination(PageNumberPagination):
             OrderedDict(
                 [
                     ("success", True),
-                    ("message", "Operation completed successfully"),
+                    ("message", "OK"),
                     (
                         "data",
                         OrderedDict(

@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts.choices import StudentVerificationStatus
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.protected_media import ProtectedMediaService
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
@@ -14,7 +15,14 @@ from .models import VerificationRequest, VerificationStatus
 class VerificationService:
     @staticmethod
     @transaction.atomic
-    def review(verification: VerificationRequest, reviewer, status: str, rejection_reason: str = "", admin_note: str = ""):
+    def review(
+        verification: VerificationRequest,
+        reviewer,
+        status: str,
+        rejection_reason: str = "",
+        admin_note: str = "",
+        request=None,
+    ):
         verification = (
             VerificationRequest.objects.select_for_update()
             .select_related("user", "student_profile", "university", "faculty", "major", "academic_year", "semester")
@@ -76,5 +84,23 @@ class VerificationService:
                 action=action,
                 target=verification,
                 new_value={"status": status, "student_number": verification.student_number},
+                request=request,
             )
         return verification
+
+    @staticmethod
+    def create_card_preview_token(verification: VerificationRequest, reviewer, request=None) -> dict:
+        token, expires_in = ProtectedMediaService.create_token(
+            user=reviewer,
+            object_type="verification_request",
+            object_id=verification.id,
+            purpose="verification_card_preview",
+        )
+        AuditLogService.log(
+            actor=reviewer,
+            action=AuditAction.VERIFICATION_CARD_PREVIEW_TOKEN_CREATED,
+            target=verification,
+            new_value={"purpose": "verification_card_preview", "expires_in": expires_in},
+            request=request,
+        )
+        return {"url": ProtectedMediaService.build_url(request, token), "expires_in": expires_in}

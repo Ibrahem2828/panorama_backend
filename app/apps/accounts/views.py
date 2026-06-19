@@ -1,6 +1,6 @@
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import permissions, status
+from rest_framework import exceptions, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
@@ -11,6 +11,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import error_response, success_response
 
+from .choices import UserRole
 from .serializers import (
     ChangePasswordSerializer,
     ConfirmPasswordResetSerializer,
@@ -28,6 +29,7 @@ from .serializers import (
 class NormalUserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = NormalUserRegisterSerializer
+    throttle_scope = "register"
 
     @extend_schema(request=NormalUserRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
@@ -44,6 +46,7 @@ class StudentRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = StudentRegisterSerializer
+    throttle_scope = "register"
 
     @extend_schema(request=StudentRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
@@ -59,13 +62,29 @@ class StudentRegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
-    throttle_scope = "auth_login"
+    throttle_scope = "login"
 
     @extend_schema(request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except exceptions.ValidationError:
+            AuditLogService.log(
+                action=AuditAction.USER_LOGIN_FAILED,
+                new_value={"reason": "invalid_credentials"},
+                request=request,
+            )
+            raise
         user = serializer.validated_data["user"]
+        if user.role in {UserRole.IT_SUPPORT, UserRole.ADMIN, UserRole.PRINT_STAFF}:
+            AuditLogService.log(
+                actor=user,
+                action=AuditAction.USER_LOGIN_SUCCEEDED,
+                target=user,
+                new_value={"role": user.role},
+                request=request,
+            )
         return success_response(
             data={
                 "access": serializer.validated_data["access"],
@@ -98,7 +117,11 @@ class LogoutView(APIView):
         try:
             RefreshToken(refresh_token).blacklist()
         except TokenError:
-            return error_response(message="Invalid token", errors={"refresh": "Invalid or expired refresh token."})
+            return error_response(
+                message="Invalid token",
+                errors={"refresh": "Invalid or expired refresh token."},
+                request_id=getattr(request, "request_id", None),
+            )
         AuditLogService.log(actor=request.user, action=AuditAction.USER_LOGGED_OUT, target=request.user, request=request)
         return success_response(message="Logged out successfully")
 

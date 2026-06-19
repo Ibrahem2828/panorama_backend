@@ -45,6 +45,12 @@ class FileResourceSerializer(serializers.ModelSerializer):
         path = f"/api/v1/files/{obj.id}/view/"
         return request.build_absolute_uri(path) if request else path
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.visibility != FileVisibility.PUBLIC:
+            data["file"] = None
+        return data
+
     def validate(self, attrs):
         instance = self.instance
         visibility = attrs.get("visibility") or getattr(instance, "visibility", FileVisibility.PUBLIC)

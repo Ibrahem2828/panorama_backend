@@ -13,7 +13,7 @@ from apps.groups.models import Group
 
 from .models import Message, MessageReport
 from .serializers import MessageCreateSerializer, MessageReportSerializer, MessageSerializer
-from .services import ChatPermissionService
+from .services import ChatPermissionService, ChatWebSocketTokenService
 
 
 class GroupMessageViewSet(StandardReadOnlyModelViewSet):
@@ -62,7 +62,7 @@ class GroupMessageDeleteView(APIView):
             ChatPermissionService.enforce_group_chat_access(request.user, group)
             if not message.is_deleted:
                 message.soft_delete(request.user)
-                AuditLogService.log(actor=request.user, action=AuditAction.MESSAGE_DELETED, target=message)
+                AuditLogService.log(actor=request.user, action=AuditAction.MESSAGE_DELETED, target=message, request=request)
         return success_response(message="Message deleted successfully")
 
 
@@ -78,4 +78,21 @@ class GroupMessageReportView(APIView):
             serializer = MessageReportSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             report = MessageReport.objects.create(message=message, reported_by=request.user, reason=serializer.validated_data["reason"])
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.MESSAGE_REPORTED,
+                target=message,
+                new_value={"report_id": report.id, "group_id": group.id},
+                request=request,
+            )
         return success_response(data=MessageReportSerializer(report).data, message="Message reported successfully", status_code=status.HTTP_201_CREATED)
+
+
+class GroupChatWebSocketTokenView(APIView):
+    serializer_class = MessageSerializer
+
+    @extend_schema(tags=["Chat"])
+    def post(self, request, group_id: int):
+        group = Group.objects.get(pk=group_id, is_deleted=False)
+        data = ChatWebSocketTokenService.create_token(request.user, group, request=request)
+        return success_response(data=data, message="WebSocket token created")

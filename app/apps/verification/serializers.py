@@ -100,6 +100,11 @@ class VerificationRequestSerializer(serializers.ModelSerializer):
     def get_detected_serial_number(self, obj):
         return self._parsed(obj).get("serial_number")
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["card_image"] = None
+        return data
+
     def validate(self, attrs):
         request = self.context["request"]
         user = request.user

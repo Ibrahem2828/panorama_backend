@@ -1,0 +1,621 @@
+{
+  "name": "Panorama Mobile API Collection",
+  "version": "2.0-production",
+  "base_url": "http://eby52x8qksscjvfeqxf0eob7.76.13.155.172.sslip.io",
+  "auth": {
+    "type": "bearer",
+    "header": "Authorization: Bearer {{access_token}}",
+    "notes": "REST APIs use JWT bearer access tokens. Production WebSocket connections must use ws_token from POST /api/v1/groups/{{group_id}}/chat/ws-token/, not the access token directly."
+  },
+  "response_contract": {
+    "success_response": {
+      "success": true,
+      "message": "OK",
+      "data": {}
+    },
+    "error_response": {
+      "success": false,
+      "message": "Validation error",
+      "errors": {},
+      "request_id": "{{request_id}}"
+    },
+    "pagination": {
+      "success": true,
+      "message": "OK",
+      "data": {
+        "count": 0,
+        "next": null,
+        "previous": null,
+        "results": []
+      }
+    }
+  },
+  "roles": {
+    "mobile_allowed": ["student", "normal_user"],
+    "student_features_requirements": "Some group, chat, academic file, and verification features require role=student, verified phone, and approved student verification.",
+    "dashboard_roles": "it_support, admin, and print_staff use dashboard APIs, not mobile-only flows."
+  },
+  "rate_limits": {
+    "login": "5/minute",
+    "register": "5/hour",
+    "otp_send": "3/10min",
+    "otp_verify": "5/10min",
+    "password_reset": "3/15min",
+    "verification_submit": "3/hour",
+    "chat_message": "30/minute",
+    "support_ticket_create": "5/hour",
+    "print_order_create": "10/hour"
+  },
+  "frontend_notes": [
+    "Always read request_id from error responses and X-Request-ID from response headers for support tickets.",
+    "Use protected media token URLs returned by token endpoints. Do not construct /media/ URLs.",
+    "Do not place JWT access tokens in WebSocket URLs in production."
+  ],
+  "endpoints": [
+    {
+      "section": "Auth",
+      "name": "Register Normal User",
+      "method": "POST",
+      "path": "/api/v1/auth/register/normal/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "full_name": "Normal User",
+        "email": "user@example.com",
+        "phone_number": "+963900000100",
+        "password": "StrongPass123!",
+        "password_confirm": "StrongPass123!"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Register Student",
+      "method": "POST",
+      "path": "/api/v1/auth/register/student/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "content_type": "multipart/form-data",
+      "request_body": {
+        "full_name": "Student User",
+        "email": "student@example.com",
+        "phone_number": "+963900000101",
+        "password": "StrongPass123!",
+        "password_confirm": "StrongPass123!",
+        "student_number": "2150094",
+        "card_image": "{{image_file}}"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Login",
+      "method": "POST",
+      "path": "/api/v1/auth/login/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "identifier": "user@example.com",
+        "password": "StrongPass123!"
+      },
+      "success_response_example": {
+        "success": true,
+        "message": "Logged in successfully",
+        "data": {
+          "access": "{{access_token}}",
+          "refresh": "{{refresh_token}}",
+          "user": {}
+        }
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Refresh Token",
+      "method": "POST",
+      "path": "/api/v1/auth/token/refresh/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "refresh": "{{refresh_token}}"
+      },
+      "notes": "Refresh tokens rotate on use; replace the stored refresh token with the returned refresh value when present."
+    },
+    {
+      "section": "Auth",
+      "name": "Logout",
+      "method": "POST",
+      "path": "/api/v1/auth/logout/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"],
+      "request_body": {
+        "refresh": "{{refresh_token}}"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Current User",
+      "method": "GET",
+      "path": "/api/v1/auth/me/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Auth",
+      "name": "Update Current User",
+      "method": "PATCH",
+      "path": "/api/v1/auth/me/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"],
+      "request_body": {
+        "full_name": "Updated Name",
+        "username": "optional_username"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Change Password",
+      "method": "POST",
+      "path": "/api/v1/auth/change-password/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"],
+      "request_body": {
+        "old_password": "OldPass123!",
+        "new_password": "NewPass123!",
+        "new_password_confirm": "NewPass123!"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "OTP Send",
+      "method": "POST",
+      "path": "/api/v1/auth/otp/send/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "phone_number": "+963900000100",
+        "purpose": "verify_phone"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "OTP Verify",
+      "method": "POST",
+      "path": "/api/v1/auth/otp/verify/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "phone_number": "+963900000100",
+        "purpose": "verify_phone",
+        "code": "123456"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Request Password Reset",
+      "method": "POST",
+      "path": "/api/v1/auth/request-password-reset/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "phone_number": "+963900000100"
+      }
+    },
+    {
+      "section": "Auth",
+      "name": "Confirm Password Reset",
+      "method": "POST",
+      "path": "/api/v1/auth/confirm-password-reset/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous"],
+      "request_body": {
+        "phone_number": "+963900000100",
+        "code": "123456",
+        "new_password": "NewPass123!",
+        "new_password_confirm": "NewPass123!"
+      }
+    },
+    {
+      "section": "Student Profile",
+      "name": "Get Student Profile",
+      "method": "GET",
+      "path": "/api/v1/students/me/profile/",
+      "auth_required": true,
+      "allowed_roles": ["student"]
+    },
+    {
+      "section": "Student Profile",
+      "name": "Update Student Profile",
+      "method": "PATCH",
+      "path": "/api/v1/students/me/profile/",
+      "auth_required": true,
+      "allowed_roles": ["student"],
+      "notes": "Approved or pending students cannot edit sensitive academic identity fields.",
+      "request_body": {
+        "university": "{{university_id}}",
+        "faculty": "{{faculty_id}}",
+        "major": "{{major_id}}",
+        "academic_year": "{{academic_year_id}}",
+        "semester": "{{semester_id}}",
+        "student_number": "2150094"
+      }
+    },
+    {
+      "section": "Student Profile",
+      "name": "Parse Student Number",
+      "method": "GET",
+      "path": "/api/v1/students/student-number/parse/?student_number=2150094",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Academic Data",
+      "name": "Universities",
+      "method": "GET",
+      "path": "/api/v1/universities/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous", "student", "normal_user"]
+    },
+    {
+      "section": "Academic Data",
+      "name": "Faculties",
+      "method": "GET",
+      "path": "/api/v1/faculties/?university={{university_id}}",
+      "auth_required": false,
+      "allowed_roles": ["anonymous", "student", "normal_user"]
+    },
+    {
+      "section": "Academic Data",
+      "name": "Majors",
+      "method": "GET",
+      "path": "/api/v1/majors/?faculty={{faculty_id}}",
+      "auth_required": false,
+      "allowed_roles": ["anonymous", "student", "normal_user"]
+    },
+    {
+      "section": "Academic Data",
+      "name": "Academic Years",
+      "method": "GET",
+      "path": "/api/v1/academic-years/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous", "student", "normal_user"]
+    },
+    {
+      "section": "Academic Data",
+      "name": "Semesters",
+      "method": "GET",
+      "path": "/api/v1/semesters/",
+      "auth_required": false,
+      "allowed_roles": ["anonymous", "student", "normal_user"]
+    },
+    {
+      "section": "Academic Data",
+      "name": "Subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects/?major={{major_id}}",
+      "auth_required": false,
+      "allowed_roles": ["anonymous", "student", "normal_user"]
+    },
+    {
+      "section": "Verification",
+      "name": "Submit Verification",
+      "method": "POST",
+      "path": "/api/v1/verification/submit/",
+      "auth_required": true,
+      "allowed_roles": ["student"],
+      "content_type": "multipart/form-data",
+      "request_body": {
+        "university": "{{university_id}}",
+        "faculty": "{{faculty_id}}",
+        "major": "{{major_id}}",
+        "academic_year": "{{academic_year_id}}",
+        "semester": "{{semester_id}}",
+        "student_number": "2150094",
+        "card_image": "{{image_file}}"
+      }
+    },
+    {
+      "section": "Verification",
+      "name": "My Verification",
+      "method": "GET",
+      "path": "/api/v1/verification/me/",
+      "auth_required": true,
+      "allowed_roles": ["student"]
+    },
+    {
+      "section": "Verification",
+      "name": "Resubmit Verification",
+      "method": "POST",
+      "path": "/api/v1/verification/resubmit/",
+      "auth_required": true,
+      "allowed_roles": ["student"],
+      "content_type": "multipart/form-data"
+    },
+    {
+      "section": "Announcements",
+      "name": "Relevant Announcements",
+      "method": "GET",
+      "path": "/api/v1/announcements/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"]
+    },
+    {
+      "section": "Groups",
+      "name": "Available Groups",
+      "method": "GET",
+      "path": "/api/v1/groups/available/",
+      "auth_required": true,
+      "allowed_roles": ["student"],
+      "access": "Approved verified student only."
+    },
+    {
+      "section": "Groups",
+      "name": "My Groups",
+      "method": "GET",
+      "path": "/api/v1/groups/my/",
+      "auth_required": true,
+      "allowed_roles": ["student"]
+    },
+    {
+      "section": "Groups",
+      "name": "Group Detail",
+      "method": "GET",
+      "path": "/api/v1/groups/{{group_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["student"]
+    },
+    {
+      "section": "Groups",
+      "name": "Join Group",
+      "method": "POST",
+      "path": "/api/v1/groups/{{group_id}}/join/",
+      "auth_required": true,
+      "allowed_roles": ["student"]
+    },
+    {
+      "section": "Groups",
+      "name": "Leave Group",
+      "method": "POST",
+      "path": "/api/v1/groups/{{group_id}}/leave/",
+      "auth_required": true,
+      "allowed_roles": ["student"]
+    },
+    {
+      "section": "Chat",
+      "name": "Group Messages",
+      "method": "GET",
+      "path": "/api/v1/groups/{{group_id}}/messages/",
+      "auth_required": true,
+      "allowed_roles": ["student", "admin", "it_support"]
+    },
+    {
+      "section": "Chat",
+      "name": "Create Message",
+      "method": "POST",
+      "path": "/api/v1/groups/{{group_id}}/messages/",
+      "auth_required": true,
+      "allowed_roles": ["student", "admin", "it_support"],
+      "request_body": {
+        "type": "message",
+        "content": "Hello"
+      }
+    },
+    {
+      "section": "Chat",
+      "name": "Delete Message",
+      "method": "DELETE",
+      "path": "/api/v1/groups/{{group_id}}/messages/{{message_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["sender", "moderator", "group_admin", "admin", "it_support"]
+    },
+    {
+      "section": "Chat",
+      "name": "Report Message",
+      "method": "POST",
+      "path": "/api/v1/groups/{{group_id}}/messages/{{message_id}}/report/",
+      "auth_required": true,
+      "allowed_roles": ["student", "admin", "it_support"],
+      "request_body": {
+        "reason": "Spam or abusive content"
+      }
+    },
+    {
+      "section": "Chat",
+      "name": "Create WebSocket Token",
+      "method": "POST",
+      "path": "/api/v1/groups/{{group_id}}/chat/ws-token/",
+      "auth_required": true,
+      "allowed_roles": ["student", "admin", "it_support"],
+      "success_response_example": {
+        "success": true,
+        "message": "WebSocket token created",
+        "data": {
+          "ws_token": "{{ws_token}}",
+          "expires_in": 120,
+          "websocket_url": "ws://eby52x8qksscjvfeqxf0eob7.76.13.155.172.sslip.io/ws/v1/groups/{{group_id}}/chat/?token={{ws_token}}"
+        }
+      }
+    },
+    {
+      "section": "Chat",
+      "name": "WebSocket Connect",
+      "method": "WEBSOCKET",
+      "path": "ws://{{host}}/ws/v1/groups/{{group_id}}/chat/?token={{ws_token}}",
+      "auth_required": true,
+      "allowed_roles": ["student", "admin", "it_support"],
+      "notes": "Use short-lived ws_token. Do not put access_token in this URL in production."
+    },
+    {
+      "section": "Files",
+      "name": "List Files",
+      "method": "GET",
+      "path": "/api/v1/files/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support"],
+      "access": "admin_only files are hidden from mobile list/detail."
+    },
+    {
+      "section": "Files",
+      "name": "File Detail",
+      "method": "GET",
+      "path": "/api/v1/files/{{file_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support"]
+    },
+    {
+      "section": "Files",
+      "name": "Group Files",
+      "method": "GET",
+      "path": "/api/v1/groups/{{group_id}}/files/",
+      "auth_required": true,
+      "allowed_roles": ["student"],
+      "access": "Approved group membership required."
+    },
+    {
+      "section": "Files",
+      "name": "Create Download Token",
+      "method": "POST",
+      "path": "/api/v1/files/{{file_id}}/download-token/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support"],
+      "notes": "Returns protected backend URL and expires_in. Use returned URL to download/preview accessible file."
+    },
+    {
+      "section": "Printing",
+      "name": "Create Print Order",
+      "method": "POST",
+      "path": "/api/v1/printing/orders/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"],
+      "request_body": {
+        "user_notes": "Please print",
+        "items": [
+          {
+            "source_file": "{{file_id}}",
+            "copies": 1,
+            "color_mode": "black_white",
+            "paper_size": "A4",
+            "sides": "one_sided"
+          }
+        ]
+      },
+      "access": "Users cannot print files they cannot access."
+    },
+    {
+      "section": "Printing",
+      "name": "My Print Orders",
+      "method": "GET",
+      "path": "/api/v1/printing/orders/my/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"]
+    },
+    {
+      "section": "Printing",
+      "name": "Print Order Detail",
+      "method": "GET",
+      "path": "/api/v1/printing/orders/{{order_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"],
+      "access": "Owner only."
+    },
+    {
+      "section": "Printing",
+      "name": "Cancel Print Order",
+      "method": "POST",
+      "path": "/api/v1/printing/orders/{{order_id}}/cancel/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"],
+      "access": "Owner only; status transition rules apply."
+    },
+    {
+      "section": "Notifications",
+      "name": "List Notifications",
+      "method": "GET",
+      "path": "/api/v1/notifications/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Unread Count",
+      "method": "GET",
+      "path": "/api/v1/notifications/unread-count/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Mark Read",
+      "method": "POST",
+      "path": "/api/v1/notifications/{{notification_id}}/mark-read/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Read All",
+      "method": "POST",
+      "path": "/api/v1/notifications/read-all/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Notifications",
+      "name": "Register Device Token",
+      "method": "POST",
+      "path": "/api/v1/notifications/device-tokens/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"],
+      "request_body": {
+        "token": "{{fcm_device_token}}",
+        "platform": "android"
+      }
+    },
+    {
+      "section": "Notifications",
+      "name": "Delete Device Token",
+      "method": "DELETE",
+      "path": "/api/v1/notifications/device-tokens/{{device_token_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user", "admin", "it_support", "print_staff"]
+    },
+    {
+      "section": "Support",
+      "name": "Create Ticket",
+      "method": "POST",
+      "path": "/api/v1/support/tickets/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"],
+      "request_body": {
+        "category": "technical",
+        "subject": "Problem",
+        "message": "Describe the issue"
+      }
+    },
+    {
+      "section": "Support",
+      "name": "My Tickets",
+      "method": "GET",
+      "path": "/api/v1/support/tickets/my/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"]
+    },
+    {
+      "section": "Support",
+      "name": "Ticket Detail",
+      "method": "GET",
+      "path": "/api/v1/support/tickets/{{ticket_id}}/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"],
+      "access": "Owner only."
+    },
+    {
+      "section": "Support",
+      "name": "Add Ticket Message",
+      "method": "POST",
+      "path": "/api/v1/support/tickets/{{ticket_id}}/messages/",
+      "auth_required": true,
+      "allowed_roles": ["student", "normal_user"],
+      "request_body": {
+        "message": "Additional detail"
+      }
+    }
+  ]
+}

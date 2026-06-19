@@ -79,6 +79,11 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["card_image"] = None
+        return data
+
 
 class StudentAcademicProfileSerializer(StudentProfileSerializer):
     editable_statuses = {

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Phase 2 hardens authentication, OTP handling, password reset behavior, upload validation, file access, chat safety, assignment rules, audit coverage, and production security settings without changing the existing mobile or dashboard API contract.
+Phase 2 hardens authentication, OTP handling, password reset behavior, upload validation, protected media access, WebSocket access, chat safety, assignment rules, audit coverage, and production security settings without breaking existing mobile or dashboard REST paths.
 
 ## What Changed
 
@@ -11,7 +11,9 @@ Phase 2 hardens authentication, OTP handling, password reset behavior, upload va
 - Added OTP max-attempt enforcement.
 - Made password reset requests enumeration-safe for unknown well-formed phone numbers.
 - Added upload validation for images and documents.
-- Added a protected file access endpoint and a `secure_file_url` response field while keeping the existing `file` field unchanged.
+- Added short-lived protected media token endpoints for mobile downloads and dashboard previews.
+- Redacted direct sensitive media URLs from mobile and dashboard serializers.
+- Added short-lived group chat WebSocket tokens and disabled direct access-token WebSocket URL auth by default.
 - Hardened chat message validation and cross-group reply handling.
 - Hardened WebSocket payload handling for malformed JSON.
 - Restricted print and support assignment targets by role.
@@ -26,7 +28,7 @@ Phase 2 hardens authentication, OTP handling, password reset behavior, upload va
 - No existing request fields were renamed or removed.
 - No existing response fields were renamed or removed.
 - The unified API response envelope was not changed.
-- API collection JSON files were not modified.
+- Existing API collection JSON files remain available; production v2 contract files were added.
 - No new dependencies were added.
 - Existing mobile and dashboard workflows remain backward-compatible for valid requests.
 
@@ -34,22 +36,25 @@ Phase 2 hardens authentication, OTP handling, password reset behavior, upload va
 
 Existing clients can continue using the current endpoints and fields. Invalid or abusive requests are now more likely to be rejected, but valid existing requests should continue to work.
 
-The existing `file` serializer field remains present. The new `secure_file_url` field is additive and intended for future client migration to protected file access.
+Existing public REST paths remain available. Restricted media now uses explicit token endpoints, and production WebSocket clients must use `ws_token` from the chat token endpoint instead of a JWT access token in the WebSocket URL.
 
 ## Authentication and Throttling
 
 Scoped throttles were added using built-in DRF throttling:
 
-- `auth_login`
+- `login`
+- `register`
 - `otp_send`
 - `otp_verify`
 - `password_reset`
+- `verification_submit`
 - `change_password`
 - `chat_message`
+- `support_ticket_create`
 - `support_message`
-- `print_order`
+- `print_order_create`
 
-Default rates are configured in `REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]` and can be overridden with environment variables such as `THROTTLE_AUTH_LOGIN` and `THROTTLE_OTP_SEND`.
+Default rates are configured in `REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]` and can be overridden with environment variables such as `THROTTLE_LOGIN` and `THROTTLE_OTP_SEND`.
 
 Testing settings raise these rates to avoid suite flakiness. Dedicated throttle tests override rates deterministically.
 
@@ -87,17 +92,25 @@ Fixed or strengthened:
 - Support assignment now only accepts `admin` or `it_support`.
 - Chat replies must target messages in the same group.
 
-## File Access
+## Protected Media Access
 
-The existing `file` field remains unchanged for backward compatibility.
+Sensitive media must not be consumed through direct `/media/` URLs. Clients request short-lived access tokens and then open the returned protected URL before expiry.
 
-Added:
+Endpoints:
 
-- `secure_file_url` on file serializer responses.
-- `GET /api/v1/files/{file_id}/view/` protected file view.
-- Authentication and object-level visibility checks before file streaming.
-- Safe file-not-found handling.
-- Audit logging for protected file access.
+- `POST /api/v1/files/{file_id}/download-token/`
+- `POST /api/v1/dashboard/files/{file_id}/preview-token/`
+- `POST /api/v1/dashboard/verifications/{id}/card-preview-token/`
+- `POST /api/v1/dashboard/printing/orders/{id}/file-preview-token/`
+- `GET /api/v1/protected-media/{token}/`
+
+The protected media token identifies the user, object type, object id, purpose, and expiry. Permission checks are re-run before serving local storage files. The service is isolated so S3 or Cloudflare R2 signed URLs can replace local file serving later.
+
+Restricted file resources, verification card images, print uploads, and support attachments are redacted from normal serializer output where they could leak direct file paths.
+
+Environment:
+
+- `PROTECTED_MEDIA_TOKEN_TTL_SECONDS=300`
 
 ## Upload Validation
 
@@ -122,12 +135,22 @@ Validated upload points include verification card images, student card images, g
 
 Phase 2 adds:
 
+- `POST /api/v1/groups/{group_id}/chat/ws-token/` for short-lived production WebSocket tokens.
+- Production WebSocket clients must connect with `ws://host/ws/v1/groups/{group_id}/chat/?token={ws_token}`.
+- JWT access tokens are not accepted in WebSocket URLs unless `ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH=True`, which must stay false in production.
+- Connect-time and receive-time checks for active user, active group, approved membership, blocked/left state, and `send_messages_permission`.
+- Channel-layer disconnect or permission-change events when memberships or group send permissions change.
 - Max message length via `MAX_CHAT_MESSAGE_LENGTH`.
 - Whitespace-only text rejection.
 - Cross-group reply rejection.
 - Type-aware attachment validation.
 - Malformed WebSocket JSON handling with safe error messages.
 - Existing send-permission enforcement remains shared through `ChatMessageService`.
+
+Environment:
+
+- `GROUP_CHAT_WS_TOKEN_TTL_SECONDS=120`
+- `ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH=False`
 
 ## Assignment Validation
 
@@ -161,6 +184,8 @@ Added or expanded audit events for:
 
 Audit logging remains best-effort and redacts sensitive keys through the existing audit service.
 
+Protected media token creation is audited for sensitive resources without logging raw token values.
+
 ## Security Headers and Settings
 
 Production settings now include:
@@ -182,7 +207,7 @@ Added `app/apps/common/tests_phase2_security.py` covering:
 - Password reset enumeration-safe response.
 - Login throttling envelope.
 - Upload validation for images and documents.
-- Protected file view permission checks.
+- Protected media token and serving permission checks.
 - Chat cross-group reply and blocked-send rejection.
 - Admins-only chat send behavior and moderator delete.
 - Print and support assignment role validation.
@@ -193,30 +218,49 @@ Added `app/apps/common/tests_phase2_security.py` covering:
 Run:
 
 ```powershell
+.\.venv\Scripts\python.exe app\manage.py makemigrations --check --dry-run --settings=config.settings.testing
+.\.venv\Scripts\python.exe app\manage.py check --settings=config.settings.testing
+.\.venv\Scripts\python.exe app\manage.py check --deploy --settings=config.settings.production
+.\.venv\Scripts\python.exe app\manage.py spectacular --settings=config.settings.testing --validate --fail-on-warn --file openapi.json
 .\.venv\Scripts\python.exe -m pytest app\apps\common\tests_phase2_security.py
+.\.venv\Scripts\python.exe -m pytest app\apps\common\tests_phase2_production_finalization.py
 .\.venv\Scripts\python.exe -m pytest app\apps\common\tests_api_contract_collections.py
 .\.venv\Scripts\python.exe -m pytest app\apps\common\tests_production_hardening.py
 .\.venv\Scripts\python.exe -m pytest
-.\scripts\validate_backend.ps1 -DeployCheck
+.\.venv\Scripts\python.exe -m json.tool docs\api\panorama_mobile_api_collection_v2_production.json
+.\.venv\Scripts\python.exe -m json.tool docs\api\panorama_dashboard_api_collection_v2_production.json
 ```
+
+For deploy checks, provide non-secret local validation values for `SECRET_KEY`, host, CORS, CSRF, Redis, and database settings.
 
 ## Known Limitations
 
-- Protected file view streams local/media-backed files; production object storage should still be reviewed in the next phase.
+- Protected media currently streams local/media-backed files after token and permission checks; production object storage should be migrated behind the same service abstraction when S3 or R2 is selected.
 - Upload validation is extension and size based; it is not antivirus or deep content scanning.
 - Throttling uses Django/DRF cache behavior. Production should use a shared cache backend for multi-instance deployments.
-- WebSocket typing events are still lightweight and not separately throttled.
+- WebSocket typing events are permission-checked but not separately throttled.
 - Audit coverage was expanded for representative sensitive paths, not every possible CRUD action in the system.
 
 ## Remaining Risks for Phase 3
 
 - Multi-instance cache and Redis reliability for throttling and Channels.
 - Background task robustness and retry behavior.
-- Media/object storage authorization strategy.
+- Object storage migration for protected media.
 - Database integrity constraints and idempotency for high-traffic workflows.
 - Performance of dashboard list filters at larger data volumes.
 - Operational monitoring, alerting, and structured security logs.
 
 ## Next Recommended Phase
 
-Phase 3 should focus on reliability, performance, and data integrity.
+Phase 3 should focus on reliability, performance, data integrity, and object storage operationalization.
+
+## Final API Contracts And Deployment Values
+
+Production API contract files:
+
+- `docs/api/panorama_mobile_api_collection_v2_production.json`
+- `docs/api/panorama_dashboard_api_collection_v2_production.json`
+
+Deployment value replacement guide:
+
+- `docs/PRODUCTION_ENV_VALUES_TO_REPLACE.md`

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from decouple import config
 
-from .env import get_bool_env, get_csv_env
+from .env import get_bool_env, get_csv_env, get_env
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
@@ -138,17 +138,20 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
     "DEFAULT_THROTTLE_CLASSES": (
-        "rest_framework.throttling.ScopedRateThrottle",
+        "apps.common.throttles.IdentifierScopedRateThrottle",
     ),
     "DEFAULT_THROTTLE_RATES": {
-        "auth_login": config("THROTTLE_AUTH_LOGIN", default="10/minute"),
-        "otp_send": config("THROTTLE_OTP_SEND", default="5/minute"),
-        "otp_verify": config("THROTTLE_OTP_VERIFY", default="10/minute"),
-        "password_reset": config("THROTTLE_PASSWORD_RESET", default="5/minute"),
+        "login": get_env("THROTTLE_LOGIN", "THROTTLE_AUTH_LOGIN", default="5/minute"),
+        "register": get_env("THROTTLE_REGISTER", default="5/hour"),
+        "otp_send": get_env("THROTTLE_OTP_SEND", default="3/10min"),
+        "otp_verify": get_env("THROTTLE_OTP_VERIFY", default="5/10min"),
+        "password_reset": get_env("THROTTLE_PASSWORD_RESET", default="3/15min"),
+        "verification_submit": get_env("THROTTLE_VERIFICATION_SUBMIT", default="3/hour"),
+        "chat_message": get_env("THROTTLE_CHAT_MESSAGE", default="30/minute"),
+        "support_ticket_create": get_env("THROTTLE_SUPPORT_TICKET_CREATE", default="5/hour"),
+        "print_order_create": get_env("THROTTLE_PRINT_ORDER_CREATE", "THROTTLE_PRINT_ORDER", default="10/hour"),
         "change_password": config("THROTTLE_CHANGE_PASSWORD", default="5/minute"),
-        "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/minute"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="20/minute"),
-        "print_order": config("THROTTLE_PRINT_ORDER", default="10/minute"),
     },
 }
 
@@ -159,7 +162,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(
         days=config("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=14, cast=int)
     ),
-    "ROTATE_REFRESH_TOKENS": False,
+    "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
@@ -267,6 +270,9 @@ CACHES = {
 
 MAX_OTP_VERIFY_ATTEMPTS = config("MAX_OTP_VERIFY_ATTEMPTS", default=5, cast=int)
 MAX_CHAT_MESSAGE_LENGTH = config("MAX_CHAT_MESSAGE_LENGTH", default=4000, cast=int)
+PROTECTED_MEDIA_TOKEN_TTL_SECONDS = config("PROTECTED_MEDIA_TOKEN_TTL_SECONDS", default=300, cast=int)
+GROUP_CHAT_WS_TOKEN_TTL_SECONDS = config("GROUP_CHAT_WS_TOKEN_TTL_SECONDS", default=120, cast=int)
+ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH = get_bool_env("ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH", default=False)
 MAX_IMAGE_UPLOAD_SIZE_MB = config("MAX_IMAGE_UPLOAD_SIZE_MB", default=5, cast=int)
 MAX_DOCUMENT_UPLOAD_SIZE_MB = config("MAX_DOCUMENT_UPLOAD_SIZE_MB", default=25, cast=int)
 ALLOWED_IMAGE_EXTENSIONS = get_csv_env(

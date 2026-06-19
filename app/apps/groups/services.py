@@ -1,5 +1,7 @@
 from django.utils import timezone
 from django.db import transaction
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
@@ -9,6 +11,36 @@ from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
 from .models import Group, GroupMembership, GroupMembershipStatus
+
+
+def notify_group_membership_permission_changed(group_id: int, user_id: int, *, reason: str = "permission_changed") -> None:
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    async_to_sync(channel_layer.group_send)(
+        f"group_chat_{group_id}_user_{user_id}",
+        {"type": "force_disconnect", "reason": reason},
+    )
+
+
+def notify_group_membership_role_changed(group_id: int, user_id: int, role: str) -> None:
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    async_to_sync(channel_layer.group_send)(
+        f"group_chat_{group_id}_user_{user_id}",
+        {"type": "permission_changed", "data": {"role": role}},
+    )
+
+
+def notify_group_permission_changed(group_id: int, send_messages_permission: str) -> None:
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    async_to_sync(channel_layer.group_send)(
+        f"group_chat_{group_id}",
+        {"type": "permission_changed", "data": {"send_messages_permission": send_messages_permission}},
+    )
 
 
 def is_student_eligible_for_group(user, group: Group) -> bool:
@@ -60,11 +92,12 @@ class GroupMembershipService:
         membership = GroupMembership.objects.select_for_update().get(group=group, user=user, status=GroupMembershipStatus.APPROVED)
         membership.status = GroupMembershipStatus.LEFT
         membership.save(update_fields=["status", "updated_at"])
+        notify_group_membership_permission_changed(group.id, user.id, reason="membership_left")
         return membership
 
     @staticmethod
     @transaction.atomic
-    def review(membership: GroupMembership, reviewer, status: str) -> GroupMembership:
+    def review(membership: GroupMembership, reviewer, status: str, request=None) -> GroupMembership:
         membership = GroupMembership.objects.select_for_update().select_related("group", "user").get(pk=membership.pk, is_deleted=False)
         old_status = membership.status
         if status == GroupMembershipStatus.APPROVED:
@@ -97,5 +130,8 @@ class GroupMembershipService:
                 target=membership,
                 old_value={"status": old_status},
                 new_value={"status": status},
+                request=request,
             )
+        if status in {GroupMembershipStatus.REJECTED, GroupMembershipStatus.BLOCKED, GroupMembershipStatus.LEFT}:
+            notify_group_membership_permission_changed(membership.group_id, membership.user_id, reason=f"membership_{status}")
         return membership
