@@ -152,8 +152,20 @@ REST_FRAMEWORK = {
         "print_order_create": get_env("THROTTLE_PRINT_ORDER_CREATE", "THROTTLE_PRINT_ORDER", default="10/hour"),
         "change_password": config("THROTTLE_CHANGE_PASSWORD", default="5/minute"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="20/minute"),
+        "student_account_request": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST", default="5/hour"),
+        "student_account_request_status": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST_STATUS", default="30/minute"),
+        "student_account_request_otp_verify": get_env(
+            "THROTTLE_STUDENT_ACCOUNT_REQUEST_OTP_VERIFY",
+            default="5/10min",
+        ),
     },
 }
+
+STUDENT_ACCOUNT_OTP_RESEND_COOLDOWN_SECONDS = config(
+    "STUDENT_ACCOUNT_OTP_RESEND_COOLDOWN_SECONDS",
+    default=60,
+    cast=int,
+)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(

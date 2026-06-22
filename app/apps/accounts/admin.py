@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from .models import OTPCode, StudentProfile, User
+from .models import OTPCode, StudentAccountRequest, StudentProfile, User
 
 
 @admin.register(User)
@@ -56,6 +56,14 @@ class StudentProfileAdmin(admin.ModelAdmin):
     list_filter = ("verification_status",)
     search_fields = ("user__full_name", "user__email", "student_number")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(StudentAccountRequest)
+class StudentAccountRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "public_id", "full_name", "email", "phone_number", "status", "created_at")
+    list_filter = ("status", "university")
+    search_fields = ("full_name", "email", "phone_number", "student_number", "public_id")
+    readonly_fields = ("public_id", "password_hash", "otp_hash", "created_at", "updated_at")
 
 
 @admin.register(OTPCode)

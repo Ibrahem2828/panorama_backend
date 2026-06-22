@@ -58,3 +58,25 @@ def validate_document_upload(uploaded_file) -> None:
         allowed_extensions=settings.ALLOWED_DOCUMENT_EXTENSIONS,
         max_size_mb=settings.MAX_DOCUMENT_UPLOAD_SIZE_MB,
     )
+
+
+def validate_student_card_upload(uploaded_file) -> None:
+    if uploaded_file is None:
+        raise serializers.ValidationError("University card upload is required.")
+    extension = _extension(uploaded_file)
+    image_extensions = {item.lower().lstrip(".") for item in settings.ALLOWED_IMAGE_EXTENSIONS}
+    document_extensions = {item.lower().lstrip(".") for item in settings.ALLOWED_DOCUMENT_EXTENSIONS}
+    allowed_extensions = image_extensions | document_extensions
+    if extension not in allowed_extensions:
+        raise serializers.ValidationError("This file extension is not allowed.")
+    max_size_mb = (
+        settings.MAX_IMAGE_UPLOAD_SIZE_MB
+        if extension in image_extensions
+        else settings.MAX_DOCUMENT_UPLOAD_SIZE_MB
+    )
+    size = getattr(uploaded_file, "size", 0) or 0
+    if size <= 0:
+        raise serializers.ValidationError("Uploaded file cannot be empty.")
+    max_size = max_size_mb * 1024 * 1024
+    if size > max_size:
+        raise serializers.ValidationError(f"Uploaded file must be {max_size_mb} MB or smaller.")

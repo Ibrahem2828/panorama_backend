@@ -1,5 +1,3 @@
-import logging
-
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -8,8 +6,6 @@ from apps.audit.services import AuditLogService
 
 from .choices import OTPPurpose
 from .models import OTPCode, User
-
-logger = logging.getLogger(__name__)
 
 
 class OTPService:
@@ -30,7 +26,6 @@ class OTPService:
         otp.save()
 
         if settings.RETURN_DEVELOPMENT_OTP:
-            logger.info("Development OTP for %s (%s): %s", phone_number, purpose, raw_code)
             return otp, raw_code
         return otp, None
 

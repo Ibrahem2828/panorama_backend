@@ -18,6 +18,7 @@ from apps.universities.serializers import (
 )
 
 from .choices import OTPPurpose, StudentVerificationStatus, UserRole
+from .otp_contract import requires_phone_verification_for_user
 from .models import StudentProfile, User
 from .services import OTPService
 from .student_number import StudentNumberParser, apply_student_number_parse
@@ -145,6 +146,8 @@ class StudentAcademicProfileSerializer(StudentProfileSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     student_verification_status = serializers.SerializerMethodField()
+    phone_verified = serializers.SerializerMethodField()
+    requires_phone_verification = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -156,6 +159,8 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "role",
             "is_phone_verified",
+            "phone_verified",
+            "requires_phone_verification",
             "is_email_verified",
             "student_verification_status",
             "date_joined",
@@ -166,10 +171,18 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "role",
             "is_phone_verified",
+            "phone_verified",
+            "requires_phone_verification",
             "is_email_verified",
             "student_verification_status",
             "date_joined",
         ]
+
+    def get_phone_verified(self, obj: User) -> bool:
+        return obj.is_phone_verified
+
+    def get_requires_phone_verification(self, obj: User) -> bool:
+        return requires_phone_verification_for_user(obj)
 
     def get_student_verification_status(self, obj: User) -> str | None:
         profile = getattr(obj, "student_profile", None)

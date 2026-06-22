@@ -164,3 +164,6 @@ class OTPCode(BaseModel):
     def mark_used(self) -> None:
         self.is_used = True
         self.save(update_fields=["is_used", "updated_at"])
+
+
+from .student_account_request_models import StudentAccountRequest  # noqa: E402, F401

@@ -23,3 +23,13 @@ class OTPPurpose(models.TextChoices):
     VERIFY_PHONE = "verify_phone", "Verify Phone"
     RESET_PASSWORD = "reset_password", "Reset Password"
     LOGIN = "login", "Login"
+
+
+class StudentAccountRequestStatus(models.TextChoices):
+    PENDING_REVIEW = "pending_review", "Pending Review"
+    APPROVED_PENDING_OTP = "approved_pending_otp", "Approved Pending OTP"
+    OTP_SENT = "otp_sent", "OTP Sent"
+    ACTIVE = "active", "Active"
+    REJECTED = "rejected", "Rejected"
+    NEEDS_UPDATE = "needs_update", "Needs Update"
+    EXPIRED = "expired", "Expired"

@@ -44,6 +44,11 @@ def test_normal_user_registration(api_client, normal_payload):
 
     assert response.status_code == status.HTTP_201_CREATED
     assert response.data["success"] is True
+    assert response.data["data"]["requires_otp"] is True
+    assert response.data["data"]["next_step"] == "verify_phone"
+    assert response.data["data"]["requires_phone_verification"] is True
+    assert response.data["data"]["phone_verified"] is False
+    assert response.data["data"]["expires_in_seconds"] == 600
     user = User.objects.get(email=normal_payload["email"])
     assert user.role == UserRole.NORMAL_USER
     assert OTPCode.objects.filter(user=user, purpose=OTPPurpose.VERIFY_PHONE).exists()
@@ -177,6 +182,8 @@ def test_otp_verify(api_client, normal_user):
     )
 
     assert response.status_code == status.HTTP_200_OK
+    assert response.data["data"]["phone_verified"] is True
+    assert response.data["data"]["requires_phone_verification"] is False
     normal_user.refresh_from_db()
     assert normal_user.is_phone_verified is True
 

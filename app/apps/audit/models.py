@@ -48,6 +48,19 @@ class AuditAction(models.TextChoices):
     SUPPORT_TICKET_STAFF_REPLY = "support_ticket_staff_reply", "Support Ticket Staff Reply"
     MESSAGE_DELETED = "message_deleted", "Message Deleted"
     MESSAGE_REPORTED = "message_reported", "Message Reported"
+    STUDENT_ACCOUNT_REQUEST_SUBMITTED = "student_account_request_submitted", "Student Account Request Submitted"
+    STUDENT_ACCOUNT_REQUEST_APPROVED = "student_account_request_approved", "Student Account Request Approved"
+    STUDENT_ACCOUNT_REQUEST_REJECTED = "student_account_request_rejected", "Student Account Request Rejected"
+    STUDENT_ACCOUNT_REQUEST_NEEDS_UPDATE = "student_account_request_needs_update", "Student Account Request Needs Update"
+    STUDENT_ACCOUNT_OTP_GENERATED = "student_account_otp_generated", "Student Account OTP Generated"
+    STUDENT_ACCOUNT_OTP_RESENT = "student_account_otp_resent", "Student Account OTP Resent"
+    STUDENT_ACCOUNT_OTP_VERIFIED = "student_account_otp_verified", "Student Account OTP Verified"
+    STUDENT_ACCOUNT_OTP_FAILED = "student_account_otp_failed", "Student Account OTP Failed"
+    STUDENT_ACCOUNT_ACTIVATED = "student_account_activated", "Student Account Activated"
+    STUDENT_ACCOUNT_CARD_PREVIEW_TOKEN_CREATED = (
+        "student_account_card_preview_token_created",
+        "Student Account Card Preview Token Created",
+    )
 
 
 class AuditLog(BaseModel):

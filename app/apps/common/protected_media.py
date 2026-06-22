@@ -131,6 +131,20 @@ class ProtectedMediaService:
         return verification.card_image
 
     @staticmethod
+    def _resolve_student_account_request_card(token_data: ProtectedMediaToken, user):
+        from apps.accounts.student_account_request_models import StudentAccountRequest
+
+        if token_data.purpose != "student_account_card_preview" or user.role not in {
+            UserRole.ADMIN,
+            UserRole.IT_SUPPORT,
+        }:
+            raise PermissionDenied("You do not have access to this file.")
+        request_obj = StudentAccountRequest.objects.filter(pk=token_data.object_id, is_deleted=False).first()
+        if request_obj is None:
+            raise NotFound("File not found.")
+        return request_obj.uploaded_card
+
+    @staticmethod
     def _resolve_print_order_file(token_data: ProtectedMediaToken, user):
         from apps.printing.models import PrintOrder, PrintOrderItem
 
@@ -163,6 +177,8 @@ class ProtectedMediaService:
             file_field = ProtectedMediaService._resolve_file_resource(token_data, user)
         elif token_data.object_type == "verification_request":
             file_field = ProtectedMediaService._resolve_verification_card(token_data, user)
+        elif token_data.object_type == "student_account_request":
+            file_field = ProtectedMediaService._resolve_student_account_request_card(token_data, user)
         elif token_data.object_type == "print_order":
             file_field = ProtectedMediaService._resolve_print_order_file(token_data, user)
         else:

@@ -11,7 +11,12 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import error_response, success_response
 
-from .choices import UserRole
+from .choices import OTPPurpose, UserRole
+from .otp_contract import (
+    build_phone_otp_register_payload,
+    build_phone_otp_send_payload,
+    build_verify_phone_success_payload,
+)
 from .serializers import (
     ChangePasswordSerializer,
     ConfirmPasswordResetSerializer,
@@ -36,10 +41,14 @@ class NormalUserRegisterView(APIView):
         serializer = NormalUserRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, raw_code = serializer.save()
-        data = {"user": UserSerializer(user).data}
+        data = {"user": UserSerializer(user).data, **build_phone_otp_register_payload(user)}
         if settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
-        return success_response(data=data, message="Normal user registered successfully", status_code=status.HTTP_201_CREATED)
+        return success_response(
+            data=data,
+            message="تم إنشاء الحساب بنجاح. أرسلنا رمز تحقق إلى رقم الجوال لتفعيل الحساب.",
+            status_code=status.HTTP_201_CREATED,
+        )
 
 
 class StudentRegisterView(APIView):
@@ -163,10 +172,19 @@ class SendOTPView(APIView):
         serializer = SendOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         otp, raw_code = serializer.save()
-        data = {"expires_at": otp.expires_at}
+        data = build_phone_otp_send_payload(
+            purpose=otp.purpose,
+            phone_number=otp.phone_number,
+            expires_at=otp.expires_at,
+        )
         if settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
-        return success_response(data=data, message="OTP sent successfully")
+        message = (
+            "تم إرسال رمز التحقق إلى رقم الجوال."
+            if otp.purpose == OTPPurpose.VERIFY_PHONE
+            else "OTP sent successfully"
+        )
+        return success_response(data=data, message=message)
 
 
 class VerifyOTPView(APIView):
@@ -178,8 +196,36 @@ class VerifyOTPView(APIView):
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        otp = serializer.save()
+        data = build_verify_phone_success_payload() if otp.purpose == OTPPurpose.VERIFY_PHONE else {}
+        message = (
+            "تم التحقق من رقم الجوال بنجاح. يمكنك تسجيل الدخول الآن."
+            if otp.purpose == OTPPurpose.VERIFY_PHONE
+            else "OTP verified successfully"
+        )
+        return success_response(message=message, data=data)
+
+
+class VerifyPhoneView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = VerifyOTPSerializer
+    throttle_scope = "otp_verify"
+
+    @extend_schema(request=VerifyOTPSerializer, tags=["Auth"])
+    def post(self, request):
+        payload = request.data.copy()
+        if hasattr(payload, "dict"):
+            payload = payload.dict()
+        else:
+            payload = dict(payload)
+        payload.setdefault("purpose", OTPPurpose.VERIFY_PHONE)
+        serializer = VerifyOTPSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
-        return success_response(message="OTP verified successfully")
+        return success_response(
+            data=build_verify_phone_success_payload(),
+            message="تم التحقق من رقم الجوال بنجاح. يمكنك تسجيل الدخول الآن.",
+        )
 
 
 class RequestPasswordResetView(APIView):
