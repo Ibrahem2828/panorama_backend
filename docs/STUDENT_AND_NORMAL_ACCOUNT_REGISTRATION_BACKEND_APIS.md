@@ -11,6 +11,127 @@ No WhatsApp API integration exists in this phase.
 
 ---
 
+## Phone number format
+
+Official backend storage and response format is **E.164**.
+
+For Syrian mobile numbers, the canonical format is:
+
+```text
++9639XXXXXXXX
+```
+
+Accepted mobile input formats:
+
+| Client input | Stored/returned value |
+|--------------|-----------------------|
+| `0994109259` | `+963994109259` |
+| `963994109259` | `+963994109259` |
+| `+963994109259` | `+963994109259` |
+
+Rejected examples include `994109259`, `00963994109259`, numbers with letters, landline formats, and numbers that are too short or too long.
+
+Mobile may send `0994109259` or `+963994109259`. Backend normalizes the value before storing, duplicate checks, OTP generation, OTP verification, and response payloads.
+
+Recommended mobile helper text:
+
+```text
+مثال: 0994109259 أو +963994109259
+```
+
+Invalid phone response:
+
+```json
+{
+  "success": false,
+  "message": "تحقق من البيانات المدخلة وحاول مرة أخرى.",
+  "errors": {
+    "phone_number": [
+      "صيغة رقم الجوال غير صحيحة. استخدم مثالاً مثل: +963994109259 أو 0994109259."
+    ]
+  },
+  "data": {
+    "error_code": "invalid_phone",
+    "expected_phone_format": "E.164",
+    "examples": ["+963994109259", "0994109259"]
+  },
+  "request_id": "..."
+}
+```
+
+Duplicate phone response:
+
+```json
+{
+  "success": false,
+  "message": "رقم الجوال مستخدم مسبقاً.",
+  "errors": {
+    "phone_number": ["رقم الجوال مستخدم مسبقاً."]
+  },
+  "data": {
+    "error_code": "duplicate_phone"
+  },
+  "request_id": "..."
+}
+```
+
+Duplicate email response:
+
+```json
+{
+  "success": false,
+  "message": "البريد الإلكتروني مستخدم مسبقاً.",
+  "errors": {
+    "email": ["البريد الإلكتروني مستخدم مسبقاً."]
+  },
+  "data": {
+    "error_code": "duplicate_email"
+  },
+  "request_id": "..."
+}
+```
+
+---
+
+## Rate limiting
+
+Sensitive public auth endpoints remain throttled. Normal user registration uses an endpoint-specific policy:
+
+| Endpoint | Policy |
+|----------|--------|
+| `POST /api/v1/auth/register/normal/` | 7 attempts / 20 minutes |
+| `POST /api/v1/auth/otp/verify/` and `POST /api/v1/auth/verify-phone/` | 7 attempts / 20 minutes plus OTP max-attempt protection |
+| `POST /api/v1/auth/student-account-requests/` | 7 attempts / 20 minutes |
+| `POST /api/v1/auth/student-account-requests/{request_id}/verify-otp/` | 7 attempts / 20 minutes plus OTP max-attempt protection |
+
+DRF throttling counts allowed requests before serializer validation, so successful, invalid, duplicate, and repeated registration attempts all count toward the normal-register window. Throttle keys include IP and a hashed request identifier where available; phone identifiers are normalized before hashing.
+
+429 response:
+
+```json
+{
+  "success": false,
+  "message": "تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد 20 دقيقة.",
+  "errors": {
+    "detail": "تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد 20 دقيقة."
+  },
+  "data": {
+    "error_code": "rate_limited",
+    "retry_after_seconds": 1200,
+    "retry_after_minutes": 20
+  },
+  "request_id": "..."
+}
+```
+
+The `Retry-After` header is preserved. Mobile should display:
+
+```text
+تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد X دقيقة.
+```
+
+---
+
 ## Normal User Flow
 
 ```
@@ -31,9 +152,9 @@ register/normal → phone OTP sent → verify_phone → login
 
 ```json
 {
-  "full_name": "Ahmad Ali",
-  "email": "ahmad@example.com",
-  "phone_number": "+963900000000",
+  "full_name": "إبراهيم محمد خير سعد الدين",
+  "email": "ibrahemsa28@example.com",
+  "phone_number": "0994109259",
   "password": "StrongPass123!",
   "password_confirm": "StrongPass123!"
 }
@@ -55,8 +176,8 @@ Response:
     },
     "requires_otp": true,
     "otp_purpose": "verify_phone",
-    "phone_number": "+963900000000",
-    "phone_number_masked": "+963******000",
+    "phone_number": "+963994109259",
+    "phone_number_masked": "+963******259",
     "phone_verified": false,
     "requires_phone_verification": true,
     "next_step": "verify_phone",
@@ -74,7 +195,7 @@ Response:
 
 ```json
 {
-  "phone_number": "+963900000000",
+  "phone_number": "0994109259",
   "code": "123456"
 }
 ```
@@ -348,5 +469,6 @@ Dashboard forbidden (`print_staff`):
 
 - Run migrations: `0004_studentaccountrequest`, `0005_studentaccountrequest_otp_resend_count`
 - No new required env vars
-- Optional: `THROTTLE_STUDENT_ACCOUNT_REQUEST`, `STUDENT_ACCOUNT_OTP_RESEND_COOLDOWN_SECONDS`
+- Optional: `THROTTLE_NORMAL_REGISTER`, `THROTTLE_OTP_VERIFY`, `THROTTLE_STUDENT_ACCOUNT_REQUEST`, `THROTTLE_STUDENT_ACCOUNT_REQUEST_OTP_VERIFY`, `STUDENT_ACCOUNT_OTP_RESEND_COOLDOWN_SECONDS`
 - Media uploads stored under `student_account_requests/`
+- After a throttle policy change, old Redis throttle keys may still block requests until their original expiry unless targeted throttle keys are cleared. A backend restart alone does not clear Redis cache. If targeted clearing is not performed, QA should wait until the old throttle window expires before retesting the same IP/identifier.

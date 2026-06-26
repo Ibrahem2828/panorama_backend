@@ -34,7 +34,7 @@ from .serializers import (
 class NormalUserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = NormalUserRegisterSerializer
-    throttle_scope = "register"
+    throttle_scope = "normal_register"
 
     @extend_schema(request=NormalUserRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
@@ -48,6 +48,7 @@ class NormalUserRegisterView(APIView):
             data=data,
             message="تم إنشاء الحساب بنجاح. أرسلنا رمز تحقق إلى رقم الجوال لتفعيل الحساب.",
             status_code=status.HTTP_201_CREATED,
+            request_id=getattr(request, "request_id", None),
         )
 
 

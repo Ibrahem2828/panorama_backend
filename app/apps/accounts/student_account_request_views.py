@@ -18,6 +18,7 @@ from apps.accounts.student_account_request_serializers import (
     StudentAccountRequestVerifyOtpSerializer,
 )
 from apps.accounts.student_account_request_service import StudentAccountRequestService
+from apps.accounts.serializers import validate_phone_number_format
 from apps.common.responses import success_response
 from apps.common.viewsets import StandardReadOnlyModelViewSet
 
@@ -52,6 +53,8 @@ class StudentAccountRequestStatusView(APIView):
     @extend_schema(tags=["Auth"], responses={200: StudentAccountRequestStatusSerializer})
     def get(self, request, public_id):
         phone_number = request.query_params.get("phone_number", "").strip()
+        if phone_number:
+            phone_number = validate_phone_number_format(phone_number)
         request_obj = StudentAccountRequestService.get_request_or_404(public_id)
         if phone_number and phone_number != request_obj.phone_number:
             from rest_framework.exceptions import ValidationError

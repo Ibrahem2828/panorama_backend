@@ -48,7 +48,7 @@ class StudentAccountRequestCreateSerializer(serializers.Serializer):
     def validate_email(self, value: str) -> str:
         email = value.lower().strip()
         if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
+            raise serializers.ValidationError("البريد الإلكتروني مستخدم مسبقاً.", code="duplicate_email")
         if StudentAccountRequest.objects.filter(
             email__iexact=email,
             status__in=StudentAccountRequest.open_statuses(),
@@ -60,7 +60,7 @@ class StudentAccountRequestCreateSerializer(serializers.Serializer):
     def validate_phone_number(self, value: str) -> str:
         phone_number = validate_phone_number_format(value)
         if User.objects.filter(phone_number=phone_number).exists():
-            raise serializers.ValidationError("A user with this phone number already exists.")
+            raise serializers.ValidationError("رقم الجوال مستخدم مسبقاً.", code="duplicate_phone")
         if StudentAccountRequest.objects.filter(
             phone_number=phone_number,
             status__in=StudentAccountRequest.open_statuses(),

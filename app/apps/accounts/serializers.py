@@ -1,7 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.db.models import Q
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -20,19 +19,14 @@ from apps.universities.serializers import (
 from .choices import OTPPurpose, StudentVerificationStatus, UserRole
 from .otp_contract import requires_phone_verification_for_user
 from .models import StudentProfile, User
+from .phone_numbers import normalize_phone_number, normalize_phone_number_or_none
 from .services import OTPService
 from .student_number import StudentNumberParser, apply_student_number_parse
 from .student_number import FACULTY_CODE_LABELS
 
 
 def validate_phone_number_format(value: str) -> str:
-    phone_number = value.strip()
-    if not phone_number or len(phone_number) > 32:
-        raise serializers.ValidationError(_("Enter a valid phone number."))
-    normalized = phone_number[1:] if phone_number.startswith("+") else phone_number
-    if not normalized.isdigit() or len(normalized) < 7:
-        raise serializers.ValidationError(_("Enter a valid phone number."))
-    return phone_number
+    return normalize_phone_number(value)
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -195,6 +189,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class BaseRegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    phone_number = serializers.CharField(max_length=32)
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
 
@@ -203,15 +199,15 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
         fields = ["full_name", "email", "phone_number", "password", "password_confirm"]
 
     def validate_email(self, value: str) -> str:
-        email = value.lower()
+        email = value.lower().strip()
         if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
+            raise serializers.ValidationError("البريد الإلكتروني مستخدم مسبقاً.", code="duplicate_email")
         return email
 
     def validate_phone_number(self, value: str) -> str:
-        phone_number = value.strip()
+        phone_number = validate_phone_number_format(value)
         if User.objects.filter(phone_number=phone_number).exists():
-            raise serializers.ValidationError("A user with this phone number already exists.")
+            raise serializers.ValidationError("رقم الجوال مستخدم مسبقاً.", code="duplicate_phone")
         return phone_number
 
     def validate(self, attrs):
@@ -278,8 +274,9 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         identifier = attrs["identifier"].strip()
         password = attrs["password"]
+        normalized_identifier = normalize_phone_number_or_none(identifier) or identifier
 
-        user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=identifier)).first()
+        user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=normalized_identifier)).first()
         if user is None or not user.check_password(password):
             raise serializers.ValidationError({"identifier": "Invalid credentials."})
         if not user.is_active:
@@ -324,8 +321,11 @@ class SendOTPSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     purpose = serializers.ChoiceField(choices=OTPPurpose.choices)
 
+    def validate_phone_number(self, value: str) -> str:
+        return validate_phone_number_format(value)
+
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"].strip()
+        phone_number = self.validated_data["phone_number"]
         user = User.objects.filter(phone_number=phone_number).first()
         return OTPService.send_otp(phone_number, self.validated_data["purpose"], user=user)
 
@@ -335,8 +335,11 @@ class VerifyOTPSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6, min_length=6)
     purpose = serializers.ChoiceField(choices=OTPPurpose.choices)
 
+    def validate_phone_number(self, value: str) -> str:
+        return validate_phone_number_format(value)
+
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"].strip()
+        phone_number = self.validated_data["phone_number"]
         otp = OTPService.verify_otp(
             phone_number=phone_number,
             code=self.validated_data["code"],
@@ -355,7 +358,7 @@ class RequestPasswordResetSerializer(serializers.Serializer):
         return validate_phone_number_format(value)
 
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"].strip()
+        phone_number = self.validated_data["phone_number"]
         user = User.objects.filter(phone_number=phone_number).first()
         if user is None:
             return None, None
@@ -378,7 +381,7 @@ class ConfirmPasswordResetSerializer(serializers.Serializer):
 
     @transaction.atomic
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"].strip()
+        phone_number = self.validated_data["phone_number"]
         otp = OTPService.verify_otp(
             phone_number=phone_number,
             code=self.validated_data["code"],

@@ -7,12 +7,15 @@ def success_response(
     data: Any = None,
     message: str = "Operation completed successfully",
     status_code: int = 200,
+    request_id: str | None = None,
 ) -> Response:
     payload = {
         "success": True,
         "message": message,
         "data": {} if data is None else data,
     }
+    if request_id:
+        payload["request_id"] = request_id
     return Response(
         payload,
         status=status_code,

@@ -250,9 +250,9 @@ class StudentAccountRequestService:
     @staticmethod
     def activate_account(request_obj: StudentAccountRequest) -> User:
         if User.objects.filter(email__iexact=request_obj.email).exists():
-            raise ValidationError({"email": "A user with this email already exists."})
+            raise ValidationError({"email": "البريد الإلكتروني مستخدم مسبقاً."}, code="duplicate_email")
         if User.objects.filter(phone_number=request_obj.phone_number).exists():
-            raise ValidationError({"phone_number": "A user with this phone number already exists."})
+            raise ValidationError({"phone_number": "رقم الجوال مستخدم مسبقاً."}, code="duplicate_phone")
         if StudentProfile.objects.filter(
             university=request_obj.university,
             student_number=request_obj.student_number,

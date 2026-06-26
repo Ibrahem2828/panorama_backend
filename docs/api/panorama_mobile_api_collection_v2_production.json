@@ -1,7 +1,7 @@
 {
   "name": "Panorama Mobile API Collection",
   "version": "2.0-production",
-  "base_url": "http://eby52x8qksscjvfeqxf0eob7.76.13.155.172.sslip.io",
+  "base_url": "https://api.xn--mgbaab0cxheq.tech",
   "auth": {
     "type": "bearer",
     "header": "Authorization: Bearer {{access_token}}",

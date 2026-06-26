@@ -1,5 +1,7 @@
 from django.contrib.auth.base_user import BaseUserManager
 
+from apps.accounts.phone_numbers import normalize_phone_number
+
 from .choices import UserRole
 
 
@@ -16,7 +18,7 @@ class UserManager(BaseUserManager):
             raise ValueError("Users must have a phone number")
 
         email = self._normalize_email(email)
-        user = self.model(email=email, phone_number=phone_number.strip(), **extra_fields)
+        user = self.model(email=email, phone_number=normalize_phone_number(phone_number), **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user

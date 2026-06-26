@@ -143,8 +143,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "login": get_env("THROTTLE_LOGIN", "THROTTLE_AUTH_LOGIN", default="5/minute"),
         "register": get_env("THROTTLE_REGISTER", default="5/hour"),
+        "normal_register": get_env("THROTTLE_NORMAL_REGISTER", default="7/20min"),
         "otp_send": get_env("THROTTLE_OTP_SEND", default="3/10min"),
-        "otp_verify": get_env("THROTTLE_OTP_VERIFY", default="5/10min"),
+        "otp_verify": get_env("THROTTLE_OTP_VERIFY", default="7/20min"),
         "password_reset": get_env("THROTTLE_PASSWORD_RESET", default="3/15min"),
         "verification_submit": get_env("THROTTLE_VERIFICATION_SUBMIT", default="3/hour"),
         "chat_message": get_env("THROTTLE_CHAT_MESSAGE", default="30/minute"),
@@ -152,11 +153,11 @@ REST_FRAMEWORK = {
         "print_order_create": get_env("THROTTLE_PRINT_ORDER_CREATE", "THROTTLE_PRINT_ORDER", default="10/hour"),
         "change_password": config("THROTTLE_CHANGE_PASSWORD", default="5/minute"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="20/minute"),
-        "student_account_request": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST", default="5/hour"),
+        "student_account_request": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST", default="7/20min"),
         "student_account_request_status": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST_STATUS", default="30/minute"),
         "student_account_request_otp_verify": get_env(
             "THROTTLE_STUDENT_ACCOUNT_REQUEST_OTP_VERIFY",
-            default="5/10min",
+            default="7/20min",
         ),
     },
 }

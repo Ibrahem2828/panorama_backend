@@ -6,6 +6,7 @@ from apps.audit.services import AuditLogService
 
 from .choices import OTPPurpose
 from .models import OTPCode, User
+from .phone_numbers import normalize_phone_number
 
 
 class OTPService:
@@ -14,7 +15,7 @@ class OTPService:
         if purpose not in OTPPurpose.values:
             raise ValidationError({"purpose": "Invalid OTP purpose."})
 
-        phone_number = phone_number.strip()
+        phone_number = normalize_phone_number(phone_number)
         raw_code = OTPCode.generate_code()
         otp = OTPCode(
             user=user,
@@ -36,7 +37,7 @@ class OTPService:
 
         otp = (
             OTPCode.objects.filter(
-                phone_number=phone_number.strip(),
+                phone_number=normalize_phone_number(phone_number),
                 purpose=purpose,
                 is_used=False,
             )
