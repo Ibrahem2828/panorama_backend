@@ -1,37 +1,47 @@
-FROM python:3.12-slim
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim AS builder
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PIP_NO_CACHE_DIR=1
-ENV DJANGO_SETTINGS_MODULE=config.settings.production
-ENV PORT=8000
-ENV HEALTHCHECK_PATH=/api/v1/health/
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
-WORKDIR /app
-
-RUN addgroup --system panorama
-RUN adduser --system --ingroup panorama --home /app panorama
-RUN mkdir -p /app/staticfiles /app/media
-RUN chown -R panorama:panorama /app
+WORKDIR /build
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/ ./requirements/
+RUN python -m pip wheel --wheel-dir /wheels -r requirements/production.txt
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements/production.txt
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH=/home/panorama/.local/bin:$PATH
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system panorama \
+    && useradd --system --gid panorama --create-home --home-dir /home/panorama panorama
+
+WORKDIR /app
+COPY --from=builder /wheels /wheels
+RUN python -m pip install --no-cache-dir /wheels/* \
+    && rm -rf /wheels
 
 COPY --chown=panorama:panorama . .
-
-RUN chmod +x /app/docker/entrypoint.sh
-RUN chown -R panorama:panorama /app/staticfiles /app/media
-
-WORKDIR /app/app
+RUN chmod 0755 /app/docker/entrypoint.sh /app/docker/release.sh \
+    && mkdir -p /app/app/staticfiles /app/app/media \
+    && chown -R panorama:panorama /app
 
 USER panorama
-
+WORKDIR /app/app
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD python /app/docker/healthcheck.py
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/api/v1/health/' % os.getenv('PORT','8000'), timeout=3).read()" || exit 1
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
-
 CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]

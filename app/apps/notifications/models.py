@@ -10,6 +10,10 @@ class NotificationType(models.TextChoices):
     FILE = "file", "File"
     ANNOUNCEMENT = "announcement", "Announcement"
     SYSTEM = "system", "System"
+    PRINTING = "printing", "Printing"
+    SUPPORT = "support", "Support"
+    FEEDBACK = "feedback", "Feedback"
+    CHAT = "chat", "Chat"
 
 
 class Notification(BaseModel):

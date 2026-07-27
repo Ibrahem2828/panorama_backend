@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import filters, permissions
 
-from apps.accounts.permissions import IsAdminOrITSupport
+from apps.accounts.permissions import CanManageAcademic
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import AcademicYear, Faculty, Major, Semester, Subject, University
@@ -103,7 +103,7 @@ class PublicSubjectByMajorViewSet(AcademicQuerysetMixin, StandardReadOnlyModelVi
 
 
 class DashboardAcademicMixin(AcademicQuerysetMixin, StandardModelViewSet):
-    permission_classes = [IsAdminOrITSupport]
+    permission_classes = [CanManageAcademic]
     filterset_fields = ["is_active"]
 
 

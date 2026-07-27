@@ -1,46 +1,29 @@
-from django.utils import timezone
+from __future__ import annotations
+
+from urllib.parse import urlparse
+
 from django.db import transaction
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from rest_framework.exceptions import ValidationError
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
+from apps.accounts.permissions import Capability, PermissionService
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.crypto import decrypt_text, encrypt_text
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
-from .models import Group, GroupMembership, GroupMembershipStatus
+from .models import (
+    ExternalChannelAccessTicket,
+    ExternalChannelType,
+    Group,
+    GroupExternalChannel,
+    GroupMembership,
+    GroupMembershipStatus,
+)
 
-
-def notify_group_membership_permission_changed(group_id: int, user_id: int, *, reason: str = "permission_changed") -> None:
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        return
-    async_to_sync(channel_layer.group_send)(
-        f"group_chat_{group_id}_user_{user_id}",
-        {"type": "force_disconnect", "reason": reason},
-    )
-
-
-def notify_group_membership_role_changed(group_id: int, user_id: int, role: str) -> None:
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        return
-    async_to_sync(channel_layer.group_send)(
-        f"group_chat_{group_id}_user_{user_id}",
-        {"type": "permission_changed", "data": {"role": role}},
-    )
-
-
-def notify_group_permission_changed(group_id: int, send_messages_permission: str) -> None:
-    channel_layer = get_channel_layer()
-    if channel_layer is None:
-        return
-    async_to_sync(channel_layer.group_send)(
-        f"group_chat_{group_id}",
-        {"type": "permission_changed", "data": {"send_messages_permission": send_messages_permission}},
-    )
+WHATSAPP_HOSTS = {"wa.me", "www.wa.me", "api.whatsapp.com", "chat.whatsapp.com", "www.whatsapp.com"}
 
 
 def is_student_eligible_for_group(user, group: Group) -> bool:
@@ -66,6 +49,7 @@ class GroupMembershipService:
     @staticmethod
     @transaction.atomic
     def join(user, group: Group) -> GroupMembership:
+        group = Group.objects.select_for_update().get(pk=group.pk)
         if not group.is_active or group.is_deleted:
             raise ValidationError("Group is not active.")
         if not is_student_eligible_for_group(user, group):
@@ -82,6 +66,8 @@ class GroupMembershipService:
         if membership:
             membership.status = status
             membership.joined_at = joined_at
+            membership.reviewed_by = None
+            membership.reviewed_at = None
             membership.save()
             return membership
         return GroupMembership.objects.create(group=group, user=user, status=status, joined_at=joined_at)
@@ -89,28 +75,36 @@ class GroupMembershipService:
     @staticmethod
     @transaction.atomic
     def leave(user, group: Group) -> GroupMembership:
-        membership = GroupMembership.objects.select_for_update().get(group=group, user=user, status=GroupMembershipStatus.APPROVED)
+        membership = GroupMembership.objects.select_for_update().get(
+            group=group,
+            user=user,
+            status=GroupMembershipStatus.APPROVED,
+        )
         membership.status = GroupMembershipStatus.LEFT
         membership.save(update_fields=["status", "updated_at"])
-        notify_group_membership_permission_changed(group.id, user.id, reason="membership_left")
         return membership
 
     @staticmethod
     @transaction.atomic
     def review(membership: GroupMembership, reviewer, status: str, request=None) -> GroupMembership:
-        membership = GroupMembership.objects.select_for_update().select_related("group", "user").get(pk=membership.pk, is_deleted=False)
-        old_status = membership.status
+        membership = GroupMembership.objects.select_for_update().select_related("group", "user").get(pk=membership.pk)
         if status == GroupMembershipStatus.APPROVED:
             membership.approve(reviewer)
-            title = "Group request approved"
-            body = f"Your request to join {membership.group.name} was approved."
+            title = "تم قبول طلب الانضمام"
+            body = f"تم قبول طلبك للانضمام إلى {membership.group.name}."
+            action = AuditAction.GROUP_MEMBERSHIP_APPROVED
         else:
             membership.status = status
             membership.reviewed_by = reviewer
             membership.reviewed_at = timezone.now()
             membership.save()
-            title = "Group membership updated"
-            body = f"Your membership request for {membership.group.name} was {status}."
+            title = "تم تحديث عضوية الغروب"
+            body = f"تم تحديث حالة عضويتك في {membership.group.name}."
+            action = (
+                AuditAction.GROUP_MEMBERSHIP_BLOCKED
+                if status == GroupMembershipStatus.BLOCKED
+                else AuditAction.GROUP_MEMBERSHIP_REJECTED
+            )
         NotificationService.create_notification(
             membership.user,
             title=title,
@@ -118,20 +112,74 @@ class GroupMembershipService:
             type=NotificationType.GROUP,
             data={"group_id": membership.group_id, "membership_id": membership.id, "status": status},
         )
-        action = {
-            GroupMembershipStatus.APPROVED: AuditAction.GROUP_MEMBERSHIP_APPROVED,
-            GroupMembershipStatus.REJECTED: AuditAction.GROUP_MEMBERSHIP_REJECTED,
-            GroupMembershipStatus.BLOCKED: AuditAction.GROUP_MEMBERSHIP_BLOCKED,
-        }.get(status)
-        if action:
-            AuditLogService.log(
-                actor=reviewer,
-                action=action,
-                target=membership,
-                old_value={"status": old_status},
-                new_value={"status": status},
-                request=request,
-            )
-        if status in {GroupMembershipStatus.REJECTED, GroupMembershipStatus.BLOCKED, GroupMembershipStatus.LEFT}:
-            notify_group_membership_permission_changed(membership.group_id, membership.user_id, reason=f"membership_{status}")
+        AuditLogService.log(
+            actor=reviewer,
+            action=action,
+            target=membership,
+            new_value={"status": status, "group_id": membership.group_id},
+            request=request,
+        )
         return membership
+
+
+class ExternalChannelService:
+    @staticmethod
+    def validate_whatsapp_url(value: str) -> str:
+        value = str(value or "").strip()
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or parsed.hostname not in WHATSAPP_HOSTS:
+            raise ValidationError({"url": "Only official HTTPS WhatsApp links are allowed."})
+        if len(value) > 2048:
+            raise ValidationError({"url": "The link is too long."})
+        return value
+
+    @classmethod
+    @transaction.atomic
+    def set_whatsapp_channel(cls, group: Group, url: str, actor, is_active: bool = True, label: str = ""):
+        url = cls.validate_whatsapp_url(url)
+        channel, _ = GroupExternalChannel.objects.select_for_update().get_or_create(
+            group=group,
+            channel_type=ExternalChannelType.WHATSAPP,
+            defaults={"encrypted_url": encrypt_text(url)},
+        )
+        channel.encrypted_url = encrypt_text(url)
+        channel.is_active = is_active
+        channel.label = label.strip()[:100]
+        channel.updated_by = actor
+        channel.is_deleted = False
+        channel.save()
+        return channel
+
+    @staticmethod
+    def user_can_open(user, channel: GroupExternalChannel) -> bool:
+        if PermissionService.has(user, Capability.GROUPS_EXTERNAL_CHANNELS_MANAGE):
+            return True
+        return user.group_memberships.filter(
+            group=channel.group,
+            status=GroupMembershipStatus.APPROVED,
+            is_deleted=False,
+        ).exists()
+
+    @classmethod
+    def issue_ticket(cls, group: Group, user) -> ExternalChannelAccessTicket:
+        channel = GroupExternalChannel.objects.filter(
+            group=group,
+            channel_type=ExternalChannelType.WHATSAPP,
+            is_active=True,
+            is_deleted=False,
+        ).first()
+        if not channel:
+            raise ValidationError("WhatsApp channel is not available for this group.")
+        if not cls.user_can_open(user, channel):
+            raise PermissionDenied("You are not allowed to access this external channel.")
+        return ExternalChannelAccessTicket.issue(channel, user)
+
+    @staticmethod
+    @transaction.atomic
+    def consume_ticket(ticket: ExternalChannelAccessTicket) -> str:
+        ticket = ExternalChannelAccessTicket.objects.select_for_update().select_related("channel__group").get(pk=ticket.pk)
+        if not ticket.is_valid:
+            raise ValidationError("The external channel link is invalid or expired.")
+        ticket.used_at = timezone.now()
+        ticket.save(update_fields=["used_at", "updated_at"])
+        return decrypt_text(ticket.channel.encrypted_url)

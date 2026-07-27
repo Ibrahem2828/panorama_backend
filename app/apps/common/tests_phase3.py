@@ -10,11 +10,15 @@ from apps.audit.models import AuditLog
 from apps.files.models import FileResource, FileVisibility
 from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 from apps.notifications.models import DeviceToken, Notification
-from apps.printing.models import PrintOrder, PrintOrderStatus, PrintOrderStatusHistory
+from apps.printing.models import PrintOrder, PrintOrderStatus, PrintOrderStatusHistory, PrintPricingRule
 from apps.support.models import SupportTicket, SupportTicketStatus
 from apps.universities.models import AcademicYear, Faculty, Major, Semester, University
 
-GIF_BYTES = b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+PNG_BYTES = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+    b"\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xf0\x1f\x00\x05\x00\x01\xff\x89\x99=\x1d"
+    b"\x00\x00\x00\x00IEND\xaeB`\x82"
+)
 
 
 @pytest.fixture
@@ -101,8 +105,33 @@ def auth(client, user):
     client.force_authenticate(user=user)
 
 
-def upload(name="file.pdf", content=b"%PDF-1.4"):
-    return SimpleUploadedFile(name, content, content_type="application/pdf")
+def upload(name="file.png", content=PNG_BYTES):
+    return SimpleUploadedFile(name, content, content_type="image/png")
+
+
+def configure_printing():
+    PrintPricingRule.objects.get_or_create(
+        name="Test A4 monochrome",
+        defaults={
+            "color_mode": "black_white",
+            "paper_size": "A4",
+            "sides": "one_sided",
+            "price_per_sheet": "100",
+            "setup_fee": "0",
+            "currency": "SYP",
+        },
+    )
+
+
+def print_item(source_file, copies=1):
+    return {
+        "source_file": source_file.id,
+        "copies": copies,
+        "color_mode": "black_white",
+        "paper_size": "A4",
+        "sides": "one_sided",
+        "binding": "none",
+    }
 
 
 def approve_student(user, academic):
@@ -173,14 +202,14 @@ def test_verification_rejects_mismatched_faculty_and_accepts_matching(api_client
     }
     mismatch = api_client.post(
         "/api/v1/verification/submit/",
-        {**base, "faculty": academic["other_faculty"].id, "card_image": SimpleUploadedFile("card.gif", GIF_BYTES, content_type="image/gif")},
+        {**base, "faculty": academic["other_faculty"].id, "card_image": SimpleUploadedFile("card.png", PNG_BYTES, content_type="image/png")},
         format="multipart",
     )
     assert mismatch.status_code == status.HTTP_400_BAD_REQUEST
 
     match = api_client.post(
         "/api/v1/verification/submit/",
-        {**base, "faculty": academic["faculty"].id, "card_image": SimpleUploadedFile("card2.gif", GIF_BYTES, content_type="image/gif")},
+        {**base, "faculty": academic["faculty"].id, "card_image": SimpleUploadedFile("card2.png", PNG_BYTES, content_type="image/png")},
         format="multipart",
     )
     assert match.status_code == status.HTTP_201_CREATED
@@ -196,26 +225,30 @@ def test_approved_student_cannot_change_student_number(api_client, student_user,
 
 @pytest.mark.django_db
 def test_print_order_uploaded_file_and_priority(api_client, normal_user, student_user, academic):
+    configure_printing()
+    normal_file = FileResource.objects.create(title="Normal printable", file=upload(), uploaded_by=normal_user, visibility=FileVisibility.PUBLIC, pages_count=1)
     auth(api_client, normal_user)
-    normal = api_client.post("/api/v1/printing/orders/", {"uploaded_file": upload(), "user_notes": "Please print"}, format="multipart")
-    assert normal.status_code == status.HTTP_201_CREATED
+    normal = api_client.post("/api/v1/printing/orders/", {"items": [print_item(normal_file)], "user_notes": "Please print"}, format="json")
+    assert normal.status_code == status.HTTP_201_CREATED, normal.data
     assert normal.data["data"]["priority"] == "normal"
 
     approve_student(student_user, academic)
+    student_file = FileResource.objects.create(title="Student printable", file=upload("student.png"), uploaded_by=student_user, visibility=FileVisibility.PUBLIC, pages_count=1)
     auth(api_client, student_user)
-    student = api_client.post("/api/v1/printing/orders/", {"uploaded_file": upload("s.pdf")}, format="multipart")
+    student = api_client.post("/api/v1/printing/orders/", {"items": [print_item(student_file)]}, format="json")
     assert student.status_code == status.HTTP_201_CREATED
     assert student.data["data"]["priority"] == "student_priority"
 
 
 @pytest.mark.django_db
 def test_print_order_source_file_access_and_owner_visibility(api_client, normal_user, other_user, admin_user):
-    public_file = FileResource.objects.create(title="Printable", file=upload(), uploaded_by=admin_user, visibility=FileVisibility.PUBLIC)
-    admin_file = FileResource.objects.create(title="Private", file=upload("private.pdf"), uploaded_by=admin_user, visibility=FileVisibility.ADMIN_ONLY)
+    configure_printing()
+    public_file = FileResource.objects.create(title="Printable", file=upload(), uploaded_by=admin_user, visibility=FileVisibility.PUBLIC, pages_count=1)
+    admin_file = FileResource.objects.create(title="Private", file=upload("private.png"), uploaded_by=admin_user, visibility=FileVisibility.ADMIN_ONLY, pages_count=1)
     auth(api_client, normal_user)
-    ok = api_client.post("/api/v1/printing/orders/", {"items": [{"source_file": public_file.id, "copies": 2}]}, format="json")
-    blocked = api_client.post("/api/v1/printing/orders/", {"items": [{"source_file": admin_file.id}]}, format="json")
-    assert ok.status_code == status.HTTP_201_CREATED
+    ok = api_client.post("/api/v1/printing/orders/", {"items": [print_item(public_file, copies=2)]}, format="json")
+    blocked = api_client.post("/api/v1/printing/orders/", {"items": [print_item(admin_file)]}, format="json")
+    assert ok.status_code == status.HTTP_201_CREATED, ok.data
     assert blocked.status_code == status.HTTP_400_BAD_REQUEST
 
     auth(api_client, other_user)
@@ -274,7 +307,7 @@ def test_support_ticket_user_and_admin_flows(api_client, normal_user, other_user
     auth(api_client, normal_user)
     created = api_client.post(
         "/api/v1/support/tickets/",
-        {"category": "technical", "subject": "Bug", "message": "It broke"},
+        {"category": "technical", "subject": "Bug report", "message": "The application stopped working."},
         format="json",
     )
     assert created.status_code == status.HTTP_201_CREATED
@@ -308,11 +341,12 @@ def test_audit_logs_protected_and_sanitized(api_client, normal_user, admin_user)
 @pytest.mark.django_db
 def test_device_token_register_duplicate_and_delete_scope(api_client, normal_user, other_user):
     auth(api_client, normal_user)
-    first = api_client.post("/api/v1/notifications/device-tokens/", {"token": "abc", "platform": "android"}, format="json")
-    second = api_client.post("/api/v1/notifications/device-tokens/", {"token": "abc", "platform": "ios"}, format="json")
+    token = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaa]"
+    first = api_client.post("/api/v1/notifications/device-tokens/", {"token": token, "platform": "android"}, format="json")
+    second = api_client.post("/api/v1/notifications/device-tokens/", {"token": token, "platform": "ios"}, format="json")
     assert first.status_code == status.HTTP_201_CREATED
     assert second.status_code == status.HTTP_201_CREATED
-    assert DeviceToken.objects.get(token="abc").platform == "ios"
+    assert DeviceToken.objects.get(token=token).platform == "ios"
 
     auth(api_client, other_user)
     delete = api_client.delete(f"/api/v1/notifications/device-tokens/{first.data['data']['id']}/")

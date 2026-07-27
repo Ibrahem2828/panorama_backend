@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Message, MessageReport
+from .models import Message, MessageAttachmentAccessTicket, MessageReport
 
 
 @admin.register(Message)
@@ -18,3 +18,5 @@ class MessageReportAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at")
     autocomplete_fields = ("message", "reported_by")
     readonly_fields = ("created_at", "updated_at")
+
+admin.site.register(MessageAttachmentAccessTicket)

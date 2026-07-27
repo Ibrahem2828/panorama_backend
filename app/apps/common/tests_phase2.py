@@ -14,7 +14,11 @@ from apps.universities.models import AcademicYear, Faculty, Major, Semester, Sub
 from apps.verification.models import VerificationRequest, VerificationStatus
 
 
-GIF_BYTES = b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00ccc,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+PNG_BYTES = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+    b"\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xf0\x1f\x00\x05\x00\x01\xff\x89\x99=\x1d"
+    b"\x00\x00\x00\x00IEND\xaeB`\x82"
+)
 
 
 @pytest.fixture
@@ -60,9 +64,9 @@ def student_user(db):
 @pytest.fixture
 def academic_structure(db):
     university = University.objects.create(name="Damascus University", code="DU")
-    faculty = Faculty.objects.create(university=university, name="Engineering", code="ENG")
+    faculty = Faculty.objects.create(university=university, name="Engineering", code="2")
     major = Major.objects.create(faculty=faculty, name="Software Engineering", code="SWE")
-    other_faculty = Faculty.objects.create(university=university, name="Science", code="SCI")
+    other_faculty = Faculty.objects.create(university=university, name="Science", code="3")
     other_major = Major.objects.create(faculty=other_faculty, name="Math", code="MATH")
     year = AcademicYear.objects.create(name="First Year", order=1)
     semester = Semester.objects.create(name="First Semester", order=1)
@@ -82,8 +86,8 @@ def authenticate(client, user):
     client.force_authenticate(user=user)
 
 
-def uploaded_image(name="card.gif"):
-    return SimpleUploadedFile(name, GIF_BYTES, content_type="image/gif")
+def uploaded_image(name="card.png"):
+    return SimpleUploadedFile(name, PNG_BYTES, content_type="image/png")
 
 
 def uploaded_file(name="lecture.pdf"):
@@ -97,7 +101,7 @@ def approve_student(user, academic):
     profile.major = academic["major"]
     profile.academic_year = academic["year"]
     profile.semester = academic["semester"]
-    profile.student_number = "20201234"
+    profile.student_number = "2150094"
     profile.verification_status = StudentVerificationStatus.APPROVED
     profile.verified_at = timezone.now()
     profile.save()
@@ -154,7 +158,7 @@ def test_student_can_update_profile_before_verification(api_client, student_user
             "major": academic_structure["major"].id,
             "academic_year": academic_structure["year"].id,
             "semester": academic_structure["semester"].id,
-            "student_number": "20201234",
+            "student_number": "2150094",
         },
         format="json",
     )
@@ -200,11 +204,11 @@ def test_verification_submit_duplicate_and_approval_flow(api_client, student_use
         "major": academic_structure["major"].id,
         "academic_year": academic_structure["year"].id,
         "semester": academic_structure["semester"].id,
-        "student_number": "20201234",
+        "student_number": "2150094",
         "card_image": uploaded_image(),
     }
     response = api_client.post("/api/v1/verification/submit/", payload, format="multipart")
-    duplicate = api_client.post("/api/v1/verification/submit/", {**payload, "card_image": uploaded_image("card2.gif")}, format="multipart")
+    duplicate = api_client.post("/api/v1/verification/submit/", {**payload, "card_image": uploaded_image("card2.png")}, format="multipart")
 
     assert response.status_code == status.HTTP_201_CREATED
     assert duplicate.status_code == status.HTTP_400_BAD_REQUEST
@@ -230,7 +234,7 @@ def test_verification_reject_creates_notification_and_non_admin_forbidden(api_cl
         major=academic_structure["major"],
         academic_year=academic_structure["year"],
         semester=academic_structure["semester"],
-        student_number="20201234",
+        student_number="2150094",
         card_image=uploaded_image(),
     )
     authenticate(api_client, normal_user)

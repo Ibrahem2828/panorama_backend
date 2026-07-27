@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+import uuid
+from datetime import timedelta
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -98,3 +104,70 @@ class GroupMembership(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.user_id} -> {self.group_id}: {self.status}"
+
+
+class ExternalChannelType(models.TextChoices):
+    WHATSAPP = "whatsapp", "WhatsApp"
+
+
+class GroupExternalChannel(BaseModel):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="external_channels")
+    channel_type = models.CharField(max_length=32, choices=ExternalChannelType.choices)
+    encrypted_url = models.TextField()
+    is_active = models.BooleanField(default=True)
+    label = models.CharField(max_length=100, blank=True)
+    updated_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        related_name="updated_group_external_channels",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["group", "channel_type"], name="unique_group_external_channel")
+        ]
+        indexes = [models.Index(fields=["group", "channel_type", "is_active"], name="groups_ext_channel_active_idx")]
+
+    def __str__(self) -> str:
+        return f"{self.group_id}:{self.channel_type}"
+
+
+class ExternalChannelAccessTicket(BaseModel):
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    channel = models.ForeignKey(
+        GroupExternalChannel,
+        on_delete=models.CASCADE,
+        related_name="access_tickets",
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="external_channel_tickets",
+    )
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["token", "expires_at"], name="groups_ext_ticket_token_idx")]
+
+    @property
+    def is_valid(self) -> bool:
+        return (
+            self.used_at is None
+            and self.expires_at > timezone.now()
+            and self.channel.is_active
+            and not self.channel.is_deleted
+            and self.channel.group.is_active
+            and not self.channel.group.is_deleted
+        )
+
+    @classmethod
+    def issue(cls, channel, user):
+        return cls.objects.create(
+            channel=channel,
+            user=user,
+            expires_at=timezone.now() + timedelta(seconds=settings.EXTERNAL_CHANNEL_TICKET_TTL_SECONDS),
+        )

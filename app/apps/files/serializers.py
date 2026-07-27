@@ -1,16 +1,20 @@
-from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field
+from __future__ import annotations
 
-from apps.common.upload_validation import validate_document_upload
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from apps.common.file_validation import validate_document_upload
 from apps.universities.models import validate_academic_hierarchy
 
+from .document_inspection import compute_sha256, detect_pages_count
 from .models import FileResource, FileVisibility
 
 
 class FileResourceSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(validators=[validate_document_upload])
     uploaded_by_name = serializers.CharField(source="uploaded_by.full_name", read_only=True)
-    secure_file_url = serializers.SerializerMethodField()
+    file = serializers.FileField(write_only=True)
+    preview_ticket_endpoint = serializers.SerializerMethodField()
+    download_allowed = serializers.SerializerMethodField()
 
     class Meta:
         model = FileResource
@@ -19,9 +23,12 @@ class FileResourceSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "file",
-            "secure_file_url",
             "file_type",
             "file_size",
+            "pages_count",
+            "sha256",
+            "preview_ticket_endpoint",
+            "download_allowed",
             "uploaded_by",
             "uploaded_by_name",
             "university",
@@ -37,19 +44,29 @@ class FileResourceSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "file_type", "file_size", "uploaded_by", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "file_type",
+            "file_size",
+            "pages_count",
+            "sha256",
+            "preview_ticket_endpoint",
+            "download_allowed",
+            "uploaded_by",
+            "created_at",
+            "updated_at",
+        ]
 
     @extend_schema_field(serializers.CharField())
-    def get_secure_file_url(self, obj):
-        request = self.context.get("request")
-        path = f"/api/v1/files/{obj.id}/view/"
-        return request.build_absolute_uri(path) if request else path
+    def get_preview_ticket_endpoint(self, obj):
+        return f"/api/v1/files/{obj.pk}/access-ticket/"
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if instance.visibility != FileVisibility.PUBLIC:
-            data["file"] = None
-        return data
+    @extend_schema_field(serializers.BooleanField())
+    def get_download_allowed(self, obj):
+        return False
+
+    def validate_file(self, value):
+        return validate_document_upload(value, "file")
 
     def validate(self, attrs):
         instance = self.instance
@@ -73,3 +90,16 @@ class FileResourceSerializer(serializers.ModelSerializer):
         if visibility == FileVisibility.MAJOR_ONLY and (not major or not academic_year):
             raise serializers.ValidationError({"major": "Major and academic year are required for major-only files."})
         return attrs
+
+    def create(self, validated_data):
+        uploaded = validated_data["file"]
+        validated_data["pages_count"] = detect_pages_count(uploaded, uploaded.name)
+        validated_data["sha256"] = compute_sha256(uploaded)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        uploaded = validated_data.get("file")
+        if uploaded:
+            validated_data["pages_count"] = detect_pages_count(uploaded, uploaded.name)
+            validated_data["sha256"] = compute_sha256(uploaded)
+        return super().update(instance, validated_data)

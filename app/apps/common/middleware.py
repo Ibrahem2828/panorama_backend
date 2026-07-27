@@ -3,33 +3,46 @@ from __future__ import annotations
 import re
 import uuid
 
-from apps.common.logging import reset_request_id, set_request_id
+from django.conf import settings
 
-REQUEST_ID_HEADER = "X-Request-ID"
-_REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
-
-
-def _clean_request_id(value: str | None) -> str | None:
-    if not value:
-        return None
-    candidate = value.strip()
-    if _REQUEST_ID_PATTERN.fullmatch(candidate):
-        return candidate
-    return None
+_REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
 class RequestIDMiddleware:
+    """Attach a safe correlation id to every request and response."""
+
+    header_name = "HTTP_X_REQUEST_ID"
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        request_id = _clean_request_id(request.headers.get(REQUEST_ID_HEADER)) or str(uuid.uuid4())
-        request.request_id = request_id
-        token = set_request_id(request_id)
-        try:
-            response = self.get_response(request)
-        finally:
-            reset_request_id(token)
+        candidate = request.META.get(self.header_name, "")
+        request.request_id = candidate if _REQUEST_ID_RE.match(candidate) else uuid.uuid4().hex
+        response = self.get_response(request)
+        response["X-Request-ID"] = request.request_id
+        return response
 
-        response[REQUEST_ID_HEADER] = request_id
+
+class APISecurityHeadersMiddleware:
+    """Apply conservative security/cache headers to API responses."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path.startswith("/api/"):
+            response.setdefault("X-Content-Type-Options", "nosniff")
+            response.setdefault("Referrer-Policy", "no-referrer")
+            response.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+            response.setdefault("Cross-Origin-Resource-Policy", "same-site")
+            if any(
+                part in request.path
+                for part in ("/auth/", "/verification/", "/protected-files/", "/protected-print-items/", "/verification-card-access/", "/support/attachments/", "/external-channels/")
+            ):
+                response.setdefault("Cache-Control", "no-store, max-age=0")
+                response.setdefault("Pragma", "no-cache")
+        if getattr(settings, "API_CONTENT_SECURITY_POLICY", ""):
+            response.setdefault("Content-Security-Policy", settings.API_CONTENT_SECURITY_POLICY)
         return response

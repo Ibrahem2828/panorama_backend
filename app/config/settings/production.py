@@ -1,31 +1,13 @@
+from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
-from .env import database_from_url, get_bool_env, get_csv_env, get_env, get_int_env, get_required_env
+from .env import database_from_url, get_bool_env, get_csv_env, get_env
 
-UNSAFE_SECRET_KEYS = {
-    "unsafe-development-secret-key",
-    "change-me",
-    "changeme",
-    "change_me",
-    "replace-me",
-    "replace-with-a-generated-django-secret-key",
-}
-
-
-def _require_env(name: str, *, message: str | None = None) -> str:
-    return get_required_env(name, message=message)
-
-
-SECRET_KEY = _require_env("SECRET_KEY", message="Production requires SECRET_KEY.")
-if SECRET_KEY.strip().lower() in UNSAFE_SECRET_KEYS:
-    raise ImproperlyConfigured("Production SECRET_KEY must be replaced with a generated secret.")
-
+SECRET_KEY = config("SECRET_KEY")
 DEBUG = get_bool_env("DEBUG", "DJANGO_DEBUG", default=False)
-if DEBUG:
-    raise ImproperlyConfigured("Production DEBUG must be False.")
-
 RETURN_DEVELOPMENT_OTP = False
+API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=False)
 ALLOWED_HOSTS = get_csv_env(
     "ALLOWED_HOSTS",
     "DJANGO_ALLOWED_HOSTS",
@@ -39,77 +21,67 @@ if "*" in ALLOWED_HOSTS:
     raise ImproperlyConfigured("Production ALLOWED_HOSTS must not contain '*'. Configure explicit hostnames.")
 
 database_url = get_env("DATABASE_URL")
-DATABASE_SSL_REQUIRE = get_bool_env("DATABASE_SSL_REQUIRE", default=False)
+DATABASE_SSL_REQUIRE = get_bool_env("DATABASE_SSL_REQUIRE", default=True)
 if database_url:
     DATABASES["default"] = database_from_url(database_url, ssl_require=DATABASE_SSL_REQUIRE)  # noqa: F405
-else:
-    for db_env_name in ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST", "DB_PORT"):
-        _require_env(db_env_name, message=f"Production requires DATABASE_URL or {db_env_name}.")
-
-REDIS_URL = _require_env("REDIS_URL", message="Production requires REDIS_URL for cache, throttling, Celery, and Channels.")
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-        "TIMEOUT": get_int_env("CACHE_DEFAULT_TIMEOUT", default=300),
-    }
-}
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [REDIS_URL]},
-    }
-}
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_REFERRER_POLICY = get_env("SECURE_REFERRER_POLICY", default="same-origin")
-X_FRAME_OPTIONS = get_env("X_FRAME_OPTIONS", default="DENY")
-# These flags are environment-driven because some managed platforms terminate
-# TLS before Django. Use True when the application directly sees HTTPS.
-SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=False)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
-SECURE_HSTS_PRELOAD = get_bool_env("SECURE_HSTS_PRELOAD", default=False)
-SECURE_HSTS_SECONDS = get_int_env("SECURE_HSTS_SECONDS", default=0)
-if get_bool_env("SECURE_PROXY_SSL_HEADER", "DJANGO_SECURE_PROXY_SSL_HEADER", default=True):
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-else:
-    SECURE_PROXY_SSL_HEADER = None
+SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=True)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
+SECURE_HSTS_PRELOAD = get_bool_env("SECURE_HSTS_PRELOAD", default=True)
+SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=31536000, cast=int)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = get_bool_env("USE_X_FORWARDED_HOST", "DJANGO_USE_X_FORWARDED_HOST", default=True)
-SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", "DJANGO_SESSION_COOKIE_SECURE", default=False)
-CSRF_COOKIE_SECURE = get_bool_env("CSRF_COOKIE_SECURE", "DJANGO_CSRF_COOKIE_SECURE", default=False)
-CSRF_TRUSTED_ORIGINS = get_csv_env(
-    "CSRF_TRUSTED_ORIGINS",
-    "DJANGO_CSRF_TRUSTED_ORIGINS",
-    required_message="Production requires CSRF_TRUSTED_ORIGINS or DJANGO_CSRF_TRUSTED_ORIGINS.",
-)
-CORS_ALLOWED_ORIGINS = get_csv_env(
-    "CORS_ALLOWED_ORIGINS",
-    "DJANGO_CORS_ALLOWED_ORIGINS",
-    required_message="Production requires CORS_ALLOWED_ORIGINS or DJANGO_CORS_ALLOWED_ORIGINS.",
-)
+SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", "DJANGO_SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = get_bool_env("CSRF_COOKIE_SECURE", "DJANGO_CSRF_COOKIE_SECURE", default=True)
+CSRF_TRUSTED_ORIGINS = get_csv_env("CSRF_TRUSTED_ORIGINS", "DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+CORS_ALLOWED_ORIGINS = get_csv_env("CORS_ALLOWED_ORIGINS", "DJANGO_CORS_ALLOWED_ORIGINS", default=[])
 
-LOG_LEVEL = get_env("LOG_LEVEL", default="INFO")
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "no-referrer"
+
+FIELD_ENCRYPTION_KEY = get_env("FIELD_ENCRYPTION_KEY", default=FIELD_ENCRYPTION_KEY)  # noqa: F405
+if not FIELD_ENCRYPTION_KEY:  # noqa: F405
+    raise ImproperlyConfigured("Production requires FIELD_ENCRYPTION_KEY for encrypted secrets.")
+EMAIL_HOST_PASSWORD = get_env("EMAIL_HOST_PASSWORD", default=EMAIL_HOST_PASSWORD)  # noqa: F405
+if EMAIL_BACKEND.endswith("smtp.EmailBackend") and not EMAIL_HOST_PASSWORD:  # noqa: F405
+    raise ImproperlyConfigured("Production SMTP email delivery requires EMAIL_HOST_PASSWORD.")
+
+USE_S3_STORAGE = get_bool_env("USE_S3_STORAGE", default=False)
+if USE_S3_STORAGE:
+    INSTALLED_APPS += ["storages"]  # noqa: F405
+    AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_ENDPOINT_URL = config("AWS_S3_ENDPOINT_URL", default="") or None
+    AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="auto")
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = config("AWS_QUERYSTRING_EXPIRE", default=120, cast=int)
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    STORAGES = {
+        "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }
+
+LOG_LEVEL = config("LOG_LEVEL", default="INFO")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {
-        "request_id": {
-            "()": "apps.common.logging.RequestIDLogFilter",
-        },
-    },
     "formatters": {
         "console": {
-            "format": "%(asctime)s %(levelname)s %(name)s request_id=%(request_id)s %(message)s",
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "console",
-            "filters": ["request_id"],
         },
     },
     "root": {

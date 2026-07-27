@@ -44,14 +44,9 @@ def test_normal_user_registration(api_client, normal_payload):
 
     assert response.status_code == status.HTTP_201_CREATED
     assert response.data["success"] is True
-    assert response.data["data"]["requires_otp"] is True
-    assert response.data["data"]["next_step"] == "verify_phone"
-    assert response.data["data"]["requires_phone_verification"] is True
-    assert response.data["data"]["phone_verified"] is False
-    assert response.data["data"]["expires_in_seconds"] == 600
     user = User.objects.get(email=normal_payload["email"])
     assert user.role == UserRole.NORMAL_USER
-    assert OTPCode.objects.filter(user=user, purpose=OTPPurpose.VERIFY_PHONE).exists()
+    assert OTPCode.objects.filter(user=user, purpose=OTPPurpose.VERIFY_EMAIL).exists()
 
 
 @pytest.mark.django_db
@@ -92,6 +87,8 @@ def test_duplicate_phone_rejection(api_client, normal_payload, normal_user):
 
 @pytest.mark.django_db
 def test_login_with_email(api_client, normal_user):
+    normal_user.is_email_verified = True
+    normal_user.save(update_fields=["is_email_verified", "updated_at"])
     response = api_client.post(
         reverse("login"),
         {"identifier": normal_user.email, "password": "StrongPass123!"},
@@ -105,6 +102,8 @@ def test_login_with_email(api_client, normal_user):
 
 @pytest.mark.django_db
 def test_login_with_phone(api_client, normal_user):
+    normal_user.is_email_verified = True
+    normal_user.save(update_fields=["is_email_verified", "updated_at"])
     response = api_client.post(
         reverse("login"),
         {"identifier": normal_user.phone_number, "password": "StrongPass123!"},
@@ -158,7 +157,7 @@ def test_change_password(api_client, normal_user):
 def test_otp_send(api_client, normal_user):
     response = api_client.post(
         reverse("otp-send"),
-        {"phone_number": normal_user.phone_number, "purpose": OTPPurpose.VERIFY_PHONE},
+        {"email": normal_user.email, "purpose": OTPPurpose.VERIFY_EMAIL},
         format="json",
     )
 
@@ -170,29 +169,27 @@ def test_otp_send(api_client, normal_user):
 def test_otp_verify(api_client, normal_user):
     response = api_client.post(
         reverse("otp-send"),
-        {"phone_number": normal_user.phone_number, "purpose": OTPPurpose.VERIFY_PHONE},
+        {"email": normal_user.email, "purpose": OTPPurpose.VERIFY_EMAIL},
         format="json",
     )
     code = response.data["data"]["development_otp"]
 
     response = api_client.post(
         reverse("otp-verify"),
-        {"phone_number": normal_user.phone_number, "purpose": OTPPurpose.VERIFY_PHONE, "code": code},
+        {"email": normal_user.email, "purpose": OTPPurpose.VERIFY_EMAIL, "code": code},
         format="json",
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.data["data"]["phone_verified"] is True
-    assert response.data["data"]["requires_phone_verification"] is False
     normal_user.refresh_from_db()
-    assert normal_user.is_phone_verified is True
+    assert normal_user.is_email_verified is True
 
 
 @pytest.mark.django_db
 def test_password_reset_flow(api_client, normal_user):
     response = api_client.post(
         reverse("request-password-reset"),
-        {"phone_number": normal_user.phone_number},
+        {"email": normal_user.email},
         format="json",
     )
     code = response.data["data"]["development_otp"]
@@ -200,7 +197,7 @@ def test_password_reset_flow(api_client, normal_user):
     response = api_client.post(
         reverse("confirm-password-reset"),
         {
-            "phone_number": normal_user.phone_number,
+            "email": normal_user.email,
             "code": code,
             "new_password": "ResetStrongPass123!",
             "new_password_confirm": "ResetStrongPass123!",

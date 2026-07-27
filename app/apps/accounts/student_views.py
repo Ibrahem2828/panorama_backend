@@ -5,8 +5,6 @@ from rest_framework.views import APIView
 from apps.accounts.choices import UserRole
 from apps.accounts.serializers import StudentAcademicProfileSerializer
 from apps.accounts.student_number import StudentNumberParser
-from apps.audit.models import AuditAction
-from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 
 
@@ -27,28 +25,9 @@ class CurrentStudentProfileView(APIView):
     @extend_schema(tags=["Students"], request=StudentAcademicProfileSerializer, responses={200: StudentAcademicProfileSerializer})
     def patch(self, request):
         profile = self._get_profile(request)
-        tracked_fields = [
-            "university_id",
-            "faculty_id",
-            "major_id",
-            "academic_year_id",
-            "semester_id",
-            "student_number",
-        ]
-        old_value = {field: getattr(profile, field) for field in tracked_fields}
         serializer = StudentAcademicProfileSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        profile = serializer.save()
-        new_value = {field: getattr(profile, field) for field in tracked_fields}
-        if old_value != new_value:
-            AuditLogService.log(
-                actor=request.user,
-                action=AuditAction.STUDENT_PROFILE_UPDATED,
-                target=profile,
-                old_value=old_value,
-                new_value=new_value,
-                request=request,
-            )
+        serializer.save()
         return success_response(data=serializer.data, message="Student profile updated successfully")
 
 

@@ -2,12 +2,11 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    DashboardFilePreviewTokenView,
     DashboardFileResourceViewSet,
-    FileDownloadTokenView,
-    FileResourceProtectedView,
+    FileAccessTicketView,
     FileResourceViewSet,
     GroupFileResourceViewSet,
+    ProtectedFileStreamView,
 )
 
 router = DefaultRouter()
@@ -16,8 +15,7 @@ router.register("dashboard/files", DashboardFileResourceViewSet, basename="dashb
 
 urlpatterns = [
     *router.urls,
-    path("files/<int:pk>/download-token/", FileDownloadTokenView.as_view(), name="file-download-token"),
-    path("dashboard/files/<int:pk>/preview-token/", DashboardFilePreviewTokenView.as_view(), name="dashboard-file-preview-token"),
-    path("files/<int:pk>/view/", FileResourceProtectedView.as_view(), name="file-protected-view"),
     path("groups/<int:group_pk>/files/", GroupFileResourceViewSet.as_view({"get": "list"}), name="group-files"),
+    path("files/<int:pk>/access-ticket/", FileAccessTicketView.as_view(), name="file-access-ticket"),
+    path("protected-files/<uuid:token>/", ProtectedFileStreamView.as_view(), name="protected-file-stream"),
 ]

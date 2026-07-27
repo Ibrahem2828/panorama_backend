@@ -3,7 +3,7 @@ from pathlib import Path
 
 from decouple import config
 
-from .env import get_bool_env, get_csv_env, get_env
+from .env import get_bool_env, get_csv_env
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
@@ -29,6 +29,7 @@ LOCAL_APPS = [
     "apps.chat",
     "apps.support",
     "apps.audit",
+    "apps.feedback",
 ]
 
 THIRD_PARTY_APPS = [
@@ -63,6 +64,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.common.middleware.APISecurityHeadersMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -106,7 +108,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ar"
 TIME_ZONE = "Asia/Damascus"
 USE_I18N = True
 USE_TZ = True
@@ -137,36 +139,21 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPageNumberPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
-    "DEFAULT_THROTTLE_CLASSES": (
-        "apps.common.throttles.IdentifierScopedRateThrottle",
-    ),
     "DEFAULT_THROTTLE_RATES": {
-        "login": get_env("THROTTLE_LOGIN", "THROTTLE_AUTH_LOGIN", default="5/minute"),
-        "register": get_env("THROTTLE_REGISTER", default="5/hour"),
-        "normal_register": get_env("THROTTLE_NORMAL_REGISTER", default="7/20min"),
-        "otp_send": get_env("THROTTLE_OTP_SEND", default="3/10min"),
-        "otp_verify": get_env("THROTTLE_OTP_VERIFY", default="7/20min"),
-        "password_reset": get_env("THROTTLE_PASSWORD_RESET", default="3/15min"),
-        "verification_submit": get_env("THROTTLE_VERIFICATION_SUBMIT", default="3/hour"),
-        "chat_message": get_env("THROTTLE_CHAT_MESSAGE", default="30/minute"),
-        "support_ticket_create": get_env("THROTTLE_SUPPORT_TICKET_CREATE", default="5/hour"),
-        "print_order_create": get_env("THROTTLE_PRINT_ORDER_CREATE", "THROTTLE_PRINT_ORDER", default="10/hour"),
-        "change_password": config("THROTTLE_CHANGE_PASSWORD", default="5/minute"),
-        "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="20/minute"),
-        "student_account_request": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST", default="7/20min"),
-        "student_account_request_status": get_env("THROTTLE_STUDENT_ACCOUNT_REQUEST_STATUS", default="30/minute"),
-        "student_account_request_otp_verify": get_env(
-            "THROTTLE_STUDENT_ACCOUNT_REQUEST_OTP_VERIFY",
-            default="7/20min",
-        ),
+        "auth_login": config("THROTTLE_AUTH_LOGIN", default="8/min"),
+        "auth_register": config("THROTTLE_AUTH_REGISTER", default="4/hour"),
+        "otp_request": config("THROTTLE_OTP_REQUEST", default="3/10min"),
+        "otp_verify": config("THROTTLE_OTP_VERIFY", default="8/10min"),
+        "password_reset": config("THROTTLE_PASSWORD_RESET", default="4/hour"),
+        "feedback_submit": config("THROTTLE_FEEDBACK", default="20/day"),
+        "file_ticket": config("THROTTLE_FILE_TICKET", default="60/hour"),
+        "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),
+        "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/min"),
+        "chat_report": config("THROTTLE_CHAT_REPORT", default="10/day"),
+        "support_ticket": config("THROTTLE_SUPPORT_TICKET", default="5/hour"),
+        "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
     },
 }
-
-STUDENT_ACCOUNT_OTP_RESEND_COOLDOWN_SECONDS = config(
-    "STUDENT_ACCOUNT_OTP_RESEND_COOLDOWN_SECONDS",
-    default=60,
-    cast=int,
-)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
@@ -184,7 +171,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Panorama API",
     "DESCRIPTION": "Backend API for the Panorama student services platform.",
-    "VERSION": "1.0.0",
+    "VERSION": "2.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{"bearerAuth": []}],
@@ -193,6 +180,8 @@ SPECTACULAR_SETTINGS = {
             ("it_support", "IT Support"),
             ("admin", "Admin"),
             ("print_staff", "Print Staff"),
+            ("support_staff", "Support Staff"),
+            ("content_manager", "Content Manager"),
             ("student", "Student"),
             ("normal_user", "Normal User"),
         ],
@@ -255,47 +244,84 @@ SPECTACULAR_SETTINGS = {
             ("high", "High"),
             ("urgent", "Urgent"),
         ],
+        "FeedbackStatusEnum": [
+            ("new", "New"),
+            ("reviewing", "Reviewing"),
+            ("planned", "Planned"),
+            ("in_progress", "In Progress"),
+            ("resolved", "Resolved"),
+            ("rejected", "Rejected"),
+            ("duplicate", "Duplicate"),
+        ],
+        "FeedbackPriorityEnum": [
+            ("low", "Low"),
+            ("normal", "Normal"),
+            ("high", "High"),
+            ("critical", "Critical"),
+        ],
+        "MessageReportStatusEnum": [
+            ("open", "Open"),
+            ("reviewed", "Reviewed"),
+        ],
+        "OtpChannelEnum": [
+            ("email", "Email"),
+            ("phone", "Phone"),
+        ],
     },
 }
 
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = config("CELERY_TASK_TIME_LIMIT", default=300, cast=int)
-OTP_CLEANUP_RETENTION_DAYS = config("OTP_CLEANUP_RETENTION_DAYS", default=1, cast=int)
-CELERY_BEAT_SCHEDULE = {
-    "cleanup-expired-otp-daily": {
-        "task": "apps.common.tasks.cleanup_expired_otp",
-        "schedule": config("OTP_CLEANUP_INTERVAL_SECONDS", default=86400, cast=int),
-        "kwargs": {"retention_days": OTP_CLEANUP_RETENTION_DAYS},
-    },
-}
-FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
-
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "panorama-local-cache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+        "TIMEOUT": 300,
+        "KEY_PREFIX": config("CACHE_KEY_PREFIX", default="panorama"),
     }
 }
 
-MAX_OTP_VERIFY_ATTEMPTS = config("MAX_OTP_VERIFY_ATTEMPTS", default=5, cast=int)
-MAX_CHAT_MESSAGE_LENGTH = config("MAX_CHAT_MESSAGE_LENGTH", default=4000, cast=int)
-PROTECTED_MEDIA_TOKEN_TTL_SECONDS = config("PROTECTED_MEDIA_TOKEN_TTL_SECONDS", default=300, cast=int)
-GROUP_CHAT_WS_TOKEN_TTL_SECONDS = config("GROUP_CHAT_WS_TOKEN_TTL_SECONDS", default=120, cast=int)
-ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH = get_bool_env("ALLOW_WEBSOCKET_ACCESS_TOKEN_AUTH", default=False)
-MAX_IMAGE_UPLOAD_SIZE_MB = config("MAX_IMAGE_UPLOAD_SIZE_MB", default=5, cast=int)
-MAX_DOCUMENT_UPLOAD_SIZE_MB = config("MAX_DOCUMENT_UPLOAD_SIZE_MB", default=25, cast=int)
-ALLOWED_IMAGE_EXTENSIONS = get_csv_env(
-    "ALLOWED_IMAGE_EXTENSIONS",
-    default=["jpg", "jpeg", "png", "gif", "webp"],
-)
-ALLOWED_DOCUMENT_EXTENSIONS = get_csv_env(
-    "ALLOWED_DOCUMENT_EXTENSIONS",
-    default=["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "jpg", "jpeg", "png"],
-)
+SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="panoramacompany31@gmail.com")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=SUPPORT_EMAIL)
+SERVER_EMAIL = config("SERVER_EMAIL", default=SUPPORT_EMAIL)
+EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = get_bool_env("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = get_bool_env("EMAIL_USE_SSL", default=False)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=SUPPORT_EMAIL)
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)
+
+OTP_DEFAULT_CHANNEL = config("OTP_DEFAULT_CHANNEL", default="email")
+OTP_EXPIRY_MINUTES = config("OTP_EXPIRY_MINUTES", default=10, cast=int)
+OTP_RESEND_COOLDOWN_SECONDS = config("OTP_RESEND_COOLDOWN_SECONDS", default=60, cast=int)
+OTP_MAX_ATTEMPTS = config("OTP_MAX_ATTEMPTS", default=5, cast=int)
+OTP_EMAIL_SUBJECT = config("OTP_EMAIL_SUBJECT", default="رمز التحقق الخاص بتطبيق بانوراما")
+SMS_OTP_PROVIDER_ENABLED = get_bool_env("SMS_OTP_PROVIDER_ENABLED", default=False)
+
+FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
+APP_BASE_URL = config("APP_BASE_URL", default="http://localhost:8000").rstrip("/")
+FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
+FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
+EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
+VERIFICATION_CARD_RETENTION_DAYS = config("VERIFICATION_CARD_RETENTION_DAYS", default=90, cast=int)
+OTP_RETENTION_DAYS = config("OTP_RETENTION_DAYS", default=7, cast=int)
+ACCESS_TICKET_RETENTION_HOURS = config("ACCESS_TICKET_RETENTION_HOURS", default=24, cast=int)
+FEEDBACK_PROMPT_EVENT_RETENTION_DAYS = config("FEEDBACK_PROMPT_EVENT_RETENTION_DAYS", default=365, cast=int)
+AUDIT_LOG_RETENTION_DAYS = config("AUDIT_LOG_RETENTION_DAYS", default=730, cast=int)
+MAX_DOCUMENT_UPLOAD_SIZE = config("MAX_DOCUMENT_UPLOAD_SIZE", default=25 * 1024 * 1024, cast=int)
+MAX_IMAGE_UPLOAD_SIZE = config("MAX_IMAGE_UPLOAD_SIZE", default=8 * 1024 * 1024, cast=int)
+DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=30 * 1024 * 1024, cast=int)
+FILE_UPLOAD_MAX_MEMORY_SIZE = config("FILE_UPLOAD_MAX_MEMORY_SIZE", default=5 * 1024 * 1024, cast=int)
+API_CONTENT_SECURITY_POLICY = config("API_CONTENT_SECURITY_POLICY", default="default-src 'none'; frame-ancestors 'none'")
+
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL)
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=REDIS_URL)
+CELERY_TASK_TIME_LIMIT = config("CELERY_TASK_TIME_LIMIT", default=60, cast=int)
+CELERY_TASK_SOFT_TIME_LIMIT = config("CELERY_TASK_SOFT_TIME_LIMIT", default=45, cast=int)
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
 
 CHANNEL_LAYERS = {
     "default": {
@@ -304,4 +330,14 @@ CHANNEL_LAYERS = {
     }
 }
 
-RETURN_DEVELOPMENT_OTP = DEBUG
+RETURN_DEVELOPMENT_OTP = DEBUG and get_bool_env("RETURN_DEVELOPMENT_OTP", default=False)
+API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=DEBUG)
+TRUSTED_PROXY_COUNT = config("TRUSTED_PROXY_COUNT", default=1, cast=int)
+
+
+PUSH_NOTIFICATIONS_ENABLED = get_bool_env("PUSH_NOTIFICATIONS_ENABLED", default=False)
+EXPO_PUSH_ENDPOINT = config("EXPO_PUSH_ENDPOINT", default="https://exp.host/--/api/v2/push/send")
+EXPO_ACCESS_TOKEN = config("EXPO_ACCESS_TOKEN", default="")
+EXPO_PUSH_ALLOWED_HOSTS = frozenset(
+    host.strip().lower() for host in config("EXPO_PUSH_ALLOWED_HOSTS", default="exp.host,api.expo.dev").split(",") if host.strip()
+)

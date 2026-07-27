@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Group, GroupMembership
+from .models import ExternalChannelAccessTicket, Group, GroupExternalChannel, GroupMembership
+
+
+class ExternalChannelInline(admin.TabularInline):
+    model = GroupExternalChannel
+    extra = 0
+    readonly_fields = ("encrypted_url", "updated_by", "created_at", "updated_at")
 
 
 @admin.register(Group)
@@ -10,6 +16,7 @@ class GroupAdmin(admin.ModelAdmin):
     search_fields = ("name", "description")
     autocomplete_fields = ("university", "faculty", "major", "academic_year", "semester", "subject", "created_by")
     readonly_fields = ("created_at", "updated_at")
+    inlines = [ExternalChannelInline]
 
 
 @admin.register(GroupMembership)
@@ -19,3 +26,9 @@ class GroupMembershipAdmin(admin.ModelAdmin):
     search_fields = ("group__name", "user__full_name", "user__email")
     autocomplete_fields = ("group", "user", "reviewed_by")
     readonly_fields = ("created_at", "updated_at", "reviewed_at", "joined_at")
+
+
+@admin.register(ExternalChannelAccessTicket)
+class ExternalChannelAccessTicketAdmin(admin.ModelAdmin):
+    list_display = ("id", "channel", "user", "expires_at", "used_at", "created_at")
+    readonly_fields = ("token", "channel", "user", "expires_at", "used_at", "created_at", "updated_at")

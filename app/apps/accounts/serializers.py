@@ -4,9 +4,6 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.audit.models import AuditAction
-from apps.audit.services import AuditLogService
-from apps.common.upload_validation import validate_image_upload
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
     AcademicYearSerializer,
@@ -16,21 +13,15 @@ from apps.universities.serializers import (
     UniversitySerializer,
 )
 
-from .choices import OTPPurpose, StudentVerificationStatus, UserRole
-from .otp_contract import requires_phone_verification_for_user
+from .choices import OTPDeliveryChannel, OTPPurpose, StudentVerificationStatus, UserRole
 from .models import StudentProfile, User
-from .phone_numbers import normalize_phone_number, normalize_phone_number_or_none
 from .services import OTPService
 from .student_number import StudentNumberParser, apply_student_number_parse
 from .student_number import FACULTY_CODE_LABELS
 
 
-def validate_phone_number_format(value: str) -> str:
-    return normalize_phone_number(value)
-
-
 class StudentProfileSerializer(serializers.ModelSerializer):
-    card_image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_upload])
+    has_card_image = serializers.SerializerMethodField()
     university_detail = UniversitySerializer(source="university", read_only=True)
     faculty_detail = FacultySerializer(source="faculty", read_only=True)
     major_detail = MajorSerializer(source="major", read_only=True)
@@ -56,7 +47,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "enrollment_year_code",
             "enrollment_year_full",
             "student_serial_number",
-            "card_image",
+            "has_card_image",
             "verification_status",
             "verified_at",
             "created_at",
@@ -74,10 +65,9 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["card_image"] = None
-        return data
+
+    def get_has_card_image(self, obj) -> bool:
+        return bool(obj.card_image)
 
 
 class StudentAcademicProfileSerializer(StudentProfileSerializer):
@@ -97,7 +87,6 @@ class StudentAcademicProfileSerializer(StudentProfileSerializer):
                 "academic_year",
                 "semester",
                 "student_number",
-                "card_image",
             }
             if blocked_fields.intersection(attrs):
                 raise serializers.ValidationError(
@@ -140,8 +129,6 @@ class StudentAcademicProfileSerializer(StudentProfileSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     student_verification_status = serializers.SerializerMethodField()
-    phone_verified = serializers.SerializerMethodField()
-    requires_phone_verification = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -153,8 +140,6 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "role",
             "is_phone_verified",
-            "phone_verified",
-            "requires_phone_verification",
             "is_email_verified",
             "student_verification_status",
             "date_joined",
@@ -165,18 +150,10 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "role",
             "is_phone_verified",
-            "phone_verified",
-            "requires_phone_verification",
             "is_email_verified",
             "student_verification_status",
             "date_joined",
         ]
-
-    def get_phone_verified(self, obj: User) -> bool:
-        return obj.is_phone_verified
-
-    def get_requires_phone_verification(self, obj: User) -> bool:
-        return requires_phone_verification_for_user(obj)
 
     def get_student_verification_status(self, obj: User) -> str | None:
         profile = getattr(obj, "student_profile", None)
@@ -188,26 +165,31 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
+
 class BaseRegisterSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField()
-    phone_number = serializers.CharField(max_length=32)
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
+    otp_channel = serializers.ChoiceField(
+        choices=OTPDeliveryChannel.choices,
+        required=False,
+        default=OTPDeliveryChannel.EMAIL,
+        write_only=True,
+    )
 
     class Meta:
         model = User
-        fields = ["full_name", "email", "phone_number", "password", "password_confirm"]
+        fields = ["full_name", "email", "phone_number", "password", "password_confirm", "otp_channel"]
 
     def validate_email(self, value: str) -> str:
-        email = value.lower().strip()
+        email = value.strip().lower()
         if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError("البريد الإلكتروني مستخدم مسبقاً.", code="duplicate_email")
+            raise serializers.ValidationError("A user with this email already exists.")
         return email
 
     def validate_phone_number(self, value: str) -> str:
-        phone_number = validate_phone_number_format(value)
+        phone_number = value.strip()
         if User.objects.filter(phone_number=phone_number).exists():
-            raise serializers.ValidationError("رقم الجوال مستخدم مسبقاً.", code="duplicate_phone")
+            raise serializers.ValidationError("A user with this phone number already exists.")
         return phone_number
 
     def validate(self, attrs):
@@ -215,26 +197,32 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password_confirm": "Passwords do not match."})
         return attrs
 
-    def _create_user(self, validated_data, role: str) -> User:
+    def _create_user(self, validated_data, role: str) -> tuple[User, str]:
         validated_data.pop("password_confirm")
+        channel = validated_data.pop("otp_channel", OTPDeliveryChannel.EMAIL)
         password = validated_data.pop("password")
-        return User.objects.create_user(password=password, role=role, **validated_data)
+        user = User.objects.create_user(password=password, role=role, **validated_data)
+        return user, channel
+
+    def _send_identity_otp(self, user: User, channel: str):
+        identifier = user.email if channel == OTPDeliveryChannel.EMAIL else user.phone_number
+        purpose = OTPPurpose.VERIFY_EMAIL if channel == OTPDeliveryChannel.EMAIL else OTPPurpose.VERIFY_PHONE
+        return OTPService.send_otp(identifier, purpose, user=user, channel=channel)
 
 
 class NormalUserRegisterSerializer(BaseRegisterSerializer):
     @transaction.atomic
     def create(self, validated_data):
-        user = self._create_user(validated_data, UserRole.NORMAL_USER)
-        otp, raw_code = OTPService.send_otp(user.phone_number, OTPPurpose.VERIFY_PHONE, user=user)
-        return user, raw_code
+        user, channel = self._create_user(validated_data, UserRole.NORMAL_USER)
+        otp, raw_code = self._send_identity_otp(user, channel)
+        return user, raw_code, channel
 
 
 class StudentRegisterSerializer(BaseRegisterSerializer):
     student_number = serializers.CharField(required=False, allow_blank=True, max_length=64)
-    card_image = serializers.ImageField(required=False, allow_null=True, validators=[validate_image_upload])
 
     class Meta(BaseRegisterSerializer.Meta):
-        fields = BaseRegisterSerializer.Meta.fields + ["student_number", "card_image"]
+        fields = BaseRegisterSerializer.Meta.fields + ["student_number"]
 
     def validate_student_number(self, value: str) -> str:
         value = value.strip()
@@ -245,26 +233,24 @@ class StudentRegisterSerializer(BaseRegisterSerializer):
                 raise serializers.ValidationError(getattr(exc, "message", str(exc))) from exc
         return value
 
+
     @transaction.atomic
     def create(self, validated_data):
         student_number = validated_data.pop("student_number", "")
-        card_image = validated_data.pop("card_image", None)
-        user = self._create_user(validated_data, UserRole.STUDENT)
-        verification_status = (
-            StudentVerificationStatus.PENDING if card_image else StudentVerificationStatus.INCOMPLETE
-        )
+        user, channel = self._create_user(validated_data, UserRole.STUDENT)
+        # Registration never creates a pending verification state. Only an actual
+        # VerificationRequest may move the profile to PENDING.
         StudentProfile.objects.create(
             user=user,
             student_number=student_number,
-            card_image=card_image,
-            verification_status=verification_status,
+            verification_status=StudentVerificationStatus.INCOMPLETE,
         )
         if student_number:
             profile = user.student_profile
             apply_student_number_parse(profile, student_number, auto_link_faculty=True)
             profile.save()
-        otp, raw_code = OTPService.send_otp(user.phone_number, OTPPurpose.VERIFY_PHONE, user=user)
-        return user, raw_code
+        otp, raw_code = self._send_identity_otp(user, channel)
+        return user, raw_code, channel
 
 
 class LoginSerializer(serializers.Serializer):
@@ -274,13 +260,13 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, attrs):
         identifier = attrs["identifier"].strip()
         password = attrs["password"]
-        normalized_identifier = normalize_phone_number_or_none(identifier) or identifier
 
-        user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=normalized_identifier)).first()
-        if user is None or not user.check_password(password):
+        user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=identifier)).first()
+        # Use one generic failure response to prevent account enumeration.
+        if user is None or not user.check_password(password) or not user.is_active:
             raise serializers.ValidationError({"identifier": "Invalid credentials."})
-        if not user.is_active:
-            raise serializers.ValidationError({"identifier": "This account is inactive."})
+        if not (user.is_email_verified or user.is_phone_verified):
+            raise serializers.ValidationError({"identifier": "Account verification is required before login."})
 
         refresh = RefreshToken.for_user(user)
         attrs["user"] = user
@@ -306,10 +292,15 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
     def save(self, **kwargs):
+        from django.utils import timezone
+        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+
         user = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
-        user.save(update_fields=["password", "updated_at"])
-        AuditLogService.log(actor=user, action=AuditAction.PASSWORD_CHANGED, target=user)
+        user.last_password_change_at = timezone.now()
+        user.save(update_fields=["password", "last_password_change_at", "updated_at"])
+        for token in OutstandingToken.objects.filter(user=user):
+            BlacklistedToken.objects.get_or_create(token=token)
         return user
 
 
@@ -317,80 +308,123 @@ class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
 
-class SendOTPSerializer(serializers.Serializer):
-    phone_number = serializers.CharField()
-    purpose = serializers.ChoiceField(choices=OTPPurpose.choices)
+class OTPInputSerializer(serializers.Serializer):
+    identifier = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+    phone_number = serializers.CharField(required=False)
+    channel = serializers.ChoiceField(choices=OTPDeliveryChannel.choices, required=False)
 
-    def validate_phone_number(self, value: str) -> str:
-        return validate_phone_number_format(value)
+    def validate(self, attrs):
+        channel = attrs.get("channel")
+        identifier = attrs.get("identifier") or attrs.get("email") or attrs.get("phone_number")
+        if not identifier:
+            raise serializers.ValidationError({"identifier": "Email or phone number is required."})
+        if not channel:
+            channel = OTPDeliveryChannel.EMAIL if "@" in str(identifier) else OTPDeliveryChannel.PHONE
+        if channel == OTPDeliveryChannel.EMAIL:
+            identifier = serializers.EmailField().run_validation(identifier).lower()
+        else:
+            identifier = str(identifier).strip()
+        attrs["identifier"] = identifier
+        attrs["channel"] = channel
+        return attrs
+
+
+class SendOTPSerializer(OTPInputSerializer):
+    purpose = serializers.ChoiceField(
+        choices=[OTPPurpose.VERIFY_EMAIL, OTPPurpose.VERIFY_PHONE],
+    )
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        expected = OTPPurpose.VERIFY_EMAIL if attrs["channel"] == OTPDeliveryChannel.EMAIL else OTPPurpose.VERIFY_PHONE
+        if attrs.get("purpose") != expected:
+            raise serializers.ValidationError({"purpose": "Purpose does not match the selected delivery channel."})
+        return attrs
 
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"]
-        user = User.objects.filter(phone_number=phone_number).first()
-        return OTPService.send_otp(phone_number, self.validated_data["purpose"], user=user)
+        identifier = self.validated_data["identifier"]
+        channel = self.validated_data["channel"]
+        user = (
+            User.objects.filter(email__iexact=identifier).first()
+            if channel == OTPDeliveryChannel.EMAIL
+            else User.objects.filter(phone_number=identifier).first()
+        )
+        # Generic no-op prevents this public endpoint from becoming an arbitrary email/SMS relay.
+        if user is None or not user.is_active:
+            return None, None
+        already_verified = user.is_email_verified if channel == OTPDeliveryChannel.EMAIL else user.is_phone_verified
+        if already_verified:
+            return None, None
+        return OTPService.send_otp(identifier, self.validated_data["purpose"], user=user, channel=channel)
 
 
-class VerifyOTPSerializer(serializers.Serializer):
-    phone_number = serializers.CharField()
+class VerifyOTPSerializer(OTPInputSerializer):
     code = serializers.CharField(max_length=6, min_length=6)
     purpose = serializers.ChoiceField(choices=OTPPurpose.choices)
 
-    def validate_phone_number(self, value: str) -> str:
-        return validate_phone_number_format(value)
-
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"]
         otp = OTPService.verify_otp(
-            phone_number=phone_number,
+            identifier=self.validated_data["identifier"],
             code=self.validated_data["code"],
             purpose=self.validated_data["purpose"],
+            channel=self.validated_data["channel"],
         )
-        if otp.purpose == OTPPurpose.VERIFY_PHONE and otp.user:
-            otp.user.is_phone_verified = True
-            otp.user.save(update_fields=["is_phone_verified", "updated_at"])
+        if otp.user:
+            if otp.delivery_channel == OTPDeliveryChannel.EMAIL:
+                otp.user.is_email_verified = True
+                otp.user.save(update_fields=["is_email_verified", "updated_at"])
+            else:
+                otp.user.is_phone_verified = True
+                otp.user.save(update_fields=["is_phone_verified", "updated_at"])
         return otp
 
 
-class RequestPasswordResetSerializer(serializers.Serializer):
-    phone_number = serializers.CharField()
-
-    def validate_phone_number(self, value: str) -> str:
-        return validate_phone_number_format(value)
-
+class RequestPasswordResetSerializer(OTPInputSerializer):
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"]
-        user = User.objects.filter(phone_number=phone_number).first()
+        identifier = self.validated_data["identifier"]
+        channel = self.validated_data["channel"]
+        user = (
+            User.objects.filter(email__iexact=identifier).first()
+            if channel == OTPDeliveryChannel.EMAIL
+            else User.objects.filter(phone_number=identifier).first()
+        )
+        # Deliberately return a generic successful flow when no account exists.
         if user is None:
             return None, None
-        return OTPService.send_otp(phone_number, OTPPurpose.RESET_PASSWORD, user=user)
+        return OTPService.send_otp(identifier, OTPPurpose.RESET_PASSWORD, user=user, channel=channel)
 
 
-class ConfirmPasswordResetSerializer(serializers.Serializer):
-    phone_number = serializers.CharField()
+class ConfirmPasswordResetSerializer(OTPInputSerializer):
     code = serializers.CharField(max_length=6, min_length=6)
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
 
-    def validate_phone_number(self, value: str) -> str:
-        return validate_phone_number_format(value)
-
     def validate(self, attrs):
+        attrs = super().validate(attrs)
         if attrs["new_password"] != attrs["new_password_confirm"]:
             raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
         return attrs
 
     @transaction.atomic
     def save(self, **kwargs):
-        phone_number = self.validated_data["phone_number"]
+        from django.utils import timezone
+        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+
+        identifier = self.validated_data["identifier"]
+        channel = self.validated_data["channel"]
         otp = OTPService.verify_otp(
-            phone_number=phone_number,
+            identifier=identifier,
             code=self.validated_data["code"],
             purpose=OTPPurpose.RESET_PASSWORD,
+            channel=channel,
         )
-        user = otp.user or User.objects.filter(phone_number=phone_number).first()
+        user = otp.user
         if user is None:
-            raise serializers.ValidationError({"phone_number": "No account exists with this phone number."})
+            raise serializers.ValidationError({"code": "Invalid or expired OTP code."})
         user.set_password(self.validated_data["new_password"])
-        user.save(update_fields=["password", "updated_at"])
-        AuditLogService.log(actor=user, action=AuditAction.PASSWORD_RESET_CONFIRMED, target=user)
+        user.last_password_change_at = timezone.now()
+        user.save(update_fields=["password", "last_password_change_at", "updated_at"])
+        for token in OutstandingToken.objects.filter(user=user):
+            BlacklistedToken.objects.get_or_create(token=token)
         return user

@@ -1,10 +1,5 @@
 from django.urls import path
 
-from .student_account_request_views import (
-    StudentAccountRequestCreateView,
-    StudentAccountRequestStatusView,
-    StudentAccountRequestVerifyOtpView,
-)
 from .views import (
     ChangePasswordView,
     ConfirmPasswordResetView,
@@ -17,7 +12,6 @@ from .views import (
     StudentRegisterView,
     TokenRefreshView,
     VerifyOTPView,
-    VerifyPhoneView,
 )
 
 urlpatterns = [
@@ -30,18 +24,6 @@ urlpatterns = [
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("otp/send/", SendOTPView.as_view(), name="otp-send"),
     path("otp/verify/", VerifyOTPView.as_view(), name="otp-verify"),
-    path("verify-phone/", VerifyPhoneView.as_view(), name="verify-phone"),
-    path("student-account-requests/", StudentAccountRequestCreateView.as_view(), name="student-account-request-create"),
-    path(
-        "student-account-requests/<uuid:public_id>/status/",
-        StudentAccountRequestStatusView.as_view(),
-        name="student-account-request-status",
-    ),
-    path(
-        "student-account-requests/<uuid:public_id>/verify-otp/",
-        StudentAccountRequestVerifyOtpView.as_view(),
-        name="student-account-request-verify-otp",
-    ),
     path("request-password-reset/", RequestPasswordResetView.as_view(), name="request-password-reset"),
     path("confirm-password-reset/", ConfirmPasswordResetView.as_view(), name="confirm-password-reset"),
 ]

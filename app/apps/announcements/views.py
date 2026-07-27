@@ -1,7 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
-from apps.accounts.permissions import IsAdminOrITSupport
+from apps.accounts.permissions import CanManageAnnouncements
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import Announcement
@@ -26,7 +26,7 @@ class AnnouncementViewSet(StandardReadOnlyModelViewSet):
 
 
 class DashboardAnnouncementViewSet(StandardModelViewSet):
-    permission_classes = [IsAdminOrITSupport]
+    permission_classes = [CanManageAnnouncements]
     serializer_class = AnnouncementSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = AnnouncementViewSet.filterset_fields + ["is_active"]

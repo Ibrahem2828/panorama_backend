@@ -20,7 +20,7 @@ class NotificationViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Notification.objects.none()
-        return Notification.objects.filter(user=self.request.user, is_deleted=False).select_related("user")
+        return Notification.objects.filter(user=self.request.user, is_deleted=False)
 
 
 class UnreadNotificationCountView(APIView):

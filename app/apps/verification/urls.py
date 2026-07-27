@@ -8,7 +8,8 @@ from .views import (
     NeedsUpdateVerificationView,
     RejectVerificationView,
     SubmitVerificationView,
-    VerificationCardPreviewTokenView,
+    VerificationCardStreamView,
+    VerificationCardTicketView,
 )
 
 dashboard_router = DefaultRouter()
@@ -22,9 +23,6 @@ urlpatterns = [
     path("dashboard/verifications/<int:pk>/approve/", ApproveVerificationView.as_view(), name="verification-approve"),
     path("dashboard/verifications/<int:pk>/reject/", RejectVerificationView.as_view(), name="verification-reject"),
     path("dashboard/verifications/<int:pk>/needs-update/", NeedsUpdateVerificationView.as_view(), name="verification-needs-update"),
-    path(
-        "dashboard/verifications/<int:pk>/card-preview-token/",
-        VerificationCardPreviewTokenView.as_view(),
-        name="verification-card-preview-token",
-    ),
+    path("dashboard/verifications/<int:pk>/card-ticket/", VerificationCardTicketView.as_view(), name="verification-card-ticket"),
+    path("verification-card-access/<uuid:token>/", VerificationCardStreamView.as_view(), name="verification-card-access"),
 ]

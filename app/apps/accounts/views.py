@@ -1,22 +1,21 @@
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import exceptions, permissions, status
+from rest_framework import permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.audit.models import AuditAction
-from apps.audit.services import AuditLogService
 from apps.common.responses import error_response, success_response
-
-from .choices import OTPPurpose, UserRole
-from .otp_contract import (
-    build_phone_otp_register_payload,
-    build_phone_otp_send_payload,
-    build_verify_phone_success_payload,
+from apps.common.throttles import (
+    LoginRateThrottle,
+    OTPRequestRateThrottle,
+    OTPVerifyRateThrottle,
+    PasswordResetRateThrottle,
+    RegistrationRateThrottle,
 )
+
 from .serializers import (
     ChangePasswordSerializer,
     ConfirmPasswordResetSerializer,
@@ -33,68 +32,59 @@ from .serializers import (
 
 class NormalUserRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [RegistrationRateThrottle]
     serializer_class = NormalUserRegisterSerializer
-    throttle_scope = "normal_register"
 
     @extend_schema(request=NormalUserRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
         serializer = NormalUserRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user, raw_code = serializer.save()
-        data = {"user": UserSerializer(user).data, **build_phone_otp_register_payload(user)}
+        user, raw_code, channel = serializer.save()
+        data = {"user": UserSerializer(user).data, "otp_channel": channel}
         if settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
         return success_response(
             data=data,
-            message="تم إنشاء الحساب بنجاح. أرسلنا رمز تحقق إلى رقم الجوال لتفعيل الحساب.",
+            message="Normal user registered successfully",
             status_code=status.HTTP_201_CREATED,
-            request_id=getattr(request, "request_id", None),
+            request=request,
+            code="USER_REGISTERED",
         )
 
 
 class StudentRegisterView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [RegistrationRateThrottle]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = StudentRegisterSerializer
-    throttle_scope = "register"
 
     @extend_schema(request=StudentRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
         serializer = StudentRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user, raw_code = serializer.save()
-        data = {"user": UserSerializer(user).data}
+        user, raw_code, channel = serializer.save()
+        data = {"user": UserSerializer(user).data, "otp_channel": channel}
         if settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
-        return success_response(data=data, message="Student registered successfully", status_code=status.HTTP_201_CREATED)
+        return success_response(
+            data=data,
+            message="Student registered successfully. Complete the academic profile and submit verification.",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="STUDENT_REGISTERED",
+        )
 
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [LoginRateThrottle]
     serializer_class = LoginSerializer
-    throttle_scope = "login"
 
     @extend_schema(request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        try:
-            serializer.is_valid(raise_exception=True)
-        except exceptions.ValidationError:
-            AuditLogService.log(
-                action=AuditAction.USER_LOGIN_FAILED,
-                new_value={"reason": "invalid_credentials"},
-                request=request,
-            )
-            raise
+        serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        if user.role in {UserRole.IT_SUPPORT, UserRole.ADMIN, UserRole.PRINT_STAFF}:
-            AuditLogService.log(
-                actor=user,
-                action=AuditAction.USER_LOGIN_SUCCEEDED,
-                target=user,
-                new_value={"role": user.role},
-                request=request,
-            )
         return success_response(
             data={
                 "access": serializer.validated_data["access"],
@@ -102,18 +92,26 @@ class LoginView(APIView):
                 "user": UserSerializer(user).data,
             },
             message="Logged in successfully",
+            request=request,
+            code="LOGIN_SUCCEEDED",
         )
 
 
 class TokenRefreshView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [LoginRateThrottle]
     serializer_class = TokenRefreshSerializer
 
     @extend_schema(request=TokenRefreshSerializer, responses={200: OpenApiResponse(description="JWT refresh response")})
     def post(self, request):
         serializer = TokenRefreshSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return success_response(data=serializer.validated_data, message="Token refreshed successfully")
+        return success_response(
+            data=serializer.validated_data,
+            message="Token refreshed successfully",
+            request=request,
+            code="TOKEN_REFRESHED",
+        )
 
 
 class LogoutView(APIView):
@@ -130,10 +128,10 @@ class LogoutView(APIView):
             return error_response(
                 message="Invalid token",
                 errors={"refresh": "Invalid or expired refresh token."},
-                request_id=getattr(request, "request_id", None),
+                request=request,
+                code="INVALID_REFRESH_TOKEN",
             )
-        AuditLogService.log(actor=request.user, action=AuditAction.USER_LOGGED_OUT, target=request.user, request=request)
-        return success_response(message="Logged out successfully")
+        return success_response(message="Logged out successfully", request=request, code="LOGOUT_SUCCEEDED")
 
 
 class CurrentUserView(APIView):
@@ -141,118 +139,100 @@ class CurrentUserView(APIView):
 
     @extend_schema(responses={200: UserSerializer})
     def get(self, request):
-        return success_response(data=UserSerializer(request.user).data)
+        return success_response(data=UserSerializer(request.user).data, request=request)
 
     @extend_schema(request=UserSerializer, responses={200: UserSerializer})
     def patch(self, request):
         serializer = UserSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return success_response(data=serializer.data, message="Profile updated successfully")
+        return success_response(data=serializer.data, message="Profile updated successfully", request=request)
 
 
 class ChangePasswordView(APIView):
     serializer_class = ChangePasswordSerializer
-    throttle_scope = "change_password"
 
     @extend_schema(request=ChangePasswordSerializer)
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return success_response(message="Password changed successfully")
+        return success_response(
+            message="Password changed successfully. Other sessions were revoked.",
+            request=request,
+            code="PASSWORD_CHANGED",
+        )
 
 
 class SendOTPView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OTPRequestRateThrottle]
     serializer_class = SendOTPSerializer
-    throttle_scope = "otp_send"
 
     @extend_schema(request=SendOTPSerializer)
     def post(self, request):
         serializer = SendOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         otp, raw_code = serializer.save()
-        data = build_phone_otp_send_payload(
-            purpose=otp.purpose,
-            phone_number=otp.phone_number,
-            expires_at=otp.expires_at,
-        )
+        data = {"expires_at": otp.expires_at, "channel": otp.delivery_channel} if otp else {}
         if settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
-        message = (
-            "تم إرسال رمز التحقق إلى رقم الجوال."
-            if otp.purpose == OTPPurpose.VERIFY_PHONE
-            else "OTP sent successfully"
+        return success_response(
+            data=data,
+            message="If the account requires verification, an OTP has been sent.",
+            request=request,
+            code="OTP_SENT",
         )
-        return success_response(data=data, message=message)
 
 
 class VerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OTPVerifyRateThrottle]
     serializer_class = VerifyOTPSerializer
-    throttle_scope = "otp_verify"
 
     @extend_schema(request=VerifyOTPSerializer)
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        otp = serializer.save()
-        data = build_verify_phone_success_payload() if otp.purpose == OTPPurpose.VERIFY_PHONE else {}
-        message = (
-            "تم التحقق من رقم الجوال بنجاح. يمكنك تسجيل الدخول الآن."
-            if otp.purpose == OTPPurpose.VERIFY_PHONE
-            else "OTP verified successfully"
-        )
-        return success_response(message=message, data=data)
-
-
-class VerifyPhoneView(APIView):
-    permission_classes = [permissions.AllowAny]
-    serializer_class = VerifyOTPSerializer
-    throttle_scope = "otp_verify"
-
-    @extend_schema(request=VerifyOTPSerializer, tags=["Auth"])
-    def post(self, request):
-        payload = request.data.copy()
-        if hasattr(payload, "dict"):
-            payload = payload.dict()
-        else:
-            payload = dict(payload)
-        payload.setdefault("purpose", OTPPurpose.VERIFY_PHONE)
-        serializer = VerifyOTPSerializer(data=payload)
-        serializer.is_valid(raise_exception=True)
         serializer.save()
-        return success_response(
-            data=build_verify_phone_success_payload(),
-            message="تم التحقق من رقم الجوال بنجاح. يمكنك تسجيل الدخول الآن.",
-        )
+        return success_response(message="OTP verified successfully", request=request, code="OTP_VERIFIED")
 
 
 class RequestPasswordResetView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [PasswordResetRateThrottle]
     serializer_class = RequestPasswordResetSerializer
-    throttle_scope = "password_reset"
 
     @extend_schema(request=RequestPasswordResetSerializer)
     def post(self, request):
         serializer = RequestPasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         otp, raw_code = serializer.save()
-        data = {"expires_at": otp.expires_at} if otp else {}
-        if otp and settings.RETURN_DEVELOPMENT_OTP and raw_code:
+        data = {}
+        if otp:
+            data = {"expires_at": otp.expires_at, "channel": otp.delivery_channel}
+        if settings.RETURN_DEVELOPMENT_OTP and raw_code:
             data["development_otp"] = raw_code
-        return success_response(data=data, message="Password reset OTP sent successfully")
+        return success_response(
+            data=data,
+            message="If the account exists, a password reset code has been sent.",
+            request=request,
+            code="PASSWORD_RESET_REQUEST_ACCEPTED",
+        )
 
 
 class ConfirmPasswordResetView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [OTPVerifyRateThrottle]
     serializer_class = ConfirmPasswordResetSerializer
-    throttle_scope = "password_reset"
 
     @extend_schema(request=ConfirmPasswordResetSerializer)
     def post(self, request):
         serializer = ConfirmPasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return success_response(message="Password reset successfully")
+        return success_response(
+            message="Password reset successfully. Previous sessions were revoked.",
+            request=request,
+            code="PASSWORD_RESET_SUCCEEDED",
+        )

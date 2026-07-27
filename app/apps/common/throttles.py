@@ -2,77 +2,132 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Any
 
-from rest_framework.throttling import ScopedRateThrottle
-
-from apps.accounts.phone_numbers import normalize_phone_number_or_none
+from apps.common.request_utils import get_client_ip
+from rest_framework.throttling import SimpleRateThrottle
 
 
-IDENTIFIER_FIELDS_BY_SCOPE = {
-    "login": ("identifier", "email", "phone_number"),
-    "register": ("email", "phone_number"),
-    "normal_register": ("email", "phone_number"),
-    "otp_send": ("phone_number",),
-    "otp_verify": ("phone_number",),
-    "password_reset": ("phone_number", "email"),
-    "student_account_request": ("email", "phone_number"),
-}
+def _request_ip(request) -> str:
+    return get_client_ip(request) or "unknown"
 
 
-class IdentifierScopedRateThrottle(ScopedRateThrottle):
-    """
-    Scoped throttle that keeps normal DRF behavior for most endpoints and adds
-    request identifier entropy for auth/OTP endpoints.
-    """
+def _normalise_identifier(value: object) -> str:
+    return str(value or "").strip().lower()[:254]
 
-    def parse_rate(self, rate):
+
+class IdentifierRateThrottle(SimpleRateThrottle):
+    """Rate limit by both source IP and submitted account identifier."""
+
+    identifier_fields: tuple[str, ...] = ("identifier", "email", "phone_number")
+    _period_units = {
+        "s": 1, "sec": 1, "secs": 1, "second": 1, "seconds": 1,
+        "m": 60, "min": 60, "mins": 60, "minute": 60, "minutes": 60,
+        "h": 3600, "hr": 3600, "hrs": 3600, "hour": 3600, "hours": 3600,
+        "d": 86400, "day": 86400, "days": 86400,
+    }
+
+    def parse_rate(self, rate: str | None) -> tuple[int | None, int | None]:
+        """Support explicit sliding windows such as ``3/10min`` in addition to DRF's shorthand."""
         if rate is None:
             return None, None
+        try:
+            requests, period = rate.strip().lower().split("/", 1)
+            num_requests = int(requests)
+        except (AttributeError, ValueError) as exc:
+            raise ValueError(f"Invalid throttle rate: {rate!r}") from exc
 
-        match = re.fullmatch(r"(\d+)/(\d+)?([A-Za-z]+)", rate)
-        if not match:
-            return super().parse_rate(rate)
+        match = re.fullmatch(r"(?:(\d+)\s*)?([a-z]+)", period.strip())
+        if not match or match.group(2) not in self._period_units:
+            raise ValueError(f"Unsupported throttle period: {period!r}")
+        multiplier = int(match.group(1) or 1)
+        return num_requests, multiplier * self._period_units[match.group(2)]
 
-        num_requests = int(match.group(1))
-        multiplier = int(match.group(2) or 1)
-        unit = match.group(3).lower()
-        if unit.startswith("s"):
-            seconds = 1
-        elif unit.startswith("m"):
-            seconds = 60
-        elif unit.startswith("h"):
-            seconds = 60 * 60
-        elif unit.startswith("d"):
-            seconds = 60 * 60 * 24
-        else:
-            return super().parse_rate(rate)
-        return num_requests, multiplier * seconds
-
-    def _request_value(self, request, field_names: tuple[str, ...]) -> str:
-        data: Any = getattr(request, "data", {}) or {}
-        for field_name in field_names:
-            value = data.get(field_name) if hasattr(data, "get") else None
-            if value:
-                value = str(value).strip().lower()
-                if field_name in {"identifier", "phone_number"}:
-                    value = normalize_phone_number_or_none(value) or value
-                return value
-        return ""
+    def get_identifier(self, request) -> str:
+        data = getattr(request, "data", {}) or {}
+        for field in self.identifier_fields:
+            if data.get(field):
+                return _normalise_identifier(data.get(field))
+        return "anonymous"
 
     def get_cache_key(self, request, view):
-        self.scope = getattr(view, self.scope_attr, None)
-        if not self.scope:
+        if not self.rate:
             return None
-        self.rate = self.get_rate()
-        if self.rate is None:
-            return None
+        composite = f"{_request_ip(request)}|{self.get_identifier(request)}"
+        digest = hashlib.sha256(composite.encode("utf-8")).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": digest}
 
-        ident = self.get_ident(request)
-        field_names = IDENTIFIER_FIELDS_BY_SCOPE.get(self.scope)
-        if field_names:
-            identifier = self._request_value(request, field_names)
-            if identifier:
-                identifier_hash = hashlib.sha256(identifier.encode("utf-8")).hexdigest()[:32]
-                ident = f"{ident}:{identifier_hash}"
+
+class LoginRateThrottle(IdentifierRateThrottle):
+    scope = "auth_login"
+
+
+class RegistrationRateThrottle(IdentifierRateThrottle):
+    scope = "auth_register"
+
+
+class OTPRequestRateThrottle(IdentifierRateThrottle):
+    scope = "otp_request"
+
+
+class OTPVerifyRateThrottle(IdentifierRateThrottle):
+    scope = "otp_verify"
+
+
+class PasswordResetRateThrottle(IdentifierRateThrottle):
+    scope = "password_reset"
+
+
+class FeedbackRateThrottle(SimpleRateThrottle):
+    scope = "feedback_submit"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class FileTicketRateThrottle(SimpleRateThrottle):
+    scope = "file_ticket"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class ExternalChannelRateThrottle(SimpleRateThrottle):
+    scope = "external_channel"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class ChatMessageRateThrottle(SimpleRateThrottle):
+    scope = "chat_message"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class ChatReportRateThrottle(SimpleRateThrottle):
+    scope = "chat_report"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class SupportTicketRateThrottle(SimpleRateThrottle):
+    scope = "support_ticket"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class SupportMessageRateThrottle(SimpleRateThrottle):
+    scope = "support_message"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
         return self.cache_format % {"scope": self.scope, "ident": ident}

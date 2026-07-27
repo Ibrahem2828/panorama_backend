@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -5,7 +7,6 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts.choices import StudentVerificationStatus
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
-from apps.common.protected_media import ProtectedMediaService
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
@@ -25,18 +26,26 @@ class VerificationService:
     ):
         verification = (
             VerificationRequest.objects.select_for_update()
-            .select_related("user", "student_profile", "university", "faculty", "major", "academic_year", "semester")
+            .select_related("student_profile", "user")
             .get(pk=verification.pk, is_deleted=False)
         )
         if verification.status != VerificationStatus.PENDING:
             raise ValidationError("Only pending verification requests can be reviewed.")
         if verification.user_id == reviewer.id:
             raise ValidationError("You cannot review your own verification request.")
+        if status not in {
+            VerificationStatus.APPROVED,
+            VerificationStatus.REJECTED,
+            VerificationStatus.NEEDS_UPDATE,
+        }:
+            raise ValidationError({"status": "Unsupported verification decision."})
+        if status in {VerificationStatus.REJECTED, VerificationStatus.NEEDS_UPDATE} and not rejection_reason.strip():
+            raise ValidationError({"rejection_reason": "A clear reason is required for this decision."})
 
         now = timezone.now()
         verification.status = status
-        verification.rejection_reason = rejection_reason
-        verification.admin_note = admin_note
+        verification.rejection_reason = rejection_reason.strip()
+        verification.admin_note = admin_note.strip()
         verification.reviewed_by = reviewer
         verification.reviewed_at = now
         verification.save()
@@ -54,16 +63,18 @@ class VerificationService:
             profile.academic_year = verification.academic_year
             profile.semester = verification.semester
             profile.student_number = verification.student_number
-            title = "Verification approved"
-            body = "Your student verification request was approved."
+            title = "تم توثيق حسابك"
+            body = "أصبح بإمكانك الآن استخدام ميزات الطلاب الموثقين في بانوراما."
         elif status == VerificationStatus.NEEDS_UPDATE:
             profile.verification_status = StudentVerificationStatus.NEEDS_UPDATE
-            title = "Verification needs update"
-            body = rejection_reason or "Please update your verification request."
+            profile.verified_at = None
+            title = "طلب التوثيق يحتاج إلى تحديث"
+            body = rejection_reason.strip()
         else:
             profile.verification_status = StudentVerificationStatus.REJECTED
-            title = "Verification rejected"
-            body = rejection_reason or "Your student verification request was rejected."
+            profile.verified_at = None
+            title = "تم رفض طلب التوثيق"
+            body = rejection_reason.strip()
 
         profile.save()
         NotificationService.create_notification(
@@ -77,30 +88,12 @@ class VerificationService:
             VerificationStatus.APPROVED: AuditAction.VERIFICATION_APPROVED,
             VerificationStatus.REJECTED: AuditAction.VERIFICATION_REJECTED,
             VerificationStatus.NEEDS_UPDATE: AuditAction.VERIFICATION_NEEDS_UPDATE,
-        }.get(status)
-        if action:
-            AuditLogService.log(
-                actor=reviewer,
-                action=action,
-                target=verification,
-                new_value={"status": status, "student_number": verification.student_number},
-                request=request,
-            )
-        return verification
-
-    @staticmethod
-    def create_card_preview_token(verification: VerificationRequest, reviewer, request=None) -> dict:
-        token, expires_in = ProtectedMediaService.create_token(
-            user=reviewer,
-            object_type="verification_request",
-            object_id=verification.id,
-            purpose="verification_card_preview",
-        )
+        }[status]
         AuditLogService.log(
             actor=reviewer,
-            action=AuditAction.VERIFICATION_CARD_PREVIEW_TOKEN_CREATED,
+            action=action,
             target=verification,
-            new_value={"purpose": "verification_card_preview", "expires_in": expires_in},
+            new_value={"status": status, "student_number": verification.student_number},
             request=request,
         )
-        return {"url": ProtectedMediaService.build_url(request, token), "expires_in": expires_in}
+        return verification

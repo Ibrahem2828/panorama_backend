@@ -1,5 +1,9 @@
 -r base.txt
 
+bandit>=1.7,<2.0
+coverage>=7.0,<8.0
 django-extensions>=3.2,<4.0
+pip-audit>=2.7,<3.0
 pytest>=8.0,<9.0
 pytest-django>=4.8,<5.0
+ruff>=0.6,<1.0

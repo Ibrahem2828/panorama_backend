@@ -5,62 +5,46 @@ from apps.common.models import BaseModel
 
 class AuditAction(models.TextChoices):
     USER_REGISTERED = "user_registered", "User Registered"
-    USER_LOGIN_SUCCEEDED = "user_login_succeeded", "User Login Succeeded"
-    USER_LOGIN_FAILED = "user_login_failed", "User Login Failed"
-    USER_LOGGED_OUT = "user_logged_out", "User Logged Out"
-    PASSWORD_CHANGED = "password_changed", "Password Changed"
-    PASSWORD_RESET_CONFIRMED = "password_reset_confirmed", "Password Reset Confirmed"
-    OTP_VERIFICATION_FAILED = "otp_verification_failed", "OTP Verification Failed"
+    USER_ROLE_CHANGED = "user_role_changed", "User Role Changed"
+    USER_STATUS_CHANGED = "user_status_changed", "User Status Changed"
+    USER_PERMISSION_OVERRIDE_CHANGED = "user_permission_override_changed", "User Permission Override Changed"
     STUDENT_PROFILE_UPDATED = "student_profile_updated", "Student Profile Updated"
+    OTP_SENT = "otp_sent", "OTP Sent"
+    OTP_VERIFIED = "otp_verified", "OTP Verified"
+    OTP_FAILED = "otp_failed", "OTP Failed"
     VERIFICATION_SUBMITTED = "verification_submitted", "Verification Submitted"
     VERIFICATION_APPROVED = "verification_approved", "Verification Approved"
     VERIFICATION_REJECTED = "verification_rejected", "Verification Rejected"
     VERIFICATION_NEEDS_UPDATE = "verification_needs_update", "Verification Needs Update"
-    VERIFICATION_CARD_PREVIEW_TOKEN_CREATED = (
-        "verification_card_preview_token_created",
-        "Verification Card Preview Token Created",
-    )
+    VERIFICATION_CARD_ACCESSED = "verification_card_accessed", "Verification Card Accessed"
     GROUP_CREATED = "group_created", "Group Created"
     GROUP_UPDATED = "group_updated", "Group Updated"
     GROUP_DELETED = "group_deleted", "Group Deleted"
     GROUP_MEMBERSHIP_APPROVED = "group_membership_approved", "Group Membership Approved"
     GROUP_MEMBERSHIP_REJECTED = "group_membership_rejected", "Group Membership Rejected"
     GROUP_MEMBERSHIP_BLOCKED = "group_membership_blocked", "Group Membership Blocked"
-    GROUP_MEMBERSHIP_ROLE_CHANGED = "group_membership_role_changed", "Group Membership Role Changed"
+    GROUP_EXTERNAL_CHANNEL_UPDATED = "group_external_channel_updated", "External Channel Updated"
+    GROUP_EXTERNAL_CHANNEL_TICKET_ISSUED = "group_external_channel_ticket_issued", "External Channel Ticket Issued"
+    GROUP_EXTERNAL_CHANNEL_OPENED = "group_external_channel_opened", "External Channel Opened"
     FILE_UPLOADED = "file_uploaded", "File Uploaded"
     FILE_UPDATED = "file_updated", "File Updated"
     FILE_DELETED = "file_deleted", "File Deleted"
-    FILE_ACCESSED = "file_accessed", "File Accessed"
-    FILE_PREVIEW_TOKEN_CREATED = "file_preview_token_created", "File Preview Token Created"
-    FILE_DOWNLOAD_TOKEN_CREATED = "file_download_token_created", "File Download Token Created"
+    FILE_ACCESS_TICKET_ISSUED = "file_access_ticket_issued", "File Access Ticket Issued"
     ANNOUNCEMENT_CREATED = "announcement_created", "Announcement Created"
     ANNOUNCEMENT_UPDATED = "announcement_updated", "Announcement Updated"
     ANNOUNCEMENT_DELETED = "announcement_deleted", "Announcement Deleted"
     PRINT_ORDER_CREATED = "print_order_created", "Print Order Created"
-    PRINT_ORDER_ASSIGNED = "print_order_assigned", "Print Order Assigned"
     PRINT_ORDER_STATUS_CHANGED = "print_order_status_changed", "Print Order Status Changed"
+    PRINT_ORDER_ASSIGNED = "print_order_assigned", "Print Order Assigned"
     PRINT_ORDER_NOTE_UPDATED = "print_order_note_updated", "Print Order Note Updated"
-    PRINT_FILE_PREVIEW_TOKEN_CREATED = "print_file_preview_token_created", "Print File Preview Token Created"
+    PRINT_PRICING_CHANGED = "print_pricing_changed", "Print Pricing Changed"
     SUPPORT_TICKET_CREATED = "support_ticket_created", "Support Ticket Created"
-    SUPPORT_TICKET_ASSIGNED = "support_ticket_assigned", "Support Ticket Assigned"
     SUPPORT_TICKET_STATUS_CHANGED = "support_ticket_status_changed", "Support Ticket Status Changed"
+    SUPPORT_TICKET_ASSIGNED = "support_ticket_assigned", "Support Ticket Assigned"
     SUPPORT_TICKET_PRIORITY_CHANGED = "support_ticket_priority_changed", "Support Ticket Priority Changed"
-    SUPPORT_TICKET_STAFF_REPLY = "support_ticket_staff_reply", "Support Ticket Staff Reply"
     MESSAGE_DELETED = "message_deleted", "Message Deleted"
-    MESSAGE_REPORTED = "message_reported", "Message Reported"
-    STUDENT_ACCOUNT_REQUEST_SUBMITTED = "student_account_request_submitted", "Student Account Request Submitted"
-    STUDENT_ACCOUNT_REQUEST_APPROVED = "student_account_request_approved", "Student Account Request Approved"
-    STUDENT_ACCOUNT_REQUEST_REJECTED = "student_account_request_rejected", "Student Account Request Rejected"
-    STUDENT_ACCOUNT_REQUEST_NEEDS_UPDATE = "student_account_request_needs_update", "Student Account Request Needs Update"
-    STUDENT_ACCOUNT_OTP_GENERATED = "student_account_otp_generated", "Student Account OTP Generated"
-    STUDENT_ACCOUNT_OTP_RESENT = "student_account_otp_resent", "Student Account OTP Resent"
-    STUDENT_ACCOUNT_OTP_VERIFIED = "student_account_otp_verified", "Student Account OTP Verified"
-    STUDENT_ACCOUNT_OTP_FAILED = "student_account_otp_failed", "Student Account OTP Failed"
-    STUDENT_ACCOUNT_ACTIVATED = "student_account_activated", "Student Account Activated"
-    STUDENT_ACCOUNT_CARD_PREVIEW_TOKEN_CREATED = (
-        "student_account_card_preview_token_created",
-        "Student Account Card Preview Token Created",
-    )
+    FEEDBACK_SUBMITTED = "feedback_submitted", "Feedback Submitted"
+    FEEDBACK_WORKFLOW_UPDATED = "feedback_workflow_updated", "Feedback Workflow Updated"
 
 
 class AuditLog(BaseModel):
@@ -72,7 +56,6 @@ class AuditLog(BaseModel):
     new_value = models.JSONField(null=True, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
-    request_id = models.CharField(max_length=128, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -80,7 +63,6 @@ class AuditLog(BaseModel):
             models.Index(fields=["action", "created_at"]),
             models.Index(fields=["actor", "created_at"]),
             models.Index(fields=["target_type", "target_id"]),
-            models.Index(fields=["request_id"]),
         ]
 
     def __str__(self) -> str:

@@ -1,6 +1,10 @@
+# Panorama Backend v2 — Production Candidate
+
+> هذه الحزمة نسخة مطورة أمنيًا ووظيفيًا من MVP. راجع `docs/architecture/BACKEND_V2_PRODUCTION_TRANSFORMATION_AR.md` و`docs/operations/SECURITY_AND_PRODUCTION_OPERATIONS_AR.md` قبل النشر. لا تُعتبر جاهزية الإنتاج نهائية قبل نجاح CI وStaging واختبارات الاختراق والضغط والاستعادة.
+
 # Panorama Backend
 
-Panorama is a Django REST backend for a student services mobile application and future admin dashboard. The backend is MVP v1 feature-complete for React Native and dashboard integration, with phased production hardening for repository hygiene, security, reliability, quality gates, and observability.
+Panorama is a Django REST backend for a student services mobile application and future admin dashboard. The backend is MVP v1 feature-complete for React Native and dashboard integration. Phase 1 provides the foundation, Phase 2 adds the academic platform, Phase 3 adds printing/chat/support/audit/stats, and the final hardening pass adds seed data, API collections, integration docs, and group messaging controls.
 
 ## Tech Stack
 
@@ -62,8 +66,6 @@ See `.env.example` for the full list:
 - `REDIS_URL`
 - `FCM_SERVER_KEY`
 
-Before deploying, review `docs/PRODUCTION_ENV_VALUES_TO_REPLACE.md` for the exact production values that must replace placeholders, including current HTTP sslip values, final HTTPS examples, protected media TTL, and WebSocket token settings.
-
 ## Tests
 
 ```bash
@@ -72,51 +74,12 @@ pytest
 
 The testing settings use an in-memory SQLite database for fast local feedback. The default application settings use PostgreSQL.
 
-## Validation
-
-Run the backend validation entry point from the repository root:
-
-```powershell
-.\scripts\validate_backend.ps1 -DeployCheck
-```
-
-Shell equivalent:
-
-```bash
-bash scripts/validate_backend.sh --deploy-check
-```
-
-For repository hygiene, production configuration notes, and API contract lock details, see `docs/30_PHASE_1_REPOSITORY_CLEANUP_AND_API_CONTRACT_LOCK.md`.
-
-For current production foundation hardening rules, including release hygiene, response contract, request IDs, JWT rotation, and throttling, see `docs/backend_hardening.md`.
-
-Production release packages must never include `.env`, `.git`, `__pycache__/`, local `media/`, logs, or local database files.
-
-For Phase 2 security hardening, access-control notes, and upload validation rules, see `docs/31_PHASE_2_SECURITY_HARDENING_AND_ACCESS_CONTROL.md`.
-
-For Phase 3 reliability, performance, Redis/cache readiness, and data-integrity notes, see `docs/32_PHASE_3_RELIABILITY_PERFORMANCE_AND_DATA_INTEGRITY.md`.
-
-For Phase 4 testing, quality gates, request correlation, and observability notes, see `docs/33_PHASE_4_TESTING_QUALITY_GATES_AND_OBSERVABILITY.md`.
-
-For deployment operations, see `docs/RUNBOOK.md` and `docs/OBSERVABILITY.md`.
-
-For Coolify production deployment readiness, see:
-
-- `docs/COOLIFY_DEPLOYMENT.md`
-- `docs/ENVIRONMENT_PRODUCTION.md`
-- `docs/BACKUP_RESTORE.md`
-- `docs/PRODUCTION_SECURITY_CHECKLIST.md`
-- `docs/PRODUCTION_SMOKE_TESTS.md`
-- `docs/34_PHASE_5_COOLIFY_PRODUCTION_DEPLOYMENT_READINESS.md`
-
 ## API Documentation
 
 - Swagger UI: `http://localhost:8000/api/docs/`
 - OpenAPI schema: `http://localhost:8000/api/schema/`
-- Legacy mobile API JSON: `docs/api/mobile_api_collection.json`
-- Legacy dashboard API JSON: `docs/api/dashboard_api_collection.json`
-- Mobile API JSON v2 production: `docs/api/panorama_mobile_api_collection_v2_production.json`
-- Dashboard API JSON v2 production: `docs/api/panorama_dashboard_api_collection_v2_production.json`
+- Mobile API JSON: `docs/api/mobile_api_collection.json`
+- Dashboard API JSON: `docs/api/dashboard_api_collection.json`
 - Mobile integration guide: `FRONTEND_INTEGRATION.md`
 - Dashboard integration guide: `DASHBOARD_INTEGRATION.md`
 
@@ -285,11 +248,10 @@ POST /api/v1/groups/{group_id}/messages/{message_id}/report/
 WebSocket:
 
 ```text
-POST /api/v1/groups/{group_id}/chat/ws-token/
-ws://localhost:8000/ws/v1/groups/{group_id}/chat/?token=<ws_token>
+ws://localhost:8000/ws/v1/groups/{group_id}/chat/?token=<access_token>
 ```
 
-Only approved verified students can read group messages. Sending also depends on `send_messages_permission`. Admin/IT can moderate. Moderators and group admins can delete inappropriate messages. Production clients must not use JWT access tokens directly in WebSocket URLs.
+Only approved verified students can read group messages. Sending also depends on `send_messages_permission`. Admin/IT can moderate. Moderators and group admins can delete inappropriate messages.
 
 ## Support Flow
 
