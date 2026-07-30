@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Base-image tags are tracked by .github/dependabot.yml. CI records the resolved digest.
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
@@ -15,7 +15,7 @@ COPY requirements.lock ./
 RUN python -m pip wheel --require-hashes --wheel-dir /wheels -r requirements.lock
 
 
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 ARG VCS_REF=unknown
 ARG VERSION=unknown
