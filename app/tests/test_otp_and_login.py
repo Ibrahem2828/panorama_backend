@@ -1,13 +1,12 @@
 import pytest
-from django.contrib.auth.hashers import check_password
-from django.core import mail
-from django.test import override_settings
-from rest_framework import serializers
-
 from apps.accounts.choices import OTPDeliveryChannel, OTPPurpose, UserRole
 from apps.accounts.models import User
 from apps.accounts.serializers import LoginSerializer, VerifyOTPSerializer
 from apps.accounts.services import OTPService
+from django.contrib.auth.hashers import check_password
+from django.core import mail
+from django.test import override_settings
+from rest_framework import serializers
 
 
 @pytest.mark.django_db

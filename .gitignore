@@ -3,8 +3,12 @@ __pycache__/
 *.sqlite3
 .pytest_cache/
 .coverage
+coverage.json
+coverage.xml
 htmlcov/
 .env
+.envrc
+.secrets/
 media/
 staticfiles/
 venv/

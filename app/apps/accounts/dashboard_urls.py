@@ -2,7 +2,9 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .dashboard_views import (
-    DashboardCapabilitiesView, DashboardUserPermissionOverridesView, DashboardUserViewSet,
+    DashboardCapabilitiesView,
+    DashboardUserPermissionOverridesView,
+    DashboardUserViewSet,
 )
 
 router = DefaultRouter()

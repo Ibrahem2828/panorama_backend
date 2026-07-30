@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 from decimal import Decimal
 from math import ceil
@@ -30,7 +32,6 @@ from .models import (
     PrintSides,
 )
 
-
 VALID_TRANSITIONS = {
     PrintOrderStatus.SUBMITTED: {PrintOrderStatus.UNDER_REVIEW, PrintOrderStatus.CANCELLED, PrintOrderStatus.REJECTED},
     PrintOrderStatus.UNDER_REVIEW: {PrintOrderStatus.ACCEPTED, PrintOrderStatus.CANCELLED, PrintOrderStatus.REJECTED},
@@ -60,6 +61,14 @@ def default_priority_for_user(user) -> str:
 
 
 class PrintPricingService:
+    @staticmethod
+    def pricing_revision(priced_items: list[PricedItem]) -> str:
+        """Stable server-calculated revision of every rule used by a quote."""
+
+        payload = [item.snapshot for item in priced_items]
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
     @staticmethod
     def _active_rule(item_data: dict) -> PrintPricingRule:
         now = timezone.now()
@@ -176,6 +185,7 @@ class PrintPricingService:
             "total_price": total,
             "currency": currency,
             "items": priced_items,
+            "pricing_revision": cls.pricing_revision(priced_items),
             "calculated_at": timezone.now(),
         }
 
@@ -183,19 +193,39 @@ class PrintPricingService:
 class PrintOrderService:
     @staticmethod
     @transaction.atomic
-    def create_order(user, items_data: list[dict], user_notes: str = "", pickup_location=None, request=None) -> PrintOrder:
+    def create_order(
+        user,
+        items_data: list[dict],
+        user_notes: str = "",
+        pickup_location=None,
+        request=None,
+        idempotency_key: str = "",
+    ) -> PrintOrder:
+        user = user.__class__.objects.select_for_update().get(pk=user.pk)
+        key_hash = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest() if idempotency_key else ""
+        if key_hash:
+            existing = PrintOrder.objects.select_for_update().filter(
+                user=user,
+                idempotency_key_hash=key_hash,
+                is_deleted=False,
+            ).first()
+            if existing:
+                return existing
         quote = PrintPricingService.quote(user, items_data)
         order = PrintOrder.objects.create(
             user=user,
+            idempotency_key_hash=key_hash,
             priority=default_priority_for_user(user),
             user_notes=user_notes,
             pickup_location=pickup_location,
             total_price=quote["total_price"],
             currency=quote["currency"],
             price_calculated_at=quote["calculated_at"],
+            pricing_revision=quote["pricing_revision"],
             pricing_snapshot={
                 "currency": quote["currency"],
                 "total_price": str(quote["total_price"]),
+                "pricing_revision": quote["pricing_revision"],
                 "calculated_at": quote["calculated_at"].isoformat(),
             },
         )

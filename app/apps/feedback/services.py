@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import timedelta
 
+from django.conf import settings
 from django.db import transaction
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -16,6 +18,7 @@ from apps.notifications.services import NotificationService
 from .models import (
     AppFeedback,
     FeedbackKind,
+    FeedbackMetricType,
     FeedbackPromptEvent,
     FeedbackPromptPolicy,
     FeedbackStatus,
@@ -34,6 +37,39 @@ SENSITIVE_METADATA_KEYS = {
     "card_image",
     "file_url",
 }
+
+
+def _feedback_text(validated_data: dict) -> str:
+    return " ".join(
+        str(validated_data.get(field, "")).strip().lower()
+        for field in ("title", "comment", "suggestion")
+        if str(validated_data.get(field, "")).strip()
+    )
+
+
+def content_fingerprint(validated_data: dict) -> str:
+    payload = "|".join(
+        [
+            str(validated_data.get("kind", "")),
+            str(validated_data.get("context", "")),
+            str(validated_data.get("action_key", "")),
+            _feedback_text(validated_data),
+        ]
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def abuse_flags(validated_data: dict) -> list[str]:
+    text = _feedback_text(validated_data)
+    flags: list[str] = []
+    if re.search(r"(.)\\1{12,}", text):
+        flags.append("repeated_characters")
+    if re.search(r"https?://", text):
+        flags.append("contains_url")
+    terms = [term.strip().lower() for term in getattr(settings, "FEEDBACK_ABUSE_TERMS", []) if term.strip()]
+    if any(term in text for term in terms):
+        flags.append("configured_abuse_term")
+    return flags
 
 
 def validate_metadata(value, path="metadata"):
@@ -67,7 +103,14 @@ def _version_tuple(value: str) -> tuple[int, ...]:
 
 class FeedbackPromptService:
     @staticmethod
-    def eligible(user, context: str, action_key: str = "", app_version: str = "") -> FeedbackPromptPolicy | None:
+    def eligible(
+        user,
+        context: str,
+        action_key: str = "",
+        app_version: str = "",
+        platform: str = "",
+        locale: str = "",
+    ) -> FeedbackPromptPolicy | None:
         policy = FeedbackPromptPolicy.objects.filter(
             context=context,
             action_key=action_key,
@@ -85,7 +128,18 @@ class FeedbackPromptService:
             return None
         if policy.minimum_app_version and _version_tuple(app_version) < _version_tuple(policy.minimum_app_version):
             return None
-        sample_seed = f"{user.pk}:{policy.pk}:{app_version}"
+        if policy.maximum_app_version and _version_tuple(app_version) > _version_tuple(policy.maximum_app_version):
+            return None
+        if policy.platforms and platform not in policy.platforms:
+            return None
+        if policy.locales and locale not in policy.locales:
+            return None
+        if policy.roles and user.role not in policy.roles:
+            return None
+        verification_status = getattr(getattr(user, "student_profile", None), "verification_status", "")
+        if policy.verification_statuses and verification_status not in policy.verification_statuses:
+            return None
+        sample_seed = f"{user.pk}:{policy.pk}"
         bucket = int(hashlib.sha256(sample_seed.encode("utf-8")).hexdigest()[:8], 16) % 100
         if bucket >= policy.sample_percent:
             return None
@@ -97,23 +151,79 @@ class FeedbackPromptService:
             event__in=["shown", "submitted"],
             is_deleted=False,
         ).exists()
-        return None if recently_prompted else policy
+        if recently_prompted:
+            return None
+        dismissed_since = timezone.now() - timedelta(days=policy.dismiss_cooldown_days)
+        if FeedbackPromptEvent.objects.filter(
+            user=user,
+            policy=policy,
+            event="dismissed",
+            created_at__gte=dismissed_since,
+            is_deleted=False,
+        ).exists():
+            return None
+        prompts_since = timezone.now() - timedelta(days=30)
+        prompt_count = FeedbackPromptEvent.objects.filter(
+            user=user,
+            policy=policy,
+            event__in=["shown", "submitted"],
+            created_at__gte=prompts_since,
+            is_deleted=False,
+        ).count()
+        return policy if prompt_count < policy.max_prompts_per_30_days else None
 
 
 class FeedbackService:
     @staticmethod
     @transaction.atomic
     def submit(user, validated_data: dict, request=None) -> AppFeedback:
+        user = user.__class__.objects.select_for_update().get(pk=user.pk)
         metadata = validate_metadata(validated_data.pop("metadata", {}))
         validated_data["metadata"] = metadata
         kind = validated_data["kind"]
+        metric_type = validated_data.get("metric_type") or (
+            FeedbackMetricType.STARS if kind == FeedbackKind.RATING or validated_data.get("rating") is not None else FeedbackMetricType.FREE_TEXT
+        )
+        validated_data["metric_type"] = metric_type
+        metric_value = validated_data.get("metric_value")
         rating = validated_data.get("rating")
-        if kind == FeedbackKind.RATING and rating is None:
-            raise ValidationError({"rating": "A rating from 1 to 5 is required."})
+        if metric_value is None and metric_type == FeedbackMetricType.STARS:
+            metric_value = rating
+        ranges = {
+            FeedbackMetricType.CSAT: (1, 5),
+            FeedbackMetricType.CES: (1, 7),
+            FeedbackMetricType.NPS: (0, 10),
+            FeedbackMetricType.STARS: (1, 5),
+        }
+        if metric_type in ranges:
+            minimum, maximum = ranges[metric_type]
+            if metric_value is None or not minimum <= metric_value <= maximum:
+                raise ValidationError({"metric_value": f"{metric_type} must be between {minimum} and {maximum}."})
+            validated_data["metric_value"] = metric_value
+            validated_data["rating"] = metric_value if metric_type == FeedbackMetricType.STARS else None
+        elif metric_type == FeedbackMetricType.FREE_TEXT:
+            if metric_value is not None:
+                raise ValidationError({"metric_value": "free_text feedback cannot include a numeric value."})
+            validated_data["rating"] = None
+        if kind == FeedbackKind.RATING and metric_type == FeedbackMetricType.FREE_TEXT:
+            raise ValidationError({"metric_type": "A rating cannot use the free_text metric."})
         if kind != FeedbackKind.RATING and not any(
             str(validated_data.get(field, "")).strip() for field in ("title", "comment", "suggestion")
         ):
             raise ValidationError({"comment": "Please provide feedback details."})
+
+        fingerprint = content_fingerprint(validated_data)
+        validated_data["content_fingerprint"] = fingerprint
+        validated_data["abuse_flags"] = abuse_flags(validated_data)
+        if kind != FeedbackKind.RATING:
+            duplicate = AppFeedback.objects.filter(
+                user=user,
+                content_fingerprint=fingerprint,
+                created_at__gte=timezone.now() - timedelta(minutes=10),
+                is_deleted=False,
+            ).first()
+            if duplicate:
+                return duplicate
 
         if kind == FeedbackKind.RATING:
             lookup = {
@@ -152,6 +262,10 @@ class FeedbackService:
             new_value={"kind": feedback.kind, "context": feedback.context, "rating": feedback.rating},
             request=request,
         )
+        if getattr(settings, "FEEDBACK_AI_TRIAGE_ENABLED", False):
+            from .tasks import triage_feedback
+
+            transaction.on_commit(lambda feedback_id=feedback.pk: triage_feedback.delay(feedback_id))
         return feedback
 
     @staticmethod
@@ -176,6 +290,9 @@ class FeedbackService:
     def analytics(queryset=None) -> dict:
         queryset = queryset or AppFeedback.objects.filter(is_deleted=False)
         ratings = queryset.filter(kind=FeedbackKind.RATING, rating__isnull=False)
+        csat = queryset.filter(metric_type=FeedbackMetricType.CSAT, metric_value__isnull=False)
+        ces = queryset.filter(metric_type=FeedbackMetricType.CES, metric_value__isnull=False)
+        nps = queryset.filter(metric_type=FeedbackMetricType.NPS, metric_value__isnull=False)
         total_ratings = ratings.count()
         distribution = {
             str(row["rating"]): row["count"]
@@ -187,13 +304,41 @@ class FeedbackService:
             .order_by("context")
         )
         satisfied = ratings.filter(rating__gte=4).count()
+        nps_total = nps.count()
+        prompt_events = FeedbackPromptEvent.objects.filter(is_deleted=False)
+        shown_count = prompt_events.filter(event="shown").count()
+        submitted_count = prompt_events.filter(event="submitted").count()
         return {
             "total_feedback": queryset.count(),
             "total_ratings": total_ratings,
             "average_rating": ratings.aggregate(value=Avg("rating"))["value"],
             "satisfaction_percent": round((satisfied / total_ratings) * 100, 2) if total_ratings else 0,
+            "csat": {
+                "average": csat.aggregate(value=Avg("metric_value"))["value"],
+                "distribution": {
+                    str(row["metric_value"]): row["count"]
+                    for row in csat.values("metric_value").annotate(count=Count("id")).order_by("metric_value")
+                },
+            },
+            "ces": {"average": ces.aggregate(value=Avg("metric_value"))["value"], "responses": ces.count()},
+            "nps": {
+                "score": round(
+                    ((nps.filter(metric_value__gte=9).count() - nps.filter(metric_value__lte=6).count()) / nps_total) * 100,
+                    2,
+                ) if nps_total else None,
+                "promoters": nps.filter(metric_value__gte=9).count(),
+                "passives": nps.filter(metric_value__gte=7, metric_value__lte=8).count(),
+                "detractors": nps.filter(metric_value__lte=6).count(),
+            },
+            "prompt_conversion_percent": round((submitted_count / shown_count) * 100, 2) if shown_count else 0,
+            "prompt_events": {"shown": shown_count, "submitted": submitted_count},
             "rating_distribution": distribution,
             "ratings_by_context": by_context,
+            "trends_by_version_platform": list(
+                queryset.values("app_version", "platform")
+                .annotate(count=Count("id"), average_metric=Avg("metric_value"))
+                .order_by("app_version", "platform")[:100]
+            ),
             "open_items": queryset.exclude(status__in=[FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE]).count(),
             "critical_items": queryset.filter(priority="critical").exclude(status=FeedbackStatus.RESOLVED).count(),
             "top_suggestions": list(

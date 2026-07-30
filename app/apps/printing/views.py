@@ -30,12 +30,12 @@ from .models import (
     PrintPricingRule,
 )
 from .serializers import (
+    DashboardPrintOrderSerializer,
+    MobilePrintOrderSerializer,
     PrintBindingPriceSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
     PrintOrderNoteSerializer,
-    DashboardPrintOrderSerializer,
-    MobilePrintOrderSerializer,
     PrintPickupLocationSerializer,
     PrintPricingRuleSerializer,
     PrintQuoteSerializer,
@@ -56,6 +56,7 @@ class PrintQuoteView(APIView):
         data = {
             "total_price": quote["total_price"],
             "currency": quote["currency"],
+            "pricing_revision": quote["pricing_revision"],
             "calculated_at": quote["calculated_at"],
             "items": [
                 {

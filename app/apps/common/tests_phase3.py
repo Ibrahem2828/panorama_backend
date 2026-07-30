@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -157,11 +158,11 @@ def test_student_number_parser_valid_and_invalid():
     assert parsed["enrollment_year_full"] == 2015
     assert parsed["serial_number"] == "0094"
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         StudentNumberParser.parse("21A0094")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         StudentNumberParser.parse("9150094")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         StudentNumberParser.parse("215")
 
 
@@ -228,9 +229,23 @@ def test_print_order_uploaded_file_and_priority(api_client, normal_user, student
     configure_printing()
     normal_file = FileResource.objects.create(title="Normal printable", file=upload(), uploaded_by=normal_user, visibility=FileVisibility.PUBLIC, pages_count=1)
     auth(api_client, normal_user)
-    normal = api_client.post("/api/v1/printing/orders/", {"items": [print_item(normal_file)], "user_notes": "Please print"}, format="json")
+    normal = api_client.post(
+        "/api/v1/printing/orders/",
+        {"items": [print_item(normal_file)], "user_notes": "Please print"},
+        format="json",
+        HTTP_IDEMPOTENCY_KEY="normal-order-retry-key",
+    )
     assert normal.status_code == status.HTTP_201_CREATED, normal.data
     assert normal.data["data"]["priority"] == "normal"
+    assert normal.data["data"]["pricing_revision"]
+    retry = api_client.post(
+        "/api/v1/printing/orders/",
+        {"items": [print_item(normal_file)], "user_notes": "Please print"},
+        format="json",
+        HTTP_IDEMPOTENCY_KEY="normal-order-retry-key",
+    )
+    assert retry.status_code == status.HTTP_201_CREATED, retry.data
+    assert retry.data["data"]["id"] == normal.data["data"]["id"]
 
     approve_student(student_user, academic)
     student_file = FileResource.objects.create(title="Student printable", file=upload("student.png"), uploaded_by=student_user, visibility=FileVisibility.PUBLIC, pages_count=1)

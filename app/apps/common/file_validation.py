@@ -3,13 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+import filetype
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
-
-try:
-    import filetype
-except ImportError:  # pragma: no cover - dependency is present in production requirements
-    filetype = None
 
 
 @dataclass(frozen=True)
@@ -58,10 +54,8 @@ def validate_uploaded_file(uploaded_file, policy: UploadPolicy, field_name: str 
         raise ValidationError({field_name: "Unsupported file extension."})
 
     head = _read_head(uploaded_file)
-    detected_mime = None
-    if filetype is not None:
-        kind = filetype.guess(head)
-        detected_mime = kind.mime if kind else None
+    kind = filetype.guess(head)
+    detected_mime = kind.mime if kind else None
 
     supplied_mime = str(getattr(uploaded_file, "content_type", "") or "").lower()
     effective_mime = detected_mime or supplied_mime

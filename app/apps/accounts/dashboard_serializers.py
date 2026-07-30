@@ -5,8 +5,7 @@ from rest_framework import serializers
 
 from .choices import PermissionEffect, UserRole
 from .models import User, UserPermissionOverride
-from .permissions import Capability, PermissionService, ROLE_CAPABILITIES
-
+from .permissions import Capability, PermissionService
 
 ALL_CAPABILITIES = sorted(
     value for name, value in vars(Capability).items() if name.isupper() and isinstance(value, str)

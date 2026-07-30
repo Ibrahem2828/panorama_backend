@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 import json
 import logging
+from collections.abc import Iterable
 from urllib import request as urllib_request
-from urllib.parse import urlsplit
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.db import transaction

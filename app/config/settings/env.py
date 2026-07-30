@@ -4,7 +4,6 @@ from urllib.parse import unquote, urlparse
 from decouple import UndefinedValueError, config
 from django.core.exceptions import ImproperlyConfigured
 
-
 TRUE_VALUES = {"1", "true", "t", "yes", "y", "on"}
 FALSE_VALUES = {"0", "false", "f", "no", "n", "off"}
 
@@ -21,6 +20,16 @@ def get_env(primary_name: str, fallback_name: str | None = None, default: str | 
             if str(value).strip():
                 return str(value).strip()
     return default
+
+
+def require_env(primary_name: str, fallback_name: str | None = None, *, message: str | None = None) -> str:
+    """Return a non-empty setting or fail before the application starts."""
+
+    value = get_env(primary_name, fallback_name)
+    if value:
+        return value
+    names = " or ".join(name for name in (primary_name, fallback_name) if name)
+    raise ImproperlyConfigured(message or f"Production requires {names}.")
 
 
 def get_bool_env(primary_name: str, fallback_name: str | None = None, default: bool = False) -> bool:

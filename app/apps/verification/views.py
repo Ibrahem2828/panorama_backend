@@ -6,7 +6,6 @@ from pathlib import Path
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
@@ -20,7 +19,11 @@ from apps.common.responses import success_response
 from apps.common.viewsets import StandardReadOnlyModelViewSet
 
 from .models import VerificationCardAccessTicket, VerificationRequest, VerificationStatus
-from .serializers import VerificationRequestSerializer, VerificationRequestStudentSerializer, VerificationReviewSerializer
+from .serializers import (
+    VerificationRequestSerializer,
+    VerificationRequestStudentSerializer,
+    VerificationReviewSerializer,
+)
 from .services import VerificationService
 
 

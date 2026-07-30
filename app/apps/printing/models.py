@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 import uuid
+from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -110,11 +110,13 @@ class PrintBindingPrice(BaseModel):
 
 class PrintOrder(BaseModel):
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="print_orders")
+    idempotency_key_hash = models.CharField(max_length=64, blank=True, editable=False)
     status = models.CharField(max_length=32, choices=PrintOrderStatus.choices, default=PrintOrderStatus.SUBMITTED)
     priority = models.CharField(max_length=32, choices=PrintOrderPriority.choices, default=PrintOrderPriority.NORMAL)
     total_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=8, default="SYP")
     pricing_snapshot = models.JSONField(default=dict, blank=True)
+    pricing_revision = models.CharField(max_length=64, blank=True, db_index=True)
     price_calculated_at = models.DateTimeField(null=True, blank=True)
     pickup_location = models.ForeignKey(
         PrintPickupLocation,
@@ -142,6 +144,13 @@ class PrintOrder(BaseModel):
             models.Index(fields=["status", "priority", "created_at"]),
             models.Index(fields=["user", "status"]),
             models.Index(fields=["assigned_to", "status"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "idempotency_key_hash"],
+                condition=~models.Q(idempotency_key_hash=""),
+                name="unique_print_order_idempotency_key",
+            )
         ]
 
     def __str__(self) -> str:

@@ -4,6 +4,7 @@ cd /app/app
 python manage.py check --deploy
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+python manage.py spectacular --format openapi-json --validate --fail-on-warn --file /tmp/openapi.json
 if [ "${RUN_SETUP_ADMIN_ACCOUNTS:-False}" = "True" ]; then
   python manage.py setup_admin_accounts
 fi

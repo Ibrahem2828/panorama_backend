@@ -3,9 +3,9 @@ from __future__ import annotations
 import base64
 import hashlib
 
+from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from cryptography.fernet import Fernet, InvalidToken
 
 
 def _fernet() -> Fernet:

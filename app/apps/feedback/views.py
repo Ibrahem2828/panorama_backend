@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import filters, status
@@ -17,12 +19,13 @@ from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelView
 from .models import AppFeedback, FeedbackKind, FeedbackPromptPolicy, FeedbackStatus
 from .serializers import (
     AppFeedbackSerializer,
-    DashboardFeedbackSerializer,
     DashboardFeedbackPromptPolicySerializer,
+    DashboardFeedbackSerializer,
+    FeedbackPrivacyRequestSerializer,
     FeedbackPromptEventSerializer,
     FeedbackPromptPolicySerializer,
-    PublicSuggestionSerializer,
     FeedbackWorkflowSerializer,
+    PublicSuggestionSerializer,
 )
 from .services import FeedbackPromptService, FeedbackService, FeedbackWorkflowService
 
@@ -33,7 +36,9 @@ class FeedbackPromptEligibilityView(APIView):
         context = request.query_params.get("context", "app")
         action_key = request.query_params.get("action_key", "")[:100]
         app_version = request.query_params.get("app_version", "")[:32]
-        policy = FeedbackPromptService.eligible(request.user, context, action_key, app_version)
+        platform = request.query_params.get("platform", "")[:32]
+        locale = request.query_params.get("locale", "")[:16]
+        policy = FeedbackPromptService.eligible(request.user, context, action_key, app_version, platform, locale)
         return success_response(
             data={
                 "should_prompt": bool(policy),
@@ -72,6 +77,40 @@ class FeedbackSubmitView(APIView):
         )
 
 
+class FeedbackPrivacyRequestView(APIView):
+    serializer_class = FeedbackPrivacyRequestSerializer
+
+    @extend_schema(tags=["Feedback"], request=FeedbackPrivacyRequestSerializer, responses={200: OpenApiTypes.OBJECT})
+    def post(self, request, pk: int):
+        serializer = FeedbackPrivacyRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            feedback = get_object_or_404(
+                AppFeedback.objects.select_for_update(),
+                pk=pk,
+                user=request.user,
+                is_deleted=False,
+            )
+            action = serializer.validated_data["action"]
+            feedback.is_hidden = True
+            if action == "delete":
+                feedback.deletion_requested_at = timezone.now()
+            feedback.save(update_fields=["is_hidden", "deletion_requested_at", "updated_at"])
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.FEEDBACK_PRIVACY_REQUESTED,
+                target=feedback,
+                new_value={"action": action},
+                request=request,
+            )
+        return success_response(
+            data={"id": feedback.id, "is_hidden": feedback.is_hidden, "deletion_requested": bool(feedback.deletion_requested_at)},
+            message="Feedback privacy request recorded",
+            request=request,
+            code="FEEDBACK_PRIVACY_REQUESTED",
+        )
+
+
 class MyFeedbackViewSet(StandardReadOnlyModelViewSet):
     serializer_class = AppFeedbackSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -99,6 +138,7 @@ class PublicSuggestionViewSet(StandardReadOnlyModelViewSet):
                 kind=FeedbackKind.SUGGESTION,
                 status__in=[FeedbackStatus.PLANNED, FeedbackStatus.IN_PROGRESS, FeedbackStatus.RESOLVED],
                 is_deleted=False,
+                is_hidden=False,
             )
             .exclude(suggestion="")
             .annotate(votes_count=Count("votes"))

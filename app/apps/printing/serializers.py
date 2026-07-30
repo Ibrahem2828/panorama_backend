@@ -157,6 +157,7 @@ class MobilePrintOrderSerializer(serializers.ModelSerializer):
             "priority",
             "total_price",
             "currency",
+            "pricing_revision",
             "price_calculated_at",
             "pickup_location",
             "pickup_location_detail",
@@ -190,6 +191,7 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
             "total_price",
             "currency",
             "pricing_snapshot",
+            "pricing_revision",
             "price_calculated_at",
             "pickup_location",
             "pickup_location_detail",
@@ -256,7 +258,14 @@ class PrintOrderCreateSerializer(BasePrintRequestSerializer):
             validated_data.get("user_notes", ""),
             pickup_location=validated_data.get("pickup_location"),
             request=self.context["request"],
+            idempotency_key=self._idempotency_key(),
         )
+
+    def _idempotency_key(self) -> str:
+        key = self.context["request"].headers.get("Idempotency-Key", "").strip()
+        if len(key) > 255:
+            raise serializers.ValidationError({"Idempotency-Key": "Header must not exceed 255 characters."})
+        return key
 
 
 class PrintStatusUpdateSerializer(serializers.Serializer):

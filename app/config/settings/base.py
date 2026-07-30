@@ -56,6 +56,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "apps.common.middleware.RequestIDMiddleware",
+    "apps.common.middleware.StructuredRequestLogMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -308,6 +309,10 @@ VERIFICATION_CARD_RETENTION_DAYS = config("VERIFICATION_CARD_RETENTION_DAYS", de
 OTP_RETENTION_DAYS = config("OTP_RETENTION_DAYS", default=7, cast=int)
 ACCESS_TICKET_RETENTION_HOURS = config("ACCESS_TICKET_RETENTION_HOURS", default=24, cast=int)
 FEEDBACK_PROMPT_EVENT_RETENTION_DAYS = config("FEEDBACK_PROMPT_EVENT_RETENTION_DAYS", default=365, cast=int)
+FEEDBACK_ABUSE_TERMS = get_csv_env("FEEDBACK_ABUSE_TERMS", default=[])
+FEEDBACK_AI_TRIAGE_ENABLED = get_bool_env("FEEDBACK_AI_TRIAGE_ENABLED", default=False)
+FEEDBACK_AI_PROVIDER = config("FEEDBACK_AI_PROVIDER", default="local_safe_heuristic")
+FEEDBACK_AI_CIRCUIT_SECONDS = config("FEEDBACK_AI_CIRCUIT_SECONDS", default=300, cast=int)
 AUDIT_LOG_RETENTION_DAYS = config("AUDIT_LOG_RETENTION_DAYS", default=730, cast=int)
 MAX_DOCUMENT_UPLOAD_SIZE = config("MAX_DOCUMENT_UPLOAD_SIZE", default=25 * 1024 * 1024, cast=int)
 MAX_IMAGE_UPLOAD_SIZE = config("MAX_IMAGE_UPLOAD_SIZE", default=8 * 1024 * 1024, cast=int)

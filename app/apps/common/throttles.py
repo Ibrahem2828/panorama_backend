@@ -3,8 +3,9 @@ from __future__ import annotations
 import hashlib
 import re
 
-from apps.common.request_utils import get_client_ip
 from rest_framework.throttling import SimpleRateThrottle
+
+from apps.common.request_utils import get_client_ip
 
 
 def _request_ip(request) -> str:

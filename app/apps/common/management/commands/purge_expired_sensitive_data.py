@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -16,7 +16,6 @@ from apps.groups.models import ExternalChannelAccessTicket
 from apps.printing.models import PrintItemAccessTicket
 from apps.support.models import SupportAttachmentAccessTicket
 from apps.verification.models import VerificationCardAccessTicket, VerificationRequest, VerificationStatus
-
 
 logger = logging.getLogger(__name__)
 

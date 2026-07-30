@@ -1,10 +1,12 @@
-from decouple import config
+from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
-from .env import database_from_url, get_bool_env, get_csv_env, get_env
+from .env import database_from_url, get_bool_env, get_csv_env, require_env
 
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = require_env("SECRET_KEY")
+if len(SECRET_KEY) < 50:
+    raise ImproperlyConfigured("Production SECRET_KEY must be at least 50 characters and generated randomly.")
 DEBUG = get_bool_env("DEBUG", "DJANGO_DEBUG", default=False)
 RETURN_DEVELOPMENT_OTP = False
 API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=False)
@@ -20,23 +22,41 @@ ALLOWED_HOSTS = get_csv_env(
 if "*" in ALLOWED_HOSTS:
     raise ImproperlyConfigured("Production ALLOWED_HOSTS must not contain '*'. Configure explicit hostnames.")
 
-database_url = get_env("DATABASE_URL")
+database_url = require_env("DATABASE_URL")
 DATABASE_SSL_REQUIRE = get_bool_env("DATABASE_SSL_REQUIRE", default=True)
-if database_url:
-    DATABASES["default"] = database_from_url(database_url, ssl_require=DATABASE_SSL_REQUIRE)  # noqa: F405
+DATABASES["default"] = database_from_url(database_url, ssl_require=DATABASE_SSL_REQUIRE)  # noqa: F405
+
+REDIS_URL = require_env("REDIS_URL")
+CACHES["default"]["LOCATION"] = REDIS_URL  # noqa: F405
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=True)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
 SECURE_HSTS_PRELOAD = get_bool_env("SECURE_HSTS_PRELOAD", default=True)
-SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=31536000, cast=int)
+SECURE_HSTS_SECONDS = int(require_env("SECURE_HSTS_SECONDS"))
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = get_bool_env("USE_X_FORWARDED_HOST", "DJANGO_USE_X_FORWARDED_HOST", default=True)
 SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", "DJANGO_SESSION_COOKIE_SECURE", default=True)
 CSRF_COOKIE_SECURE = get_bool_env("CSRF_COOKIE_SECURE", "DJANGO_CSRF_COOKIE_SECURE", default=True)
-CSRF_TRUSTED_ORIGINS = get_csv_env("CSRF_TRUSTED_ORIGINS", "DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
-CORS_ALLOWED_ORIGINS = get_csv_env("CORS_ALLOWED_ORIGINS", "DJANGO_CORS_ALLOWED_ORIGINS", default=[])
+CSRF_TRUSTED_ORIGINS = get_csv_env(
+    "CSRF_TRUSTED_ORIGINS",
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    required_message="Production requires CSRF_TRUSTED_ORIGINS or DJANGO_CSRF_TRUSTED_ORIGINS.",
+)
+CORS_ALLOWED_ORIGINS = get_csv_env(
+    "CORS_ALLOWED_ORIGINS",
+    "DJANGO_CORS_ALLOWED_ORIGINS",
+    required_message="Production requires CORS_ALLOWED_ORIGINS or DJANGO_CORS_ALLOWED_ORIGINS.",
+)
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
@@ -45,45 +65,53 @@ CSRF_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "no-referrer"
 
-FIELD_ENCRYPTION_KEY = get_env("FIELD_ENCRYPTION_KEY", default=FIELD_ENCRYPTION_KEY)  # noqa: F405
-if not FIELD_ENCRYPTION_KEY:  # noqa: F405
-    raise ImproperlyConfigured("Production requires FIELD_ENCRYPTION_KEY for encrypted secrets.")
-EMAIL_HOST_PASSWORD = get_env("EMAIL_HOST_PASSWORD", default=EMAIL_HOST_PASSWORD)  # noqa: F405
-if EMAIL_BACKEND.endswith("smtp.EmailBackend") and not EMAIL_HOST_PASSWORD:  # noqa: F405
-    raise ImproperlyConfigured("Production SMTP email delivery requires EMAIL_HOST_PASSWORD.")
+FIELD_ENCRYPTION_KEY = require_env("FIELD_ENCRYPTION_KEY")
+try:
+    Fernet(FIELD_ENCRYPTION_KEY.encode("ascii"))
+except Exception as exc:  # noqa: BLE001
+    raise ImproperlyConfigured("FIELD_ENCRYPTION_KEY must be a valid Fernet key.") from exc
+EMAIL_HOST = require_env("EMAIL_HOST")
+EMAIL_HOST_USER = require_env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = require_env("EMAIL_HOST_PASSWORD")
 
-USE_S3_STORAGE = get_bool_env("USE_S3_STORAGE", default=False)
-if USE_S3_STORAGE:
-    INSTALLED_APPS += ["storages"]  # noqa: F405
-    AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
-    AWS_S3_ENDPOINT_URL = config("AWS_S3_ENDPOINT_URL", default="") or None
-    AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="auto")
-    AWS_QUERYSTRING_AUTH = True
-    AWS_QUERYSTRING_EXPIRE = config("AWS_QUERYSTRING_EXPIRE", default=120, cast=int)
-    AWS_DEFAULT_ACL = None
-    AWS_S3_FILE_OVERWRITE = False
-    STORAGES = {
-        "default": {"BACKEND": "storages.backends.s3.S3Storage"},
-        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
-    }
+if not get_bool_env("USE_S3_STORAGE", default=False):
+    raise ImproperlyConfigured("Production requires USE_S3_STORAGE=True for private object storage.")
+INSTALLED_APPS += ["storages"]  # noqa: F405
+AWS_ACCESS_KEY_ID = require_env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = require_env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = require_env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_ENDPOINT_URL = require_env("AWS_S3_ENDPOINT_URL")
+AWS_S3_REGION_NAME = require_env("AWS_S3_REGION_NAME")
+AWS_QUERYSTRING_AUTH = True
+AWS_QUERYSTRING_EXPIRE = int(require_env("AWS_QUERYSTRING_EXPIRE"))
+AWS_DEFAULT_ACL = None
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "private, no-store"}
+S3_BUCKET_PRIVATE = get_bool_env("S3_BUCKET_PRIVATE", default=False)
+if not S3_BUCKET_PRIVATE:
+    raise ImproperlyConfigured("Production requires S3_BUCKET_PRIVATE=True after provider policy verification.")
+STORAGES = {
+    "default": {"BACKEND": "storages.backends.s3.S3Storage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
-LOG_LEVEL = config("LOG_LEVEL", default="INFO")
+LOG_LEVEL = require_env("LOG_LEVEL")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "console": {
-            "format": "%(asctime)s %(levelname)s %(name)s %(message)s",
+            "()": "apps.common.logging.JSONFormatter",
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "console",
+            "filters": ["sensitive_data"],
         },
     },
+    "filters": {"sensitive_data": {"()": "apps.common.logging.SensitiveDataFilter"}},
     "root": {
         "handlers": ["console"],
         "level": LOG_LEVEL,

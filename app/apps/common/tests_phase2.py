@@ -11,8 +11,7 @@ from apps.files.models import FileResource, FileVisibility
 from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 from apps.notifications.models import Notification
 from apps.universities.models import AcademicYear, Faculty, Major, Semester, Subject, University
-from apps.verification.models import VerificationRequest, VerificationStatus
-
+from apps.verification.models import VerificationRequest
 
 PNG_BYTES = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"

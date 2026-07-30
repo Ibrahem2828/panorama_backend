@@ -8,6 +8,7 @@ from apps.accounts.models import User
 from .models import (
     AppFeedback,
     FeedbackKind,
+    FeedbackMetricType,
     FeedbackPriority,
     FeedbackPromptEvent,
     FeedbackPromptPolicy,
@@ -27,10 +28,17 @@ class FeedbackPromptPolicySerializer(serializers.ModelSerializer):
             "question",
             "is_active",
             "minimum_app_version",
+            "maximum_app_version",
             "cooldown_days",
+            "dismiss_cooldown_days",
+            "max_prompts_per_30_days",
             "sample_percent",
             "allow_comment",
             "allow_suggestion",
+            "platforms",
+            "locales",
+            "roles",
+            "verification_statuses",
         ]
         read_only_fields = fields
 
@@ -46,14 +54,35 @@ class DashboardFeedbackPromptPolicySerializer(serializers.ModelSerializer):
             "question",
             "is_active",
             "minimum_app_version",
+            "maximum_app_version",
             "cooldown_days",
+            "dismiss_cooldown_days",
+            "max_prompts_per_30_days",
             "sample_percent",
             "allow_comment",
             "allow_suggestion",
+            "platforms",
+            "locales",
+            "roles",
+            "verification_statuses",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        for field in ("platforms", "locales", "roles", "verification_statuses"):
+            values = attrs.get(field, getattr(self.instance, field, []))
+            if not isinstance(values, list) or len(values) > 25 or any(not isinstance(value, str) for value in values):
+                raise serializers.ValidationError({field: "Use a list of at most 25 strings."})
+        minimum = attrs.get("minimum_app_version", getattr(self.instance, "minimum_app_version", ""))
+        maximum = attrs.get("maximum_app_version", getattr(self.instance, "maximum_app_version", ""))
+        def version_tuple(value):
+            return tuple(int("".join(char for char in part if char.isdigit()) or 0) for part in value.split("."))
+
+        if minimum and maximum and version_tuple(minimum) > version_tuple(maximum):
+            raise serializers.ValidationError({"maximum_app_version": "Maximum version must not be below the minimum version."})
+        return attrs
 
 
 class FeedbackPromptEventSerializer(serializers.Serializer):
@@ -68,18 +97,26 @@ class FeedbackPromptEventSerializer(serializers.Serializer):
         return FeedbackPromptEvent.objects.create(user=self.context["request"].user, **validated_data)
 
 
+class FeedbackPrivacyRequestSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=["hide", "delete"])
+
+
 class AppFeedbackSerializer(serializers.ModelSerializer):
     """User-safe feedback contract. Internal workflow notes and device metadata never leak."""
 
     votes_count = serializers.IntegerField(source="votes.count", read_only=True)
     has_voted = serializers.SerializerMethodField()
     metadata = serializers.JSONField(write_only=True, required=False, default=dict)
+    metric_type = serializers.ChoiceField(choices=FeedbackMetricType.choices, required=False)
+    metric_value = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = AppFeedback
         fields = [
             "id",
             "kind",
+            "metric_type",
+            "metric_value",
             "context",
             "action_key",
             "object_type",
@@ -95,6 +132,11 @@ class AppFeedbackSerializer(serializers.ModelSerializer):
             "build_number",
             "platform",
             "locale",
+            "release_channel",
+            "journey_id",
+            "session_id",
+            "experiment_key",
+            "source_screen",
             "device_model",
             "metadata",
             "votes_count",
@@ -122,8 +164,30 @@ class AppFeedbackSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         kind = attrs.get("kind", getattr(self.instance, "kind", None))
-        if kind == FeedbackKind.RATING and attrs.get("rating") is None:
-            raise serializers.ValidationError({"rating": "A rating from 1 to 5 is required."})
+        metric_type = attrs.get("metric_type") or (
+            FeedbackMetricType.STARS if kind == FeedbackKind.RATING or attrs.get("rating") is not None else FeedbackMetricType.FREE_TEXT
+        )
+        attrs["metric_type"] = metric_type
+        metric_value = attrs.get("metric_value")
+        if metric_value is None and metric_type == FeedbackMetricType.STARS:
+            metric_value = attrs.get("rating", getattr(self.instance, "rating", None))
+        metric_ranges = {
+            FeedbackMetricType.CSAT: (1, 5),
+            FeedbackMetricType.CES: (1, 7),
+            FeedbackMetricType.NPS: (0, 10),
+            FeedbackMetricType.STARS: (1, 5),
+        }
+        if metric_type in metric_ranges:
+            minimum, maximum = metric_ranges[metric_type]
+            if metric_value is None or not minimum <= metric_value <= maximum:
+                raise serializers.ValidationError({"metric_value": f"{metric_type} must be between {minimum} and {maximum}."})
+            attrs["metric_value"] = metric_value
+            if metric_type == FeedbackMetricType.STARS:
+                attrs["rating"] = metric_value
+        elif metric_type == FeedbackMetricType.FREE_TEXT and metric_value is not None:
+            raise serializers.ValidationError({"metric_value": "free_text feedback cannot include a numeric value."})
+        if kind == FeedbackKind.RATING and metric_type == FeedbackMetricType.FREE_TEXT:
+            raise serializers.ValidationError({"metric_type": "A rating cannot use the free_text metric."})
         if kind == FeedbackKind.SUGGESTION and not str(attrs.get("suggestion", "")).strip():
             raise serializers.ValidationError({"suggestion": "Suggestion details are required."})
         if kind == FeedbackKind.SUGGESTION and not str(attrs.get("title", "")).strip():
@@ -175,6 +239,8 @@ class DashboardFeedbackSerializer(serializers.ModelSerializer):
             "user",
             "user_name",
             "kind",
+            "metric_type",
+            "metric_value",
             "context",
             "action_key",
             "object_type",
@@ -194,8 +260,17 @@ class DashboardFeedbackSerializer(serializers.ModelSerializer):
             "build_number",
             "platform",
             "locale",
+            "release_channel",
+            "journey_id",
+            "session_id",
+            "experiment_key",
+            "source_screen",
             "device_model",
             "metadata",
+            "content_fingerprint",
+            "abuse_flags",
+            "is_hidden",
+            "deletion_requested_at",
             "votes_count",
             "created_at",
             "updated_at",

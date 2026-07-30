@@ -1,8 +1,13 @@
 from django.contrib import admin
 
 from .models import (
-    PrintBindingPrice, PrintItemAccessTicket, PrintOrder, PrintOrderItem,
-    PrintOrderStatusHistory, PrintPickupLocation, PrintPricingRule,
+    PrintBindingPrice,
+    PrintItemAccessTicket,
+    PrintOrder,
+    PrintOrderItem,
+    PrintOrderStatusHistory,
+    PrintPickupLocation,
+    PrintPricingRule,
 )
 
 

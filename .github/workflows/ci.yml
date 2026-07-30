@@ -1,0 +1,125 @@
+name: Production Acceptance Gate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: panorama_test
+          POSTGRES_USER: panorama
+          POSTGRES_PASSWORD: ci_test_only_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U panorama -d panorama_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.testing
+      SECRET_KEY: ci-test-only-key
+      DATABASE_URL: postgres://panorama:ci_test_only_password@127.0.0.1:5432/panorama_test
+      REDIS_URL: redis://127.0.0.1:6379/0
+      FIELD_ENCRYPTION_KEY: ci-test-only-encryption-key
+      EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - name: Install dependencies
+        run: python -m pip install --require-hashes -r requirements-dev.lock
+      - name: Scan committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Static checks
+        run: |
+          python -m compileall -q app
+          ruff check app
+          mypy app/apps/accounts app/apps/verification app/apps/files app/apps/printing app/apps/feedback app/apps/common
+          bandit -q -r app -x '*/migrations/*,*/tests/*' --severity-level medium
+          sh -n docker/entrypoint.sh
+          sh -n docker/release.sh
+          python -m py_compile scripts/smoke_test.py
+      - name: Django contracts and migrations
+        working-directory: app
+        run: |
+          python manage.py check --settings=config.settings.testing
+          python manage.py makemigrations --check --dry-run --settings=config.settings.testing
+          python manage.py migrate --noinput --settings=config.settings.testing
+          python manage.py spectacular --format openapi-json --validate --fail-on-warn --file ../docs/api/openapi.json --settings=config.settings.testing
+      - name: Generate Postman collection from OpenAPI
+        run: python scripts/generate_postman_collection.py
+      - name: Verify generated OpenAPI contract is committed
+        run: git diff --exit-code -- docs/api/openapi.json docs/api/postman_collection.json
+      - name: Tests and coverage gate
+        run: pytest -q --cov=apps --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=html:htmlcov
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ github.sha }}
+          path: |
+            coverage.xml
+            htmlcov/
+      - name: Dependency audit
+        run: pip-audit -r requirements.lock
+      - name: Build production image
+        run: |
+          docker build --pull \
+            --build-arg VCS_REF=${GITHUB_SHA} \
+            --build-arg VERSION=ci-${GITHUB_SHA} \
+            --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+            --tag panorama-backend:${GITHUB_SHA} .
+      - name: Scan image for critical and high vulnerabilities
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: panorama-backend:${{ github.sha }}
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Upload image scan
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-image.sarif
+      - name: Scan Docker and Compose configuration
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: panorama-backend:${{ github.sha }}
+          artifact-name: panorama-sbom-${{ github.sha }}
+          output-file: sbom.spdx.json
+          format: spdx-json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.spdx.json

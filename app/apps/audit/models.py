@@ -45,6 +45,7 @@ class AuditAction(models.TextChoices):
     MESSAGE_DELETED = "message_deleted", "Message Deleted"
     FEEDBACK_SUBMITTED = "feedback_submitted", "Feedback Submitted"
     FEEDBACK_WORKFLOW_UPDATED = "feedback_workflow_updated", "Feedback Workflow Updated"
+    FEEDBACK_PRIVACY_REQUESTED = "feedback_privacy_requested", "Feedback Privacy Requested"
 
 
 class AuditLog(BaseModel):

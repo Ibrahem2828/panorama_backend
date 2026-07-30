@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from hashlib import sha256
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -82,7 +83,10 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         try:
             data = await self.create_message(content)
         except Exception:
-            logger.exception("WebSocket message creation failed", extra={"user_id": self.user.id, "group_id": self.group_id})
+            logger.exception(
+                "WebSocket message creation failed",
+                extra={"user_id_hash": sha256(str(self.user.id).encode("utf-8")).hexdigest()[:16], "group_id": self.group_id},
+            )
             await self.send_error("MESSAGE_REJECTED", "The message could not be sent.")
             return
         await self.channel_layer.group_send(self.room_group_name, {"type": "message_event", "data": data})

@@ -1,8 +1,6 @@
 from dataclasses import dataclass
-from datetime import date
 
 from django.core.exceptions import ValidationError
-
 
 FACULTY_CODE_LABELS = {
     "1": "HUMAN_MEDICINE",

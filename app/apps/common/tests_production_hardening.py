@@ -1,7 +1,9 @@
 import importlib
 import sys
+from unittest.mock import patch
 
 import pytest
+from config.settings.env import get_bool_env, get_csv_env
 from decouple import UndefinedValueError
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
@@ -10,7 +12,6 @@ from rest_framework.test import APIClient
 
 from apps.accounts.choices import UserRole
 from apps.accounts.models import User
-from config.settings.env import get_bool_env, get_csv_env
 
 
 def test_get_csv_env_uses_primary_before_fallback(monkeypatch):
@@ -50,13 +51,28 @@ def test_get_bool_env_supports_django_debug_fallback(monkeypatch):
 
 
 def test_production_settings_accept_django_allowed_hosts(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "test-secret")
-    monkeypatch.setenv("FIELD_ENCRYPTION_KEY", "test-encryption-key")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-that-is-long-enough-to-satisfy-production-validation-123")
+    monkeypatch.setenv("FIELD_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
+    monkeypatch.setenv("EMAIL_HOST", "smtp.example.test")
+    monkeypatch.setenv("EMAIL_HOST_USER", "mailer@example.test")
     monkeypatch.setenv("EMAIL_HOST_PASSWORD", "test-smtp-password")
     monkeypatch.delenv("ALLOWED_HOSTS", raising=False)
     monkeypatch.setenv("DJANGO_ALLOWED_HOSTS", "coolify.sslip.io,localhost")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
     monkeypatch.setenv("DATABASE_SSL_REQUIRE", "True")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.test")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.test")
+    monkeypatch.setenv("SECURE_HSTS_SECONDS", "31536000")
+    monkeypatch.setenv("LOG_LEVEL", "INFO")
+    monkeypatch.setenv("USE_S3_STORAGE", "True")
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-key")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret")
+    monkeypatch.setenv("AWS_STORAGE_BUCKET_NAME", "private-bucket")
+    monkeypatch.setenv("AWS_S3_ENDPOINT_URL", "https://storage.example.test")
+    monkeypatch.setenv("AWS_S3_REGION_NAME", "auto")
+    monkeypatch.setenv("AWS_QUERYSTRING_EXPIRE", "120")
+    monkeypatch.setenv("S3_BUCKET_PRIVATE", "True")
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
     sys.modules.pop("config.settings.production", None)
@@ -65,6 +81,18 @@ def test_production_settings_accept_django_allowed_hosts(monkeypatch):
     assert production.ALLOWED_HOSTS == ["coolify.sslip.io", "localhost"]
     assert production.DEBUG is False
     assert production.DATABASES["default"]["OPTIONS"] == {"sslmode": "require"}
+    assert production.STORAGES["default"]["BACKEND"] == "storages.backends.s3.S3Storage"
+
+
+def test_production_settings_fail_fast_without_required_database(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-that-is-long-enough-to-satisfy-production-validation-123")
+    monkeypatch.setenv("ALLOWED_HOSTS", "api.example.test")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
+    sys.modules.pop("config.settings.production", None)
+
+    with pytest.raises(ImproperlyConfigured, match="DATABASE_URL"):
+        importlib.import_module("config.settings.production")
 
 
 def test_health_endpoint_is_public():
@@ -80,6 +108,42 @@ def test_health_endpoint_is_public():
             "service": "panorama_backend",
         },
     }
+
+
+def test_liveness_endpoint_is_public_and_does_not_require_dependencies():
+    with patch("apps.common.health_views.connection.cursor", side_effect=RuntimeError):
+        response = APIClient().get("/api/v1/health/live/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["code"] == "LIVE"
+    assert response.data["data"]["status"] == "live"
+
+
+@pytest.mark.django_db
+def test_readiness_endpoint_checks_dependencies_without_authentication():
+    response = APIClient().get("/api/v1/health/ready/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["code"] == "READY"
+    assert response.data["data"]["status"] == "ready"
+
+
+@pytest.mark.django_db
+def test_readiness_returns_503_when_cache_dependency_fails():
+    with patch("apps.common.health_views.cache.get", side_effect=RuntimeError):
+        response = APIClient().get("/api/v1/health/ready/")
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.data["code"] == "SERVICE_NOT_READY"
+
+
+@pytest.mark.django_db
+def test_startup_endpoint_checks_migrations_and_configuration_without_authentication():
+    response = APIClient().get("/api/v1/health/startup/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["code"] == "STARTUP_READY"
+    assert response.data["data"]["migrations"] == "current"
 
 
 @pytest.mark.django_db

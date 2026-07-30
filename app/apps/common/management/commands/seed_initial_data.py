@@ -1,3 +1,5 @@
+import secrets
+
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -34,7 +36,7 @@ class Command(BaseCommand):
         ]
         faculties = {}
         majors = {}
-        for code, arabic_name, english_name, major_name in faculties_data:
+        for code, arabic_name, _english_name, major_name in faculties_data:
             faculty, _ = Faculty.objects.update_or_create(
                 university=university,
                 code=code,
@@ -82,7 +84,7 @@ class Command(BaseCommand):
                 )
                 subjects[(code, idx)] = subject
 
-        password = "ChangeMe123!"
+        password = secrets.token_urlsafe(32)
         users = {
             "it": self._user("it@panorama.local", "+963900000001", "IT Support", UserRole.IT_SUPPORT, password, is_staff=True, is_superuser=True),
             "admin": self._user("admin@panorama.local", "+963900000002", "Admin User", UserRole.ADMIN, password),
@@ -183,7 +185,7 @@ class Command(BaseCommand):
         ticket, _ = SupportTicket.objects.get_or_create(user=users["student"], subject="Demo support ticket", defaults={"category": SupportTicketCategory.TECHNICAL})
         SupportTicketMessage.objects.get_or_create(ticket=ticket, sender=users["student"], message="I need help with the demo app.")
 
-        self.stdout.write(self.style.SUCCESS("Seed data ready. Demo password for all users: ChangeMe123!"))
+        self.stdout.write(self.style.SUCCESS("Seed data ready. Demo accounts use generated, non-disclosed passwords."))
 
     def _user(self, email, phone, full_name, role, password, is_staff=False, is_superuser=False, is_phone_verified=False):
         user, _ = User.objects.update_or_create(

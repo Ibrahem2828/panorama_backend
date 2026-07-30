@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.accounts.permissions import PermissionService, Capability
+from apps.accounts.permissions import Capability, PermissionService
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.notifications.models import NotificationType

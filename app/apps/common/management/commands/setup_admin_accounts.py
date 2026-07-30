@@ -1,31 +1,27 @@
 import os
 
+from config.settings.env import get_bool_env
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 
 from apps.accounts.choices import UserRole
 from apps.accounts.models import User
-from config.settings.env import get_bool_env
-
 
 LOCAL_DEFAULTS = {
     "django_superuser": {
         "email": "it@panorama.local",
         "phone": "+963900000001",
-        "password": "ChangeMe123!",
         "full_name": "Panorama IT Support",
     },
     "dashboard_admin": {
         "email": "admin@panorama.local",
         "phone": "+963900000002",
-        "password": "ChangeMe123!",
         "full_name": "Panorama Admin",
     },
     "print_staff": {
         "email": "print@panorama.local",
         "phone": "+963900000003",
-        "password": "ChangeMe123!",
         "full_name": "Panorama Print Staff",
     },
 }
@@ -77,7 +73,7 @@ class Command(BaseCommand):
         account = {
             "email": self._env_or_default(f"{prefix}_EMAIL", defaults.get("email")),
             "phone": self._env_or_default(f"{prefix}_PHONE", defaults.get("phone")),
-            "password": self._env_or_default(f"{prefix}_PASSWORD", defaults.get("password")),
+            "password": self._env_or_default(f"{prefix}_PASSWORD"),
             "full_name": self._env_or_default(f"{prefix}_FULL_NAME", defaults.get("full_name")),
         }
         missing = [key for key, value in account.items() if not value]

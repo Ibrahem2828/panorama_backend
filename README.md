@@ -94,13 +94,10 @@ python manage.py seed_initial_data
 
 The command is idempotent and creates SPU academic data, faculties with student-number codes `1` to `7`, demo subjects, demo users, groups, files, announcements, print orders, and a support ticket.
 
-Demo credentials, all using password `ChangeMe123!`:
-
-- IT Support: `it@panorama.local`
-- Admin: `admin@panorama.local`
-- Print Staff: `print@panorama.local`
-- Verified Student: `student@panorama.local`
-- Normal User: `user@panorama.local`
+The seed command creates non-production demo accounts with generated,
+non-disclosed passwords. It must never be used to bootstrap a production
+administrator; use `setup_admin_accounts` with deployment-secret environment
+variables instead.
 
 ## Phase 1 Features
 

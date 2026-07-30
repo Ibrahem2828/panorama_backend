@@ -1,155 +1,208 @@
+# Coolify production compose. Configure its HTTP health check as GET
+# /api/v1/health/ready/ and require HTTP 200 plus code=READY in the JSON body.
+# The Docker health check below remains liveness-only by design.
+
+x-app-environment: &app-environment
+  DJANGO_SETTINGS_MODULE: config.settings.production
+  SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in Coolify}
+  FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?set FIELD_ENCRYPTION_KEY in Coolify}
+  DEBUG: "False"
+  DJANGO_DEBUG: "False"
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
+  DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL (managed or postgres service)}
+  DATABASE_SSL_REQUIRE: ${DATABASE_SSL_REQUIRE:?set DATABASE_SSL_REQUIRE}
+  REDIS_URL: ${REDIS_URL:?set REDIS_URL (managed or redis service)}
+  EMAIL_HOST: ${EMAIL_HOST:?set EMAIL_HOST}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:?set EMAIL_HOST_USER}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:?set EMAIL_HOST_PASSWORD}
+  USE_S3_STORAGE: "True"
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?set AWS_ACCESS_KEY_ID}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?set AWS_SECRET_ACCESS_KEY}
+  AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:?set AWS_STORAGE_BUCKET_NAME}
+  AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:?set AWS_S3_ENDPOINT_URL}
+  AWS_S3_REGION_NAME: ${AWS_S3_REGION_NAME:?set AWS_S3_REGION_NAME}
+  S3_BUCKET_PRIVATE: ${S3_BUCKET_PRIVATE:?confirm S3_BUCKET_PRIVATE after provider policy verification}
+  AWS_QUERYSTRING_EXPIRE: ${AWS_QUERYSTRING_EXPIRE:?set AWS_QUERYSTRING_EXPIRE}
+  APP_BASE_URL: ${APP_BASE_URL:?set APP_BASE_URL}
+  PORT: ${PORT:?set PORT}
+  HEALTHCHECK_HOST: ${HEALTHCHECK_HOST:?set HEALTHCHECK_HOST}
+  LOG_LEVEL: ${LOG_LEVEL:?set LOG_LEVEL}
+  SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:?set SECURE_SSL_REDIRECT}
+  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:?set SESSION_COOKIE_SECURE}
+  CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:?set CSRF_COOKIE_SECURE}
+  SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:?set SECURE_HSTS_SECONDS}
+  SECURE_HSTS_INCLUDE_SUBDOMAINS: ${SECURE_HSTS_INCLUDE_SUBDOMAINS:?set SECURE_HSTS_INCLUDE_SUBDOMAINS}
+  SECURE_HSTS_PRELOAD: ${SECURE_HSTS_PRELOAD:?set SECURE_HSTS_PRELOAD}
+  USE_X_FORWARDED_HOST: ${USE_X_FORWARDED_HOST:?set USE_X_FORWARDED_HOST}
+  RUN_SETUP_ADMIN_ACCOUNTS: ${RUN_SETUP_ADMIN_ACCOUNTS:-False}
+  RUN_SEED_DATA: ${RUN_SEED_DATA:-False}
+  RUN_SEED_PRODUCTION_DEFAULTS: ${RUN_SEED_PRODUCTION_DEFAULTS:-False}
+  OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
+
+x-runtime-security: &runtime-security
+  init: true
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=64m
+
+x-runtime-resources: &runtime-resources
+  logging:
+    driver: local
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   web:
+    <<: [*runtime-security, *runtime-resources]
     build:
       context: .
       dockerfile: Dockerfile
-    image: panorama-backend:${IMAGE_TAG:-latest}
+      args:
+        VCS_REF: ${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
+        VERSION: ${RELEASE_VERSION:?set RELEASE_VERSION}
+        BUILD_DATE: ${BUILD_DATE:?set BUILD_DATE as ISO-8601 UTC}
+    image: panorama-backend:${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
     restart: unless-stopped
+    stop_grace_period: 35s
     expose:
       - "8000"
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.production
-      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
-      DEBUG: "False"
-      DJANGO_DEBUG: "False"
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
-      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
-      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
-      DATABASE_SSL_REQUIRE: ${DATABASE_SSL_REQUIRE:-False}
-      REDIS_URL: redis://redis:6379/0
-      PORT: ${PORT:-8000}
-      HEALTHCHECK_HOST: ${HEALTHCHECK_HOST:-}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-True}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-True}
-      CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-True}
-      SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:-31536000}
-      SECURE_HSTS_INCLUDE_SUBDOMAINS: ${SECURE_HSTS_INCLUDE_SUBDOMAINS:-True}
-      SECURE_HSTS_PRELOAD: ${SECURE_HSTS_PRELOAD:-False}
-      USE_X_FORWARDED_HOST: ${USE_X_FORWARDED_HOST:-True}
-      RUN_DEPLOY_CHECK: ${RUN_DEPLOY_CHECK:-True}
-      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-True}
-      RUN_COLLECTSTATIC: ${RUN_COLLECTSTATIC:-True}
-      RUN_SETUP_ADMIN_ACCOUNTS: ${RUN_SETUP_ADMIN_ACCOUNTS:-False}
-      RUN_SEED_DATA: ${RUN_SEED_DATA:-False}
-      WAIT_FOR_DATABASE: ${WAIT_FOR_DATABASE:-True}
-      WAIT_FOR_REDIS: ${WAIT_FOR_REDIS:-True}
-      WAIT_TIMEOUT_SECONDS: ${WAIT_TIMEOUT_SECONDS:-60}
-      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
-      JWT_ACCESS_TOKEN_LIFETIME_MINUTES: ${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-60}
-      JWT_REFRESH_TOKEN_LIFETIME_DAYS: ${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-14}
-      CACHE_DEFAULT_TIMEOUT: ${CACHE_DEFAULT_TIMEOUT:-300}
-      MAX_OTP_VERIFY_ATTEMPTS: ${MAX_OTP_VERIFY_ATTEMPTS:-5}
-      MAX_CHAT_MESSAGE_LENGTH: ${MAX_CHAT_MESSAGE_LENGTH:-4000}
-      MAX_IMAGE_UPLOAD_SIZE_MB: ${MAX_IMAGE_UPLOAD_SIZE_MB:-5}
-      MAX_DOCUMENT_UPLOAD_SIZE_MB: ${MAX_DOCUMENT_UPLOAD_SIZE_MB:-25}
-      OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    environment: *app-environment
     volumes:
-      - media_data:/app/media
       - static_data:/app/staticfiles
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 512M
     healthcheck:
-      test: ["CMD", "python", "-c", "import http.client, os, sys; port=int(os.environ.get('PORT', '8000')); host=os.environ.get('HEALTHCHECK_HOST') or (os.environ.get('ALLOWED_HOSTS') or os.environ.get('DJANGO_ALLOWED_HOSTS') or 'localhost').split(',')[0].strip(); conn=http.client.HTTPConnection('127.0.0.1', port, timeout=3); conn.request('GET', '/api/v1/health/ready/', headers={'Host': host}); response=conn.getresponse(); sys.exit(0 if response.status < 500 else 1)"]
+      test: ["CMD", "python", "-c", "import json,http.client,os,sys; conn=http.client.HTTPConnection('127.0.0.1',int(os.environ['PORT']),timeout=3); conn.request('GET','/api/v1/health/live/',headers={'Host':os.environ['HEALTHCHECK_HOST']}); response=conn.getresponse(); body=json.loads(response.read()); sys.exit(0 if response.status == 200 and body.get('code') == 'LIVE' and body.get('data',{}).get('status') == 'live' else 1)"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 45s
 
   worker:
-    image: panorama-backend:${IMAGE_TAG:-latest}
+    <<: [*runtime-security, *runtime-resources]
+    image: panorama-backend:${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
     restart: unless-stopped
-    profiles: ["celery"]
-    command: celery -A config worker --loglevel=${CELERY_LOG_LEVEL:-INFO}
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.production
-      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
-      DEBUG: "False"
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
-      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
-      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
-      REDIS_URL: redis://redis:6379/0
-      RUN_DEPLOY_CHECK: "False"
-      RUN_MIGRATIONS: "False"
-      RUN_COLLECTSTATIC: "False"
-      RUN_SETUP_ADMIN_ACCOUNTS: "False"
-      RUN_SEED_DATA: "False"
-      WAIT_FOR_DATABASE: "True"
-      WAIT_FOR_REDIS: "True"
-      OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - media_data:/app/media
+    stop_grace_period: 75s
+    command: celery -A config worker --loglevel=${CELERY_LOG_LEVEL:-INFO} --concurrency=${CELERY_CONCURRENCY:-2}
+    environment: *app-environment
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 512M
     healthcheck:
-      disable: true
+      test: ["CMD-SHELL", "celery -A config inspect ping --destination=celery@$$HOSTNAME --timeout=5 2>/dev/null | grep -q pong"]
+      interval: 45s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   beat:
-    image: panorama-backend:${IMAGE_TAG:-latest}
+    <<: [*runtime-security, *runtime-resources]
+    image: panorama-backend:${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
     restart: unless-stopped
-    profiles: ["celery"]
-    command: celery -A config beat --loglevel=${CELERY_LOG_LEVEL:-INFO}
-    environment:
-      DJANGO_SETTINGS_MODULE: config.settings.production
-      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
-      DEBUG: "False"
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?set ALLOWED_HOSTS}
-      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?set CSRF_TRUSTED_ORIGINS}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS}
-      DATABASE_URL: postgres://${POSTGRES_USER:?set POSTGRES_USER}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB}
-      REDIS_URL: redis://redis:6379/0
-      RUN_DEPLOY_CHECK: "False"
-      RUN_MIGRATIONS: "False"
-      RUN_COLLECTSTATIC: "False"
-      RUN_SETUP_ADMIN_ACCOUNTS: "False"
-      RUN_SEED_DATA: "False"
-      WAIT_FOR_DATABASE: "True"
-      WAIT_FOR_REDIS: "True"
-      OTP_CLEANUP_RETENTION_DAYS: ${OTP_CLEANUP_RETENTION_DAYS:-1}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    stop_grace_period: 35s
+    command: celery -A config beat --loglevel=${CELERY_LOG_LEVEL:-INFO} --schedule=/tmp/celerybeat-schedule --pidfile=/tmp/celerybeat.pid
+    environment: *app-environment
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 256M
+    # Docker supervises the main beat process; the writable schedule lives only in tmpfs.
+    healthcheck:
+      test: ["CMD-SHELL", "test -w /tmp"]
+      interval: 45s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  release:
+    <<: [*runtime-security, *runtime-resources]
+    image: panorama-backend:${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
+    profiles: ["release"]
+    restart: "no"
+    stop_grace_period: 120s
+    command: ["sh", "/app/docker/release.sh"]
+    environment: *app-environment
+    volumes:
+      - static_data:/app/staticfiles
     healthcheck:
       disable: true
 
+  # Enable these only with COMPOSE_PROFILES=self-hosted. No ports are published.
+  # For Coolify-managed services, omit the profile and point DATABASE_URL/REDIS_URL at them.
   postgres:
+    <<: *runtime-resources
     image: postgres:16-alpine
+    profiles: ["self-hosted"]
     restart: unless-stopped
+    stop_grace_period: 60s
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB for self-hosted mode}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER for self-hosted mode}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD for self-hosted mode}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 2G
+        reservations:
+          cpus: "0.25"
+          memory: 1G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 30s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   redis:
+    <<: *runtime-resources
     image: redis:7-alpine
+    profiles: ["self-hosted"]
     restart: unless-stopped
+    stop_grace_period: 30s
+    command: redis-server --appendonly yes --appendfsync everysec --save 60 1
     volumes:
       - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 256M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 5s
       retries: 5
+      start_period: 15s
 
 volumes:
   postgres_data:
   redis_data:
-  media_data:
   static_data:

@@ -6,7 +6,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
+from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
@@ -20,8 +20,12 @@ from apps.common.viewsets import StandardReadOnlyModelViewSet
 
 from .models import SupportAttachmentAccessTicket, SupportTicket, SupportTicketMessage
 from .serializers import (
-    SupportTicketAddMessageSerializer, SupportTicketAssignSerializer, SupportTicketCreateSerializer,
-    DashboardSupportTicketSerializer, MobileSupportTicketSerializer, SupportTicketPrioritySerializer,
+    DashboardSupportTicketSerializer,
+    MobileSupportTicketSerializer,
+    SupportTicketAddMessageSerializer,
+    SupportTicketAssignSerializer,
+    SupportTicketCreateSerializer,
+    SupportTicketPrioritySerializer,
     SupportTicketStatusSerializer,
 )
 from .services import SupportTicketService
@@ -111,8 +115,8 @@ class SupportAttachmentStreamView(APIView):
                 raise Http404
             try:
                 response = FileResponse(attachment.open("rb"), as_attachment=False, filename=Path(attachment.name).name)
-            except (FileNotFoundError, OSError):
-                raise Http404
+            except (FileNotFoundError, OSError) as exc:
+                raise Http404 from exc
         response["Cache-Control"] = "private, no-store, max-age=0"
         response["Pragma"] = "no-cache"
         response["X-Content-Type-Options"] = "nosniff"

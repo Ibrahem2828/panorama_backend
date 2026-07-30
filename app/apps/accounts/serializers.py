@@ -16,8 +16,7 @@ from apps.universities.serializers import (
 from .choices import OTPDeliveryChannel, OTPPurpose, StudentVerificationStatus, UserRole
 from .models import StudentProfile, User
 from .services import OTPService
-from .student_number import StudentNumberParser, apply_student_number_parse
-from .student_number import FACULTY_CODE_LABELS
+from .student_number import FACULTY_CODE_LABELS, StudentNumberParser, apply_student_number_parse
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -293,7 +292,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         from django.utils import timezone
-        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
         user = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
@@ -409,7 +408,7 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
     @transaction.atomic
     def save(self, **kwargs):
         from django.utils import timezone
-        from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
         identifier = self.validated_data["identifier"]
         channel = self.validated_data["channel"]

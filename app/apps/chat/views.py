@@ -105,10 +105,10 @@ class GroupMessageReportView(APIView):
                 reported_by=request.user,
                 reason=serializer.validated_data["reason"],
             )
-        except IntegrityError:
+        except IntegrityError as exc:
             from rest_framework.exceptions import ValidationError
 
-            raise ValidationError({"message": "You have already reported this message."})
+            raise ValidationError({"message": "You have already reported this message."}) from exc
         return success_response(
             data=MessageReportSerializer(report).data,
             message="Message reported successfully",

@@ -4,7 +4,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiTypes, extend_schema
-from rest_framework import filters, status
+from rest_framework import filters
 from rest_framework.views import APIView
 
 from apps.audit.models import AuditAction
@@ -13,7 +13,9 @@ from apps.common.responses import success_response
 from apps.common.viewsets import StandardReadOnlyModelViewSet
 
 from .dashboard_serializers import (
-    ALL_CAPABILITIES, DashboardUserSerializer, PermissionOverrideUpsertSerializer,
+    ALL_CAPABILITIES,
+    DashboardUserSerializer,
+    PermissionOverrideUpsertSerializer,
     UserPermissionOverrideSerializer,
 )
 from .models import User, UserPermissionOverride

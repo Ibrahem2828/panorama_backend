@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from decimal import Decimal, InvalidOperation
 import os
+from decimal import Decimal, InvalidOperation
 
 from django.core.management.base import BaseCommand
 
 from apps.feedback.models import FeedbackPromptPolicy
 from apps.printing.models import (
-    PrintBinding, PrintBindingPrice, PrintColorMode, PrintPaperSize,
-    PrintPickupLocation, PrintPricingRule, PrintSides,
+    PrintBinding,
+    PrintBindingPrice,
+    PrintColorMode,
+    PrintPaperSize,
+    PrintPickupLocation,
+    PrintPricingRule,
+    PrintSides,
 )
-
 
 PROMPT_POLICIES = [
     ("registration", "registration.completed", "تجربة إنشاء الحساب", "كيف تقيّم سهولة إنشاء حسابك؟", 30, 35),
