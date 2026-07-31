@@ -77,7 +77,7 @@ jobs:
       - name: Tests and coverage gate
         run: pytest -q --cov=apps --cov-fail-under=90 --cov-report=xml:coverage.xml --cov-report=html:htmlcov
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-${{ github.sha }}
@@ -124,7 +124,7 @@ jobs:
           output-file: sbom.spdx.json
           format: spdx-json
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
           path: sbom.spdx.json
