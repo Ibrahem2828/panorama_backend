@@ -1,21 +1,42 @@
-# syntax=docker/dockerfile:1.7
-# Base-image tags are tracked by .github/dependabot.yml. CI records the resolved digest.
-FROM python:3.12-slim AS builder
+# syntax=docker/dockerfile:1
 
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1
+ARG PYTHON_IMAGE=python:3.12-slim-bookworm
+
+# ------------------------------------------------------------
+# Builder: install production dependencies once into a venv.
+# ------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_PROGRESS_BAR=off
 
 WORKDIR /build
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev \
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Keep dependency layers cacheable and install exclusively from the hashed lock file.
-COPY requirements.lock ./
-RUN python -m pip wheel --require-hashes --wheel-dir /wheels -r requirements.lock
+RUN python -m venv /opt/venv
 
+ENV PATH="/opt/venv/bin:${PATH}"
 
-FROM python:3.12-slim AS runtime
+COPY requirements.lock /build/requirements.lock
+
+RUN pip install \
+        --no-cache-dir \
+        --no-compile \
+        --require-hashes \
+        -r /build/requirements.lock
+
+# ------------------------------------------------------------
+# Runtime: minimal, non-root production image.
+# ------------------------------------------------------------
+FROM ${PYTHON_IMAGE} AS runtime
 
 ARG VCS_REF=unknown
 ARG VERSION=unknown
@@ -26,36 +47,59 @@ LABEL org.opencontainers.image.title="panorama-backend" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.source="https://github.com/REPLACE_WITH_ORGANIZATION/panorama-backend"
+      org.opencontainers.image.source="https://github.com/Ibrahem2828/panorama_backend"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PATH=/home/panorama/.local/bin:$PATH
+    PATH="/opt/venv/bin:${PATH}" \
+    HOME="/home/panorama" \
+    TMPDIR="/tmp/panorama" \
+    PORT=8000
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpq5 ca-certificates \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libpq5 \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system panorama \
-    && useradd --system --gid panorama --create-home --home-dir /home/panorama panorama
+    && groupadd --gid 10001 panorama \
+    && useradd \
+        --uid 10001 \
+        --gid 10001 \
+        --create-home \
+        --home-dir /home/panorama \
+        --shell /usr/sbin/nologin \
+        panorama
 
 WORKDIR /app
-COPY --from=builder /wheels /wheels
-RUN python -m pip install --no-cache-dir /wheels/* \
-    && rm -rf /wheels
 
-COPY --chown=panorama:panorama . .
-RUN chmod 0755 /app/docker/entrypoint.sh /app/docker/release.sh \
-    && mkdir -p /app/staticfiles \
-    && chown -R panorama:panorama /app
+COPY --from=builder /opt/venv /opt/venv
+COPY --chown=panorama:panorama app /app/app
+COPY --chown=panorama:panorama docker /app/docker
+
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh /app/docker/release.sh \
+    && chmod 0755 /app/docker/entrypoint.sh /app/docker/release.sh \
+    && mkdir -p \
+        /app/app/staticfiles \
+        /app/app/media \
+        /app/staticfiles \
+        /tmp/panorama \
+        /home/panorama/.cache \
+    && chown -R panorama:panorama \
+        /app \
+        /tmp/panorama \
+        /home/panorama
 
 USER panorama
 WORKDIR /app/app
-EXPOSE 8000
 
-# Liveness only: readiness is configured in the Coolify service UI.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD python -c "import json,os,urllib.request; port=os.getenv('PORT','8000'); request=urllib.request.Request('http://127.0.0.1:'+port+'/api/v1/health/live/',headers={'Host':os.getenv('HEALTHCHECK_HOST','localhost')}); response=urllib.request.urlopen(request,timeout=3); body=json.load(response); assert response.status == 200 and body.get('code') == 'LIVE' and body.get('data',{}).get('status') == 'live'" || exit 1
+EXPOSE 8000
+STOPSIGNAL SIGTERM
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+  CMD python -c "import os,urllib.request; port=os.getenv('PORT','8000'); req=urllib.request.Request('http://127.0.0.1:'+port+'/api/v1/health/live/',headers={'Host':os.getenv('HEALTHCHECK_HOST','localhost')}); res=urllib.request.urlopen(req,timeout=4); raise SystemExit(0 if res.status == 200 else 1)"
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
-CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
+
+CMD ["sh", "-c", "exec daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
