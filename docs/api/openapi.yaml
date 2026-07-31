@@ -7181,6 +7181,9 @@ paths:
         required: true
       tags:
       - Protected Assets
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           description: Inline chat attachment
@@ -7196,6 +7199,9 @@ paths:
         required: true
       tags:
       - Protected Assets
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           description: Inline protected file stream
@@ -7211,6 +7217,9 @@ paths:
         required: true
       tags:
       - Protected Assets
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           description: Inline protected print item
@@ -7428,6 +7437,9 @@ paths:
         required: true
       tags:
       - Protected Assets
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -7950,6 +7962,9 @@ paths:
         required: true
       tags:
       - Protected Assets
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           description: Inline protected card image

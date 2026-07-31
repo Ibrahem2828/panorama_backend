@@ -291,12 +291,15 @@ Push notification sending is a safe no-op until `FCM_SERVER_KEY` is configured. 
 - Dashboard stats
 - Swagger/OpenAPI validation
 - Docker, PostgreSQL, Redis, Channels-ready setup
+- Private local media on a persistent Coolify named volume; a future generic
+  S3-compatible adapter can be added without changing file models or API paths.
 
 ## Post-MVP Next Steps
 
 - Real WhatsApp OTP integration
 - Real FCM provider integration
-- Production object storage for media
+- A validated generic S3-compatible storage adapter when horizontal scaling
+  becomes necessary
 - Payment/wallet integration
 - Print pricing engine
 - Read receipts and richer chat moderation

@@ -6,6 +6,7 @@ from pathlib import Path
 from django.db import IntegrityError, transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils.http import content_disposition_header
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -38,10 +39,7 @@ class GroupMessageViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Message.objects.none()
-        return (
-            Message.objects.filter(group=self.get_group(), is_deleted=False)
-            .select_related("sender", "reply_to")
-        )
+        return Message.objects.filter(group=self.get_group(), is_deleted=False).select_related("sender", "reply_to")
 
     @extend_schema(tags=["Chat"], request=MessageCreateSerializer, responses={201: MessageSerializer})
     def create(self, request, *args, **kwargs):
@@ -62,7 +60,10 @@ class GroupMessageViewSet(StandardReadOnlyModelViewSet):
     def destroy(self, request, *args, **kwargs):
         group = self.get_group()
         message = get_object_or_404(Message, pk=self.kwargs["pk"], group=group, is_deleted=False)
-        if not ChatPermissionService.can_moderate_messages(request.user, group) and message.sender_id != request.user.id:
+        if (
+            not ChatPermissionService.can_moderate_messages(request.user, group)
+            and message.sender_id != request.user.id
+        ):
             from rest_framework.exceptions import PermissionDenied
 
             raise PermissionDenied("You cannot delete this message.")
@@ -79,7 +80,10 @@ class GroupMessageDeleteView(APIView):
         group = get_object_or_404(Group, pk=group_id, is_deleted=False)
         ChatPermissionService.enforce_group_chat_access(request.user, group)
         message = get_object_or_404(Message, pk=message_id, group=group, is_deleted=False)
-        if not ChatPermissionService.can_moderate_messages(request.user, group) and message.sender_id != request.user.id:
+        if (
+            not ChatPermissionService.can_moderate_messages(request.user, group)
+            and message.sender_id != request.user.id
+        ):
             from rest_framework.exceptions import PermissionDenied
 
             raise PermissionDenied("You cannot delete this message.")
@@ -140,10 +144,9 @@ class MessageAttachmentAccessTicketView(APIView):
 
 
 class ProtectedMessageAttachmentStreamView(APIView):
-    authentication_classes = []
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(auth=[], tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline chat attachment")})
+    @extend_schema(tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline chat attachment")})
     def get(self, request, token):
         with transaction.atomic():
             ticket = (
@@ -152,16 +155,21 @@ class ProtectedMessageAttachmentStreamView(APIView):
                 .filter(token=token, is_deleted=False)
                 .first()
             )
-            if not ticket or not ticket.is_valid:
+            if not ticket or not ticket.is_valid or ticket.requested_by_id != request.user.id:
                 raise Http404("The protected attachment link is invalid or expired.")
+            ChatPermissionService.enforce_group_chat_access(request.user, ticket.message.group)
             attachment = ticket.message.attachment
             ticket.use_count += 1
             ticket.save(update_fields=["use_count", "updated_at"])
         filename = Path(attachment.name).name
         content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
         response = FileResponse(attachment.open("rb"), content_type=content_type)
-        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        content_disposition = content_disposition_header(False, filename)
+        if content_disposition:
+            response["Content-Disposition"] = content_disposition
         response["Cache-Control"] = "private, no-store, max-age=0"
         response["X-Content-Type-Options"] = "nosniff"
-        response["Content-Security-Policy"] = "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+        response["Content-Security-Policy"] = (
+            "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+        )
         return response

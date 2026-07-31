@@ -13,7 +13,7 @@ Candidate: current uncommitted workspace; no immutable image digest exists
 | Staging deployment | BLOCKED | `STAGING_DEPLOYMENT_EVIDENCE.md` | Coolify Staging | no URL, digest, or deployment access |
 | DAST | BLOCKED | `DAST_SECURITY_REPORT.md` | isolated Staging | no ZAP/API security artifact |
 | Load test | BLOCKED | `LOAD_TEST_REPORT.md` | k6/Locust Staging | no executable/target/result |
-| Backup restore | BLOCKED | `BACKUP_RESTORE_EXECUTION_REPORT.md` | PostgreSQL/R2-S3 Staging | runbook/scripts are not execution evidence |
+| Backup restore | BLOCKED | `BACKUP_RESTORE_EXECUTION_REPORT.md` | PostgreSQL/local-media Staging | runbook/scripts are not execution evidence |
 | Rollback | BLOCKED | `ROLLBACK_EXECUTION_REPORT.md` | Coolify Staging | no preceding/current digest exercise |
 | Smoke tests | BLOCKED | `SMOKE_TEST_REPORT.md` | HTTPS Staging | no synthetic target/credential |
 | Ruff | PASS | command output | `ruff check app` | zero errors |

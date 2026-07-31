@@ -98,7 +98,7 @@ EXPOSE 8000
 STOPSIGNAL SIGTERM
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
-  CMD python -c "import os,urllib.request; port=os.getenv('PORT','8000'); req=urllib.request.Request('http://127.0.0.1:'+port+'/api/v1/health/live/',headers={'Host':os.getenv('HEALTHCHECK_HOST','localhost')}); res=urllib.request.urlopen(req,timeout=4); raise SystemExit(0 if res.status == 200 else 1)"
+  CMD python -c "import json,os,urllib.request; port=os.getenv('PORT','8000'); req=urllib.request.Request('http://127.0.0.1:'+port+'/api/v1/health/live/',headers={'Host':os.getenv('HEALTHCHECK_HOST','localhost')}); res=urllib.request.urlopen(req,timeout=4); body=json.loads(res.read()); raise SystemExit(0 if res.status == 200 and body.get('code') == 'LIVE' and body.get('data',{}).get('status') == 'live' else 1)"
 
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 

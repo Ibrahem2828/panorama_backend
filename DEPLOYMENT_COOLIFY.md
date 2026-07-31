@@ -13,12 +13,11 @@ Do not configure the backend as `3000:3000`. Port `3000` is for the Next.js dash
 
 ## Required Environment Variables
 
-The production settings intentionally fail fast. In addition to the values
-below, private object storage is mandatory: set `USE_S3_STORAGE=True` and
-provide `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-`AWS_STORAGE_BUCKET_NAME`, `AWS_S3_ENDPOINT_URL`, `AWS_S3_REGION_NAME`, and
-`AWS_QUERYSTRING_EXPIRE`. Also provide `EMAIL_HOST` and `EMAIL_HOST_USER` with
-`EMAIL_HOST_PASSWORD`. Do not use local `/app/media` for production files.
+The production settings intentionally fail fast for secrets and core services.
+This release uses private local storage on a Coolify named volume; set
+`STORAGE_BACKEND=local`, `MEDIA_ROOT=/app/app/media`, and `MEDIA_URL=/media/`.
+Do not configure any cloud-storage credentials for this mode. Also provide
+`EMAIL_HOST` and `EMAIL_HOST_USER` with `EMAIL_HOST_PASSWORD`.
 
 ```env
 DJANGO_SETTINGS_MODULE=config.settings.production
@@ -40,6 +39,10 @@ DATABASE_SSL_REQUIRE=True
 REDIS_URL=redis://redis:6379/0
 EMAIL_HOST_PASSWORD=store-the-smtp-app-password-as-a-secret
 PORT=8000
+
+STORAGE_BACKEND=local
+MEDIA_ROOT=/app/app/media
+MEDIA_URL=/media/
 
 DJANGO_SECURE_SSL_REDIRECT=False
 DJANGO_SESSION_COOKIE_SECURE=False
@@ -137,7 +140,12 @@ The smoke check validates settings import and Django configuration. It does not 
 
 ## Static, Media, and Redis
 
-Static files are collected into `STATIC_ROOT` and served by Whitenoise. Production uploaded media is private S3/R2-compatible object storage; local `MEDIA_ROOT` is development-only.
+Static files are collected into `STATIC_ROOT` and served by Whitenoise. User
+media is private: configure Coolify **Application → Storages → Add Persistent
+Storage → Volume** with `panorama_media` mounted at `/app/app/media`. Do not
+expose `/media/` through a Coolify route or reverse proxy; all user downloads
+must pass through the protected API ticket endpoints. See
+`docs/COOLIFY_LOCAL_MEDIA_STORAGE_AR.md` for the exact procedure.
 
 `REDIS_URL` is required for production WebSockets through Django Channels and for Celery-ready broker/result settings.
 

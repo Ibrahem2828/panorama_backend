@@ -106,7 +106,7 @@ No confirmed P0 exploitation has been established in this local assessment. This
 1. **Dependency vulnerabilities:** `pip-audit` reported 33 findings. The source constraints cap cryptography below 46 and Pillow below 12, preventing fixes. pyOpenSSL is an indirect dependency. Update constraints/locks, audit again, and do not use `SECURITY_EXCEPTIONS.md` unless a time-bound false-positive/accepted-risk approval is supplied.
 2. **Coverage below gate and weak sensitive areas:** total is below 85%; files, feedback, printing, chat, groups, support, and verification lack the required behavioral depth.
 3. **No actual runtime certification:** Docker, Compose runtime, image scans, SBOM, release job, worker, beat, Redis restart, and health-under-dependency-failure are all unexecuted.
-4. **No Staging certification:** Coolify, TLS/WSS, private R2/S3 policy, smoke, DAST, load, restore, and rollback are not evidenced.
+4. **No Staging certification:** Coolify, TLS/WSS, private local-media mount and routing policy, smoke, DAST, load, restore, and rollback are not evidenced.
 5. **Secrets/media hygiene unresolved:** local `.env` and media payload remain. `SECURITY_ROTATION_REQUIRED.md` requires rotation before deployment. No current/history secret scan result exists.
 6. **Supply-chain configuration incomplete:** Docker base images use mutable tags rather than pinned digests; OCI `source` is a placeholder; local SBOM files are absent. CI workflows are configured but unexecuted.
 7. **Malware/quarantine lifecycle absent:** ASVS matrix records no actual malware engine. File upload checks are not a substitute for isolated malware scanning/quarantine.

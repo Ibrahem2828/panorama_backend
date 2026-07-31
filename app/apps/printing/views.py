@@ -7,6 +7,7 @@ from django.db import transaction
 from django.forms.models import model_to_dict
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
@@ -71,7 +72,9 @@ class PrintQuoteView(APIView):
                 for item in quote["items"]
             ],
         }
-        return success_response(data=data, message="Print quote calculated by the backend", request=request, code="PRINT_QUOTE_CALCULATED")
+        return success_response(
+            data=data, message="Print quote calculated by the backend", request=request, code="PRINT_QUOTE_CALCULATED"
+        )
 
 
 class PrintOrderCreateView(APIView):
@@ -160,7 +163,9 @@ class DashboardPrintAssignView(APIView):
     permission_classes = [CanManagePrinting]
     serializer_class = PrintOrderAssignSerializer
 
-    @extend_schema(tags=["Dashboard"], request=PrintOrderAssignSerializer, responses={200: DashboardPrintOrderSerializer})
+    @extend_schema(
+        tags=["Dashboard"], request=PrintOrderAssignSerializer, responses={200: DashboardPrintOrderSerializer}
+    )
     def patch(self, request, pk: int):
         order = get_object_or_404(PrintOrder, pk=pk, is_deleted=False)
         serializer = PrintOrderAssignSerializer(data=request.data, context={"order": order})
@@ -175,20 +180,30 @@ class DashboardPrintAssignView(APIView):
             new_value={"assigned_to": order.assigned_to_id},
             request=request,
         )
-        return success_response(data=DashboardPrintOrderSerializer(order, context={"request": request}).data, message="Print order assigned successfully", request=request)
+        return success_response(
+            data=DashboardPrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order assigned successfully",
+            request=request,
+        )
 
 
 class DashboardPrintStatusView(APIView):
     permission_classes = [CanManagePrinting]
     serializer_class = PrintStatusUpdateSerializer
 
-    @extend_schema(tags=["Dashboard"], request=PrintStatusUpdateSerializer, responses={200: DashboardPrintOrderSerializer})
+    @extend_schema(
+        tags=["Dashboard"], request=PrintStatusUpdateSerializer, responses={200: DashboardPrintOrderSerializer}
+    )
     def patch(self, request, pk: int):
         order = get_object_or_404(PrintOrder, pk=pk, is_deleted=False)
         serializer = PrintStatusUpdateSerializer(data=request.data, context={"request": request, "order": order})
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
-        return success_response(data=DashboardPrintOrderSerializer(order, context={"request": request}).data, message="Print order status updated successfully", request=request)
+        return success_response(
+            data=DashboardPrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order status updated successfully",
+            request=request,
+        )
 
 
 class DashboardPrintNoteView(APIView):
@@ -208,7 +223,11 @@ class DashboardPrintNoteView(APIView):
             new_value={"internal_note_updated": True},
             request=request,
         )
-        return success_response(data=DashboardPrintOrderSerializer(order, context={"request": request}).data, message="Print order note updated successfully", request=request)
+        return success_response(
+            data=DashboardPrintOrderSerializer(order, context={"request": request}).data,
+            message="Print order note updated successfully",
+            request=request,
+        )
 
 
 class AuditedPrintConfigurationViewSet(StandardModelViewSet):
@@ -295,7 +314,9 @@ class PrintItemAccessTicketView(APIView):
             is_deleted=False,
             order__is_deleted=False,
         )
-        if item.order.user_id != request.user.id and not PermissionService.has(request.user, Capability.PRINTING_MANAGE):
+        if item.order.user_id != request.user.id and not PermissionService.has(
+            request.user, Capability.PRINTING_MANAGE
+        ):
             from rest_framework.exceptions import PermissionDenied
 
             raise PermissionDenied("You are not allowed to preview this print item.")
@@ -311,20 +332,26 @@ class PrintItemAccessTicketView(APIView):
 
 
 class ProtectedPrintItemStreamView(APIView):
-    authentication_classes = []
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(auth=[], tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected print item")})
+    @extend_schema(
+        tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected print item")}
+    )
     def get(self, request, token):
         with transaction.atomic():
             ticket = (
-                PrintItemAccessTicket.objects.select_for_update().select_related("item__source_file", "item__order")
+                PrintItemAccessTicket.objects.select_for_update()
+                .select_related("item__source_file", "item__order")
                 .filter(token=token, is_deleted=False)
                 .first()
             )
-            if not ticket or not ticket.is_valid:
+            if not ticket or not ticket.is_valid or ticket.requested_by_id != request.user.id:
                 raise Http404("The protected print item link is invalid or expired.")
             item = ticket.item
+            if item.order.user_id != request.user.id and not PermissionService.has(
+                request.user, Capability.PRINTING_MANAGE
+            ):
+                raise Http404("The protected print item link is invalid or expired.")
             source = item.uploaded_file or (item.source_file.file if item.source_file else None)
             if not source:
                 raise Http404("Print item file is unavailable.")
@@ -333,8 +360,12 @@ class ProtectedPrintItemStreamView(APIView):
         filename = Path(source.name).name
         content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
         response = FileResponse(source.open("rb"), content_type=content_type)
-        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        content_disposition = content_disposition_header(False, filename)
+        if content_disposition:
+            response["Content-Disposition"] = content_disposition
         response["Cache-Control"] = "private, no-store, max-age=0"
         response["X-Content-Type-Options"] = "nosniff"
-        response["Content-Security-Policy"] = "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+        response["Content-Security-Policy"] = (
+            "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+        )
         return response

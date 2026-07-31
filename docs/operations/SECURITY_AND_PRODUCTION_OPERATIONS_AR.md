@@ -4,7 +4,8 @@
 
 - يمنع رفع `.env` أو App Password أو Fernet Key إلى Git.
 - `FIELD_ENCRYPTION_KEY` يجب أن يكون Fernet key ثابتًا مع Backup آمن؛ تغييره دون خطة تدوير يمنع فك روابط القنوات القديمة.
-- SMTP App Password وAWS/R2 keys وJWT secret تحفظ في Secrets Manager الخاص بالمنصة.
+- SMTP App Password وJWT secret تحفظ في Secrets Manager الخاص بالمنصة. التخزين
+  المحلي الحالي لا يحتاج مفاتيح لمزود تخزين خارجي.
 
 ## خدمات الإنتاج
 
@@ -12,7 +13,7 @@
 2. PostgreSQL مع TLS ونسخ احتياطية وPITR إن توفر.
 3. Redis منفصل للقنوات والكاش وCelery.
 4. Celery Worker للإشعارات والمهام الخلفية.
-5. Private Object Storage مثل R2/S3.
+5. Named Volume خاص للملفات المحلية، مع نسخ احتياطي خارج الخادم.
 6. Reverse proxy مع HTTPS وWebSocket upgrade.
 7. Error monitoring وMetrics وCentralized logs.
 
@@ -50,7 +51,7 @@ python manage.py purge_expired_sensitive_data --dry-run
 
 ## حماية الملفات
 
-- Bucket خاص وليس Public.
+- Volume خاص لا ينشر عبر HTTP أو Reverse Proxy.
 - لا تستخدم `/media/` في الإنتاج.
 - التحقق من النوع والحجم والتوقيع قبل الحفظ.
 - روابط عرض مؤقتة مع `no-store` و`nosniff` وCSP sandbox.
@@ -69,7 +70,7 @@ python manage.py purge_expired_sensitive_data --dry-run
 ## نسخ احتياطية واستعادة
 
 - Backup مشفر يومي لقاعدة البيانات.
-- Versioning/Lifecycle للـObject Storage.
+- manifest وchecksums وretention للنسخ الاحتياطية الخاصة بالـVolume.
 - تجربة Restore شهرية موثقة.
 - RPO وRTO معتمدان قبل الإطلاق.
 - تخزين نسخة من Fernet key وSecrets ضمن Disaster Recovery vault.

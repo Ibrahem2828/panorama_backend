@@ -1,7 +1,7 @@
 .git
 .github
-.env
-.env.*
+*.env
+.env*
 !.env.example
 .envrc
 .secrets
@@ -12,7 +12,7 @@ __pycache__
 .pytest_cache
 .coverage
 htmlcov
-media
+media/
 staticfiles
 *.sqlite3
 *.log

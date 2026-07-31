@@ -32,7 +32,11 @@ from .services import SupportTicketService
 
 
 def _serialize(ticket, request, dashboard=False):
-    ticket = SupportTicket.objects.select_related("user", "assigned_to").prefetch_related("messages__sender").get(pk=ticket.pk)
+    ticket = (
+        SupportTicket.objects.select_related("user", "assigned_to")
+        .prefetch_related("messages__sender")
+        .get(pk=ticket.pk)
+    )
     serializer_class = DashboardSupportTicketSerializer if dashboard else MobileSupportTicketSerializer
     return serializer_class(ticket, context={"request": request}).data
 
@@ -42,14 +46,19 @@ class SupportTicketCreateView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = SupportTicketCreateSerializer
 
-    @extend_schema(tags=["Support"], request=SupportTicketCreateSerializer, responses={201: MobileSupportTicketSerializer})
+    @extend_schema(
+        tags=["Support"], request=SupportTicketCreateSerializer, responses={201: MobileSupportTicketSerializer}
+    )
     def post(self, request):
         serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         ticket = serializer.save()
         return success_response(
-            data=_serialize(ticket, request), message="Support ticket created successfully",
-            status_code=status.HTTP_201_CREATED, request=request, code="SUPPORT_TICKET_CREATED",
+            data=_serialize(ticket, request),
+            message="Support ticket created successfully",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="SUPPORT_TICKET_CREATED",
         )
 
 
@@ -63,7 +72,11 @@ class MySupportTicketViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return SupportTicket.objects.none()
-        return SupportTicket.objects.filter(user=self.request.user, is_deleted=False).select_related("assigned_to").prefetch_related("messages__sender")
+        return (
+            SupportTicket.objects.filter(user=self.request.user, is_deleted=False)
+            .select_related("assigned_to")
+            .prefetch_related("messages__sender")
+        )
 
 
 class SupportTicketMessageView(APIView):
@@ -71,15 +84,20 @@ class SupportTicketMessageView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = SupportTicketAddMessageSerializer
 
-    @extend_schema(tags=["Support"], request=SupportTicketAddMessageSerializer, responses={201: MobileSupportTicketSerializer})
+    @extend_schema(
+        tags=["Support"], request=SupportTicketAddMessageSerializer, responses={201: MobileSupportTicketSerializer}
+    )
     def post(self, request, pk: int):
         ticket = get_object_or_404(SupportTicket, pk=pk, user=request.user, is_deleted=False)
         serializer = self.serializer_class(data=request.data, context={"request": request, "ticket": ticket})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return success_response(
-            data=_serialize(ticket, request), message="Support ticket message added",
-            status_code=status.HTTP_201_CREATED, request=request, code="SUPPORT_MESSAGE_ADDED",
+            data=_serialize(ticket, request),
+            message="Support ticket message added",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="SUPPORT_MESSAGE_ADDED",
         )
 
 
@@ -92,21 +110,23 @@ class SupportAttachmentTicketView(APIView):
         ticket = SupportTicketService.issue_attachment_ticket(message, request.user)
         return success_response(
             data={"preview_url": f"/api/v1/support/attachments/{ticket.token}/", "expires_at": ticket.expires_at},
-            request=request, code="SUPPORT_ATTACHMENT_TICKET_ISSUED",
+            request=request,
+            code="SUPPORT_ATTACHMENT_TICKET_ISSUED",
         )
 
 
 class SupportAttachmentStreamView(APIView):
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []
+    permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(auth=[], tags=["Protected Assets"], responses={200: OpenApiTypes.BINARY})
+    @extend_schema(tags=["Protected Assets"], responses={200: OpenApiTypes.BINARY})
     def get(self, request, token):
         with transaction.atomic():
             access = get_object_or_404(
                 SupportAttachmentAccessTicket.objects.select_for_update().select_related("message__ticket"), token=token
             )
-            if not access.is_valid:
+            if not access.is_valid or access.requested_by_id != request.user.id:
+                raise Http404
+            if not SupportTicketService.can_access_ticket(request.user, access.message.ticket):
                 raise Http404
             access.use_count += 1
             access.save(update_fields=["use_count", "updated_at"])
@@ -134,7 +154,11 @@ class DashboardSupportTicketViewSet(StandardReadOnlyModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return SupportTicket.objects.filter(is_deleted=False).select_related("user", "assigned_to").prefetch_related("messages__sender")
+        return (
+            SupportTicket.objects.filter(is_deleted=False)
+            .select_related("user", "assigned_to")
+            .prefetch_related("messages__sender")
+        )
 
 
 class DashboardSupportStatusView(APIView):
@@ -146,7 +170,9 @@ class DashboardSupportStatusView(APIView):
         serializer = self.serializer_class(data=request.data, context={"request": request, "ticket": ticket})
         serializer.is_valid(raise_exception=True)
         ticket = serializer.save()
-        return success_response(data=_serialize(ticket, request, dashboard=True), message="Support ticket status updated", request=request)
+        return success_response(
+            data=_serialize(ticket, request, dashboard=True), message="Support ticket status updated", request=request
+        )
 
 
 class DashboardSupportPriorityView(APIView):
@@ -161,10 +187,16 @@ class DashboardSupportPriorityView(APIView):
         ticket.priority = serializer.validated_data["priority"]
         ticket.save(update_fields=["priority", "updated_at"])
         AuditLogService.log(
-            actor=request.user, action=AuditAction.SUPPORT_TICKET_PRIORITY_CHANGED, target=ticket,
-            old_value={"priority": old}, new_value={"priority": ticket.priority}, request=request,
+            actor=request.user,
+            action=AuditAction.SUPPORT_TICKET_PRIORITY_CHANGED,
+            target=ticket,
+            old_value={"priority": old},
+            new_value={"priority": ticket.priority},
+            request=request,
         )
-        return success_response(data=_serialize(ticket, request, dashboard=True), message="Support ticket priority updated", request=request)
+        return success_response(
+            data=_serialize(ticket, request, dashboard=True), message="Support ticket priority updated", request=request
+        )
 
 
 class DashboardSupportAssignView(APIView):
@@ -179,10 +211,16 @@ class DashboardSupportAssignView(APIView):
         ticket.assigned_to = serializer.validated_data["assigned_to"]
         ticket.save(update_fields=["assigned_to", "updated_at"])
         AuditLogService.log(
-            actor=request.user, action=AuditAction.SUPPORT_TICKET_ASSIGNED, target=ticket,
-            old_value={"assigned_to": old}, new_value={"assigned_to": ticket.assigned_to_id}, request=request,
+            actor=request.user,
+            action=AuditAction.SUPPORT_TICKET_ASSIGNED,
+            target=ticket,
+            old_value={"assigned_to": old},
+            new_value={"assigned_to": ticket.assigned_to_id},
+            request=request,
         )
-        return success_response(data=_serialize(ticket, request, dashboard=True), message="Support ticket assigned", request=request)
+        return success_response(
+            data=_serialize(ticket, request, dashboard=True), message="Support ticket assigned", request=request
+        )
 
 
 class DashboardSupportMessageView(APIView):
@@ -196,6 +234,8 @@ class DashboardSupportMessageView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return success_response(
-            data=_serialize(ticket, request, dashboard=True), message="Support ticket message added",
-            status_code=status.HTTP_201_CREATED, request=request,
+            data=_serialize(ticket, request, dashboard=True),
+            message="Support ticket message added",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
         )

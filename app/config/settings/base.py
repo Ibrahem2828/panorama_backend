@@ -4,9 +4,11 @@ from pathlib import Path
 from decouple import config
 
 from .env import get_bool_env, get_csv_env
+from .storage import build_storage_settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
+
 
 def config_bool(name: str, default: bool = False) -> bool:
     return get_bool_env(name, default=default)
@@ -118,8 +120,15 @@ STATIC_URL = "/static/"
 STATIC_ROOT = ROOT_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = ROOT_DIR / "media"
+# Production mounts a named Coolify volume at /app/app/media. Static files
+# remain separate under /app/staticfiles and continue to use WhiteNoise.
+globals().update(
+    build_storage_settings(
+        base_dir=BASE_DIR,
+        static_root=STATIC_ROOT,
+        staticfiles_backend=STATICFILES_STORAGE,
+    )
+)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -131,9 +140,7 @@ CORS_ALLOWED_ORIGINS = get_csv_env(
 CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
@@ -157,12 +164,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)
-    ),
-    "REFRESH_TOKEN_LIFETIME": timedelta(
-        days=config("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=14, cast=int)
-    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=config("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=14, cast=int)),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
@@ -318,7 +321,9 @@ MAX_DOCUMENT_UPLOAD_SIZE = config("MAX_DOCUMENT_UPLOAD_SIZE", default=25 * 1024 
 MAX_IMAGE_UPLOAD_SIZE = config("MAX_IMAGE_UPLOAD_SIZE", default=8 * 1024 * 1024, cast=int)
 DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=30 * 1024 * 1024, cast=int)
 FILE_UPLOAD_MAX_MEMORY_SIZE = config("FILE_UPLOAD_MAX_MEMORY_SIZE", default=5 * 1024 * 1024, cast=int)
-API_CONTENT_SECURITY_POLICY = config("API_CONTENT_SECURITY_POLICY", default="default-src 'none'; frame-ancestors 'none'")
+API_CONTENT_SECURITY_POLICY = config(
+    "API_CONTENT_SECURITY_POLICY", default="default-src 'none'; frame-ancestors 'none'"
+)
 
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL)
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default=REDIS_URL)
@@ -344,5 +349,7 @@ PUSH_NOTIFICATIONS_ENABLED = get_bool_env("PUSH_NOTIFICATIONS_ENABLED", default=
 EXPO_PUSH_ENDPOINT = config("EXPO_PUSH_ENDPOINT", default="https://exp.host/--/api/v2/push/send")
 EXPO_ACCESS_TOKEN = config("EXPO_ACCESS_TOKEN", default="")
 EXPO_PUSH_ALLOWED_HOSTS = frozenset(
-    host.strip().lower() for host in config("EXPO_PUSH_ALLOWED_HOSTS", default="exp.host,api.expo.dev").split(",") if host.strip()
+    host.strip().lower()
+    for host in config("EXPO_PUSH_ALLOWED_HOSTS", default="exp.host,api.expo.dev").split(",")
+    if host.strip()
 )

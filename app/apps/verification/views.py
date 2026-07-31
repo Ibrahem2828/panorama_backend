@@ -6,9 +6,10 @@ from pathlib import Path
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
-from rest_framework import filters, permissions, status
+from rest_framework import filters, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
@@ -32,7 +33,11 @@ class SubmitVerificationView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = VerificationRequestSerializer
 
-    @extend_schema(tags=["Verification"], request=VerificationRequestSerializer, responses={201: VerificationRequestStudentSerializer})
+    @extend_schema(
+        tags=["Verification"],
+        request=VerificationRequestSerializer,
+        responses={201: VerificationRequestStudentSerializer},
+    )
     def post(self, request):
         serializer = VerificationRequestSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -92,7 +97,9 @@ class VerificationReviewView(APIView):
     serializer_class = VerificationReviewSerializer
     target_status = VerificationStatus.APPROVED
 
-    @extend_schema(tags=["Dashboard"], request=VerificationReviewSerializer, responses={200: VerificationRequestSerializer})
+    @extend_schema(
+        tags=["Dashboard"], request=VerificationReviewSerializer, responses={200: VerificationRequestSerializer}
+    )
     def post(self, request, pk: int):
         serializer = VerificationReviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -150,18 +157,20 @@ class VerificationCardTicketView(APIView):
 
 
 class VerificationCardStreamView(APIView):
-    authentication_classes = []
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [CanReviewVerification]
 
-    @extend_schema(auth=[], tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected card image")})
+    @extend_schema(
+        tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected card image")}
+    )
     def get(self, request, token):
         with transaction.atomic():
             ticket = (
-                VerificationCardAccessTicket.objects.select_for_update().select_related("verification")
+                VerificationCardAccessTicket.objects.select_for_update()
+                .select_related("verification")
                 .filter(token=token, is_deleted=False)
                 .first()
             )
-            if not ticket or not ticket.is_valid:
+            if not ticket or not ticket.is_valid or ticket.requested_by_id != request.user.id:
                 raise Http404("The protected access link is invalid or expired.")
             verification = ticket.verification
             if not verification.card_image:
@@ -171,7 +180,9 @@ class VerificationCardStreamView(APIView):
         filename = Path(verification.card_image.name).name
         content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
         response = FileResponse(verification.card_image.open("rb"), content_type=content_type)
-        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        content_disposition = content_disposition_header(False, filename)
+        if content_disposition:
+            response["Content-Disposition"] = content_disposition
         response["Cache-Control"] = "private, no-store, max-age=0"
         response["X-Content-Type-Options"] = "nosniff"
         response["Content-Security-Policy"] = "default-src 'none'; img-src 'self' data:; sandbox"

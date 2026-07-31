@@ -12,7 +12,8 @@ Rotate and revoke, where applicable:
 - `DATABASE_URL` and the underlying PostgreSQL password
 - `REDIS_URL` and the underlying Redis password
 - `EMAIL_HOST_PASSWORD`
-- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- Any legacy cloud-storage credential that was ever issued (the current local
+  storage release does not use or require one)
 - `FCM_SERVER_KEY`
 - `EXPO_ACCESS_TOKEN`
 - JWT signing material if it is configured independently

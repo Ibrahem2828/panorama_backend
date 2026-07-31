@@ -3,6 +3,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
 from .env import database_from_url, get_bool_env, get_csv_env, require_env
+from .storage import build_storage_settings
 
 SECRET_KEY = require_env("SECRET_KEY")
 if len(SECRET_KEY) < 50:
@@ -74,26 +75,17 @@ EMAIL_HOST = require_env("EMAIL_HOST")
 EMAIL_HOST_USER = require_env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = require_env("EMAIL_HOST_PASSWORD")
 
-if not get_bool_env("USE_S3_STORAGE", default=False):
-    raise ImproperlyConfigured("Production requires USE_S3_STORAGE=True for private object storage.")
-INSTALLED_APPS += ["storages"]  # noqa: F405
-AWS_ACCESS_KEY_ID = require_env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = require_env("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = require_env("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_ENDPOINT_URL = require_env("AWS_S3_ENDPOINT_URL")
-AWS_S3_REGION_NAME = require_env("AWS_S3_REGION_NAME")
-AWS_QUERYSTRING_AUTH = True
-AWS_QUERYSTRING_EXPIRE = int(require_env("AWS_QUERYSTRING_EXPIRE"))
-AWS_DEFAULT_ACL = None
-AWS_S3_FILE_OVERWRITE = False
-AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "private, no-store"}
-S3_BUCKET_PRIVATE = get_bool_env("S3_BUCKET_PRIVATE", default=False)
-if not S3_BUCKET_PRIVATE:
-    raise ImproperlyConfigured("Production requires S3_BUCKET_PRIVATE=True after provider policy verification.")
-STORAGES = {
-    "default": {"BACKEND": "storages.backends.s3.S3Storage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
-}
+# The only enabled production mode in this release is local storage backed by
+# the named Coolify volume at /app/app/media. Generic S3 is validated only
+# when explicitly selected and never defaults to a particular provider.
+globals().update(
+    build_storage_settings(
+        base_dir=BASE_DIR,  # noqa: F405
+        static_root=STATIC_ROOT,  # noqa: F405
+        staticfiles_backend=STATICFILES_STORAGE,  # noqa: F405
+        enforce_persistent_local_path=True,
+    )
+)
 
 LOG_LEVEL = require_env("LOG_LEVEL")
 LOGGING = {

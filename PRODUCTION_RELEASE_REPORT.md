@@ -8,7 +8,9 @@ Candidate: current workspace, no immutable remote image digest published
 - Multi-stage, non-root Docker image uses `requirements.lock` with hashes, OCI metadata arguments, cache-friendly dependency copying, and a liveness JSON health check.
 - `docker-compose.coolify.yml` requires immutable `IMAGE_TAG`, runs web/worker/beat by default, has a profile-isolated one-shot release service, applies read-only runtime filesystems, dropped Linux capabilities, no-new-privileges, tmpfs, resource declarations, log rotation, graceful shutdowns, and no published DB/Redis ports.
 - Health endpoints are separated: `/api/v1/health/live/`, `/ready/`, and `/startup/`. Readiness checks DB/cache/migrations/configuration; liveness makes no dependency call.
-- Production settings reject short `SECRET_KEY`, invalid/missing Fernet keys, non-S3 storage, and missing `S3_BUCKET_PRIVATE` deployment attestation. Private bucket policy still requires provider-side verification.
+- This historical report predates the local-media migration. Current production
+  settings reject invalid secrets and require an explicit local storage layout;
+  see `docs/COOLIFY_LOCAL_MEDIA_STORAGE_AR.md` for the active deployment model.
 - CI configurations build/publish Git-SHA images, scan secrets/dependencies/image/config, generate SBOM/provenance, and provide manually triggered Staging ZAP baseline.
 - Backup/restore, deployment, incidents, DAST, load, and ASVS release-evidence runbooks are included. `load/k6/panorama.js` uses synthetic-environment variables only.
 
@@ -35,7 +37,8 @@ Candidate: current workspace, no immutable remote image digest published
 1. Push candidate and obtain green CI artifact URLs: image scan, config scan, SBOM, and provenance.
 2. Deploy immutable SHA to an isolated Staging Coolify environment; run release job once from both an empty DB and an upgraded Staging copy.
 3. Verify 200/JSON behavior for health endpoints while intentionally cutting DB and Redis; confirm web, worker, beat, and one synthetic task.
-4. Verify actual R2/S3 public-access block, bucket policy, limited CORS, lifecycle rules, private download tickets, and storage outage behavior.
+4. Verify the actual named-volume mount, non-public `/media/` routing, private
+   download tickets, and local-storage outage behavior.
 5. Run encrypted backup then Staging restore; attach RPO/RTO evidence.
 6. Run k6 scenarios against synthetic data and attach results meeting the stated SLOs.
 7. Run ZAP plus authenticated API/WebSocket abuse tests and resolve or formally accept findings.

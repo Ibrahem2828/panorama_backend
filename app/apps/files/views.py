@@ -6,6 +6,7 @@ from pathlib import Path
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
@@ -127,30 +128,36 @@ class FileAccessTicketView(APIView):
 
 
 class ProtectedFileStreamView(APIView):
-    authentication_classes = []
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(auth=[], tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected file stream")})
+    @extend_schema(
+        tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected file stream")}
+    )
     def get(self, request, token):
         with transaction.atomic():
             ticket = (
-                FileAccessTicket.objects.select_for_update().select_related("file_resource", "user")
+                FileAccessTicket.objects.select_for_update()
+                .select_related("file_resource", "user")
                 .filter(token=token, is_deleted=False)
                 .first()
             )
-            if not ticket or not ticket.is_valid:
+            if not ticket or not ticket.is_valid or ticket.user_id != request.user.id:
                 raise Http404("The protected file link is invalid or expired.")
             resource = ticket.file_resource
-            if not resource.file:
+            if not resource.file or not user_can_access_file(request.user, resource):
                 raise Http404("File is unavailable.")
             ticket.use_count += 1
             ticket.save(update_fields=["use_count", "updated_at"])
         filename = Path(resource.file.name).name
         content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
         response = FileResponse(resource.file.open("rb"), content_type=content_type)
-        response["Content-Disposition"] = f'inline; filename="{filename}"'
+        content_disposition = content_disposition_header(False, filename)
+        if content_disposition:
+            response["Content-Disposition"] = content_disposition
         response["Cache-Control"] = "private, no-store, max-age=0"
         response["Pragma"] = "no-cache"
         response["X-Content-Type-Options"] = "nosniff"
-        response["Content-Security-Policy"] = "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+        response["Content-Security-Policy"] = (
+            "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+        )
         return response

@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 from django.conf import settings
 from django.core.cache import cache
@@ -103,7 +104,10 @@ class StartupHealthCheckView(APIView):
 
     @extend_schema(
         auth=[],
-        responses={200: OpenApiResponse(description="Startup checks passed"), 503: OpenApiResponse(description="Startup checks failed")},
+        responses={
+            200: OpenApiResponse(description="Startup checks passed"),
+            503: OpenApiResponse(description="Startup checks failed"),
+        },
     )
     def get(self, request):
         checks = _dependency_checks(check_migrations=True, check_configuration=True)
@@ -137,24 +141,33 @@ def _dependency_checks(*, check_migrations: bool = True, check_configuration: bo
             return None
         if check_configuration:
             checks["configuration"] = "valid"
+            checks["storage"] = "healthy"
         return checks
     except Exception as exc:  # Deliberately do not expose database/cache internals.
         health_logger.warning("health_dependency_check_failed:%s", type(exc).__name__)
         return None
 
 
+def _local_media_is_ready() -> bool:
+    """Check local media access without creating a file on every readiness request."""
+
+    if getattr(settings, "STORAGE_BACKEND", "local") != "local":
+        return False
+    media_root = Path(settings.MEDIA_ROOT)
+    return media_root.exists() and media_root.is_dir() and os.access(media_root, os.R_OK | os.W_OK)
+
+
 def _critical_configuration_is_valid() -> bool:
-    """Production settings validate most values at import; check storage configuration too."""
+    """Production settings validate secrets at import; validate local storage safely."""
 
     if os.environ.get("DJANGO_SETTINGS_MODULE") != "config.settings.production":
-        return True
+        return _local_media_is_ready()
     storage = getattr(settings, "STORAGES", {}).get("default", {})
     return bool(
-        getattr(settings, "USE_S3_STORAGE", False)
-        and storage.get("BACKEND") == "storages.backends.s3.S3Storage"
+        getattr(settings, "STORAGE_BACKEND", "") == "local"
+        and storage.get("BACKEND") == "apps.common.storage.PrivateFileSystemStorage"
         and getattr(settings, "FIELD_ENCRYPTION_KEY", "")
-        and getattr(settings, "AWS_STORAGE_BUCKET_NAME", "")
-        and getattr(settings, "S3_BUCKET_PRIVATE", False)
+        and _local_media_is_ready()
     )
 
 

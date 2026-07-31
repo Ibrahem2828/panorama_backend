@@ -9,7 +9,7 @@ reported as a pass.
 ## Delivered changes
 
 - Added production fail-fast configuration for database, Redis, CSRF/CORS,
-  email credentials, field encryption, and mandatory private S3/R2-compatible
+  email credentials, field encryption, and mandatory private storage
   storage.
 - Added `/api/v1/health/ready/`, a dependency-aware readiness endpoint, and
   corrected the Coolify healthcheck to require a 2xx response. Removed dead

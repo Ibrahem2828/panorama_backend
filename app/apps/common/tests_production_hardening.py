@@ -50,7 +50,7 @@ def test_get_bool_env_supports_django_debug_fallback(monkeypatch):
     assert get_bool_env("DEBUG", "DJANGO_DEBUG", default=False) is True
 
 
-def test_production_settings_accept_django_allowed_hosts(monkeypatch):
+def test_production_settings_start_with_local_storage_and_no_cloud_credentials(monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-that-is-long-enough-to-satisfy-production-validation-123")
     monkeypatch.setenv("FIELD_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
     monkeypatch.setenv("EMAIL_HOST", "smtp.example.test")
@@ -65,14 +65,18 @@ def test_production_settings_accept_django_allowed_hosts(monkeypatch):
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.test")
     monkeypatch.setenv("SECURE_HSTS_SECONDS", "31536000")
     monkeypatch.setenv("LOG_LEVEL", "INFO")
-    monkeypatch.setenv("USE_S3_STORAGE", "True")
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-key")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret")
-    monkeypatch.setenv("AWS_STORAGE_BUCKET_NAME", "private-bucket")
-    monkeypatch.setenv("AWS_S3_ENDPOINT_URL", "https://storage.example.test")
-    monkeypatch.setenv("AWS_S3_REGION_NAME", "auto")
-    monkeypatch.setenv("AWS_QUERYSTRING_EXPIRE", "120")
-    monkeypatch.setenv("S3_BUCKET_PRIVATE", "True")
+    monkeypatch.setenv("STORAGE_BACKEND", "local")
+    for name in (
+        "USE_S3_STORAGE",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_STORAGE_BUCKET_NAME",
+        "AWS_S3_ENDPOINT_URL",
+        "AWS_S3_REGION_NAME",
+        "AWS_QUERYSTRING_EXPIRE",
+        "S3_BUCKET_PRIVATE",
+    ):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
 
     sys.modules.pop("config.settings.production", None)
@@ -81,7 +85,10 @@ def test_production_settings_accept_django_allowed_hosts(monkeypatch):
     assert production.ALLOWED_HOSTS == ["coolify.sslip.io", "localhost"]
     assert production.DEBUG is False
     assert production.DATABASES["default"]["OPTIONS"] == {"sslmode": "require"}
-    assert production.STORAGES["default"]["BACKEND"] == "storages.backends.s3.S3Storage"
+    assert production.STORAGE_BACKEND == "local"
+    assert production.MEDIA_ROOT == production.BASE_DIR / "media"
+    assert production.STORAGES["default"]["BACKEND"] == "apps.common.storage.PrivateFileSystemStorage"
+    assert production.STORAGES["staticfiles"]["BACKEND"] == "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 def test_production_settings_fail_fast_without_required_database(monkeypatch):

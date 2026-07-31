@@ -11850,6 +11850,14 @@
                 "tags": [
                     "Protected Assets"
                 ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Inline chat attachment"
@@ -11874,6 +11882,14 @@
                 "tags": [
                     "Protected Assets"
                 ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Inline protected file stream"
@@ -11897,6 +11913,14 @@
                 ],
                 "tags": [
                     "Protected Assets"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -12272,6 +12296,14 @@
                 ],
                 "tags": [
                     "Protected Assets"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -13079,6 +13111,14 @@
                 ],
                 "tags": [
                     "Protected Assets"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
                 ],
                 "responses": {
                     "200": {

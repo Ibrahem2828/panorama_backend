@@ -22,11 +22,13 @@
 - Confirm broker connectivity, memory eviction/persistence status, worker `inspect ping`, beat logs, and queue depth.
 - Pause nonessential task producers if idempotency is uncertain. Restart workers one at a time after Redis recovery and inspect duplicate side effects.
 
-## Object storage outage or public-access suspicion
+## Local media storage outage or public-access suspicion
 
-- Disable uploads and signed-ticket issuance if private storage cannot be verified.
-- Check bucket public-access block, policy, CORS, lifecycle, access logs, and service-key scope. Rotate the S3/R2 key if exposure is plausible.
-- Do not expose permanent media URLs as a workaround.
+- Disable uploads and protected-ticket issuance if the named volume cannot be verified.
+- Check the Coolify mount path, ownership for UID/GID `10001`, host disk health,
+  backup freshness, and reverse-proxy rules. Do not expose `/media/` as a workaround.
+- Restore to a new Staging volume first. Do not delete or recreate the incident
+  volume until preservation and recovery are approved.
 
 ## Mail or push outage
 

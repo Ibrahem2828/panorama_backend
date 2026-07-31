@@ -17,7 +17,10 @@ This repository currently has no evidence of a successful remote Coolify deploym
    - Self-hosted: set `COMPOSE_PROFILES=self-hosted`, use `postgres` and `redis` internal DNS names in those URLs, and set the three `POSTGRES_*` values. Neither service exposes a host port.
 3. Configure the Coolify HTTP health path as `/api/v1/health/ready/`. Admission requires HTTP 200. The response must carry `code=READY`; verify this in the post-deploy smoke test because Coolify versions may only assert HTTP status.
 4. Keep Docker's own health check unchanged: it calls `/api/v1/health/live/` and validates the JSON `LIVE` payload. A 404 cannot pass either check.
-5. Configure private R2/S3 policy before deployment: public access disabled, least-privilege service key, restricted CORS origins, and lifecycle rules for temporary objects.
+5. Configure the `panorama_media` named volume at `/app/app/media` and set
+   `STORAGE_BACKEND=local`. Do not publish `/media/` through Coolify or a
+   reverse proxy. Verify `python manage.py storage_status --write-test` from
+   the running container before admitting traffic.
 
 ## Release sequence
 

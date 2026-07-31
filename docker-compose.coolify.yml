@@ -17,14 +17,9 @@ x-app-environment: &app-environment
   EMAIL_HOST: ${EMAIL_HOST:?set EMAIL_HOST}
   EMAIL_HOST_USER: ${EMAIL_HOST_USER:?set EMAIL_HOST_USER}
   EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:?set EMAIL_HOST_PASSWORD}
-  USE_S3_STORAGE: "True"
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?set AWS_ACCESS_KEY_ID}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?set AWS_SECRET_ACCESS_KEY}
-  AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:?set AWS_STORAGE_BUCKET_NAME}
-  AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:?set AWS_S3_ENDPOINT_URL}
-  AWS_S3_REGION_NAME: ${AWS_S3_REGION_NAME:?set AWS_S3_REGION_NAME}
-  S3_BUCKET_PRIVATE: ${S3_BUCKET_PRIVATE:?confirm S3_BUCKET_PRIVATE after provider policy verification}
-  AWS_QUERYSTRING_EXPIRE: ${AWS_QUERYSTRING_EXPIRE:?set AWS_QUERYSTRING_EXPIRE}
+  STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+  MEDIA_ROOT: /app/app/media
+  MEDIA_URL: /media/
   APP_BASE_URL: ${APP_BASE_URL:?set APP_BASE_URL}
   PORT: ${PORT:?set PORT}
   HEALTHCHECK_HOST: ${HEALTHCHECK_HOST:?set HEALTHCHECK_HOST}
@@ -76,6 +71,7 @@ services:
     environment: *app-environment
     volumes:
       - static_data:/app/staticfiles
+      - panorama_media:/app/app/media
     deploy:
       resources:
         limits:
@@ -98,6 +94,8 @@ services:
     stop_grace_period: 75s
     command: celery -A config worker --loglevel=${CELERY_LOG_LEVEL:-INFO} --concurrency=${CELERY_CONCURRENCY:-2}
     environment: *app-environment
+    volumes:
+      - panorama_media:/app/app/media
     deploy:
       resources:
         limits:
@@ -120,6 +118,8 @@ services:
     stop_grace_period: 35s
     command: celery -A config beat --loglevel=${CELERY_LOG_LEVEL:-INFO} --schedule=/tmp/celerybeat-schedule --pidfile=/tmp/celerybeat.pid
     environment: *app-environment
+    volumes:
+      - panorama_media:/app/app/media
     deploy:
       resources:
         limits:
@@ -206,3 +206,5 @@ volumes:
   postgres_data:
   redis_data:
   static_data:
+  # Coolify production should attach this as Application > Storages > Volume.
+  panorama_media:
