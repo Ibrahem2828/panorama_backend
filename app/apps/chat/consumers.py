@@ -85,7 +85,10 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         except Exception:
             logger.exception(
                 "WebSocket message creation failed",
-                extra={"user_id_hash": sha256(str(self.user.id).encode("utf-8")).hexdigest()[:16], "group_id": self.group_id},
+                extra={
+                    "user_id_hash": sha256(str(self.user.id).encode("utf-8")).hexdigest()[:16],
+                    "group_id": self.group_id,
+                },
             )
             await self.send_error("MESSAGE_REJECTED", "The message could not be sent.")
             return
@@ -101,9 +104,7 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         if event["user_id"] == self.user.id:
             return
         await self.send(
-            text_data=json.dumps(
-                {"type": "typing", "user_id": event["user_id"], "is_typing": event["is_typing"]}
-            )
+            text_data=json.dumps({"type": "typing", "user_id": event["user_id"], "is_typing": event["is_typing"]})
         )
 
     @database_sync_to_async

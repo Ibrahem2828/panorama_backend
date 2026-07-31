@@ -22,7 +22,17 @@ urlpatterns = [
     *dashboard_router.urls,
     path("dashboard/verifications/<int:pk>/approve/", ApproveVerificationView.as_view(), name="verification-approve"),
     path("dashboard/verifications/<int:pk>/reject/", RejectVerificationView.as_view(), name="verification-reject"),
-    path("dashboard/verifications/<int:pk>/needs-update/", NeedsUpdateVerificationView.as_view(), name="verification-needs-update"),
-    path("dashboard/verifications/<int:pk>/card-ticket/", VerificationCardTicketView.as_view(), name="verification-card-ticket"),
-    path("verification-card-access/<uuid:token>/", VerificationCardStreamView.as_view(), name="verification-card-access"),
+    path(
+        "dashboard/verifications/<int:pk>/needs-update/",
+        NeedsUpdateVerificationView.as_view(),
+        name="verification-needs-update",
+    ),
+    path(
+        "dashboard/verifications/<int:pk>/card-ticket/",
+        VerificationCardTicketView.as_view(),
+        name="verification-card-ticket",
+    ),
+    path(
+        "verification-card-access/<uuid:token>/", VerificationCardStreamView.as_view(), name="verification-card-access"
+    ),
 ]

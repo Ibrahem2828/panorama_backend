@@ -38,6 +38,10 @@ def _error_code(exc: Exception, status_code: int) -> str:
     }
     if isinstance(exc, exceptions.AuthenticationFailed):
         return "AUTHENTICATION_FAILED"
+    if getattr(exc, "default_code", "") == "feature_disabled":
+        return "FEATURE_DISABLED"
+    if getattr(exc, "default_code", "") == "idempotency_in_progress":
+        return "IDEMPOTENCY_IN_PROGRESS"
     return mapping.get(status_code, "SERVER_ERROR" if status_code >= 500 else "REQUEST_FAILED")
 
 

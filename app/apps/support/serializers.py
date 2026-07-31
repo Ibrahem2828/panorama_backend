@@ -18,8 +18,14 @@ class SupportTicketMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicketMessage
         fields = [
-            "id", "ticket", "sender", "sender_name", "message", "has_attachment",
-            "attachment_preview_endpoint", "created_at",
+            "id",
+            "ticket",
+            "sender",
+            "sender_name",
+            "message",
+            "has_attachment",
+            "attachment_preview_endpoint",
+            "created_at",
         ]
         read_only_fields = fields
 
@@ -36,8 +42,15 @@ class MobileSupportTicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicket
         fields = [
-            "id", "category", "subject", "status", "closed_at", "last_response_at",
-            "messages", "created_at", "updated_at",
+            "id",
+            "category",
+            "subject",
+            "status",
+            "closed_at",
+            "last_response_at",
+            "messages",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = fields
 
@@ -50,9 +63,20 @@ class DashboardSupportTicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicket
         fields = [
-            "id", "user", "user_name", "category", "subject", "status", "priority",
-            "assigned_to", "assigned_to_name", "closed_at", "last_response_at", "messages",
-            "created_at", "updated_at",
+            "id",
+            "user",
+            "user_name",
+            "category",
+            "subject",
+            "status",
+            "priority",
+            "assigned_to",
+            "assigned_to_name",
+            "closed_at",
+            "last_response_at",
+            "messages",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = fields
 
@@ -101,8 +125,10 @@ class SupportTicketAddMessageSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         return SupportTicketService.add_message(
-            self.context["ticket"], self.context["request"].user,
-            self.validated_data["message"], self.validated_data.get("attachment"),
+            self.context["ticket"],
+            self.context["request"].user,
+            self.validated_data["message"],
+            self.validated_data.get("attachment"),
         )
 
 
@@ -111,8 +137,10 @@ class SupportTicketStatusSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         return SupportTicketService.update_status(
-            self.context["ticket"], self.validated_data["status"],
-            self.context["request"].user, request=self.context["request"],
+            self.context["ticket"],
+            self.validated_data["status"],
+            self.context["request"].user,
+            request=self.context["request"],
         )
 
 

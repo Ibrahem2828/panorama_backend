@@ -18,6 +18,7 @@ from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 from apps.common.throttles import LectureNotesRateThrottle, LectureViewerRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
+from apps.product.services import feature_enabled_or_raise
 
 from .models import Lecture, LectureNote, LecturePage, LectureViewEvent
 from .serializers import DashboardLectureSerializer, LectureNoteSerializer, LectureSerializer
@@ -74,6 +75,7 @@ class DashboardLectureViewSet(StandardModelViewSet):
         return Lecture.objects.filter(is_deleted=False).select_related("subject", "uploaded_by")
 
     def perform_create(self, serializer):
+        feature_enabled_or_raise("lecture_upload_enabled", request=self.request)
         lecture = serializer.save(uploaded_by=self.request.user)
         AuditLogService.log(
             actor=self.request.user,
@@ -82,6 +84,7 @@ class DashboardLectureViewSet(StandardModelViewSet):
             new_value={"subject_id": lecture.subject_id, "sha256": lecture.original_sha256},
             request=self.request,
         )
+        feature_enabled_or_raise("lecture_processing_enabled", request=self.request)
         transaction.on_commit(lambda: process_lecture_document.delay(lecture.id))
 
 
@@ -90,6 +93,7 @@ class LectureViewerManifestView(APIView):
 
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, pk: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         return success_response(
             data={
@@ -110,6 +114,7 @@ class LectureViewerSessionView(APIView):
 
     @extend_schema(tags=["Lecture viewer"], request=None, responses={201: OpenApiTypes.OBJECT})
     def post(self, request, pk: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         session = issue_viewer_session(request.user, lecture)
         AuditLogService.log(
@@ -132,6 +137,7 @@ class LectureViewerPageView(APIView):
 
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiResponse(description="Protected page image")})
     def get(self, request, pk: int, page_number: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         page = get_authorized_page(request.user, lecture, _viewer_token(request), page_number)
         LectureViewEvent.objects.create(lecture=lecture, user=request.user, page_number=page_number)
@@ -143,6 +149,7 @@ class LectureViewerThumbnailView(APIView):
 
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiResponse(description="Protected thumbnail image")})
     def get(self, request, pk: int, page_number: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         page = get_authorized_page(request.user, lecture, _viewer_token(request), page_number)
         if not page.thumbnail:
@@ -155,6 +162,7 @@ class LectureViewerTextView(APIView):
 
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, pk: int, page_number: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         page = get_authorized_page(request.user, lecture, _viewer_token(request), page_number)
         return success_response(
@@ -167,6 +175,7 @@ class LectureViewerTextView(APIView):
 class LectureProcessingStatusView(APIView):
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, pk: int):
+        feature_enabled_or_raise("lecture_notes_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         data = {"status": lecture.status, "page_count": lecture.page_count, "is_ready": lecture.is_ready_for_students}
         if user_can_manage_lectures(request.user):
@@ -215,6 +224,7 @@ class LectureNotesView(APIView):
 
     @extend_schema(tags=["Lecture notes"], request=LectureNoteSerializer, responses={201: LectureNoteSerializer})
     def post(self, request, pk: int):
+        feature_enabled_or_raise("lecture_notes_enabled", request=request)
         lecture = self._lecture(request, pk)
         key = request.headers.get("Idempotency-Key", "").strip()
         key_hash = LectureNoteSerializer.idempotency_hash(key) if key else ""

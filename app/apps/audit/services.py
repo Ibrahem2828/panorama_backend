@@ -8,17 +8,30 @@ from .models import AuditLog
 logger = logging.getLogger(__name__)
 
 SENSITIVE_KEYS = {
-    "password", "token", "refresh", "access", "otp", "code", "secret", "authorization",
-    "encrypted_url", "whatsapp_url", "card_image", "file", "attachment", "email_host_password",
-    "student_number", "phone_number", "email",
+    "password",
+    "token",
+    "refresh",
+    "access",
+    "otp",
+    "code",
+    "secret",
+    "authorization",
+    "encrypted_url",
+    "whatsapp_url",
+    "card_image",
+    "file",
+    "attachment",
+    "email_host_password",
+    "student_number",
+    "phone_number",
+    "email",
 }
 
 
 def sanitize_value(value: Any):
     if isinstance(value, dict):
         return {
-            key: "[REDACTED]" if key.lower() in SENSITIVE_KEYS else sanitize_value(item)
-            for key, item in value.items()
+            key: "[REDACTED]" if key.lower() in SENSITIVE_KEYS else sanitize_value(item) for key, item in value.items()
         }
     if isinstance(value, list):
         return [sanitize_value(item) for item in value]

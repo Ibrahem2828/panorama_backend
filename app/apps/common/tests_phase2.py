@@ -112,7 +112,9 @@ def approve_student(user, academic):
 @pytest.mark.django_db
 def test_admin_can_create_academic_structure(api_client, admin_user):
     authenticate(api_client, admin_user)
-    response = api_client.post("/api/v1/dashboard/universities/", {"name": "Aleppo University", "code": "AU"}, format="json")
+    response = api_client.post(
+        "/api/v1/dashboard/universities/", {"name": "Aleppo University", "code": "AU"}, format="json"
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
     assert University.objects.filter(code="AU").exists()
@@ -140,7 +142,9 @@ def test_public_academic_apis_return_only_active_records(api_client, academic_st
 
 @pytest.mark.django_db
 def test_subject_filtering_works(api_client, academic_structure):
-    response = api_client.get(f"/api/v1/majors/{academic_structure['major'].id}/subjects/?academic_year={academic_structure['year'].id}")
+    response = api_client.get(
+        f"/api/v1/majors/{academic_structure['major'].id}/subjects/?academic_year={academic_structure['year'].id}"
+    )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.data["data"]["count"] == 1
@@ -207,7 +211,9 @@ def test_verification_submit_duplicate_and_approval_flow(api_client, student_use
         "card_image": uploaded_image(),
     }
     response = api_client.post("/api/v1/verification/submit/", payload, format="multipart")
-    duplicate = api_client.post("/api/v1/verification/submit/", {**payload, "card_image": uploaded_image("card2.png")}, format="multipart")
+    duplicate = api_client.post(
+        "/api/v1/verification/submit/", {**payload, "card_image": uploaded_image("card2.png")}, format="multipart"
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
     assert duplicate.status_code == status.HTTP_400_BAD_REQUEST
@@ -223,7 +229,9 @@ def test_verification_submit_duplicate_and_approval_flow(api_client, student_use
 
 
 @pytest.mark.django_db
-def test_verification_reject_creates_notification_and_non_admin_forbidden(api_client, student_user, normal_user, academic_structure):
+def test_verification_reject_creates_notification_and_non_admin_forbidden(
+    api_client, student_user, normal_user, academic_structure
+):
     approve_student(student_user, academic_structure)
     request = VerificationRequest.objects.create(
         user=student_user,
@@ -237,7 +245,9 @@ def test_verification_reject_creates_notification_and_non_admin_forbidden(api_cl
         card_image=uploaded_image(),
     )
     authenticate(api_client, normal_user)
-    forbidden = api_client.post(f"/api/v1/dashboard/verifications/{request.id}/reject/", {"rejection_reason": "No"}, format="json")
+    forbidden = api_client.post(
+        f"/api/v1/dashboard/verifications/{request.id}/reject/", {"rejection_reason": "No"}, format="json"
+    )
     assert forbidden.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -268,7 +278,11 @@ def test_group_membership_flow_and_access_rules(api_client, admin_user, student_
     authenticate(api_client, admin_user)
     create = api_client.post(
         "/api/v1/dashboard/groups/",
-        {"name": "SWE Group", "university": academic_structure["university"].id, "major": academic_structure["major"].id},
+        {
+            "name": "SWE Group",
+            "university": academic_structure["university"].id,
+            "major": academic_structure["major"].id,
+        },
         format="json",
     )
     assert create.status_code == status.HTTP_201_CREATED
@@ -327,8 +341,15 @@ def test_blocked_student_cannot_rejoin(api_client, admin_user, student_user, aca
 @pytest.mark.django_db
 def test_file_access_control(api_client, admin_user, normal_user, student_user, academic_structure):
     approve_student(student_user, academic_structure)
-    public_file = FileResource.objects.create(title="Public", file=uploaded_file(), uploaded_by=admin_user, visibility=FileVisibility.PUBLIC)
-    verified_file = FileResource.objects.create(title="Verified", file=uploaded_file("v.pdf"), uploaded_by=admin_user, visibility=FileVisibility.VERIFIED_STUDENTS_ONLY)
+    public_file = FileResource.objects.create(
+        title="Public", file=uploaded_file(), uploaded_by=admin_user, visibility=FileVisibility.PUBLIC
+    )
+    verified_file = FileResource.objects.create(
+        title="Verified",
+        file=uploaded_file("v.pdf"),
+        uploaded_by=admin_user,
+        visibility=FileVisibility.VERIFIED_STUDENTS_ONLY,
+    )
     major_file = FileResource.objects.create(
         title="Major",
         file=uploaded_file("m.pdf"),
@@ -399,7 +420,12 @@ def test_announcement_targeting(api_client, admin_user, normal_user, student_use
         created_by=admin_user,
     )
     Announcement.objects.create(title="Inactive", description="Inactive", created_by=admin_user, is_active=False)
-    Announcement.objects.create(title="Expired", description="Expired", created_by=admin_user, ends_at=timezone.now() - timezone.timedelta(days=1))
+    Announcement.objects.create(
+        title="Expired",
+        description="Expired",
+        created_by=admin_user,
+        ends_at=timezone.now() - timezone.timedelta(days=1),
+    )
 
     authenticate(api_client, normal_user)
     normal = api_client.get("/api/v1/announcements/")

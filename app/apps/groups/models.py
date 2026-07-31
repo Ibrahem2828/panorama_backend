@@ -16,8 +16,12 @@ class Group(BaseModel):
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to="groups/", null=True, blank=True)
     university = models.ForeignKey("universities.University", on_delete=models.CASCADE, related_name="groups")
-    faculty = models.ForeignKey("universities.Faculty", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True)
-    major = models.ForeignKey("universities.Major", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True)
+    faculty = models.ForeignKey(
+        "universities.Faculty", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True
+    )
+    major = models.ForeignKey(
+        "universities.Major", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True
+    )
     academic_year = models.ForeignKey(
         "universities.AcademicYear",
         on_delete=models.SET_NULL,
@@ -25,8 +29,12 @@ class Group(BaseModel):
         null=True,
         blank=True,
     )
-    semester = models.ForeignKey("universities.Semester", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True)
-    subject = models.ForeignKey("universities.Subject", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True)
+    semester = models.ForeignKey(
+        "universities.Semester", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True
+    )
+    subject = models.ForeignKey(
+        "universities.Subject", on_delete=models.SET_NULL, related_name="groups", null=True, blank=True
+    )
     created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="created_groups")
     is_active = models.BooleanField(default=True)
     requires_approval = models.BooleanField(default=True)
@@ -75,7 +83,9 @@ class GroupMembership(BaseModel):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="memberships")
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="group_memberships")
     role = models.CharField(max_length=32, choices=GroupMembershipRole.choices, default=GroupMembershipRole.MEMBER)
-    status = models.CharField(max_length=32, choices=GroupMembershipStatus.choices, default=GroupMembershipStatus.PENDING)
+    status = models.CharField(
+        max_length=32, choices=GroupMembershipStatus.choices, default=GroupMembershipStatus.PENDING
+    )
     reviewed_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,
@@ -124,9 +134,7 @@ class GroupExternalChannel(BaseModel):
     )
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=["group", "channel_type"], name="unique_group_external_channel")
-        ]
+        constraints = [models.UniqueConstraint(fields=["group", "channel_type"], name="unique_group_external_channel")]
         indexes = [models.Index(fields=["group", "channel_type", "is_active"], name="groups_ext_channel_active_idx")]
 
     def __str__(self) -> str:

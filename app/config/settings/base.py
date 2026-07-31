@@ -33,6 +33,7 @@ LOCAL_APPS = [
     "apps.support",
     "apps.audit",
     "apps.feedback",
+    "apps.product",
 ]
 
 THIRD_PARTY_APPS = [
@@ -69,6 +70,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.common.middleware.APISecurityHeadersMiddleware",
+    "apps.product.middleware.ProductLifecycleMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -163,6 +165,7 @@ REST_FRAMEWORK = {
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
         "lecture_viewer": config("THROTTLE_LECTURE_VIEWER", default="240/min"),
         "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
+        "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
     },
 }
 
@@ -178,7 +181,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Panorama API",
     "DESCRIPTION": "Backend API for the Panorama student services platform.",
-    "VERSION": "2.0.0",
+    "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{"bearerAuth": []}],
@@ -285,6 +288,21 @@ SPECTACULAR_SETTINGS = {
             ("failed", "Failed"),
             ("quarantined", "Quarantined"),
         ],
+        "MobilePlatformEnum": [
+            ("android", "Android"),
+            ("ios", "iOS"),
+        ],
+        "ConsentKindEnum": [
+            ("terms", "Terms"),
+            ("privacy", "Privacy"),
+        ],
+        "FeedbackKindEnum": [
+            ("rating", "Rating"),
+            ("suggestion", "Suggestion"),
+            ("bug", "Bug Report"),
+            ("complaint", "Complaint"),
+            ("compliment", "Compliment"),
+        ],
     },
 }
 
@@ -361,6 +379,12 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, cast=int)
 CELERY_TASK_ROUTES = {"apps.lectures.tasks.*": {"queue": "conversion"}}
+CELERY_BEAT_SCHEDULE = {
+    "execute-due-account-deletions": {
+        "task": "apps.product.tasks.execute_due_account_deletions",
+        "schedule": 3600.0,
+    }
+}
 FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
 
 CHANNEL_LAYERS = {
@@ -373,6 +397,7 @@ CHANNEL_LAYERS = {
 RETURN_DEVELOPMENT_OTP = DEBUG and get_bool_env("RETURN_DEVELOPMENT_OTP", default=False)
 API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=DEBUG)
 TRUSTED_PROXY_COUNT = config("TRUSTED_PROXY_COUNT", default=1, cast=int)
+ACCOUNT_DELETION_GRACE_DAYS = config("ACCOUNT_DELETION_GRACE_DAYS", default=30, cast=int)
 
 
 PUSH_NOTIFICATIONS_ENABLED = get_bool_env("PUSH_NOTIFICATIONS_ENABLED", default=False)

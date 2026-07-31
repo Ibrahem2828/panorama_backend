@@ -40,11 +40,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for context, action_key, title, question, cooldown, sample in PROMPT_POLICIES:
             FeedbackPromptPolicy.objects.update_or_create(
-                context=context, action_key=action_key,
+                context=context,
+                action_key=action_key,
                 defaults={
-                    "title": title, "question": question, "cooldown_days": cooldown,
-                    "sample_percent": sample, "allow_comment": True,
-                    "allow_suggestion": True, "is_active": True, "is_deleted": False,
+                    "title": title,
+                    "question": question,
+                    "cooldown_days": cooldown,
+                    "sample_percent": sample,
+                    "allow_comment": True,
+                    "allow_suggestion": True,
+                    "is_active": True,
+                    "is_deleted": False,
                 },
             )
         self.stdout.write(self.style.SUCCESS(f"Feedback prompt policies ready: {len(PROMPT_POLICIES)}"))
@@ -56,7 +62,8 @@ class Command(BaseCommand):
                 defaults={
                     "address": os.environ.get("DEFAULT_PICKUP_LOCATION_ADDRESS", "").strip(),
                     "instructions": os.environ.get("DEFAULT_PICKUP_LOCATION_INSTRUCTIONS", "").strip(),
-                    "is_active": True, "is_deleted": False,
+                    "is_active": True,
+                    "is_deleted": False,
                 },
             )
             self.stdout.write(self.style.SUCCESS("Default pickup location configured."))
@@ -78,7 +85,12 @@ class Command(BaseCommand):
     def _seed_optional_pricing(self):
         specs = [
             ("DEFAULT_PRINT_PRICE_BW_A4_ONE", PrintColorMode.BLACK_WHITE, PrintPaperSize.A4, PrintSides.ONE_SIDED),
-            ("DEFAULT_PRINT_PRICE_BW_A4_DOUBLE", PrintColorMode.BLACK_WHITE, PrintPaperSize.A4, PrintSides.DOUBLE_SIDED),
+            (
+                "DEFAULT_PRINT_PRICE_BW_A4_DOUBLE",
+                PrintColorMode.BLACK_WHITE,
+                PrintPaperSize.A4,
+                PrintSides.DOUBLE_SIDED,
+            ),
             ("DEFAULT_PRINT_PRICE_COLOR_A4_ONE", PrintColorMode.COLOR, PrintPaperSize.A4, PrintSides.ONE_SIDED),
             ("DEFAULT_PRINT_PRICE_COLOR_A4_DOUBLE", PrintColorMode.COLOR, PrintPaperSize.A4, PrintSides.DOUBLE_SIDED),
         ]
@@ -91,9 +103,14 @@ class Command(BaseCommand):
             PrintPricingRule.objects.update_or_create(
                 name=env_name,
                 defaults={
-                    "color_mode": color, "paper_size": size, "sides": sides,
-                    "price_per_sheet": value, "setup_fee": Decimal("0"),
-                    "currency": currency, "is_active": True, "is_deleted": False,
+                    "color_mode": color,
+                    "paper_size": size,
+                    "sides": sides,
+                    "price_per_sheet": value,
+                    "setup_fee": Decimal("0"),
+                    "currency": currency,
+                    "is_active": True,
+                    "is_deleted": False,
                 },
             )
             count += 1

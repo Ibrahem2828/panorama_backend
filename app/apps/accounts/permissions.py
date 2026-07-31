@@ -23,6 +23,7 @@ class Capability:
     ANNOUNCEMENTS_MANAGE = "announcements.manage"
     AUDIT_VIEW = "audit.view"
     FEEDBACK_MANAGE = "feedback.manage"
+    PRODUCT_MANAGE = "product.manage"
 
 
 ROLE_CAPABILITIES = {
@@ -41,6 +42,7 @@ ROLE_CAPABILITIES = {
         Capability.ANNOUNCEMENTS_MANAGE,
         Capability.AUDIT_VIEW,
         Capability.FEEDBACK_MANAGE,
+        Capability.PRODUCT_MANAGE,
     },
     UserRole.PRINT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.PRINTING_MANAGE},
     UserRole.SUPPORT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.SUPPORT_MANAGE, Capability.FEEDBACK_MANAGE},
@@ -176,6 +178,10 @@ class CanViewAudit(CapabilityPermission):
 
 class CanManageFeedback(CapabilityPermission):
     capability = Capability.FEEDBACK_MANAGE
+
+
+class CanManageProduct(CapabilityPermission):
+    capability = Capability.PRODUCT_MANAGE
 
 
 class IsVerifiedStudent(BasePermission):

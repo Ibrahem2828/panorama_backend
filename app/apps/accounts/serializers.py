@@ -64,7 +64,6 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-
     def get_has_card_image(self, obj) -> bool:
         return bool(obj.card_image)
 
@@ -164,7 +163,6 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
 
-
 class BaseRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
@@ -231,7 +229,6 @@ class StudentRegisterSerializer(BaseRegisterSerializer):
             except Exception as exc:
                 raise serializers.ValidationError(getattr(exc, "message", str(exc))) from exc
         return value
-
 
     @transaction.atomic
     def create(self, validated_data):

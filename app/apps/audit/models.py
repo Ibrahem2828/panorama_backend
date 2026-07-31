@@ -50,6 +50,16 @@ class AuditAction(models.TextChoices):
     FEEDBACK_SUBMITTED = "feedback_submitted", "Feedback Submitted"
     FEEDBACK_WORKFLOW_UPDATED = "feedback_workflow_updated", "Feedback Workflow Updated"
     FEEDBACK_PRIVACY_REQUESTED = "feedback_privacy_requested", "Feedback Privacy Requested"
+    MOBILE_RELEASE_POLICY_UPDATED = "mobile_release_policy_updated", "Mobile Release Policy Updated"
+    MAINTENANCE_MODE_UPDATED = "maintenance_mode_updated", "Maintenance Mode Updated"
+    FEATURE_FLAG_UPDATED = "feature_flag_updated", "Feature Flag Updated"
+    DEVICE_INSTALLATION_REGISTERED = "device_installation_registered", "Device Installation Registered"
+    DEVICE_INSTALLATION_REVOKED = "device_installation_revoked", "Device Installation Revoked"
+    POLICY_ACCEPTED = "policy_accepted", "Policy Accepted"
+    ACCOUNT_DELETION_REQUESTED = "account_deletion_requested", "Account Deletion Requested"
+    ACCOUNT_DELETION_CANCELLED = "account_deletion_cancelled", "Account Deletion Cancelled"
+    ACCOUNT_DELETION_COMPLETED = "account_deletion_completed", "Account Deletion Completed"
+    NOTIFICATION_CAMPAIGN_CREATED = "notification_campaign_created", "Notification Campaign Created"
 
 
 class AuditLog(BaseModel):

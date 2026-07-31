@@ -13,7 +13,9 @@ def announcements_for_user(user):
         Q(ends_at__isnull=True) | Q(ends_at__gte=now),
     )
     if user.role == UserRole.NORMAL_USER:
-        return queryset.filter(target_user_type__in=[AnnouncementTargetUserType.ALL, AnnouncementTargetUserType.NORMAL_USERS])
+        return queryset.filter(
+            target_user_type__in=[AnnouncementTargetUserType.ALL, AnnouncementTargetUserType.NORMAL_USERS]
+        )
     if user.role == UserRole.STUDENT:
         profile = getattr(user, "student_profile", None)
         target_types = [AnnouncementTargetUserType.ALL, AnnouncementTargetUserType.STUDENTS]

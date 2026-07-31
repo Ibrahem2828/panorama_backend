@@ -38,10 +38,14 @@ class SupportTicketPriority(models.TextChoices):
 
 class SupportTicket(BaseModel):
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="support_tickets")
-    category = models.CharField(max_length=32, choices=SupportTicketCategory.choices, default=SupportTicketCategory.OTHER)
+    category = models.CharField(
+        max_length=32, choices=SupportTicketCategory.choices, default=SupportTicketCategory.OTHER
+    )
     subject = models.CharField(max_length=255)
     status = models.CharField(max_length=32, choices=SupportTicketStatus.choices, default=SupportTicketStatus.OPEN)
-    priority = models.CharField(max_length=32, choices=SupportTicketPriority.choices, default=SupportTicketPriority.NORMAL)
+    priority = models.CharField(
+        max_length=32, choices=SupportTicketPriority.choices, default=SupportTicketPriority.NORMAL
+    )
     assigned_to = models.ForeignKey(
         "accounts.User", on_delete=models.SET_NULL, related_name="assigned_support_tickets", null=True, blank=True
     )

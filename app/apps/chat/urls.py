@@ -14,8 +14,16 @@ message_detail = GroupMessageViewSet.as_view({"get": "retrieve", "delete": "dest
 urlpatterns = [
     path("groups/<int:group_id>/messages/", message_list, name="group-message-list"),
     path("groups/<int:group_id>/messages/<int:pk>/", message_detail, name="group-message-detail"),
-    path("groups/<int:group_id>/messages/<int:message_id>/delete/", GroupMessageDeleteView.as_view(), name="group-message-delete"),
-    path("groups/<int:group_id>/messages/<int:message_id>/report/", GroupMessageReportView.as_view(), name="group-message-report"),
+    path(
+        "groups/<int:group_id>/messages/<int:message_id>/delete/",
+        GroupMessageDeleteView.as_view(),
+        name="group-message-delete",
+    ),
+    path(
+        "groups/<int:group_id>/messages/<int:message_id>/report/",
+        GroupMessageReportView.as_view(),
+        name="group-message-report",
+    ),
     path(
         "groups/<int:group_id>/messages/<int:message_id>/attachment-ticket/",
         MessageAttachmentAccessTicketView.as_view(),

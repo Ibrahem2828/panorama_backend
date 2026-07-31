@@ -159,7 +159,9 @@ class PrintOrder(BaseModel):
 
 class PrintOrderItem(BaseModel):
     order = models.ForeignKey(PrintOrder, on_delete=models.CASCADE, related_name="items")
-    source_file = models.ForeignKey("files.FileResource", on_delete=models.SET_NULL, related_name="print_order_items", null=True, blank=True)
+    source_file = models.ForeignKey(
+        "files.FileResource", on_delete=models.SET_NULL, related_name="print_order_items", null=True, blank=True
+    )
     uploaded_file = models.FileField(upload_to="print_orders/", null=True, blank=True)
     original_file_name = models.CharField(max_length=255, blank=True)
     file_type = models.CharField(max_length=32, blank=True)

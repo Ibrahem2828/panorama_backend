@@ -13,7 +13,8 @@ matching staging environment before release.
 
 Start at [docs/INDEX.md](docs/INDEX.md). The generated API contract is available
 as [OpenAPI JSON](docs/api/openapi.json), [OpenAPI YAML](docs/api/openapi.yaml),
-and a Postman collection in the same directory.
+and the canonical [Dashboard collection](integrations/api/panorama-dashboard-api.postman_collection.json)
+and [Mobile collection](integrations/api/panorama-mobile-api.postman_collection.json).
 
 ## Local verification
 

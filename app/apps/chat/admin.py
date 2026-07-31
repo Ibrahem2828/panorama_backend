@@ -19,4 +19,5 @@ class MessageReportAdmin(admin.ModelAdmin):
     autocomplete_fields = ("message", "reported_by")
     readonly_fields = ("created_at", "updated_at")
 
+
 admin.site.register(MessageAttachmentAccessTicket)

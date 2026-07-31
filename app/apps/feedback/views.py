@@ -15,6 +15,7 @@ from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 from apps.common.throttles import FeedbackRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
+from apps.product.services import feature_enabled_or_raise
 
 from .models import AppFeedback, FeedbackKind, FeedbackPromptPolicy, FeedbackStatus
 from .serializers import (
@@ -65,6 +66,7 @@ class FeedbackSubmitView(APIView):
 
     @extend_schema(tags=["Feedback"], request=AppFeedbackSerializer, responses={201: AppFeedbackSerializer})
     def post(self, request):
+        feature_enabled_or_raise("feedback_enabled", request=request)
         serializer = AppFeedbackSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         feedback = serializer.save()
@@ -104,7 +106,11 @@ class FeedbackPrivacyRequestView(APIView):
                 request=request,
             )
         return success_response(
-            data={"id": feedback.id, "is_hidden": feedback.is_hidden, "deletion_requested": bool(feedback.deletion_requested_at)},
+            data={
+                "id": feedback.id,
+                "is_hidden": feedback.is_hidden,
+                "deletion_requested": bool(feedback.deletion_requested_at),
+            },
             message="Feedback privacy request recorded",
             request=request,
             code="FEEDBACK_PRIVACY_REQUESTED",
@@ -162,7 +168,17 @@ class DashboardFeedbackViewSet(StandardReadOnlyModelViewSet):
     permission_classes = [CanManageFeedback]
     serializer_class = DashboardFeedbackSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["kind", "context", "action_key", "status", "priority", "rating", "assigned_to", "platform", "app_version"]
+    filterset_fields = [
+        "kind",
+        "context",
+        "action_key",
+        "status",
+        "priority",
+        "rating",
+        "assigned_to",
+        "platform",
+        "app_version",
+    ]
     search_fields = ["title", "comment", "suggestion", "user__full_name", "user__email"]
     ordering_fields = ["created_at", "rating", "priority", "status"]
     ordering = ["-created_at"]

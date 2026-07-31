@@ -203,14 +203,22 @@ def test_verification_rejects_mismatched_faculty_and_accepts_matching(api_client
     }
     mismatch = api_client.post(
         "/api/v1/verification/submit/",
-        {**base, "faculty": academic["other_faculty"].id, "card_image": SimpleUploadedFile("card.png", PNG_BYTES, content_type="image/png")},
+        {
+            **base,
+            "faculty": academic["other_faculty"].id,
+            "card_image": SimpleUploadedFile("card.png", PNG_BYTES, content_type="image/png"),
+        },
         format="multipart",
     )
     assert mismatch.status_code == status.HTTP_400_BAD_REQUEST
 
     match = api_client.post(
         "/api/v1/verification/submit/",
-        {**base, "faculty": academic["faculty"].id, "card_image": SimpleUploadedFile("card2.png", PNG_BYTES, content_type="image/png")},
+        {
+            **base,
+            "faculty": academic["faculty"].id,
+            "card_image": SimpleUploadedFile("card2.png", PNG_BYTES, content_type="image/png"),
+        },
         format="multipart",
     )
     assert match.status_code == status.HTTP_201_CREATED
@@ -227,7 +235,13 @@ def test_approved_student_cannot_change_student_number(api_client, student_user,
 @pytest.mark.django_db
 def test_print_order_uploaded_file_and_priority(api_client, normal_user, student_user, academic):
     configure_printing()
-    normal_file = FileResource.objects.create(title="Normal printable", file=upload(), uploaded_by=normal_user, visibility=FileVisibility.PUBLIC, pages_count=1)
+    normal_file = FileResource.objects.create(
+        title="Normal printable",
+        file=upload(),
+        uploaded_by=normal_user,
+        visibility=FileVisibility.PUBLIC,
+        pages_count=1,
+    )
     auth(api_client, normal_user)
     normal = api_client.post(
         "/api/v1/printing/orders/",
@@ -248,7 +262,13 @@ def test_print_order_uploaded_file_and_priority(api_client, normal_user, student
     assert retry.data["data"]["id"] == normal.data["data"]["id"]
 
     approve_student(student_user, academic)
-    student_file = FileResource.objects.create(title="Student printable", file=upload("student.png"), uploaded_by=student_user, visibility=FileVisibility.PUBLIC, pages_count=1)
+    student_file = FileResource.objects.create(
+        title="Student printable",
+        file=upload("student.png"),
+        uploaded_by=student_user,
+        visibility=FileVisibility.PUBLIC,
+        pages_count=1,
+    )
     auth(api_client, student_user)
     student = api_client.post("/api/v1/printing/orders/", {"items": [print_item(student_file)]}, format="json")
     assert student.status_code == status.HTTP_201_CREATED
@@ -258,8 +278,16 @@ def test_print_order_uploaded_file_and_priority(api_client, normal_user, student
 @pytest.mark.django_db
 def test_print_order_source_file_access_and_owner_visibility(api_client, normal_user, other_user, admin_user):
     configure_printing()
-    public_file = FileResource.objects.create(title="Printable", file=upload(), uploaded_by=admin_user, visibility=FileVisibility.PUBLIC, pages_count=1)
-    admin_file = FileResource.objects.create(title="Private", file=upload("private.png"), uploaded_by=admin_user, visibility=FileVisibility.ADMIN_ONLY, pages_count=1)
+    public_file = FileResource.objects.create(
+        title="Printable", file=upload(), uploaded_by=admin_user, visibility=FileVisibility.PUBLIC, pages_count=1
+    )
+    admin_file = FileResource.objects.create(
+        title="Private",
+        file=upload("private.png"),
+        uploaded_by=admin_user,
+        visibility=FileVisibility.ADMIN_ONLY,
+        pages_count=1,
+    )
     auth(api_client, normal_user)
     ok = api_client.post("/api/v1/printing/orders/", {"items": [print_item(public_file, copies=2)]}, format="json")
     blocked = api_client.post("/api/v1/printing/orders/", {"items": [print_item(admin_file)]}, format="json")
@@ -275,10 +303,16 @@ def test_print_order_source_file_access_and_owner_visibility(api_client, normal_
 def test_print_staff_status_update_history_notification_and_invalid_transition(api_client, normal_user, print_staff):
     order = PrintOrder.objects.create(user=normal_user)
     auth(api_client, print_staff)
-    invalid = api_client.patch(f"/api/v1/dashboard/printing/orders/{order.id}/status/", {"status": PrintOrderStatus.READY}, format="json")
+    invalid = api_client.patch(
+        f"/api/v1/dashboard/printing/orders/{order.id}/status/", {"status": PrintOrderStatus.READY}, format="json"
+    )
     assert invalid.status_code == status.HTTP_400_BAD_REQUEST
 
-    valid = api_client.patch(f"/api/v1/dashboard/printing/orders/{order.id}/status/", {"status": PrintOrderStatus.UNDER_REVIEW}, format="json")
+    valid = api_client.patch(
+        f"/api/v1/dashboard/printing/orders/{order.id}/status/",
+        {"status": PrintOrderStatus.UNDER_REVIEW},
+        format="json",
+    )
     assert valid.status_code == status.HTTP_200_OK
     assert PrintOrderStatusHistory.objects.filter(order=order, new_status=PrintOrderStatus.UNDER_REVIEW).exists()
     assert Notification.objects.filter(user=normal_user, data__print_order_id=order.id).exists()
@@ -334,16 +368,24 @@ def test_support_ticket_user_and_admin_flows(api_client, normal_user, other_user
     auth(api_client, admin_user)
     listed = api_client.get("/api/v1/dashboard/support/tickets/")
     assert listed.data["data"]["count"] == 1
-    status_response = api_client.patch(f"/api/v1/dashboard/support/tickets/{ticket_id}/status/", {"status": SupportTicketStatus.IN_PROGRESS}, format="json")
+    status_response = api_client.patch(
+        f"/api/v1/dashboard/support/tickets/{ticket_id}/status/",
+        {"status": SupportTicketStatus.IN_PROGRESS},
+        format="json",
+    )
     assert status_response.status_code == status.HTTP_200_OK
-    reply = api_client.post(f"/api/v1/dashboard/support/tickets/{ticket_id}/messages/", {"message": "We are checking"}, format="json")
+    reply = api_client.post(
+        f"/api/v1/dashboard/support/tickets/{ticket_id}/messages/", {"message": "We are checking"}, format="json"
+    )
     assert reply.status_code == status.HTTP_201_CREATED
     assert Notification.objects.filter(user=normal_user, data__support_ticket_id=ticket_id).exists()
 
 
 @pytest.mark.django_db
 def test_audit_logs_protected_and_sanitized(api_client, normal_user, admin_user):
-    AuditLog.objects.create(actor=admin_user, action="support_ticket_created", new_value={"password": "secret", "safe": "ok"})
+    AuditLog.objects.create(
+        actor=admin_user, action="support_ticket_created", new_value={"password": "secret", "safe": "ok"}
+    )
     auth(api_client, normal_user)
     forbidden = api_client.get("/api/v1/dashboard/audit-logs/")
     assert forbidden.status_code == status.HTTP_403_FORBIDDEN
@@ -357,7 +399,9 @@ def test_audit_logs_protected_and_sanitized(api_client, normal_user, admin_user)
 def test_device_token_register_duplicate_and_delete_scope(api_client, normal_user, other_user):
     auth(api_client, normal_user)
     token = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaa]"
-    first = api_client.post("/api/v1/notifications/device-tokens/", {"token": token, "platform": "android"}, format="json")
+    first = api_client.post(
+        "/api/v1/notifications/device-tokens/", {"token": token, "platform": "android"}, format="json"
+    )
     second = api_client.post("/api/v1/notifications/device-tokens/", {"token": token, "platform": "ios"}, format="json")
     assert first.status_code == status.HTTP_201_CREATED
     assert second.status_code == status.HTTP_201_CREATED

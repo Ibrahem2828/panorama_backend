@@ -108,7 +108,9 @@ def test_notification_creation_and_push_delivery_update_only_active_tokens():
 
 
 def test_push_provider_rejects_untrusted_endpoint_and_handles_provider_failures():
-    with override_settings(EXPO_PUSH_ENDPOINT="http://untrusted.example", EXPO_PUSH_ALLOWED_HOSTS=frozenset({"exp.host"})):
+    with override_settings(
+        EXPO_PUSH_ENDPOINT="http://untrusted.example", EXPO_PUSH_ALLOWED_HOSTS=frozenset({"exp.host"})
+    ):
         assert PushNotificationService._send_expo(["ExponentPushToken[test]"], "T", "B") == 0
 
     class Response:
@@ -120,7 +122,9 @@ def test_push_provider_rejects_untrusted_endpoint_and_handles_provider_failures(
         def __exit__(self, exc_type, exc, traceback):
             return False
 
-    with override_settings(EXPO_PUSH_ENDPOINT="https://exp.host/--/api/v2/push/send", EXPO_PUSH_ALLOWED_HOSTS=frozenset({"exp.host"})):
+    with override_settings(
+        EXPO_PUSH_ENDPOINT="https://exp.host/--/api/v2/push/send", EXPO_PUSH_ALLOWED_HOSTS=frozenset({"exp.host"})
+    ):
         with patch("apps.notifications.services.urllib_request.urlopen", return_value=Response()) as urlopen:
             assert PushNotificationService._send_expo(["ExponentPushToken[test]"], "T", "B") == 1
         request = urlopen.call_args.args[0]

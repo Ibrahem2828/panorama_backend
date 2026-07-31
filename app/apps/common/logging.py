@@ -8,9 +8,7 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-_SENSITIVE_VALUE = re.compile(
-    r"(?i)(authorization|token|password|secret|api[_-]?key|cookie)\\s*([=:])\\s*[^\\s,;]+"
-)
+_SENSITIVE_VALUE = re.compile(r"(?i)(authorization|token|password|secret|api[_-]?key|cookie)\\s*([=:])\\s*[^\\s,;]+")
 
 
 class SensitiveDataFilter(logging.Filter):

@@ -1,4 +1,5 @@
 from cryptography.fernet import Fernet
+from decouple import config
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *  # noqa: F403
@@ -87,7 +88,7 @@ globals().update(
     )
 )
 
-LOG_LEVEL = require_env("LOG_LEVEL")
+LOG_LEVEL = config("LOG_LEVEL", default="INFO").upper()
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

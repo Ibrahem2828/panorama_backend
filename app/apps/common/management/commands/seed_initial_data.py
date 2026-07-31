@@ -32,7 +32,12 @@ class Command(BaseCommand):
             ("4", "كلية هندسة المعلوماتية", "Informatics Engineering", "هندسة المعلوماتية"),
             ("5", "كلية هندسة البترول", "Petroleum Engineering", "هندسة البترول"),
             ("6", "كلية إدارة الأعمال", "Business Administration", "إدارة الأعمال"),
-            ("7", "كلية هندسة تكنولوجيا البناء والتشييد", "Construction Technology Engineering", "هندسة تكنولوجيا البناء والتشييد"),
+            (
+                "7",
+                "كلية هندسة تكنولوجيا البناء والتشييد",
+                "Construction Technology Engineering",
+                "هندسة تكنولوجيا البناء والتشييد",
+            ),
         ]
         faculties = {}
         majors = {}
@@ -54,7 +59,10 @@ class Command(BaseCommand):
         for order in range(1, 7):
             year, _ = AcademicYear.objects.update_or_create(
                 order=order,
-                defaults={"name": f"السنة {['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة'][order - 1]}", "is_active": True},
+                defaults={
+                    "name": f"السنة {['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة'][order - 1]}",
+                    "is_active": True,
+                },
             )
             years[order] = year
 
@@ -86,10 +94,25 @@ class Command(BaseCommand):
 
         password = secrets.token_urlsafe(32)
         users = {
-            "it": self._user("it@panorama.local", "+963900000001", "IT Support", UserRole.IT_SUPPORT, password, is_staff=True, is_superuser=True),
+            "it": self._user(
+                "it@panorama.local",
+                "+963900000001",
+                "IT Support",
+                UserRole.IT_SUPPORT,
+                password,
+                is_staff=True,
+                is_superuser=True,
+            ),
             "admin": self._user("admin@panorama.local", "+963900000002", "Admin User", UserRole.ADMIN, password),
             "print": self._user("print@panorama.local", "+963900000003", "Print Staff", UserRole.PRINT_STAFF, password),
-            "student": self._user("student@panorama.local", "+963900000004", "Demo Student", UserRole.STUDENT, password, is_phone_verified=True),
+            "student": self._user(
+                "student@panorama.local",
+                "+963900000004",
+                "Demo Student",
+                UserRole.STUDENT,
+                password,
+                is_phone_verified=True,
+            ),
             "normal": self._user("user@panorama.local", "+963900000005", "Normal User", UserRole.NORMAL_USER, password),
         }
 
@@ -155,39 +178,80 @@ class Command(BaseCommand):
         GroupMembership.objects.update_or_create(
             group=dentistry_year_group,
             user=users["student"],
-            defaults={"status": GroupMembershipStatus.APPROVED, "role": GroupMembershipRole.MEMBER, "joined_at": timezone.now()},
+            defaults={
+                "status": GroupMembershipStatus.APPROVED,
+                "role": GroupMembershipRole.MEMBER,
+                "joined_at": timezone.now(),
+            },
         )
         GroupMembership.objects.update_or_create(
             group=dentistry_subject_group,
             user=users["student"],
-            defaults={"status": GroupMembershipStatus.APPROVED, "role": GroupMembershipRole.MODERATOR, "joined_at": timezone.now()},
+            defaults={
+                "status": GroupMembershipStatus.APPROVED,
+                "role": GroupMembershipRole.MODERATOR,
+                "joined_at": timezone.now(),
+            },
         )
 
         self._file("Public Welcome File", users["admin"], FileVisibility.PUBLIC)
         self._file("Verified Student Guide", users["admin"], FileVisibility.VERIFIED_STUDENTS_ONLY)
-        self._file("Dentistry Major Notes", users["admin"], FileVisibility.MAJOR_ONLY, major=majors["2"], academic_year=years[1])
+        self._file(
+            "Dentistry Major Notes",
+            users["admin"],
+            FileVisibility.MAJOR_ONLY,
+            major=majors["2"],
+            academic_year=years[1],
+        )
         self._file("Dentistry Group File", users["admin"], FileVisibility.GROUP_ONLY, group=dentistry_year_group)
 
-        Announcement.objects.update_or_create(title="Welcome to Panorama", defaults={"description": "General demo announcement", "created_by": users["admin"]})
+        Announcement.objects.update_or_create(
+            title="Welcome to Panorama",
+            defaults={"description": "General demo announcement", "created_by": users["admin"]},
+        )
         Announcement.objects.update_or_create(
             title="Verified Students Update",
-            defaults={"description": "Announcement for verified students", "target_user_type": AnnouncementTargetUserType.VERIFIED_STUDENTS, "created_by": users["admin"]},
+            defaults={
+                "description": "Announcement for verified students",
+                "target_user_type": AnnouncementTargetUserType.VERIFIED_STUDENTS,
+                "created_by": users["admin"],
+            },
         )
         Announcement.objects.update_or_create(
             title="Dentistry Notice",
-            defaults={"description": "Dentistry-targeted announcement", "target_user_type": AnnouncementTargetUserType.VERIFIED_STUDENTS, "target_major": majors["2"], "created_by": users["admin"]},
+            defaults={
+                "description": "Dentistry-targeted announcement",
+                "target_user_type": AnnouncementTargetUserType.VERIFIED_STUDENTS,
+                "target_major": majors["2"],
+                "created_by": users["admin"],
+            },
         )
-        Announcement.objects.update_or_create(title="Printing Service Available", defaults={"description": "Printing service announcement", "created_by": users["admin"]})
+        Announcement.objects.update_or_create(
+            title="Printing Service Available",
+            defaults={"description": "Printing service announcement", "created_by": users["admin"]},
+        )
 
-        PrintOrder.objects.get_or_create(user=users["student"], user_notes="Demo student order", defaults={"priority": PrintOrderPriority.STUDENT_PRIORITY})
-        PrintOrder.objects.get_or_create(user=users["normal"], user_notes="Demo normal order", defaults={"priority": PrintOrderPriority.NORMAL})
+        PrintOrder.objects.get_or_create(
+            user=users["student"],
+            user_notes="Demo student order",
+            defaults={"priority": PrintOrderPriority.STUDENT_PRIORITY},
+        )
+        PrintOrder.objects.get_or_create(
+            user=users["normal"], user_notes="Demo normal order", defaults={"priority": PrintOrderPriority.NORMAL}
+        )
 
-        ticket, _ = SupportTicket.objects.get_or_create(user=users["student"], subject="Demo support ticket", defaults={"category": SupportTicketCategory.TECHNICAL})
-        SupportTicketMessage.objects.get_or_create(ticket=ticket, sender=users["student"], message="I need help with the demo app.")
+        ticket, _ = SupportTicket.objects.get_or_create(
+            user=users["student"], subject="Demo support ticket", defaults={"category": SupportTicketCategory.TECHNICAL}
+        )
+        SupportTicketMessage.objects.get_or_create(
+            ticket=ticket, sender=users["student"], message="I need help with the demo app."
+        )
 
         self.stdout.write(self.style.SUCCESS("Seed data ready. Demo accounts use generated, non-disclosed passwords."))
 
-    def _user(self, email, phone, full_name, role, password, is_staff=False, is_superuser=False, is_phone_verified=False):
+    def _user(
+        self, email, phone, full_name, role, password, is_staff=False, is_superuser=False, is_phone_verified=False
+    ):
         user, _ = User.objects.update_or_create(
             email=email,
             defaults={
@@ -218,5 +282,7 @@ class Command(BaseCommand):
             },
         )
         if created or not file_resource.file:
-            file_resource.file.save(f"{title.lower().replace(' ', '_')}.txt", ContentFile(b"Panorama demo file"), save=True)
+            file_resource.file.save(
+                f"{title.lower().replace(' ', '_')}.txt", ContentFile(b"Panorama demo file"), save=True
+            )
         return file_resource

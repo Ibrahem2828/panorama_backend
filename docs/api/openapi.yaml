@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Panorama API
-  version: 2.0.0
+  version: 1.0.0
   description: Backend API for the Panorama student services platform.
 paths:
   /api/v1/academic-years/:
@@ -151,6 +151,62 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/account/deletion/cancel/:
+    post:
+      operationId: v1_account_deletion_cancel_create
+      tags:
+      - Account
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDeletionRequest'
+          description: ''
+  /api/v1/account/deletion/request/:
+    post:
+      operationId: v1_account_deletion_request_create
+      tags:
+      - Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountDeletionRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountDeletionRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountDeletionRequestRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDeletionRequest'
+          description: ''
+  /api/v1/account/deletion/status/:
+    get:
+      operationId: v1_account_deletion_status_retrieve
+      tags:
+      - Account
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDeletionRequest'
+          description: ''
   /api/v1/announcements/:
     get:
       operationId: v1_announcements_list
@@ -1023,9 +1079,15 @@ paths:
         schema:
           type: string
           enum:
+          - account_deletion_cancelled
+          - account_deletion_completed
+          - account_deletion_requested
           - announcement_created
           - announcement_deleted
           - announcement_updated
+          - device_installation_registered
+          - device_installation_revoked
+          - feature_flag_updated
           - feedback_privacy_requested
           - feedback_submitted
           - feedback_workflow_updated
@@ -1046,10 +1108,14 @@ paths:
           - lecture_processing_updated
           - lecture_uploaded
           - lecture_viewed
+          - maintenance_mode_updated
           - message_deleted
+          - mobile_release_policy_updated
+          - notification_campaign_created
           - otp_failed
           - otp_sent
           - otp_verified
+          - policy_accepted
           - print_order_assigned
           - print_order_created
           - print_order_note_updated
@@ -1116,6 +1182,16 @@ paths:
           * `feedback_submitted` - Feedback Submitted
           * `feedback_workflow_updated` - Feedback Workflow Updated
           * `feedback_privacy_requested` - Feedback Privacy Requested
+          * `mobile_release_policy_updated` - Mobile Release Policy Updated
+          * `maintenance_mode_updated` - Maintenance Mode Updated
+          * `feature_flag_updated` - Feature Flag Updated
+          * `device_installation_registered` - Device Installation Registered
+          * `device_installation_revoked` - Device Installation Revoked
+          * `policy_accepted` - Policy Accepted
+          * `account_deletion_requested` - Account Deletion Requested
+          * `account_deletion_cancelled` - Account Deletion Cancelled
+          * `account_deletion_completed` - Account Deletion Completed
+          * `notification_campaign_created` - Notification Campaign Created
       - in: query
         name: actor
         schema:
@@ -1423,6 +1499,164 @@ paths:
         schema:
           type: integer
         description: نوع رقم صحيح فريد يحدد هذا faculty.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/feature-flags/:
+    get:
+      operationId: v1_dashboard_feature_flags_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFeatureFlagList'
+          description: ''
+    post:
+      operationId: v1_dashboard_feature_flags_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+          description: ''
+  /api/v1/dashboard/feature-flags/{id}/:
+    get:
+      operationId: v1_dashboard_feature_flags_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا feature flag.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+          description: ''
+    put:
+      operationId: v1_dashboard_feature_flags_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا feature flag.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FeatureFlagRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+          description: ''
+    patch:
+      operationId: v1_dashboard_feature_flags_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا feature flag.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFeatureFlagRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFeatureFlagRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFeatureFlagRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureFlag'
+          description: ''
+    delete:
+      operationId: v1_dashboard_feature_flags_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا feature flag.
         required: true
       tags:
       - v1
@@ -2726,6 +2960,162 @@ paths:
       responses:
         '200':
           description: Original private document
+  /api/v1/dashboard/maintenance-modes/:
+    get:
+      operationId: v1_dashboard_maintenance_modes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMaintenanceModeList'
+          description: ''
+    post:
+      operationId: v1_dashboard_maintenance_modes_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceModeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MaintenanceModeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MaintenanceModeRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceMode'
+          description: ''
+  /api/v1/dashboard/maintenance-modes/{id}/:
+    get:
+      operationId: v1_dashboard_maintenance_modes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا maintenance mode.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceMode'
+          description: ''
+    put:
+      operationId: v1_dashboard_maintenance_modes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا maintenance mode.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceModeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MaintenanceModeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MaintenanceModeRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceMode'
+          description: ''
+    patch:
+      operationId: v1_dashboard_maintenance_modes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا maintenance mode.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenanceModeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenanceModeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMaintenanceModeRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceMode'
+          description: ''
+    delete:
+      operationId: v1_dashboard_maintenance_modes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا maintenance mode.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/dashboard/majors/:
     get:
       operationId: v1_dashboard_majors_list
@@ -2908,6 +3298,192 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/dashboard/mobile-release-policies/:
+    get:
+      operationId: v1_dashboard_mobile_release_policies_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMobileAppReleasePolicyList'
+          description: ''
+    post:
+      operationId: v1_dashboard_mobile_release_policies_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAppReleasePolicyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileAppReleasePolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileAppReleasePolicyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppReleasePolicy'
+          description: ''
+  /api/v1/dashboard/mobile-release-policies/{id}/:
+    get:
+      operationId: v1_dashboard_mobile_release_policies_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا mobile app release policy.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppReleasePolicy'
+          description: ''
+    put:
+      operationId: v1_dashboard_mobile_release_policies_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا mobile app release policy.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileAppReleasePolicyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MobileAppReleasePolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MobileAppReleasePolicyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppReleasePolicy'
+          description: ''
+    patch:
+      operationId: v1_dashboard_mobile_release_policies_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا mobile app release policy.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMobileAppReleasePolicyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMobileAppReleasePolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMobileAppReleasePolicyRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileAppReleasePolicy'
+          description: ''
+    delete:
+      operationId: v1_dashboard_mobile_release_policies_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا mobile app release policy.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/notifications/campaign/:
+    post:
+      operationId: v1_dashboard_notifications_campaign_create
+      tags:
+      - Dashboard notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationCampaignRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationCampaignRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationCampaignRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/dashboard/printing/binding-prices/:
     get:
       operationId: v1_dashboard_printing_binding_prices_list
@@ -3699,6 +4275,164 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/dashboard/privacy-policy-versions/:
+    get:
+      operationId: v1_dashboard_privacy_policy_versions_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPrivacyPolicyVersionList'
+          description: ''
+    post:
+      operationId: v1_dashboard_privacy_policy_versions_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+  /api/v1/dashboard/privacy-policy-versions/{id}/:
+    get:
+      operationId: v1_dashboard_privacy_policy_versions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا privacy policy version.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+    put:
+      operationId: v1_dashboard_privacy_policy_versions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا privacy policy version.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrivacyPolicyVersionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+    patch:
+      operationId: v1_dashboard_privacy_policy_versions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا privacy policy version.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPrivacyPolicyVersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPrivacyPolicyVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPrivacyPolicyVersionRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyPolicyVersion'
+          description: ''
+    delete:
+      operationId: v1_dashboard_privacy_policy_versions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا privacy policy version.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/dashboard/semesters/:
     get:
       operationId: v1_dashboard_semesters_list
@@ -4378,6 +5112,164 @@ paths:
               schema:
                 $ref: '#/components/schemas/SupportTicketStatus'
           description: ''
+  /api/v1/dashboard/terms-versions/:
+    get:
+      operationId: v1_dashboard_terms_versions_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTermsVersionList'
+          description: ''
+    post:
+      operationId: v1_dashboard_terms_versions_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TermsVersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TermsVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TermsVersionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermsVersion'
+          description: ''
+  /api/v1/dashboard/terms-versions/{id}/:
+    get:
+      operationId: v1_dashboard_terms_versions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا terms version.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermsVersion'
+          description: ''
+    put:
+      operationId: v1_dashboard_terms_versions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا terms version.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TermsVersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TermsVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TermsVersionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermsVersion'
+          description: ''
+    patch:
+      operationId: v1_dashboard_terms_versions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا terms version.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTermsVersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTermsVersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTermsVersionRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermsVersion'
+          description: ''
+    delete:
+      operationId: v1_dashboard_terms_versions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا terms version.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/dashboard/universities/:
     get:
       operationId: v1_dashboard_universities_list
@@ -7176,6 +8068,168 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSubjectList'
           description: ''
+  /api/v1/mobile/bootstrap/:
+    get:
+      operationId: v1_mobile_bootstrap_retrieve
+      parameters:
+      - in: header
+        name: X-App-Build
+        schema:
+          type: integer
+      - in: header
+        name: X-App-Platform
+        schema:
+          type: string
+        required: true
+      - in: header
+        name: X-App-Version
+        schema:
+          type: string
+      - in: header
+        name: X-Device-Locale
+        schema:
+          type: string
+      - in: header
+        name: X-Installation-ID
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - Mobile
+      security:
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/mobile/devices/{installation_id}/:
+    patch:
+      operationId: v1_mobile_devices_partial_update
+      parameters:
+      - in: path
+        name: installation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Mobile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDeviceInstallationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDeviceInstallationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDeviceInstallationRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceInstallation'
+          description: ''
+  /api/v1/mobile/devices/{installation_id}/revoke/:
+    post:
+      operationId: v1_mobile_devices_revoke_create
+      parameters:
+      - in: path
+        name: installation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Mobile
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/mobile/devices/register/:
+    post:
+      operationId: v1_mobile_devices_register_create
+      tags:
+      - Mobile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceInstallationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeviceInstallationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeviceInstallationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceInstallation'
+          description: ''
+  /api/v1/mobile/update-policy/:
+    get:
+      operationId: v1_mobile_update_policy_retrieve
+      description: Compatibility-friendly lightweight public update-policy endpoint.
+      parameters:
+      - in: header
+        name: X-App-Build
+        schema:
+          type: integer
+      - in: header
+        name: X-App-Platform
+        schema:
+          type: string
+        required: true
+      - in: header
+        name: X-App-Version
+        schema:
+          type: string
+      - in: header
+        name: X-Device-Locale
+        schema:
+          type: string
+      - in: header
+        name: X-Installation-ID
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - Mobile
+      security:
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/notifications/:
     get:
       operationId: v1_notifications_list
@@ -7350,6 +8404,46 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/notifications/preferences/:
+    get:
+      operationId: v1_notifications_preferences_retrieve
+      tags:
+      - Notifications
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+          description: ''
+    patch:
+      operationId: v1_notifications_preferences_partial_update
+      tags:
+      - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationPreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationPreferenceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationPreferenceRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+          description: ''
   /api/v1/notifications/read-all/:
     post:
       operationId: v1_notifications_read_all_create
@@ -7379,6 +8473,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/policies/accept/:
+    post:
+      operationId: v1_policies_accept_create
+      tags:
+      - Policies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PolicyAcceptanceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PolicyAcceptanceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PolicyAcceptanceRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserConsent'
+          description: ''
+  /api/v1/policies/current/:
+    get:
+      operationId: v1_policies_current_retrieve
+      tags:
+      - Policies
+      security:
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/printing/items/{id}/access-ticket/:
     post:
@@ -8615,9 +9753,8 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         is_active:
           type: boolean
         created_at:
@@ -8643,14 +9780,63 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         is_active:
           type: boolean
       required:
       - name
       - order
+    AccountDeletionRequest:
+      type: object
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AccountDeletionStatusEnum'
+          readOnly: true
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+        scheduled_for:
+          type: string
+          format: date-time
+          readOnly: true
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reason:
+          type: string
+          maxLength: 500
+      required:
+      - cancelled_at
+      - completed_at
+      - requested_at
+      - scheduled_for
+      - status
+    AccountDeletionRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+    AccountDeletionStatusEnum:
+      enum:
+      - requested
+      - cancelled
+      - completed
+      type: string
+      description: |-
+        * `requested` - Requested
+        * `cancelled` - Cancelled
+        * `completed` - Completed
     Announcement:
       type: object
       properties:
@@ -8782,7 +9968,7 @@ components:
           type: integer
           readOnly: true
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/FeedbackKindEnum'
         metric_type:
           $ref: '#/components/schemas/MetricTypeEnum'
         metric_value:
@@ -8885,7 +10071,7 @@ components:
         metadata never leak.
       properties:
         kind:
-          $ref: '#/components/schemas/KindEnum'
+          $ref: '#/components/schemas/FeedbackKindEnum'
         metric_type:
           $ref: '#/components/schemas/MetricTypeEnum'
         metric_value:
@@ -9050,6 +10236,16 @@ components:
       - feedback_submitted
       - feedback_workflow_updated
       - feedback_privacy_requested
+      - mobile_release_policy_updated
+      - maintenance_mode_updated
+      - feature_flag_updated
+      - device_installation_registered
+      - device_installation_revoked
+      - policy_accepted
+      - account_deletion_requested
+      - account_deletion_cancelled
+      - account_deletion_completed
+      - notification_campaign_created
       type: string
       description: |-
         * `user_registered` - User Registered
@@ -9098,6 +10294,16 @@ components:
         * `feedback_submitted` - Feedback Submitted
         * `feedback_workflow_updated` - Feedback Workflow Updated
         * `feedback_privacy_requested` - Feedback Privacy Requested
+        * `mobile_release_policy_updated` - Mobile Release Policy Updated
+        * `maintenance_mode_updated` - Maintenance Mode Updated
+        * `feature_flag_updated` - Feature Flag Updated
+        * `device_installation_registered` - Device Installation Registered
+        * `device_installation_revoked` - Device Installation Revoked
+        * `policy_accepted` - Policy Accepted
+        * `account_deletion_requested` - Account Deletion Requested
+        * `account_deletion_cancelled` - Account Deletion Cancelled
+        * `account_deletion_completed` - Account Deletion Completed
+        * `notification_campaign_created` - Notification Campaign Created
     BindingEnum:
       enum:
       - none
@@ -9209,6 +10415,14 @@ components:
       - code
       - new_password
       - new_password_confirm
+    ConsentKindEnum:
+      enum:
+      - terms
+      - privacy
+      type: string
+      description: |-
+        * `terms` - Terms
+        * `privacy` - Privacy
     ContextEnum:
       enum:
       - app
@@ -9265,7 +10479,7 @@ components:
           readOnly: true
         kind:
           allOf:
-          - $ref: '#/components/schemas/KindEnum'
+          - $ref: '#/components/schemas/FeedbackKindEnum'
           readOnly: true
         metric_type:
           allOf:
@@ -9451,19 +10665,16 @@ components:
           maxLength: 32
         cooldown_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         dismiss_cooldown_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         max_prompts_per_30_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         sample_percent:
           type: integer
           maximum: 100
@@ -9518,19 +10729,16 @@ components:
           maxLength: 32
         cooldown_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         dismiss_cooldown_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         max_prompts_per_30_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         sample_percent:
           type: integer
           maximum: 100
@@ -10110,6 +11318,94 @@ components:
           type: boolean
       required:
       - full_name
+    DeviceInstallation:
+      type: object
+      properties:
+        installation_id:
+          type: string
+          format: uuid
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        app_version:
+          type: string
+          maxLength: 32
+        build_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        push_token_hint:
+          type: string
+          readOnly: true
+        locale:
+          type: string
+          maxLength: 16
+        timezone_name:
+          type: string
+          maxLength: 64
+        device_model:
+          type: string
+          maxLength: 80
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+        notifications_enabled:
+          type: boolean
+        revoked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - installation_id
+      - last_seen_at
+      - platform
+      - push_token_hint
+      - revoked_at
+      - updated_at
+    DeviceInstallationRequest:
+      type: object
+      properties:
+        installation_id:
+          type: string
+          format: uuid
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        app_version:
+          type: string
+          maxLength: 32
+        build_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        push_token:
+          type: string
+          writeOnly: true
+          nullable: true
+          maxLength: 512
+        locale:
+          type: string
+          maxLength: 16
+        timezone_name:
+          type: string
+          maxLength: 64
+        device_model:
+          type: string
+          maxLength: 80
+        notifications_enabled:
+          type: boolean
+      required:
+      - installation_id
+      - platform
     DeviceToken:
       type: object
       properties:
@@ -10120,7 +11416,7 @@ components:
           type: string
           readOnly: true
         platform:
-          $ref: '#/components/schemas/PlatformEnum'
+          $ref: '#/components/schemas/DeviceTokenPlatformEnum'
         is_active:
           type: boolean
           readOnly: true
@@ -10145,6 +11441,16 @@ components:
       - platform
       - token_hint
       - updated_at
+    DeviceTokenPlatformEnum:
+      enum:
+      - android
+      - ios
+      - web
+      type: string
+      description: |-
+        * `android` - Android
+        * `ios` - iOS
+        * `web` - Web
     DeviceTokenRequest:
       type: object
       properties:
@@ -10154,7 +11460,7 @@ components:
           minLength: 1
           maxLength: 512
         platform:
-          $ref: '#/components/schemas/PlatformEnum'
+          $ref: '#/components/schemas/DeviceTokenPlatformEnum'
       required:
       - platform
       - token
@@ -10241,6 +11547,80 @@ components:
       - code
       - name
       - university
+    FeatureFlag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        enabled:
+          type: boolean
+        platform:
+          oneOf:
+          - $ref: '#/components/schemas/MobilePlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        role:
+          type: string
+          maxLength: 32
+        expose_to_mobile:
+          type: boolean
+        description:
+          type: string
+          maxLength: 255
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - key
+      - platform
+      - role
+      - updated_at
+    FeatureFlagRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        enabled:
+          type: boolean
+        platform:
+          oneOf:
+          - $ref: '#/components/schemas/MobilePlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        role:
+          type: string
+          maxLength: 32
+        expose_to_mobile:
+          type: boolean
+        description:
+          type: string
+          maxLength: 255
+      required:
+      - key
+      - platform
+      - role
+    FeedbackKindEnum:
+      enum:
+      - rating
+      - suggestion
+      - bug
+      - complaint
+      - compliment
+      type: string
+      description: |-
+        * `rating` - Rating
+        * `suggestion` - Suggestion
+        * `bug` - Bug Report
+        * `complaint` - Complaint
+        * `compliment` - Compliment
     FeedbackPriorityEnum:
       enum:
       - low
@@ -10718,20 +12098,6 @@ components:
       description: |-
         * `all_members` - All Members
         * `admins_only` - Admins Only
-    KindEnum:
-      enum:
-      - rating
-      - suggestion
-      - bug
-      - complaint
-      - compliment
-      type: string
-      description: |-
-        * `rating` - Rating
-        * `suggestion` - Suggestion
-        * `bug` - Bug Report
-        * `complaint` - Complaint
-        * `compliment` - Compliment
     Lecture:
       type: object
       properties:
@@ -10797,9 +12163,8 @@ components:
           readOnly: true
         page_number:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         selected_text:
           type: string
@@ -10842,9 +12207,8 @@ components:
       properties:
         page_number:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         selected_text:
           type: string
@@ -10889,6 +12253,14 @@ components:
         * `ready` - Ready
         * `failed` - Failed
         * `quarantined` - Quarantined
+    LocaleEnum:
+      enum:
+      - ar
+      - en
+      type: string
+      description: |-
+        * `ar` - ar
+        * `en` - en
     LoginRequest:
       type: object
       properties:
@@ -10917,6 +12289,92 @@ components:
           minLength: 1
       required:
       - refresh
+    MaintenanceMode:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        enabled:
+          type: boolean
+        title_ar:
+          type: string
+          maxLength: 255
+        title_en:
+          type: string
+          maxLength: 255
+        message_ar:
+          type: string
+        message_en:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        estimated_end_at:
+          type: string
+          format: date-time
+          nullable: true
+        allowed_roles: {}
+        bypass_staff:
+          type: boolean
+        bypass_healthchecks:
+          type: boolean
+        retry_after_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        is_currently_active:
+          type: boolean
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - is_currently_active
+      - updated_at
+    MaintenanceModeRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        title_ar:
+          type: string
+          maxLength: 255
+        title_en:
+          type: string
+          maxLength: 255
+        message_ar:
+          type: string
+        message_en:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        estimated_end_at:
+          type: string
+          format: date-time
+          nullable: true
+        allowed_roles: {}
+        bypass_staff:
+          type: boolean
+        bypass_healthchecks:
+          type: boolean
+        retry_after_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
     Major:
       type: object
       properties:
@@ -11139,6 +12597,110 @@ components:
         * `nps` - Net Promoter Score
         * `stars` - Stars
         * `free_text` - Free Text
+    MobileAppReleasePolicy:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        minimum_supported_version:
+          type: string
+          maxLength: 32
+        minimum_supported_build:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        latest_version:
+          type: string
+          maxLength: 32
+        latest_build:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        update_mode:
+          $ref: '#/components/schemas/UpdateModeEnum'
+        store_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        message_ar:
+          type: string
+        message_en:
+          type: string
+        grace_period_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        emergency_update_bypass:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - latest_version
+      - platform
+      - updated_at
+    MobileAppReleasePolicyRequest:
+      type: object
+      properties:
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        minimum_supported_version:
+          type: string
+          maxLength: 32
+        minimum_supported_build:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        latest_version:
+          type: string
+          minLength: 1
+          maxLength: 32
+        latest_build:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        update_mode:
+          $ref: '#/components/schemas/UpdateModeEnum'
+        store_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        message_ar:
+          type: string
+        message_en:
+          type: string
+        grace_period_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        emergency_update_bypass:
+          type: boolean
+      required:
+      - latest_version
+      - platform
+    MobilePlatformEnum:
+      enum:
+      - android
+      - ios
+      type: string
+      description: |-
+        * `android` - Android
+        * `ios` - iOS
     MobilePrintOrder:
       type: object
       properties:
@@ -11353,12 +12915,38 @@ components:
         body:
           type: string
           readOnly: true
+        title_ar:
+          type: string
+          readOnly: true
+        title_en:
+          type: string
+          readOnly: true
+        body_ar:
+          type: string
+          readOnly: true
+        body_en:
+          type: string
+          readOnly: true
         type:
           allOf:
           - $ref: '#/components/schemas/TypeEnum'
           readOnly: true
         data:
           readOnly: true
+        deep_link:
+          type: string
+          readOnly: true
+        related_object_type:
+          type: string
+          readOnly: true
+        related_object_id:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         is_read:
           type: boolean
           readOnly: true
@@ -11373,13 +12961,67 @@ components:
           readOnly: true
       required:
       - body
+      - body_ar
+      - body_en
       - created_at
       - data
+      - deep_link
+      - expires_at
       - id
       - is_read
       - read_at
+      - related_object_id
+      - related_object_type
       - title
+      - title_ar
+      - title_en
       - type
+    NotificationCampaignRequest:
+      type: object
+      properties:
+        user_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 1000
+          minItems: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          default: system
+        deep_link:
+          type: string
+          maxLength: 255
+        deduplication_key:
+          type: string
+          maxLength: 128
+      required:
+      - body
+      - title
+      - user_ids
+    NotificationPreference:
+      type: object
+      properties:
+        in_app_enabled:
+          type: boolean
+        push_enabled:
+          type: boolean
+        disabled_types: {}
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - updated_at
     OtpChannelEnum:
       enum:
       - email
@@ -11641,6 +13283,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Faculty'
+    PaginatedFeatureFlagList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureFlag'
     PaginatedFileResourceList:
       type: object
       required:
@@ -11733,6 +13398,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Lecture'
+    PaginatedMaintenanceModeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenanceMode'
     PaginatedMajorList:
       type: object
       required:
@@ -11779,6 +13467,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Message'
+    PaginatedMobileAppReleasePolicyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileAppReleasePolicy'
     PaginatedMobilePrintOrderList:
       type: object
       required:
@@ -11871,6 +13582,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PrintPricingRule'
+    PaginatedPrivacyPolicyVersionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrivacyPolicyVersion'
     PaginatedPublicSuggestionList:
       type: object
       required:
@@ -11940,6 +13674,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Subject'
+    PaginatedTermsVersionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermsVersion'
     PaginatedUniversityList:
       type: object
       required:
@@ -12005,9 +13762,8 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         is_active:
           type: boolean
     PatchedAnnouncementRequest:
@@ -12084,19 +13840,16 @@ components:
           maxLength: 32
         cooldown_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         dismiss_cooldown_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         max_prompts_per_30_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         sample_percent:
           type: integer
           maximum: 100
@@ -12188,6 +13941,37 @@ components:
           $ref: '#/components/schemas/UserRoleEnum'
         is_active:
           type: boolean
+    PatchedDeviceInstallationRequest:
+      type: object
+      properties:
+        installation_id:
+          type: string
+          format: uuid
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        app_version:
+          type: string
+          maxLength: 32
+        build_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        push_token:
+          type: string
+          writeOnly: true
+          nullable: true
+          maxLength: 512
+        locale:
+          type: string
+          maxLength: 16
+        timezone_name:
+          type: string
+          maxLength: 64
+        device_model:
+          type: string
+          maxLength: 80
+        notifications_enabled:
+          type: boolean
     PatchedFacultyRequest:
       type: object
       properties:
@@ -12202,6 +13986,28 @@ components:
           maxLength: 32
         is_active:
           type: boolean
+    PatchedFeatureFlagRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        enabled:
+          type: boolean
+        platform:
+          oneOf:
+          - $ref: '#/components/schemas/MobilePlatformEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        role:
+          type: string
+          maxLength: 32
+        expose_to_mobile:
+          type: boolean
+        description:
+          type: string
+          maxLength: 255
     PatchedFeedbackWorkflowRequest:
       type: object
       properties:
@@ -12268,9 +14074,8 @@ components:
       properties:
         page_number:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 2147483647
           minimum: 0
-          format: int64
           nullable: true
         selected_text:
           type: string
@@ -12291,6 +14096,42 @@ components:
           type: boolean
         version:
           type: integer
+    PatchedMaintenanceModeRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        title_ar:
+          type: string
+          maxLength: 255
+        title_en:
+          type: string
+          maxLength: 255
+        message_ar:
+          type: string
+        message_en:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        estimated_end_at:
+          type: string
+          format: date-time
+          nullable: true
+        allowed_roles: {}
+        bypass_staff:
+          type: boolean
+        bypass_healthchecks:
+          type: boolean
+        retry_after_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
     PatchedMajorRequest:
       type: object
       properties:
@@ -12305,6 +14146,55 @@ components:
           maxLength: 32
         is_active:
           type: boolean
+    PatchedMobileAppReleasePolicyRequest:
+      type: object
+      properties:
+        platform:
+          $ref: '#/components/schemas/MobilePlatformEnum'
+        minimum_supported_version:
+          type: string
+          maxLength: 32
+        minimum_supported_build:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        latest_version:
+          type: string
+          minLength: 1
+          maxLength: 32
+        latest_build:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        update_mode:
+          $ref: '#/components/schemas/UpdateModeEnum'
+        store_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        message_ar:
+          type: string
+        message_en:
+          type: string
+        grace_period_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+        emergency_update_bypass:
+          type: boolean
+    PatchedNotificationPreferenceRequest:
+      type: object
+      properties:
+        in_app_enabled:
+          type: boolean
+        push_enabled:
+          type: boolean
+        disabled_types: {}
     PatchedPrintBindingPriceRequest:
       type: object
       properties:
@@ -12340,9 +14230,8 @@ components:
           type: boolean
         sort_order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
     PatchedPrintPricingRuleRequest:
       type: object
       properties:
@@ -12391,6 +14280,27 @@ components:
         rejected_reason:
           type: string
           maxLength: 2000
+    PatchedPrivacyPolicyVersionRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        content_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+        requires_reacceptance:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
     PatchedSemesterRequest:
       type: object
       properties:
@@ -12400,9 +14310,8 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         is_active:
           type: boolean
     PatchedStudentAcademicProfileRequest:
@@ -12456,6 +14365,27 @@ components:
       properties:
         status:
           $ref: '#/components/schemas/SupportTicketStatusEnum'
+    PatchedTermsVersionRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        content_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+        requires_reacceptance:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
     PatchedUniversityRequest:
       type: object
       properties:
@@ -12501,16 +14431,21 @@ components:
       required:
       - effect
       - permission_code
-    PlatformEnum:
-      enum:
-      - android
-      - ios
-      - web
-      type: string
-      description: |-
-        * `android` - Android
-        * `ios` - iOS
-        * `web` - Web
+    PolicyAcceptanceRequest:
+      type: object
+      properties:
+        terms_version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        privacy_version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        locale:
+          allOf:
+          - $ref: '#/components/schemas/LocaleEnum'
+          default: ar
     PrintBindingPrice:
       type: object
       properties:
@@ -12788,9 +14723,8 @@ components:
           type: boolean
         sort_order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
       required:
       - id
       - name
@@ -12809,9 +14743,8 @@ components:
           type: boolean
         sort_order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
       required:
       - name
     PrintPricingRule:
@@ -12934,6 +14867,60 @@ components:
             $ref: '#/components/schemas/PrintOrderItemInputRequest'
       required:
       - items
+    PrivacyPolicyVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        version:
+          type: string
+          maxLength: 64
+        content_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+        requires_reacceptance:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - updated_at
+      - version
+    PrivacyPolicyVersionRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        content_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+        requires_reacceptance:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+      required:
+      - version
     PublicSuggestion:
       type: object
       properties:
@@ -13030,9 +15017,8 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         is_active:
           type: boolean
         created_at:
@@ -13058,9 +15044,8 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 32767
           minimum: 0
-          format: int64
         is_active:
           type: boolean
       required:
@@ -13490,6 +15475,60 @@ components:
         * `students` - Students
         * `verified_students` - Verified Students
         * `admins` - Admins
+    TermsVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        version:
+          type: string
+          maxLength: 64
+        content_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+        requires_reacceptance:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - updated_at
+      - version
+    TermsVersionRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          minLength: 1
+          maxLength: 64
+        content_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+        requires_reacceptance:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+      required:
+      - version
     TokenRefreshRequest:
       type: object
       properties:
@@ -13568,6 +15607,16 @@ components:
       required:
       - code
       - name
+    UpdateModeEnum:
+      enum:
+      - none
+      - recommended
+      - required
+      type: string
+      description: |-
+        * `none` - None
+        * `recommended` - Recommended
+        * `required` - Required
     User:
       type: object
       properties:
@@ -13616,6 +15665,28 @@ components:
       - phone_number
       - role
       - student_verification_status
+    UserConsent:
+      type: object
+      properties:
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ConsentKindEnum'
+          readOnly: true
+        version:
+          type: string
+          readOnly: true
+        locale:
+          type: string
+          readOnly: true
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accepted_at
+      - kind
+      - locale
+      - version
     UserRoleEnum:
       enum:
       - it_support

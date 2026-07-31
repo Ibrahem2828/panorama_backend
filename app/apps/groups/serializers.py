@@ -80,10 +80,13 @@ class GroupSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return None
-        membership = getattr(obj, "_current_membership", None) or obj.memberships.filter(
-            user=request.user,
-            is_deleted=False,
-        ).first()
+        membership = (
+            getattr(obj, "_current_membership", None)
+            or obj.memberships.filter(
+                user=request.user,
+                is_deleted=False,
+            ).first()
+        )
         return membership.role if membership else None
 
     @extend_schema_field(serializers.IntegerField())

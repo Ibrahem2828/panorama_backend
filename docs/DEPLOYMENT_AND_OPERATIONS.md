@@ -24,6 +24,9 @@ writes.
 4. Run only the release job (`check --deploy`, migrations, collectstatic, schema validation, optional idempotent seed).
 5. Start services. Gate traffic on `GET /api/v1/health/ready/` returning HTTP 200 and JSON code `READY`.
 6. Run protected asset, lecture-viewer authorization, and smoke checks after deployment.
+7. Ensure a single Beat service is running so deferred account-deletion work is
+   performed exactly once per schedule. Keep `account_deletion_enabled` false
+   until the legal retention and support process have been accepted.
 
 Liveness (`/health/live/`) checks only the process. Readiness checks PostgreSQL,
 Redis, migrations, critical configuration, and the media mount. Startup is

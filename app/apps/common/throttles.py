@@ -162,3 +162,11 @@ class LectureNotesRateThrottle(SimpleRateThrottle):
     def get_cache_key(self, request, view):
         ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
         return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class DeviceRegistrationRateThrottle(SimpleRateThrottle):
+    scope = "mobile_device"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}

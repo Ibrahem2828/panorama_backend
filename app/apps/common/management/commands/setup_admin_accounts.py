@@ -88,9 +88,7 @@ class Command(BaseCommand):
     def _find_or_create_user(self, account: dict) -> tuple[User, bool]:
         matches = list(User.objects.filter(Q(email__iexact=account["email"]) | Q(phone_number=account["phone"]))[:2])
         if len(matches) > 1:
-            raise CommandError(
-                f"Cannot configure account {account['email']}: email and phone match different users."
-            )
+            raise CommandError(f"Cannot configure account {account['email']}: email and phone match different users.")
         if matches:
             return matches[0], False
         return (
@@ -103,7 +101,9 @@ class Command(BaseCommand):
             True,
         )
 
-    def _apply_required_fields(self, user: User, account: dict, spec: dict, created: bool, reset_passwords: bool) -> None:
+    def _apply_required_fields(
+        self, user: User, account: dict, spec: dict, created: bool, reset_passwords: bool
+    ) -> None:
         user.email = account["email"].lower()
         user.phone_number = account["phone"]
         user.full_name = account["full_name"]

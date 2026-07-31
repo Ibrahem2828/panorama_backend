@@ -199,14 +199,16 @@ def test_seed_initial_data_idempotent_and_creates_demo_data():
 
 def test_api_collection_json_files_are_valid_and_scoped():
     root = Path(__file__).resolve().parents[3]
-    mobile_path = root / "docs" / "api" / "mobile_api_collection.json"
-    dashboard_path = root / "docs" / "api" / "dashboard_api_collection.json"
+    mobile_path = root / "integrations" / "api" / "panorama-mobile-api.postman_collection.json"
+    dashboard_path = root / "integrations" / "api" / "panorama-dashboard-api.postman_collection.json"
 
     mobile = json.loads(mobile_path.read_text(encoding="utf-8"))
     dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
 
-    assert mobile["base_url"] == "{{base_url}}"
-    assert dashboard["base_url"] == "{{base_url}}"
+    assert mobile["info"]["schema"] == "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    assert dashboard["info"]["schema"] == "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    assert {variable["key"] for variable in mobile["variable"]} >= {"base_url", "access_token", "installation_id"}
+    assert {variable["key"] for variable in dashboard["variable"]} >= {"base_url", "access_token", "request_id"}
     assert "/dashboard/" not in mobile_path.read_text(encoding="utf-8")
     assert "/api/v1/dashboard/" in dashboard_path.read_text(encoding="utf-8")
 
@@ -217,3 +219,5 @@ def test_canonical_documentation_exists():
     assert (docs / "INDEX.md").exists()
     assert (docs / "API_SECURITY_AND_AUTH.md").exists()
     assert (docs / "QUALITY_TESTING_AND_RELEASE.md").exists()
+    assert (docs / "MOBILE_PRODUCT_INTEGRATION.md").exists()
+    assert (docs / "DASHBOARD_INTEGRATION.md").exists()

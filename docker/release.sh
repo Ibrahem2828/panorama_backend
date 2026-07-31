@@ -2,6 +2,7 @@
 set -eu
 cd /app/app
 python manage.py check --deploy
+python manage.py validate_production_env
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 python manage.py spectacular --format openapi-json --validate --fail-on-warn --file /tmp/openapi.json

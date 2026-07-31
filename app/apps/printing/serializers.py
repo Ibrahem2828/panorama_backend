@@ -23,7 +23,9 @@ from .services import PrintOrderService, PrintPricingService, PrintStatusService
 
 
 class PrintOrderItemInputSerializer(serializers.Serializer):
-    source_file = serializers.PrimaryKeyRelatedField(queryset=FileResource.objects.none(), required=False, allow_null=True)
+    source_file = serializers.PrimaryKeyRelatedField(
+        queryset=FileResource.objects.none(), required=False, allow_null=True
+    )
     uploaded_file = serializers.FileField(required=False, allow_null=True, write_only=True)
     copies = serializers.IntegerField(min_value=1, max_value=99, default=1)
     color_mode = serializers.ChoiceField(choices=PrintOrderItem._meta.get_field("color_mode").choices)
@@ -219,7 +221,9 @@ class BasePrintRequestSerializer(serializers.Serializer):
         if request and "items" in self.fields:
             item_serializer = self.fields["items"].child
             item_serializer.context.update({"request": request})
-            item_serializer.fields["source_file"].queryset = accessible_files_for_user(request.user).filter(is_printable=True)
+            item_serializer.fields["source_file"].queryset = accessible_files_for_user(request.user).filter(
+                is_printable=True
+            )
 
     def to_internal_value(self, data):
         mutable = data.copy()

@@ -204,11 +204,15 @@ class PrintOrderService:
         user = user.__class__.objects.select_for_update().get(pk=user.pk)
         key_hash = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest() if idempotency_key else ""
         if key_hash:
-            existing = PrintOrder.objects.select_for_update().filter(
-                user=user,
-                idempotency_key_hash=key_hash,
-                is_deleted=False,
-            ).first()
+            existing = (
+                PrintOrder.objects.select_for_update()
+                .filter(
+                    user=user,
+                    idempotency_key_hash=key_hash,
+                    is_deleted=False,
+                )
+                .first()
+            )
             if existing:
                 return existing
         quote = PrintPricingService.quote(user, items_data)

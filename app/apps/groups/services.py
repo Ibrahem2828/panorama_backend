@@ -177,7 +177,9 @@ class ExternalChannelService:
     @staticmethod
     @transaction.atomic
     def consume_ticket(ticket: ExternalChannelAccessTicket) -> str:
-        ticket = ExternalChannelAccessTicket.objects.select_for_update().select_related("channel__group").get(pk=ticket.pk)
+        ticket = (
+            ExternalChannelAccessTicket.objects.select_for_update().select_related("channel__group").get(pk=ticket.pk)
+        )
         if not ticket.is_valid:
             raise ValidationError("The external channel link is invalid or expired.")
         ticket.used_at = timezone.now()

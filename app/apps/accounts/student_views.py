@@ -22,7 +22,9 @@ class CurrentStudentProfileView(APIView):
     def get(self, request):
         return success_response(data=StudentAcademicProfileSerializer(self._get_profile(request)).data)
 
-    @extend_schema(tags=["Students"], request=StudentAcademicProfileSerializer, responses={200: StudentAcademicProfileSerializer})
+    @extend_schema(
+        tags=["Students"], request=StudentAcademicProfileSerializer, responses={200: StudentAcademicProfileSerializer}
+    )
     def patch(self, request):
         profile = self._get_profile(request)
         serializer = StudentAcademicProfileSerializer(profile, data=request.data, partial=True)

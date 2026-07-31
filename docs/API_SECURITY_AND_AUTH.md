@@ -5,7 +5,7 @@ Last reviewed: 2026-07-31
 
 ## Compatibility
 
-Existing API v2 routes and response envelopes are preserved. The lecture API is
+Existing API v1 routes and response envelopes are preserved. The lecture API is
 additive under `/api/v1/lectures/` and `/api/v1/dashboard/lectures/`. Generated
 OpenAPI is the contract source of truth. Breaking changes require a versioned
 route, migration plan, contract tests, and changelog entry.
@@ -40,3 +40,18 @@ path. Responses set inline disposition where appropriate, `private, no-store`,
 `/media/` must never be proxied publicly in production. The development-only
 static media route is guarded by `DEBUG` and cannot be enabled by production
 settings.
+
+## Mobile lifecycle and idempotency
+
+Mobile version headers are advisory unless the server has an active required
+release policy. The server then returns `426 APP_UPDATE_REQUIRED` only to
+protected mobile API traffic below the minimum build; bootstrap, policy, and
+health recovery routes are excluded. A maintenance window returns
+`503 MAINTENANCE_MODE` with `Retry-After` but leaves health and dashboard
+recovery controls available.
+
+An `Idempotency-Key` is scoped to the authenticated actor and endpoint. The
+database stores hashes, the payload fingerprint, a bounded response, and an
+expiry—not the raw key or sensitive body. Reusing a key with a different body
+returns a validation error; a concurrent in-flight use returns a conflict.
+Feature flags only disable behavior and never replace authentication or RBAC.

@@ -15,9 +15,22 @@ from .models import SupportAttachmentAccessTicket, SupportTicket, SupportTicketM
 
 class SupportTicketService:
     VALID_TRANSITIONS = {
-        SupportTicketStatus.OPEN: {SupportTicketStatus.IN_PROGRESS, SupportTicketStatus.WAITING_USER, SupportTicketStatus.RESOLVED, SupportTicketStatus.CLOSED},
-        SupportTicketStatus.IN_PROGRESS: {SupportTicketStatus.WAITING_USER, SupportTicketStatus.RESOLVED, SupportTicketStatus.CLOSED},
-        SupportTicketStatus.WAITING_USER: {SupportTicketStatus.IN_PROGRESS, SupportTicketStatus.RESOLVED, SupportTicketStatus.CLOSED},
+        SupportTicketStatus.OPEN: {
+            SupportTicketStatus.IN_PROGRESS,
+            SupportTicketStatus.WAITING_USER,
+            SupportTicketStatus.RESOLVED,
+            SupportTicketStatus.CLOSED,
+        },
+        SupportTicketStatus.IN_PROGRESS: {
+            SupportTicketStatus.WAITING_USER,
+            SupportTicketStatus.RESOLVED,
+            SupportTicketStatus.CLOSED,
+        },
+        SupportTicketStatus.WAITING_USER: {
+            SupportTicketStatus.IN_PROGRESS,
+            SupportTicketStatus.RESOLVED,
+            SupportTicketStatus.CLOSED,
+        },
         SupportTicketStatus.RESOLVED: {SupportTicketStatus.IN_PROGRESS, SupportTicketStatus.CLOSED},
         SupportTicketStatus.CLOSED: {SupportTicketStatus.IN_PROGRESS},
     }

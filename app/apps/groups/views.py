@@ -217,7 +217,9 @@ class MembershipRoleUpdateView(APIView):
     permission_classes = [CanManageGroups]
     serializer_class = GroupMembershipRoleUpdateSerializer
 
-    @extend_schema(tags=["Dashboard"], request=GroupMembershipRoleUpdateSerializer, responses={200: GroupMembershipSerializer})
+    @extend_schema(
+        tags=["Dashboard"], request=GroupMembershipRoleUpdateSerializer, responses={200: GroupMembershipSerializer}
+    )
     def patch(self, request, pk: int):
         membership = get_object_or_404(
             GroupMembership.objects.select_related("group", "user"),
@@ -296,7 +298,9 @@ class ExternalChannelRedirectView(APIView):
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
-    @extend_schema(auth=[], tags=["Protected Assets"], responses={302: OpenApiResponse(description="One-time redirect")})
+    @extend_schema(
+        auth=[], tags=["Protected Assets"], responses={302: OpenApiResponse(description="One-time redirect")}
+    )
     def get(self, request, token):
         ticket = (
             ExternalChannelAccessTicket.objects.select_related("channel__group", "user")

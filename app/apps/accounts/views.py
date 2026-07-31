@@ -15,6 +15,7 @@ from apps.common.throttles import (
     PasswordResetRateThrottle,
     RegistrationRateThrottle,
 )
+from apps.product.services import feature_enabled_or_raise
 
 from .serializers import (
     ChangePasswordSerializer,
@@ -37,6 +38,7 @@ class NormalUserRegisterView(APIView):
 
     @extend_schema(request=NormalUserRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
+        feature_enabled_or_raise("registrations_enabled", request=request)
         serializer = NormalUserRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, raw_code, channel = serializer.save()
@@ -60,6 +62,7 @@ class StudentRegisterView(APIView):
 
     @extend_schema(request=StudentRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
+        feature_enabled_or_raise("registrations_enabled", request=request)
         serializer = StudentRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user, raw_code, channel = serializer.save()
@@ -82,6 +85,7 @@ class LoginView(APIView):
 
     @extend_schema(request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
     def post(self, request):
+        feature_enabled_or_raise("otp_email_enabled", request=request)
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
@@ -104,6 +108,7 @@ class TokenRefreshView(APIView):
 
     @extend_schema(request=TokenRefreshSerializer, responses={200: OpenApiResponse(description="JWT refresh response")})
     def post(self, request):
+        feature_enabled_or_raise("otp_email_enabled", request=request)
         serializer = TokenRefreshSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return success_response(

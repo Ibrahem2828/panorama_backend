@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+
 import os
 import sys
 
@@ -9,9 +10,7 @@ def main() -> None:
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
-        raise ImportError(
-            "Couldn't import Django. Is it installed and available on your PYTHONPATH?"
-        ) from exc
+        raise ImportError("Couldn't import Django. Is it installed and available on your PYTHONPATH?") from exc
     execute_from_command_line(sys.argv)
 
 

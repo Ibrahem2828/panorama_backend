@@ -42,8 +42,12 @@ class DashboardUserViewSet(StandardReadOnlyModelViewSet):
         serializer.save()
         new = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
         action = AuditAction.USER_ROLE_CHANGED if old["role"] != new["role"] else AuditAction.USER_STATUS_CHANGED
-        AuditLogService.log(actor=request.user, action=action, target=user, old_value=old, new_value=new, request=request)
-        return success_response(data=serializer.data, message="User updated", request=request, code="DASHBOARD_USER_UPDATED")
+        AuditLogService.log(
+            actor=request.user, action=action, target=user, old_value=old, new_value=new, request=request
+        )
+        return success_response(
+            data=serializer.data, message="User updated", request=request, code="DASHBOARD_USER_UPDATED"
+        )
 
 
 class DashboardCapabilitiesView(APIView):
@@ -84,13 +88,18 @@ class DashboardUserPermissionOverridesView(APIView):
             },
         )
         AuditLogService.log(
-            actor=request.user, action=AuditAction.USER_PERMISSION_OVERRIDE_CHANGED, target=user,
+            actor=request.user,
+            action=AuditAction.USER_PERMISSION_OVERRIDE_CHANGED,
+            target=user,
             old_value=UserPermissionOverrideSerializer(old).data if old else None,
-            new_value=UserPermissionOverrideSerializer(override).data, request=request,
+            new_value=UserPermissionOverrideSerializer(override).data,
+            request=request,
         )
         return success_response(
             data=UserPermissionOverrideSerializer(override).data,
-            message="Permission override saved", request=request, code="PERMISSION_OVERRIDE_SAVED",
+            message="Permission override saved",
+            request=request,
+            code="PERMISSION_OVERRIDE_SAVED",
         )
 
     @transaction.atomic
@@ -102,7 +111,13 @@ class DashboardUserPermissionOverridesView(APIView):
         old = UserPermissionOverrideSerializer(override).data
         override.delete()
         AuditLogService.log(
-            actor=request.user, action=AuditAction.USER_PERMISSION_OVERRIDE_CHANGED, target=user,
-            old_value=old, new_value={"removed": code}, request=request,
+            actor=request.user,
+            action=AuditAction.USER_PERMISSION_OVERRIDE_CHANGED,
+            target=user,
+            old_value=old,
+            new_value={"removed": code},
+            request=request,
         )
-        return success_response(message="Permission override removed", request=request, code="PERMISSION_OVERRIDE_REMOVED")
+        return success_response(
+            message="Permission override removed", request=request, code="PERMISSION_OVERRIDE_REMOVED"
+        )

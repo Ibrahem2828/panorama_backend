@@ -17,12 +17,24 @@ class Announcement(BaseModel):
     description = models.TextField()
     image = models.ImageField(upload_to="announcements/", null=True, blank=True)
     link = models.URLField(blank=True)
-    target_user_type = models.CharField(max_length=32, choices=AnnouncementTargetUserType.choices, default=AnnouncementTargetUserType.ALL)
-    target_university = models.ForeignKey("universities.University", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True)
-    target_faculty = models.ForeignKey("universities.Faculty", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True)
-    target_major = models.ForeignKey("universities.Major", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True)
-    target_academic_year = models.ForeignKey("universities.AcademicYear", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True)
-    target_semester = models.ForeignKey("universities.Semester", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True)
+    target_user_type = models.CharField(
+        max_length=32, choices=AnnouncementTargetUserType.choices, default=AnnouncementTargetUserType.ALL
+    )
+    target_university = models.ForeignKey(
+        "universities.University", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True
+    )
+    target_faculty = models.ForeignKey(
+        "universities.Faculty", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True
+    )
+    target_major = models.ForeignKey(
+        "universities.Major", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True
+    )
+    target_academic_year = models.ForeignKey(
+        "universities.AcademicYear", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True
+    )
+    target_semester = models.ForeignKey(
+        "universities.Semester", on_delete=models.SET_NULL, related_name="announcements", null=True, blank=True
+    )
     starts_at = models.DateTimeField(null=True, blank=True)
     ends_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

@@ -43,9 +43,15 @@ urlpatterns = [
         DashboardGroupMembershipViewSet.as_view({"get": "list"}, only_pending=True),
         name="dashboard-group-join-requests",
     ),
-    path("dashboard/groups/<int:pk>/whatsapp-channel/", DashboardWhatsAppChannelView.as_view(), name="dashboard-group-whatsapp-channel"),
+    path(
+        "dashboard/groups/<int:pk>/whatsapp-channel/",
+        DashboardWhatsAppChannelView.as_view(),
+        name="dashboard-group-whatsapp-channel",
+    ),
     path("dashboard/group-memberships/<int:pk>/approve/", ApproveMembershipView.as_view(), name="membership-approve"),
     path("dashboard/group-memberships/<int:pk>/reject/", RejectMembershipView.as_view(), name="membership-reject"),
     path("dashboard/group-memberships/<int:pk>/block/", BlockMembershipView.as_view(), name="membership-block"),
-    path("dashboard/group-memberships/<int:pk>/role/", MembershipRoleUpdateView.as_view(), name="membership-role-update"),
+    path(
+        "dashboard/group-memberships/<int:pk>/role/", MembershipRoleUpdateView.as_view(), name="membership-role-update"
+    ),
 ]

@@ -15,6 +15,7 @@ urlpatterns = [
     path("dashboard/capabilities/", DashboardCapabilitiesView.as_view(), name="dashboard-capabilities"),
     path(
         "dashboard/users/<int:user_id>/permission-overrides/",
-        DashboardUserPermissionOverridesView.as_view(), name="dashboard-user-permission-overrides",
+        DashboardUserPermissionOverridesView.as_view(),
+        name="dashboard-user-permission-overrides",
     ),
 ]

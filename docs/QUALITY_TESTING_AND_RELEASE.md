@@ -2,73 +2,64 @@
 
 Owner: Backend Platform Team  
 Last reviewed: 2026-07-31  
-Applies to: Panorama Backend API v2
+Applies to: Panorama API v1
 
-## Baseline before the lecture-platform work
+## Measured baseline and current result
 
-This is a measured local baseline, not a production certification. The repository
-contained 13 local Django applications, 40 local models, 146 OpenAPI paths, and
-265 documented API operations. It had no lectures application, lecture-viewer
-route, conversion worker, or lecture-note model; the existing `files` application
-only supplied protected generic files.
+Before this productization change, the checked-in revision had 14 Django apps,
+94 collected tests, lecture conversion/viewer support, local persistent media,
+and 288 documented HTTP operations. The present working tree has 15 apps,
+105 collected tests, 331 documented HTTP operations, two canonical Postman
+collections, and additive mobile-product controls. No existing `/api/v1/` path
+or response field was deliberately removed.
 
-| Gate or measure | Result | Evidence / limitation |
+| Gate | Current result | Local evidence |
 | --- | --- | --- |
-| Test suite | PASS | `.venv\\Scripts\\python.exe -m pytest -q`: 83 passed |
-| Coverage | PASS | `coverage run -m pytest -q; coverage report`: 86% (7,262 statements; 1,026 missed) |
-| Django checks | Previously PASS | Re-run after every schema or settings change |
-| Migration drift | Previously PASS | Re-run after every schema change |
-| Ruff lint | FAIL | `ruff check .`: two import-order errors in scripts |
-| Ruff formatting | FAIL | `ruff format --check .`: 57 legacy files require formatting |
-| Mypy critical scope | FAIL | 54 errors in 27 files; no new lecture code exists at this baseline |
-| Docker/Linux runtime | BLOCKED | Docker Desktop Linux engine is unavailable on this workstation |
-| PostgreSQL EXPLAIN / DB latency | BLOCKED | No isolated staging PostgreSQL data set was provided locally |
-| Redis/Celery runtime | BLOCKED | No running Redis/Celery service was provided locally |
-| Load test | BLOCKED | No staging URL, credentials, or capacity allocation was provided |
-
-The existing local test environment uses SQLite and in-memory cache/channels. It
-cannot prove PostgreSQL query plans, Redis behaviour, Celery execution, volume
-persistence, Docker image content, or Coolify deployment behaviour.
-
-## Performance baseline policy
-
-Before a production performance claim, run representative data and capture p50,
-p95, p99, response size, error rate, database query count/time, cache hit/miss,
-CPU, memory, and worker queue depth for login, OTP, profile, subjects, lecture
-list/detail, viewer manifest/pages, notes, administrative upload, protected-file
-streaming, chat, and support. Store the command, environment resources, dataset
-shape, and raw report as CI or staging artifacts; do not replace a benchmark with
-a static code review.
-
-## Release gates
-
-Required gates are: unit/integration tests, coverage not below the baseline,
-migration-drift check, Django checks, focused Mypy for changed critical code,
-Ruff lint/format for changed files, Bandit, dependency audit, OpenAPI validation,
-Linux Docker build, container startup, PostgreSQL/Redis/Celery validation,
-protected-viewer authorization tests, persistent-volume restart/redeploy test,
-and a staging load test. A gate that has not actually run remains **BLOCKED**.
-
-`PRODUCTION READY` is reserved for an environment where every required release
-gate has passed. A passing local test suite alone is not a production approval.
-
-## 2026-07-31 implementation evidence
-
-| Gate | Result | Evidence |
-| --- | --- | --- |
-| Tests | PASS | `coverage run -m pytest -q`: 94 passed |
-| Coverage | PASS | 86% (8,140 statements; 1,124 missed), above the 85% gate |
-| Migration drift | PASS | `manage.py makemigrations --check --dry-run`: no changes detected |
-| Django production checks | PASS | `manage.py check --deploy` with ephemeral non-secret validation environment: no issues |
-| OpenAPI | PASS | JSON and YAML regenerated with `spectacular --validate --fail-on-warn` |
-| Ruff | PASS | `ruff check .`: all checks passed; every changed Python file passes format check |
-| Bandit | PASS | `bandit -q -r app -ll`: no medium/high finding |
+| Unit/integration tests | PASS | `coverage run -m pytest -q`: 105 passed |
+| Overall coverage | **FAIL** | 87% (9,152 statements, 1,225 missed); release threshold is 90% |
+| Ruff lint | PASS | `ruff check .`: all checks passed |
+| Ruff formatting | PASS | `ruff format --check .`: all files formatted |
+| Django testing check | PASS | `manage.py check --settings=config.settings.testing` |
+| Production deploy check | PASS | `manage.py check --deploy` using an ephemeral non-secret validation environment |
+| Production environment command | PASS | `manage.py validate_production_env`: passes without printing values |
+| Migration drift | PASS | `manage.py makemigrations --check --dry-run --settings=config.settings.testing` |
+| Storage write validation | PASS | `storage_status --write-test` with isolated testing media |
+| OpenAPI JSON/YAML | PASS | `spectacular --validate --fail-on-warn`; 331 operations |
+| Canonical collection coverage | PASS | `validate_api_collections.py`: 331/331 documented operations covered |
+| Bandit medium/high | PASS | `bandit -q -r app -ll` |
 | Dependency audit | PASS | `pip-audit --disable-pip -r requirements.lock`: no known vulnerabilities |
-| Document capability | PARTIAL | Command correctly reports LibreOffice/Poppler unavailable on this Windows environment; real conversion is not claimed |
-| Docker Linux build/runtime | BLOCKED | Docker Desktop Linux daemon was unavailable (`dockerDesktopLinuxEngine` pipe missing) |
-| PostgreSQL/Redis/Celery/Coolify/load/restore | BLOCKED | No matching staging runtime was supplied |
-| Mypy full critical scope | FAIL | Existing shared-code/stub typing debt remains; this blocks a full type gate |
+| Mypy first-party source | **FAIL** | `mypy app`: 82 errors in 41 files, including first-party source and missing third-party stubs |
+| Gitleaks local scan | BLOCKED | The executable is not installed in this environment; CI has the Gitleaks action |
+| Compose interpolation | PASS | `docker compose -f docker-compose.coolify.yml config --quiet` with ephemeral values |
+| Linux Docker image/runtime | BLOCKED | Docker Desktop Linux daemon was unavailable (`dockerDesktopLinuxEngine` pipe missing) |
+| PostgreSQL/Redis/Celery/Channels | BLOCKED | No staging runtime was available to this session |
+| Conversion worker PDF/DOCX/PPTX | BLOCKED | Local capability command reports LibreOffice and Poppler absent on Windows |
+| Persistent-volume restart/redeploy | BLOCKED | Requires a Coolify runtime and named volume |
+| Load, backup/restore, rollback, DAST | BLOCKED | Require an isolated staging environment and approved test data |
 
-Release decision at this revision: **PRODUCTION CANDIDATE**. It is not
-`PRODUCTION READY` until the BLOCKED and FAIL gates are closed with runtime
-evidence.
+Coverage XML and HTML are generated locally as `coverage.xml` and `htmlcov/`.
+They are artifacts, not source evidence; CI uploads them and does not commit
+them. The coverage threshold is intentionally set to 90% in CI and is not
+weakened to make this revision appear green.
+
+## Required staging evidence
+
+Before a production approval, capture command output and artifacts for:
+
+1. Immutable web and conversion image build, scan, SBOM, and startup.
+2. Release job against an empty database and an upgrade copy.
+3. PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` for representative list/viewer queries.
+4. Redis/worker/Beat availability, retries, task idempotency, and DOCX/PPTX conversion.
+5. Media-volume file hash after restart and redeploy.
+6. Staging smoke, DAST, 50/100-user load, backup restore, and rollback.
+
+A gate without an executed artifact remains **BLOCKED**. A pass from SQLite or
+a static configuration file is not a substitute for a matching staging result.
+
+## Current release decision
+
+**PRODUCTION CANDIDATE FOR DASHBOARD AND MOBILE INTEGRATION.** It is not
+production-ready because the 90% coverage gate and first-party Mypy gate fail,
+and Docker/runtime, conversion, staging, DAST, load, backup/restore, and
+rollback evidence is still unavailable. The CI workflow intentionally blocks
+merge/release until these gates are resolved.

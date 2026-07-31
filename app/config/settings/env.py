@@ -69,9 +69,7 @@ def database_from_url(database_url: str, *, ssl_require: bool = False) -> dict:
     }
     engine = engine_by_scheme.get(parsed.scheme)
     if not engine:
-        raise ImproperlyConfigured(
-            "DATABASE_URL must use a supported scheme. Supported schemes: postgres, postgresql."
-        )
+        raise ImproperlyConfigured("DATABASE_URL must use a supported scheme. Supported schemes: postgres, postgresql.")
     if not parsed.hostname or not parsed.path.strip("/"):
         raise ImproperlyConfigured("DATABASE_URL must include host and database name.")
 

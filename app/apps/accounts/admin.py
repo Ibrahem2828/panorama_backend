@@ -14,7 +14,17 @@ class UserPermissionOverrideInline(admin.TabularInline):
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
     model = User
-    list_display = ("id", "full_name", "email", "phone_number", "role", "is_email_verified", "is_phone_verified", "is_active", "date_joined")
+    list_display = (
+        "id",
+        "full_name",
+        "email",
+        "phone_number",
+        "role",
+        "is_email_verified",
+        "is_phone_verified",
+        "is_active",
+        "date_joined",
+    )
     list_filter = ("role", "is_phone_verified", "is_email_verified", "is_active", "is_staff", "is_superuser")
     search_fields = ("full_name", "email", "phone_number", "username")
     ordering = ("-date_joined",)
@@ -25,9 +35,29 @@ class UserAdmin(DjangoUserAdmin):
         ("Personal info", {"fields": ("full_name", "username", "phone_number")}),
         ("Role and verification", {"fields": ("role", "is_phone_verified", "is_email_verified")}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
-        ("Important dates", {"fields": ("last_login", "last_password_change_at", "date_joined", "created_at", "updated_at")}),
+        (
+            "Important dates",
+            {"fields": ("last_login", "last_password_change_at", "date_joined", "created_at", "updated_at")},
+        ),
     )
-    add_fieldsets = ((None, {"classes": ("wide",), "fields": ("full_name", "email", "phone_number", "role", "password1", "password2", "is_staff", "is_superuser")}),)
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "full_name",
+                    "email",
+                    "phone_number",
+                    "role",
+                    "password1",
+                    "password2",
+                    "is_staff",
+                    "is_superuser",
+                ),
+            },
+        ),
+    )
 
 
 @admin.register(StudentProfile)
@@ -40,7 +70,17 @@ class StudentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(OTPCode)
 class OTPCodeAdmin(admin.ModelAdmin):
-    list_display = ("id", "delivery_channel", "email", "phone_number", "purpose", "user", "is_used", "attempts_count", "expires_at")
+    list_display = (
+        "id",
+        "delivery_channel",
+        "email",
+        "phone_number",
+        "purpose",
+        "user",
+        "is_used",
+        "attempts_count",
+        "expires_at",
+    )
     list_filter = ("delivery_channel", "purpose", "is_used", "locked_at", "created_at")
     search_fields = ("email", "phone_number", "user__email")
     readonly_fields = ("code_hash", "created_at", "updated_at")

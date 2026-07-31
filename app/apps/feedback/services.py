@@ -182,7 +182,9 @@ class FeedbackService:
         validated_data["metadata"] = metadata
         kind = validated_data["kind"]
         metric_type = validated_data.get("metric_type") or (
-            FeedbackMetricType.STARS if kind == FeedbackKind.RATING or validated_data.get("rating") is not None else FeedbackMetricType.FREE_TEXT
+            FeedbackMetricType.STARS
+            if kind == FeedbackKind.RATING or validated_data.get("rating") is not None
+            else FeedbackMetricType.FREE_TEXT
         )
         validated_data["metric_type"] = metric_type
         metric_value = validated_data.get("metric_value")
@@ -299,9 +301,7 @@ class FeedbackService:
             for row in ratings.values("rating").annotate(count=Count("id")).order_by("rating")
         }
         by_context = list(
-            ratings.values("context")
-            .annotate(average=Avg("rating"), count=Count("id"))
-            .order_by("context")
+            ratings.values("context").annotate(average=Avg("rating"), count=Count("id")).order_by("context")
         )
         satisfied = ratings.filter(rating__gte=4).count()
         nps_total = nps.count()
@@ -323,9 +323,12 @@ class FeedbackService:
             "ces": {"average": ces.aggregate(value=Avg("metric_value"))["value"], "responses": ces.count()},
             "nps": {
                 "score": round(
-                    ((nps.filter(metric_value__gte=9).count() - nps.filter(metric_value__lte=6).count()) / nps_total) * 100,
+                    ((nps.filter(metric_value__gte=9).count() - nps.filter(metric_value__lte=6).count()) / nps_total)
+                    * 100,
                     2,
-                ) if nps_total else None,
+                )
+                if nps_total
+                else None,
                 "promoters": nps.filter(metric_value__gte=9).count(),
                 "passives": nps.filter(metric_value__gte=7, metric_value__lte=8).count(),
                 "detractors": nps.filter(metric_value__lte=6).count(),
@@ -339,7 +342,9 @@ class FeedbackService:
                 .annotate(count=Count("id"), average_metric=Avg("metric_value"))
                 .order_by("app_version", "platform")[:100]
             ),
-            "open_items": queryset.exclude(status__in=[FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE]).count(),
+            "open_items": queryset.exclude(
+                status__in=[FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE]
+            ).count(),
             "critical_items": queryset.filter(priority="critical").exclude(status=FeedbackStatus.RESOLVED).count(),
             "top_suggestions": list(
                 queryset.filter(kind=FeedbackKind.SUGGESTION)
@@ -352,10 +357,33 @@ class FeedbackService:
 
 class FeedbackWorkflowService:
     VALID_TRANSITIONS = {
-        FeedbackStatus.NEW: {FeedbackStatus.REVIEWING, FeedbackStatus.PLANNED, FeedbackStatus.IN_PROGRESS, FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE},
-        FeedbackStatus.REVIEWING: {FeedbackStatus.PLANNED, FeedbackStatus.IN_PROGRESS, FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE},
-        FeedbackStatus.PLANNED: {FeedbackStatus.IN_PROGRESS, FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE},
-        FeedbackStatus.IN_PROGRESS: {FeedbackStatus.PLANNED, FeedbackStatus.RESOLVED, FeedbackStatus.REJECTED, FeedbackStatus.DUPLICATE},
+        FeedbackStatus.NEW: {
+            FeedbackStatus.REVIEWING,
+            FeedbackStatus.PLANNED,
+            FeedbackStatus.IN_PROGRESS,
+            FeedbackStatus.RESOLVED,
+            FeedbackStatus.REJECTED,
+            FeedbackStatus.DUPLICATE,
+        },
+        FeedbackStatus.REVIEWING: {
+            FeedbackStatus.PLANNED,
+            FeedbackStatus.IN_PROGRESS,
+            FeedbackStatus.RESOLVED,
+            FeedbackStatus.REJECTED,
+            FeedbackStatus.DUPLICATE,
+        },
+        FeedbackStatus.PLANNED: {
+            FeedbackStatus.IN_PROGRESS,
+            FeedbackStatus.RESOLVED,
+            FeedbackStatus.REJECTED,
+            FeedbackStatus.DUPLICATE,
+        },
+        FeedbackStatus.IN_PROGRESS: {
+            FeedbackStatus.PLANNED,
+            FeedbackStatus.RESOLVED,
+            FeedbackStatus.REJECTED,
+            FeedbackStatus.DUPLICATE,
+        },
         FeedbackStatus.RESOLVED: {FeedbackStatus.REVIEWING},
         FeedbackStatus.REJECTED: {FeedbackStatus.REVIEWING},
         FeedbackStatus.DUPLICATE: {FeedbackStatus.REVIEWING},

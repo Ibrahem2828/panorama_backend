@@ -12,7 +12,14 @@ from .services import announcements_for_user
 class AnnouncementViewSet(StandardReadOnlyModelViewSet):
     serializer_class = AnnouncementSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["target_user_type", "target_university", "target_faculty", "target_major", "target_academic_year", "target_semester"]
+    filterset_fields = [
+        "target_user_type",
+        "target_university",
+        "target_faculty",
+        "target_major",
+        "target_academic_year",
+        "target_semester",
+    ]
     search_fields = ["title", "description"]
     ordering_fields = ["created_at", "starts_at", "ends_at"]
     ordering = ["-created_at"]
@@ -21,7 +28,12 @@ class AnnouncementViewSet(StandardReadOnlyModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return Announcement.objects.none()
         return announcements_for_user(self.request.user).select_related(
-            "created_by", "target_university", "target_faculty", "target_major", "target_academic_year", "target_semester"
+            "created_by",
+            "target_university",
+            "target_faculty",
+            "target_major",
+            "target_academic_year",
+            "target_semester",
         )
 
 
@@ -36,7 +48,12 @@ class DashboardAnnouncementViewSet(StandardModelViewSet):
 
     def get_queryset(self):
         return Announcement.objects.filter(is_deleted=False).select_related(
-            "created_by", "target_university", "target_faculty", "target_major", "target_academic_year", "target_semester"
+            "created_by",
+            "target_university",
+            "target_faculty",
+            "target_major",
+            "target_academic_year",
+            "target_semester",
         )
 
     def perform_create(self, serializer):

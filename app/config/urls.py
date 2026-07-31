@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/v1/", include("apps.support.urls")),
     path("api/v1/", include("apps.audit.urls")),
     path("api/v1/", include("apps.feedback.urls")),
+    path("api/v1/", include("apps.product.urls")),
 ]
 
 if settings.DEBUG or settings.API_DOCS_ENABLED:

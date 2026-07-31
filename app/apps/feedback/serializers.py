@@ -77,11 +77,14 @@ class DashboardFeedbackPromptPolicySerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({field: "Use a list of at most 25 strings."})
         minimum = attrs.get("minimum_app_version", getattr(self.instance, "minimum_app_version", ""))
         maximum = attrs.get("maximum_app_version", getattr(self.instance, "maximum_app_version", ""))
+
         def version_tuple(value):
             return tuple(int("".join(char for char in part if char.isdigit()) or 0) for part in value.split("."))
 
         if minimum and maximum and version_tuple(minimum) > version_tuple(maximum):
-            raise serializers.ValidationError({"maximum_app_version": "Maximum version must not be below the minimum version."})
+            raise serializers.ValidationError(
+                {"maximum_app_version": "Maximum version must not be below the minimum version."}
+            )
         return attrs
 
 
@@ -165,7 +168,9 @@ class AppFeedbackSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         kind = attrs.get("kind", getattr(self.instance, "kind", None))
         metric_type = attrs.get("metric_type") or (
-            FeedbackMetricType.STARS if kind == FeedbackKind.RATING or attrs.get("rating") is not None else FeedbackMetricType.FREE_TEXT
+            FeedbackMetricType.STARS
+            if kind == FeedbackKind.RATING or attrs.get("rating") is not None
+            else FeedbackMetricType.FREE_TEXT
         )
         attrs["metric_type"] = metric_type
         metric_value = attrs.get("metric_value")
@@ -180,7 +185,9 @@ class AppFeedbackSerializer(serializers.ModelSerializer):
         if metric_type in metric_ranges:
             minimum, maximum = metric_ranges[metric_type]
             if metric_value is None or not minimum <= metric_value <= maximum:
-                raise serializers.ValidationError({"metric_value": f"{metric_type} must be between {minimum} and {maximum}."})
+                raise serializers.ValidationError(
+                    {"metric_value": f"{metric_type} must be between {minimum} and {maximum}."}
+                )
             attrs["metric_value"] = metric_value
             if metric_type == FeedbackMetricType.STARS:
                 attrs["rating"] = metric_value

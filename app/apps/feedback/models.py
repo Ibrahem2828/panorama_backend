@@ -166,7 +166,11 @@ class AppFeedback(BaseModel):
             models.CheckConstraint(
                 condition=(
                     models.Q(metric_value__isnull=True)
-                    | models.Q(metric_type__in=[FeedbackMetricType.CSAT, FeedbackMetricType.STARS], metric_value__gte=1, metric_value__lte=5)
+                    | models.Q(
+                        metric_type__in=[FeedbackMetricType.CSAT, FeedbackMetricType.STARS],
+                        metric_value__gte=1,
+                        metric_value__lte=5,
+                    )
                     | models.Q(metric_type=FeedbackMetricType.CES, metric_value__gte=1, metric_value__lte=7)
                     | models.Q(metric_type=FeedbackMetricType.NPS, metric_value__gte=0, metric_value__lte=10)
                 ),
@@ -220,7 +224,9 @@ class FeedbackAITriage(BaseModel):
     """Optional, review-only classification produced from redacted feedback."""
 
     feedback = models.OneToOneField(AppFeedback, on_delete=models.CASCADE, related_name="ai_triage")
-    status = models.CharField(max_length=24, choices=FeedbackAITriageStatus.choices, default=FeedbackAITriageStatus.QUEUED)
+    status = models.CharField(
+        max_length=24, choices=FeedbackAITriageStatus.choices, default=FeedbackAITriageStatus.QUEUED
+    )
     provider = models.CharField(max_length=64, blank=True)
     model = models.CharField(max_length=128, blank=True)
     model_version = models.CharField(max_length=64, blank=True)

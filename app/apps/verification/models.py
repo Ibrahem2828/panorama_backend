@@ -25,7 +25,9 @@ class VerificationRequest(BaseModel):
         on_delete=models.CASCADE,
         related_name="verification_requests",
     )
-    university = models.ForeignKey("universities.University", on_delete=models.PROTECT, related_name="verification_requests")
+    university = models.ForeignKey(
+        "universities.University", on_delete=models.PROTECT, related_name="verification_requests"
+    )
     faculty = models.ForeignKey("universities.Faculty", on_delete=models.PROTECT, related_name="verification_requests")
     major = models.ForeignKey("universities.Major", on_delete=models.PROTECT, related_name="verification_requests")
     academic_year = models.ForeignKey(

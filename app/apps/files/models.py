@@ -32,9 +32,15 @@ class FileResource(BaseModel):
     pages_count = models.PositiveIntegerField(null=True, blank=True)
     sha256 = models.CharField(max_length=64, blank=True, db_index=True)
     uploaded_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="uploaded_files")
-    university = models.ForeignKey("universities.University", on_delete=models.SET_NULL, related_name="files", null=True, blank=True)
-    faculty = models.ForeignKey("universities.Faculty", on_delete=models.SET_NULL, related_name="files", null=True, blank=True)
-    major = models.ForeignKey("universities.Major", on_delete=models.SET_NULL, related_name="files", null=True, blank=True)
+    university = models.ForeignKey(
+        "universities.University", on_delete=models.SET_NULL, related_name="files", null=True, blank=True
+    )
+    faculty = models.ForeignKey(
+        "universities.Faculty", on_delete=models.SET_NULL, related_name="files", null=True, blank=True
+    )
+    major = models.ForeignKey(
+        "universities.Major", on_delete=models.SET_NULL, related_name="files", null=True, blank=True
+    )
     academic_year = models.ForeignKey(
         "universities.AcademicYear",
         on_delete=models.SET_NULL,
@@ -42,8 +48,12 @@ class FileResource(BaseModel):
         null=True,
         blank=True,
     )
-    semester = models.ForeignKey("universities.Semester", on_delete=models.SET_NULL, related_name="files", null=True, blank=True)
-    subject = models.ForeignKey("universities.Subject", on_delete=models.SET_NULL, related_name="files", null=True, blank=True)
+    semester = models.ForeignKey(
+        "universities.Semester", on_delete=models.SET_NULL, related_name="files", null=True, blank=True
+    )
+    subject = models.ForeignKey(
+        "universities.Subject", on_delete=models.SET_NULL, related_name="files", null=True, blank=True
+    )
     group = models.ForeignKey("groups.Group", on_delete=models.SET_NULL, related_name="files", null=True, blank=True)
     visibility = models.CharField(max_length=32, choices=FileVisibility.choices, default=FileVisibility.PUBLIC)
     is_printable = models.BooleanField(default=True)

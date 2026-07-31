@@ -109,4 +109,7 @@ class Command(BaseCommand):
                 field_file.delete(save=False)
         except Exception:
             # Continue the retention job, but preserve the failure for operations and alerting.
-            logger.exception("Unable to delete retained sensitive file from storage", extra={"file_name": getattr(field_file, "name", "")})
+            logger.exception(
+                "Unable to delete retained sensitive file from storage",
+                extra={"file_name": getattr(field_file, "name", "")},
+            )

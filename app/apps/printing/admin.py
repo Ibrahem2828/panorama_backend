@@ -14,7 +14,18 @@ from .models import (
 class PrintOrderItemInline(admin.TabularInline):
     model = PrintOrderItem
     extra = 0
-    readonly_fields = ("file_type", "file_size", "pages_count", "sheets_count", "unit_price", "binding_price", "price", "pricing_snapshot", "created_at", "updated_at")
+    readonly_fields = (
+        "file_type",
+        "file_size",
+        "pages_count",
+        "sheets_count",
+        "unit_price",
+        "binding_price",
+        "price",
+        "pricing_snapshot",
+        "created_at",
+        "updated_at",
+    )
 
 
 @admin.register(PrintOrder)
@@ -23,7 +34,16 @@ class PrintOrderAdmin(admin.ModelAdmin):
     list_filter = ("status", "priority", "assigned_to", "currency", "created_at")
     search_fields = ("id", "user__full_name", "user__email", "user__phone_number")
     autocomplete_fields = ("user", "assigned_to")
-    readonly_fields = ("total_price", "currency", "pricing_snapshot", "price_calculated_at", "created_at", "updated_at", "completed_at", "cancelled_at")
+    readonly_fields = (
+        "total_price",
+        "currency",
+        "pricing_snapshot",
+        "price_calculated_at",
+        "created_at",
+        "updated_at",
+        "completed_at",
+        "cancelled_at",
+    )
     inlines = [PrintOrderItemInline]
 
 

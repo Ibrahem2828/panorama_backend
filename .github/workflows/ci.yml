@@ -54,8 +54,9 @@ jobs:
       - name: Static checks
         run: |
           python -m compileall -q app
-          ruff check app
-          mypy app/apps/accounts app/apps/verification app/apps/files app/apps/printing app/apps/feedback app/apps/common
+          ruff check .
+          ruff format --check .
+          mypy app
           bandit -q -r app -x '*/migrations/*,*/tests/*' --severity-level medium
           sh -n docker/entrypoint.sh
           sh -n docker/release.sh
@@ -67,12 +68,14 @@ jobs:
           python manage.py makemigrations --check --dry-run --settings=config.settings.testing
           python manage.py migrate --noinput --settings=config.settings.testing
           python manage.py spectacular --format openapi-json --validate --fail-on-warn --file ../docs/api/openapi.json --settings=config.settings.testing
-      - name: Generate Postman collection from OpenAPI
-        run: python scripts/generate_postman_collection.py
-      - name: Verify generated OpenAPI contract is committed
-        run: git diff --exit-code -- docs/api/openapi.json docs/api/postman_collection.json
+      - name: Generate and validate canonical API collections
+        run: |
+          python scripts/generate_api_collections.py
+          python scripts/validate_api_collections.py
+      - name: Verify generated API contracts are committed
+        run: git diff --exit-code -- docs/api/openapi.json docs/api/openapi.yaml integrations/api/
       - name: Tests and coverage gate
-        run: pytest -q --cov=apps --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=html:htmlcov
+        run: pytest -q --cov=apps --cov-fail-under=90 --cov-report=xml:coverage.xml --cov-report=html:htmlcov
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -90,6 +93,8 @@ jobs:
             --build-arg VERSION=ci-${GITHUB_SHA} \
             --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
             --tag panorama-backend:${GITHUB_SHA} .
+      - name: Build conversion runtime image
+        run: docker build --target conversion-runtime --pull --tag panorama-backend-conversion:${GITHUB_SHA} .
       - name: Scan image for critical and high vulnerabilities
         uses: aquasecurity/trivy-action@0.33.1
         with:

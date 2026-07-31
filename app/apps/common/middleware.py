@@ -73,7 +73,15 @@ class APISecurityHeadersMiddleware:
             response.setdefault("Cross-Origin-Resource-Policy", "same-site")
             if any(
                 part in request.path
-                for part in ("/auth/", "/verification/", "/protected-files/", "/protected-print-items/", "/verification-card-access/", "/support/attachments/", "/external-channels/")
+                for part in (
+                    "/auth/",
+                    "/verification/",
+                    "/protected-files/",
+                    "/protected-print-items/",
+                    "/verification-card-access/",
+                    "/support/attachments/",
+                    "/external-channels/",
+                )
             ):
                 response.setdefault("Cache-Control", "no-store, max-age=0")
                 response.setdefault("Pragma", "no-cache")
