@@ -111,6 +111,38 @@ services:
       retries: 3
       start_period: 60s
 
+  conversion-worker:
+    <<: [*runtime-security, *runtime-resources]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: conversion-runtime
+      args:
+        VCS_REF: ${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
+        VERSION: ${RELEASE_VERSION:?set RELEASE_VERSION}
+        BUILD_DATE: ${BUILD_DATE:?set BUILD_DATE as ISO-8601 UTC}
+    image: panorama-backend-conversion:${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}
+    restart: unless-stopped
+    stop_grace_period: 180s
+    command: celery -A config worker -Q conversion --loglevel=${CELERY_LOG_LEVEL:-INFO} --concurrency=${CELERY_CONVERSION_CONCURRENCY:-1}
+    environment: *app-environment
+    volumes:
+      - panorama_media:/app/app/media
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 2G
+        reservations:
+          cpus: "0.50"
+          memory: 1G
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping --destination=celery@$$HOSTNAME --timeout=5 2>/dev/null | grep -q pong"]
+      interval: 45s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
   beat:
     <<: [*runtime-security, *runtime-resources]
     image: panorama-backend:${IMAGE_TAG:?set IMAGE_TAG to an immutable Git SHA}

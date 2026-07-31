@@ -1042,6 +1042,10 @@ paths:
           - group_membership_blocked
           - group_membership_rejected
           - group_updated
+          - lecture_note_updated
+          - lecture_processing_updated
+          - lecture_uploaded
+          - lecture_viewed
           - message_deleted
           - otp_failed
           - otp_sent
@@ -1092,6 +1096,10 @@ paths:
           * `file_updated` - File Updated
           * `file_deleted` - File Deleted
           * `file_access_ticket_issued` - File Access Ticket Issued
+          * `lecture_uploaded` - Lecture Uploaded
+          * `lecture_processing_updated` - Lecture Processing Updated
+          * `lecture_viewed` - Lecture Viewed
+          * `lecture_note_updated` - Lecture Note Updated
           * `announcement_created` - Announcement Created
           * `announcement_updated` - Announcement Updated
           * `announcement_deleted` - Announcement Deleted
@@ -2543,6 +2551,181 @@ paths:
               schema:
                 $ref: '#/components/schemas/WhatsAppChannelUpdate'
           description: ''
+  /api/v1/dashboard/lectures/:
+    get:
+      operationId: v1_dashboard_lectures_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardLectureList'
+          description: ''
+    post:
+      operationId: v1_dashboard_lectures_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardLectureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardLectureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardLectureRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardLecture'
+          description: ''
+  /api/v1/dashboard/lectures/{id}/:
+    get:
+      operationId: v1_dashboard_lectures_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardLecture'
+          description: ''
+    put:
+      operationId: v1_dashboard_lectures_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardLectureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardLectureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardLectureRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardLecture'
+          description: ''
+    patch:
+      operationId: v1_dashboard_lectures_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardLectureRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardLectureRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardLectureRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardLecture'
+          description: ''
+    delete:
+      operationId: v1_dashboard_lectures_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/lectures/{id}/original/:
+    get:
+      operationId: v1_dashboard_lectures_original_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard lectures
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Original private document
   /api/v1/dashboard/majors/:
     get:
       operationId: v1_dashboard_majors_list
@@ -6557,6 +6740,388 @@ paths:
           description: Startup checks passed
         '503':
           description: Startup checks failed
+  /api/v1/lectures/:
+    get:
+      operationId: v1_lectures_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLectureList'
+          description: ''
+    post:
+      operationId: v1_lectures_create
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lecture'
+          description: ''
+  /api/v1/lectures/{lecture_id}/notes/{note_id}/:
+    get:
+      operationId: v1_lectures_notes_retrieve
+      parameters:
+      - in: path
+        name: lecture_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: note_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture notes
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LectureNote'
+          description: ''
+    patch:
+      operationId: v1_lectures_notes_partial_update
+      parameters:
+      - in: path
+        name: lecture_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: note_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture notes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLectureNoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLectureNoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLectureNoteRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LectureNote'
+          description: ''
+    delete:
+      operationId: v1_lectures_notes_destroy
+      parameters:
+      - in: path
+        name: lecture_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: note_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture notes
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/lectures/{id}/:
+    get:
+      operationId: v1_lectures_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lecture'
+          description: ''
+    put:
+      operationId: v1_lectures_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lecture'
+          description: ''
+    delete:
+      operationId: v1_lectures_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/lectures/{id}/notes/:
+    get:
+      operationId: v1_lectures_notes_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture notes
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LectureNote'
+          description: ''
+    post:
+      operationId: v1_lectures_notes_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture notes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LectureNoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LectureNoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LectureNoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LectureNote'
+          description: ''
+  /api/v1/lectures/{id}/processing-status/:
+    get:
+      operationId: v1_lectures_processing_status_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/lectures/{id}/viewer/manifest/:
+    get:
+      operationId: v1_lectures_viewer_manifest_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/lectures/{id}/viewer/pages/{page_number}/:
+    get:
+      operationId: v1_lectures_viewer_pages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: page_number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Protected page image
+  /api/v1/lectures/{id}/viewer/pages/{page_number}/text/:
+    get:
+      operationId: v1_lectures_viewer_pages_text_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: page_number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/lectures/{id}/viewer/pages/{page_number}/thumbnail/:
+    get:
+      operationId: v1_lectures_viewer_pages_thumbnail_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: page_number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Protected thumbnail image
+  /api/v1/lectures/{id}/viewer/session/:
+    post:
+      operationId: v1_lectures_viewer_session_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Lecture viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/majors/{major_pk}/subjects/:
     get:
       operationId: v1_majors_subjects_list
@@ -8465,6 +9030,10 @@ components:
       - file_updated
       - file_deleted
       - file_access_ticket_issued
+      - lecture_uploaded
+      - lecture_processing_updated
+      - lecture_viewed
+      - lecture_note_updated
       - announcement_created
       - announcement_updated
       - announcement_deleted
@@ -8509,6 +9078,10 @@ components:
         * `file_updated` - File Updated
         * `file_deleted` - File Deleted
         * `file_access_ticket_issued` - File Access Ticket Issued
+        * `lecture_uploaded` - Lecture Uploaded
+        * `lecture_processing_updated` - Lecture Processing Updated
+        * `lecture_viewed` - Lecture Viewed
+        * `lecture_note_updated` - Lecture Note Updated
         * `announcement_created` - Announcement Created
         * `announcement_updated` - Announcement Updated
         * `announcement_deleted` - Announcement Deleted
@@ -9108,6 +9681,102 @@ components:
       required:
       - name
       - university
+    DashboardLecture:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          type: integer
+        subject_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        original_filename:
+          type: string
+          readOnly: true
+        original_mime_type:
+          type: string
+          readOnly: true
+        original_size:
+          type: integer
+          readOnly: true
+        original_sha256:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LectureProcessingStatusEnum'
+          readOnly: true
+        page_count:
+          type: integer
+          readOnly: true
+        failure_code:
+          type: string
+          readOnly: true
+        failure_message:
+          type: string
+          readOnly: true
+        is_published:
+          type: boolean
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        uploaded_by:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - failure_code
+      - failure_message
+      - id
+      - original_filename
+      - original_mime_type
+      - original_sha256
+      - original_size
+      - page_count
+      - published_at
+      - status
+      - subject
+      - subject_name
+      - title
+      - updated_at
+      - uploaded_by
+    DashboardLectureRequest:
+      type: object
+      properties:
+        subject:
+          type: integer
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        original_file:
+          type: string
+          format: binary
+          writeOnly: true
+        is_published:
+          type: boolean
+      required:
+      - subject
+      - title
     DashboardPrintOrder:
       type: object
       properties:
@@ -10063,6 +10732,163 @@ components:
         * `bug` - Bug Report
         * `complaint` - Complaint
         * `compliment` - Compliment
+    Lecture:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          type: integer
+          readOnly: true
+        subject_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LectureProcessingStatusEnum'
+          readOnly: true
+        page_count:
+          type: integer
+          readOnly: true
+        is_published:
+          type: boolean
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        can_view:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - can_view
+      - created_at
+      - description
+      - id
+      - is_published
+      - page_count
+      - published_at
+      - status
+      - subject
+      - subject_name
+      - title
+      - updated_at
+    LectureNote:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        page_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        selected_text:
+          type: string
+        anchor_data: {}
+        content:
+          type: string
+        color:
+          type: string
+          maxLength: 32
+        note_type:
+          type: string
+          maxLength: 32
+        is_bookmark:
+          type: boolean
+        is_favorite:
+          type: boolean
+        version:
+          type: integer
+        archived_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - archived_at
+      - content
+      - created_at
+      - id
+      - updated_at
+    LectureNoteRequest:
+      type: object
+      properties:
+        page_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        selected_text:
+          type: string
+        anchor_data: {}
+        content:
+          type: string
+          minLength: 1
+        color:
+          type: string
+          maxLength: 32
+        note_type:
+          type: string
+          minLength: 1
+          maxLength: 32
+        is_bookmark:
+          type: boolean
+        is_favorite:
+          type: boolean
+        version:
+          type: integer
+      required:
+      - content
+    LectureProcessingStatusEnum:
+      enum:
+      - uploaded
+      - queued
+      - scanning
+      - converting
+      - extracting
+      - rendering
+      - ready
+      - failed
+      - quarantined
+      type: string
+      description: |-
+        * `uploaded` - Uploaded
+        * `queued` - Queued
+        * `scanning` - Scanning
+        * `converting` - Converting
+        * `extracting` - Extracting
+        * `rendering` - Rendering
+        * `ready` - Ready
+        * `failed` - Failed
+        * `quarantined` - Quarantined
     LoginRequest:
       type: object
       properties:
@@ -10700,6 +11526,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardGroup'
+    PaginatedDashboardLectureList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardLecture'
     PaginatedDashboardPrintOrderList:
       type: object
       required:
@@ -10861,6 +11710,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GroupMembership'
+    PaginatedLectureList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lecture'
     PaginatedMajorList:
       type: object
       required:
@@ -11288,6 +12160,23 @@ components:
           type: string
           writeOnly: true
           maxLength: 100
+    PatchedDashboardLectureRequest:
+      type: object
+      properties:
+        subject:
+          type: integer
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        original_file:
+          type: string
+          format: binary
+          writeOnly: true
+        is_published:
+          type: boolean
     PatchedDashboardUserRequest:
       type: object
       properties:
@@ -11374,6 +12263,34 @@ components:
       properties:
         role:
           $ref: '#/components/schemas/GroupMembershipRoleEnum'
+    PatchedLectureNoteRequest:
+      type: object
+      properties:
+        page_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        selected_text:
+          type: string
+        anchor_data: {}
+        content:
+          type: string
+          minLength: 1
+        color:
+          type: string
+          maxLength: 32
+        note_type:
+          type: string
+          minLength: 1
+          maxLength: 32
+        is_bookmark:
+          type: boolean
+        is_favorite:
+          type: boolean
+        version:
+          type: integer
     PatchedMajorRequest:
       type: object
       properties:

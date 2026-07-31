@@ -9,7 +9,6 @@ import sys
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-
 BASE_URL = os.environ.get("SMOKE_BASE_URL", "").rstrip("/")
 TOKEN = os.environ.get("SMOKE_BEARER_TOKEN", "")
 
@@ -35,7 +34,11 @@ def request(path: str, *, authenticated: bool = False) -> dict:
 def main() -> int:
     if not BASE_URL.startswith("https://"):
         raise RuntimeError("SMOKE_BASE_URL must be an HTTPS deployment URL")
-    for endpoint, code in (("/api/v1/health/live/", "LIVE"), ("/api/v1/health/ready/", "READY"), ("/api/v1/health/startup/", "STARTUP_READY")):
+    for endpoint, code in (
+        ("/api/v1/health/live/", "LIVE"),
+        ("/api/v1/health/ready/", "READY"),
+        ("/api/v1/health/startup/", "STARTUP_READY"),
+    ):
         if request(endpoint).get("code") != code:
             raise RuntimeError(f"{endpoint}: unexpected success payload")
     current_user = request("/api/v1/auth/me/", authenticated=True)

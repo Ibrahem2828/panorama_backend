@@ -17,6 +17,7 @@ class Capability:
     GROUPS_MANAGE = "groups.manage"
     GROUPS_EXTERNAL_CHANNELS_MANAGE = "groups.external_channels.manage"
     FILES_MANAGE = "files.manage"
+    LECTURES_MANAGE = "lectures.manage"
     PRINTING_MANAGE = "printing.manage"
     SUPPORT_MANAGE = "support.manage"
     ANNOUNCEMENTS_MANAGE = "announcements.manage"
@@ -34,6 +35,7 @@ ROLE_CAPABILITIES = {
         Capability.GROUPS_MANAGE,
         Capability.GROUPS_EXTERNAL_CHANNELS_MANAGE,
         Capability.FILES_MANAGE,
+        Capability.LECTURES_MANAGE,
         Capability.PRINTING_MANAGE,
         Capability.SUPPORT_MANAGE,
         Capability.ANNOUNCEMENTS_MANAGE,
@@ -48,6 +50,7 @@ ROLE_CAPABILITIES = {
         Capability.GROUPS_MANAGE,
         Capability.GROUPS_EXTERNAL_CHANNELS_MANAGE,
         Capability.FILES_MANAGE,
+        Capability.LECTURES_MANAGE,
         Capability.ANNOUNCEMENTS_MANAGE,
     },
     UserRole.STUDENT: set(),
@@ -149,6 +152,10 @@ class CanManageExternalChannels(CapabilityPermission):
 
 class CanManageFiles(CapabilityPermission):
     capability = Capability.FILES_MANAGE
+
+
+class CanManageLectures(CapabilityPermission):
+    capability = Capability.LECTURES_MANAGE
 
 
 class CanManagePrinting(CapabilityPermission):

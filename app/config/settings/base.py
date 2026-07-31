@@ -25,6 +25,7 @@ LOCAL_APPS = [
     "apps.verification",
     "apps.groups",
     "apps.files",
+    "apps.lectures",
     "apps.printing",
     "apps.announcements",
     "apps.notifications",
@@ -160,6 +161,8 @@ REST_FRAMEWORK = {
         "chat_report": config("THROTTLE_CHAT_REPORT", default="10/day"),
         "support_ticket": config("THROTTLE_SUPPORT_TICKET", default="5/hour"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
+        "lecture_viewer": config("THROTTLE_LECTURE_VIEWER", default="240/min"),
+        "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
     },
 }
 
@@ -271,6 +274,17 @@ SPECTACULAR_SETTINGS = {
             ("email", "Email"),
             ("phone", "Phone"),
         ],
+        "LectureProcessingStatusEnum": [
+            ("uploaded", "Uploaded"),
+            ("queued", "Queued"),
+            ("scanning", "Scanning"),
+            ("converting", "Converting"),
+            ("extracting", "Extracting"),
+            ("rendering", "Rendering"),
+            ("ready", "Ready"),
+            ("failed", "Failed"),
+            ("quarantined", "Quarantined"),
+        ],
     },
 }
 
@@ -281,6 +295,13 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "TIMEOUT": 300,
         "KEY_PREFIX": config("CACHE_KEY_PREFIX", default="panorama"),
+        "VERSION": config("CACHE_KEY_VERSION", default=1, cast=int),
+        "OPTIONS": {
+            "socket_connect_timeout": config("REDIS_SOCKET_CONNECT_TIMEOUT", default=3, cast=int),
+            "socket_timeout": config("REDIS_SOCKET_TIMEOUT", default=3, cast=int),
+            "retry_on_timeout": True,
+            "health_check_interval": config("REDIS_HEALTH_CHECK_INTERVAL", default=30, cast=int),
+        },
     }
 }
 
@@ -319,6 +340,12 @@ FEEDBACK_AI_CIRCUIT_SECONDS = config("FEEDBACK_AI_CIRCUIT_SECONDS", default=300,
 AUDIT_LOG_RETENTION_DAYS = config("AUDIT_LOG_RETENTION_DAYS", default=730, cast=int)
 MAX_DOCUMENT_UPLOAD_SIZE = config("MAX_DOCUMENT_UPLOAD_SIZE", default=25 * 1024 * 1024, cast=int)
 MAX_IMAGE_UPLOAD_SIZE = config("MAX_IMAGE_UPLOAD_SIZE", default=8 * 1024 * 1024, cast=int)
+LECTURE_MAX_UPLOAD_SIZE = config("LECTURE_MAX_UPLOAD_SIZE", default=50 * 1024 * 1024, cast=int)
+LECTURE_MAX_PAGES = config("LECTURE_MAX_PAGES", default=500, cast=int)
+LECTURE_VIEWER_SESSION_TTL_SECONDS = config("LECTURE_VIEWER_SESSION_TTL_SECONDS", default=900, cast=int)
+LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS = config("LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS", default=1200, cast=int)
+DOCUMENT_CONVERSION_TIME_LIMIT = config("DOCUMENT_CONVERSION_TIME_LIMIT", default=180, cast=int)
+DOCUMENT_CONVERSION_SOFT_TIME_LIMIT = config("DOCUMENT_CONVERSION_SOFT_TIME_LIMIT", default=150, cast=int)
 DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=30 * 1024 * 1024, cast=int)
 FILE_UPLOAD_MAX_MEMORY_SIZE = config("FILE_UPLOAD_MAX_MEMORY_SIZE", default=5 * 1024 * 1024, cast=int)
 API_CONTENT_SECURITY_POLICY = config(
@@ -331,6 +358,9 @@ CELERY_TASK_TIME_LIMIT = config("CELERY_TASK_TIME_LIMIT", default=60, cast=int)
 CELERY_TASK_SOFT_TIME_LIMIT = config("CELERY_TASK_SOFT_TIME_LIMIT", default=45, cast=int)
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, cast=int)
+CELERY_TASK_ROUTES = {"apps.lectures.tasks.*": {"queue": "conversion"}}
 FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
 
 CHANNEL_LAYERS = {

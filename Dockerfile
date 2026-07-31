@@ -103,3 +103,25 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
 
 CMD ["sh", "-c", "exec daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"]
+
+# ------------------------------------------------------------
+# Conversion worker: deliberately separate from the web runtime.
+# Build/deploy this target only for the Celery conversion queue.
+# ------------------------------------------------------------
+FROM runtime AS conversion-runtime
+
+USER root
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && apt-get install -y --no-install-recommends \
+        fontconfig \
+        fonts-noto-core \
+        libreoffice-impress \
+        libreoffice-writer \
+        poppler-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /home/panorama/.config /home/panorama/.cache \
+    && chown -R panorama:panorama /home/panorama
+
+USER panorama
+WORKDIR /app/app

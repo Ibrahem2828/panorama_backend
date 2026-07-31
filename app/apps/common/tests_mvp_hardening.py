@@ -95,7 +95,12 @@ def approve_student(user, academic):
 @pytest.mark.django_db
 def test_group_image_and_metadata_are_serialized(api_client, admin_user, student_user, academic):
     approve_student(student_user, academic)
-    group = Group.objects.create(name="Image Group", university=academic["university"], created_by=admin_user, send_messages_permission="all_members")
+    group = Group.objects.create(
+        name="Image Group",
+        university=academic["university"],
+        created_by=admin_user,
+        send_messages_permission="all_members",
+    )
     GroupMembership.objects.create(group=group, user=student_user, status=GroupMembershipStatus.APPROVED)
     authenticate(api_client, student_user)
 
@@ -113,33 +118,61 @@ def test_group_image_and_metadata_are_serialized(api_client, admin_user, student
 @pytest.mark.django_db
 def test_group_send_permissions_rest_and_service(api_client, admin_user, student_user, academic):
     approve_student(student_user, academic)
-    all_members = Group.objects.create(name="Open Send", university=academic["university"], created_by=admin_user, send_messages_permission="all_members")
-    admins_only = Group.objects.create(name="Admin Send", university=academic["university"], created_by=admin_user, send_messages_permission="admins_only")
+    all_members = Group.objects.create(
+        name="Open Send",
+        university=academic["university"],
+        created_by=admin_user,
+        send_messages_permission="all_members",
+    )
+    admins_only = Group.objects.create(
+        name="Admin Send",
+        university=academic["university"],
+        created_by=admin_user,
+        send_messages_permission="admins_only",
+    )
     GroupMembership.objects.create(group=all_members, user=student_user, status=GroupMembershipStatus.APPROVED)
-    membership = GroupMembership.objects.create(group=admins_only, user=student_user, status=GroupMembershipStatus.APPROVED)
+    membership = GroupMembership.objects.create(
+        group=admins_only, user=student_user, status=GroupMembershipStatus.APPROVED
+    )
     authenticate(api_client, student_user)
 
-    assert api_client.post(f"/api/v1/groups/{all_members.id}/messages/", {"content": "hello"}, format="json").status_code == status.HTTP_201_CREATED
-    assert api_client.post(f"/api/v1/groups/{admins_only.id}/messages/", {"content": "blocked"}, format="json").status_code == status.HTTP_403_FORBIDDEN
+    assert (
+        api_client.post(f"/api/v1/groups/{all_members.id}/messages/", {"content": "hello"}, format="json").status_code
+        == status.HTTP_201_CREATED
+    )
+    assert (
+        api_client.post(f"/api/v1/groups/{admins_only.id}/messages/", {"content": "blocked"}, format="json").status_code
+        == status.HTTP_403_FORBIDDEN
+    )
     assert ChatPermissionService.can_send_message(student_user, admins_only) is False
 
     membership.role = GroupMembershipRole.MODERATOR
     membership.save(update_fields=["role", "updated_at"])
     assert ChatPermissionService.can_send_message(student_user, admins_only) is True
-    assert api_client.post(f"/api/v1/groups/{admins_only.id}/messages/", {"content": "allowed"}, format="json").status_code == status.HTTP_201_CREATED
+    assert (
+        api_client.post(f"/api/v1/groups/{admins_only.id}/messages/", {"content": "allowed"}, format="json").status_code
+        == status.HTTP_201_CREATED
+    )
 
     authenticate(api_client, admin_user)
-    assert api_client.post(f"/api/v1/groups/{admins_only.id}/messages/", {"content": "admin"}, format="json").status_code == status.HTTP_201_CREATED
+    assert (
+        api_client.post(f"/api/v1/groups/{admins_only.id}/messages/", {"content": "admin"}, format="json").status_code
+        == status.HTTP_201_CREATED
+    )
 
 
 @pytest.mark.django_db
-def test_membership_role_update_and_print_staff_dashboard_scope(api_client, admin_user, print_staff, student_user, academic):
+def test_membership_role_update_and_print_staff_dashboard_scope(
+    api_client, admin_user, print_staff, student_user, academic
+):
     approve_student(student_user, academic)
     group = Group.objects.create(name="Role Group", university=academic["university"], created_by=admin_user)
     membership = GroupMembership.objects.create(group=group, user=student_user, status=GroupMembershipStatus.APPROVED)
     authenticate(api_client, admin_user)
 
-    response = api_client.patch(f"/api/v1/dashboard/group-memberships/{membership.id}/role/", {"role": "group_admin"}, format="json")
+    response = api_client.patch(
+        f"/api/v1/dashboard/group-memberships/{membership.id}/role/", {"role": "group_admin"}, format="json"
+    )
     assert response.status_code == status.HTTP_200_OK
     membership.refresh_from_db()
     assert membership.role == GroupMembershipRole.GROUP_ADMIN
@@ -178,7 +211,9 @@ def test_api_collection_json_files_are_valid_and_scoped():
     assert "/api/v1/dashboard/" in dashboard_path.read_text(encoding="utf-8")
 
 
-def test_integration_docs_exist():
+def test_canonical_documentation_exists():
     root = Path(__file__).resolve().parents[3]
-    assert (root / "FRONTEND_INTEGRATION.md").exists()
-    assert (root / "DASHBOARD_INTEGRATION.md").exists()
+    docs = root / "docs"
+    assert (docs / "INDEX.md").exists()
+    assert (docs / "API_SECURITY_AND_AUTH.md").exists()
+    assert (docs / "QUALITY_TESTING_AND_RELEASE.md").exists()

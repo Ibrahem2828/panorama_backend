@@ -30,6 +30,10 @@ class AuditAction(models.TextChoices):
     FILE_UPDATED = "file_updated", "File Updated"
     FILE_DELETED = "file_deleted", "File Deleted"
     FILE_ACCESS_TICKET_ISSUED = "file_access_ticket_issued", "File Access Ticket Issued"
+    LECTURE_UPLOADED = "lecture_uploaded", "Lecture Uploaded"
+    LECTURE_PROCESSING_UPDATED = "lecture_processing_updated", "Lecture Processing Updated"
+    LECTURE_VIEWED = "lecture_viewed", "Lecture Viewed"
+    LECTURE_NOTE_UPDATED = "lecture_note_updated", "Lecture Note Updated"
     ANNOUNCEMENT_CREATED = "announcement_created", "Announcement Created"
     ANNOUNCEMENT_UPDATED = "announcement_updated", "Announcement Updated"
     ANNOUNCEMENT_DELETED = "announcement_deleted", "Announcement Deleted"
@@ -49,7 +53,9 @@ class AuditAction(models.TextChoices):
 
 
 class AuditLog(BaseModel):
-    actor = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, related_name="audit_logs", null=True, blank=True)
+    actor = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, related_name="audit_logs", null=True, blank=True
+    )
     action = models.CharField(max_length=64, choices=AuditAction.choices)
     target_type = models.CharField(max_length=100, blank=True)
     target_id = models.CharField(max_length=64, blank=True)

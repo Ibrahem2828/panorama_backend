@@ -8,7 +8,7 @@ Send vulnerability reports privately to `panoramacompany31@gmail.com`. Do not in
 
 - Never commit `.env`, Gmail App Passwords, database credentials, JWT signing keys, Redis credentials, storage keys, or encryption keys.
 - `EMAIL_HOST_PASSWORD` must be a Gmail App Password created after enabling two-step verification; it is not the normal Gmail password.
-- Production must define a unique `FIELD_ENCRYPTION_KEY`, a strong `SECRET_KEY`, and private object-storage credentials.
+- Production must define a unique `FIELD_ENCRYPTION_KEY`, a strong `SECRET_KEY`, and a private persistent media volume. Generic S3 credentials are required only when `STORAGE_BACKEND=s3` is explicitly implemented and selected.
 
 ## Security acceptance gate
 

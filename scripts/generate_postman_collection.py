@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "docs" / "api" / "openapi.json"
 OUTPUT_PATH = ROOT / "docs" / "api" / "postman_collection.json"

@@ -27,6 +27,22 @@ IMAGE_POLICY = UploadPolicy(
     max_size_bytes=getattr(settings, "MAX_IMAGE_UPLOAD_SIZE", 8 * 1024 * 1024),
 )
 
+LECTURE_DOCUMENT_POLICY = UploadPolicy(
+    allowed_extensions=frozenset({"pdf", "doc", "docx", "ppt", "pptx"}),
+    allowed_mime_types=frozenset(
+        {
+            "application/pdf",
+            "application/msword",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/zip",
+            "application/x-ole-storage",
+        }
+    ),
+    max_size_bytes=getattr(settings, "LECTURE_MAX_UPLOAD_SIZE", 50 * 1024 * 1024),
+)
+
 
 def _read_head(uploaded_file, size: int = 4096) -> bytes:
     current = uploaded_file.tell() if hasattr(uploaded_file, "tell") else None

@@ -21,10 +21,24 @@ class IdentifierRateThrottle(SimpleRateThrottle):
 
     identifier_fields: tuple[str, ...] = ("identifier", "email", "phone_number")
     _period_units = {
-        "s": 1, "sec": 1, "secs": 1, "second": 1, "seconds": 1,
-        "m": 60, "min": 60, "mins": 60, "minute": 60, "minutes": 60,
-        "h": 3600, "hr": 3600, "hrs": 3600, "hour": 3600, "hours": 3600,
-        "d": 86400, "day": 86400, "days": 86400,
+        "s": 1,
+        "sec": 1,
+        "secs": 1,
+        "second": 1,
+        "seconds": 1,
+        "m": 60,
+        "min": 60,
+        "mins": 60,
+        "minute": 60,
+        "minutes": 60,
+        "h": 3600,
+        "hr": 3600,
+        "hrs": 3600,
+        "hour": 3600,
+        "hours": 3600,
+        "d": 86400,
+        "day": 86400,
+        "days": 86400,
     }
 
     def parse_rate(self, rate: str | None) -> tuple[int | None, int | None]:
@@ -128,6 +142,22 @@ class SupportTicketRateThrottle(SimpleRateThrottle):
 
 class SupportMessageRateThrottle(SimpleRateThrottle):
     scope = "support_message"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class LectureViewerRateThrottle(SimpleRateThrottle):
+    scope = "lecture_viewer"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class LectureNotesRateThrottle(SimpleRateThrottle):
+    scope = "lecture_notes"
 
     def get_cache_key(self, request, view):
         ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
