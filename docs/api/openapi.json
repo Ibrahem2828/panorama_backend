@@ -9,6 +9,7 @@
         "/api/v1/academic-years/": {
             "get": {
                 "operationId": "v1_academic_years_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -78,58 +79,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_academic_years_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AcademicYearRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AcademicYearRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AcademicYearRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AcademicYear"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/academic-years/{id}/": {
             "get": {
                 "operationId": "v1_academic_years_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -163,95 +118,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_academic_years_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا academic year.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AcademicYearRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AcademicYearRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AcademicYearRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AcademicYear"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_academic_years_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا academic year.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -362,6 +228,7 @@
         "/api/v1/announcements/": {
             "get": {
                 "operationId": "v1_announcements_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "ordering",
@@ -473,57 +340,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_announcements_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AnnouncementRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AnnouncementRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AnnouncementRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Announcement"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/announcements/{id}/": {
             "get": {
                 "operationId": "v1_announcements_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -556,93 +378,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_announcements_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا announcement.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AnnouncementRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AnnouncementRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AnnouncementRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Announcement"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_announcements_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا announcement.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -714,15 +449,6 @@
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -763,15 +489,6 @@
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "200": {
                         "description": "JWT login response"
@@ -926,15 +643,6 @@
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -975,15 +683,6 @@
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -1024,15 +723,6 @@
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "201": {
                         "content": {
@@ -1073,15 +763,6 @@
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "201": {
                         "content": {
@@ -1121,15 +802,6 @@
                         }
                     }
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "200": {
                         "content": {
@@ -1154,31 +826,22 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/TokenRefreshRequest"
+                                "$ref": "#/components/schemas/SessionVersionTokenRefreshRequest"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/TokenRefreshRequest"
+                                "$ref": "#/components/schemas/SessionVersionTokenRefreshRequest"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/TokenRefreshRequest"
+                                "$ref": "#/components/schemas/SessionVersionTokenRefreshRequest"
                             }
                         }
                     },
                     "required": true
                 },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
                 "responses": {
                     "200": {
                         "description": "JWT refresh response"
@@ -1189,6 +852,7 @@
         "/api/v1/dashboard/academic-years/": {
             "get": {
                 "operationId": "v1_dashboard_academic_years_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -1260,6 +924,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_academic_years_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -1308,6 +973,7 @@
         "/api/v1/dashboard/academic-years/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_academic_years_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1345,6 +1011,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_academic_years_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1402,6 +1069,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_academic_years_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1458,6 +1126,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_academic_years_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1490,6 +1159,7 @@
         "/api/v1/dashboard/announcements/": {
             "get": {
                 "operationId": "v1_dashboard_announcements_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -1611,6 +1281,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_announcements_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -1659,6 +1330,7 @@
         "/api/v1/dashboard/announcements/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_announcements_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1696,6 +1368,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_announcements_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1753,6 +1426,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_announcements_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1809,6 +1483,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_announcements_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -1841,6 +1516,7 @@
         "/api/v1/dashboard/audit-logs/": {
             "get": {
                 "operationId": "v1_dashboard_audit_logs_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -1989,37 +1665,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_dashboard_audit_logs_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AuditLog"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/dashboard/audit-logs/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_audit_logs_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2052,73 +1703,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_dashboard_audit_logs_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا audit log.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AuditLog"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_dashboard_audit_logs_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا audit log.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -2155,6 +1739,7 @@
         "/api/v1/dashboard/faculties/": {
             "get": {
                 "operationId": "v1_dashboard_faculties_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -2233,6 +1818,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_faculties_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -2281,6 +1867,7 @@
         "/api/v1/dashboard/faculties/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_faculties_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2318,6 +1905,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_faculties_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2375,6 +1963,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_faculties_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2431,6 +2020,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_faculties_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2463,6 +2053,7 @@
         "/api/v1/dashboard/feature-flags/": {
             "get": {
                 "operationId": "v1_dashboard_feature_flags_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "name": "page",
@@ -2509,6 +2100,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_feature_flags_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -2557,6 +2149,7 @@
         "/api/v1/dashboard/feature-flags/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_feature_flags_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2594,6 +2187,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_feature_flags_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2651,6 +2245,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_feature_flags_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2707,6 +2302,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_feature_flags_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -2739,6 +2335,7 @@
         "/api/v1/dashboard/feedback/": {
             "get": {
                 "operationId": "v1_dashboard_feedback_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -2910,32 +2507,6 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_dashboard_feedback_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardFeedback"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/dashboard/feedback-analytics/": {
@@ -2970,6 +2541,7 @@
         "/api/v1/dashboard/feedback-prompt-policies/": {
             "get": {
                 "operationId": "v1_dashboard_feedback_prompt_policies_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -2999,6 +2571,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_feedback_prompt_policies_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -3047,6 +2620,7 @@
         "/api/v1/dashboard/feedback-prompt-policies/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_feedback_prompt_policies_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3084,6 +2658,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_feedback_prompt_policies_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3141,6 +2716,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_feedback_prompt_policies_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3197,6 +2773,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_feedback_prompt_policies_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3229,6 +2806,7 @@
         "/api/v1/dashboard/feedback/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_feedback_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3261,73 +2839,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_dashboard_feedback_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا app feedback.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardFeedback"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_dashboard_feedback_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا app feedback.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -3392,6 +2903,7 @@
         "/api/v1/dashboard/files/": {
             "get": {
                 "operationId": "v1_dashboard_files_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -3535,6 +3047,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_files_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -3583,6 +3096,7 @@
         "/api/v1/dashboard/files/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_files_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3620,6 +3134,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_files_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3677,6 +3192,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_files_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3733,6 +3249,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_files_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -3936,6 +3453,7 @@
         "/api/v1/dashboard/groups/": {
             "get": {
                 "operationId": "v1_dashboard_groups_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -4049,6 +3567,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_groups_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -4097,6 +3616,7 @@
         "/api/v1/dashboard/groups/{group_pk}/join-requests/": {
             "get": {
                 "operationId": "v1_dashboard_groups_join_requests_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4199,6 +3719,7 @@
         "/api/v1/dashboard/groups/{group_pk}/memberships/": {
             "get": {
                 "operationId": "v1_dashboard_groups_memberships_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4301,6 +3822,7 @@
         "/api/v1/dashboard/groups/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_groups_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4338,6 +3860,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_groups_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4395,6 +3918,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_groups_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4451,6 +3975,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_groups_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4541,6 +4066,7 @@
         "/api/v1/dashboard/lectures/": {
             "get": {
                 "operationId": "v1_dashboard_lectures_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "name": "page",
@@ -4587,6 +4113,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_lectures_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -4635,6 +4162,7 @@
         "/api/v1/dashboard/lectures/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_lectures_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4672,6 +4200,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_lectures_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4729,6 +4258,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_lectures_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4785,6 +4315,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_lectures_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4848,6 +4379,7 @@
         "/api/v1/dashboard/maintenance-modes/": {
             "get": {
                 "operationId": "v1_dashboard_maintenance_modes_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "name": "page",
@@ -4894,6 +4426,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_maintenance_modes_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -4941,6 +4474,7 @@
         "/api/v1/dashboard/maintenance-modes/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_maintenance_modes_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -4978,6 +4512,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_maintenance_modes_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5034,6 +4569,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_maintenance_modes_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5090,6 +4626,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_maintenance_modes_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5122,6 +4659,7 @@
         "/api/v1/dashboard/majors/": {
             "get": {
                 "operationId": "v1_dashboard_majors_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -5207,6 +4745,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_majors_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -5255,6 +4794,7 @@
         "/api/v1/dashboard/majors/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_majors_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5292,6 +4832,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_majors_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5349,6 +4890,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_majors_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5405,6 +4947,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_majors_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5437,6 +4980,7 @@
         "/api/v1/dashboard/mobile-release-policies/": {
             "get": {
                 "operationId": "v1_dashboard_mobile_release_policies_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "name": "page",
@@ -5483,6 +5027,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_mobile_release_policies_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -5531,6 +5076,7 @@
         "/api/v1/dashboard/mobile-release-policies/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_mobile_release_policies_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5568,6 +5114,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_mobile_release_policies_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5625,6 +5172,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_mobile_release_policies_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -5681,6 +5229,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_mobile_release_policies_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -6027,6 +5576,7 @@
         "/api/v1/dashboard/printing/orders/": {
             "get": {
                 "operationId": "v1_dashboard_printing_orders_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -6140,37 +5690,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_dashboard_printing_orders_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardPrintOrder"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/dashboard/printing/orders/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_printing_orders_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -6203,73 +5728,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_dashboard_printing_orders_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا print order.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardPrintOrder"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_dashboard_printing_orders_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا print order.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -7056,6 +6514,7 @@
         "/api/v1/dashboard/privacy-policy-versions/": {
             "get": {
                 "operationId": "v1_dashboard_privacy_policy_versions_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "name": "page",
@@ -7102,6 +6561,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_privacy_policy_versions_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -7150,6 +6610,7 @@
         "/api/v1/dashboard/privacy-policy-versions/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_privacy_policy_versions_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7187,6 +6648,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_privacy_policy_versions_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7244,6 +6706,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_privacy_policy_versions_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7300,6 +6763,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_privacy_policy_versions_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7332,6 +6796,7 @@
         "/api/v1/dashboard/semesters/": {
             "get": {
                 "operationId": "v1_dashboard_semesters_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -7403,6 +6868,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_semesters_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -7451,6 +6917,7 @@
         "/api/v1/dashboard/semesters/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_semesters_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7488,6 +6955,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_semesters_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7545,6 +7013,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_semesters_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7601,6 +7070,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_semesters_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7661,6 +7131,7 @@
         "/api/v1/dashboard/subjects/": {
             "get": {
                 "operationId": "v1_dashboard_subjects_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -7753,6 +7224,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_subjects_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -7801,6 +7273,7 @@
         "/api/v1/dashboard/subjects/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_subjects_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7838,6 +7311,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_subjects_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7895,6 +7369,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_subjects_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7951,6 +7426,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_subjects_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -7983,6 +7459,7 @@
         "/api/v1/dashboard/support/tickets/": {
             "get": {
                 "operationId": "v1_dashboard_support_tickets_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -8105,37 +7582,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_dashboard_support_tickets_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardSupportTicket"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/dashboard/support/tickets/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_support_tickets_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8168,73 +7620,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_dashboard_support_tickets_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا support ticket.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardSupportTicket"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_dashboard_support_tickets_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا support ticket.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -8472,6 +7857,7 @@
         "/api/v1/dashboard/terms-versions/": {
             "get": {
                 "operationId": "v1_dashboard_terms_versions_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "name": "page",
@@ -8518,6 +7904,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_terms_versions_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -8566,6 +7953,7 @@
         "/api/v1/dashboard/terms-versions/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_terms_versions_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8603,6 +7991,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_terms_versions_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8660,6 +8049,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_terms_versions_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8716,6 +8106,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_terms_versions_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8748,6 +8139,7 @@
         "/api/v1/dashboard/universities/": {
             "get": {
                 "operationId": "v1_dashboard_universities_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "query",
@@ -8819,6 +8211,7 @@
             },
             "post": {
                 "operationId": "v1_dashboard_universities_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "Dashboard"
                 ],
@@ -8867,6 +8260,7 @@
         "/api/v1/dashboard/universities/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_universities_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8904,6 +8298,7 @@
             },
             "put": {
                 "operationId": "v1_dashboard_universities_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -8961,6 +8356,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_universities_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -9017,6 +8413,7 @@
             },
             "delete": {
                 "operationId": "v1_dashboard_universities_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -9049,6 +8446,7 @@
         "/api/v1/dashboard/users/": {
             "get": {
                 "operationId": "v1_dashboard_users_list",
+                "description": "Read users, PATCH an allowed profile subset, and use explicit status actions.",
                 "parameters": [
                     {
                         "in": "query",
@@ -9148,57 +8546,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_dashboard_users_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/DashboardUserRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/DashboardUserRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/DashboardUserRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardUser"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/dashboard/users/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_users_retrieve",
+                "description": "Read users, PATCH an allowed profile subset, and use explicit status actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -9213,63 +8566,6 @@
                 "tags": [
                     "v1"
                 ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/DashboardUser"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_dashboard_users_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا user.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/DashboardUserRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/DashboardUserRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/DashboardUserRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
                 "security": [
                     {
                         "jwtAuth": []
@@ -9293,6 +8589,7 @@
             },
             "patch": {
                 "operationId": "v1_dashboard_users_partial_update",
+                "description": "Read users, PATCH an allowed profile subset, and use explicit status actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -9311,20 +8608,80 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedDashboardUserRequest"
+                                "$ref": "#/components/schemas/PatchedDashboardUserUpdateRequest"
                             }
                         },
                         "application/x-www-form-urlencoded": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedDashboardUserRequest"
+                                "$ref": "#/components/schemas/PatchedDashboardUserUpdateRequest"
                             }
                         },
                         "multipart/form-data": {
                             "schema": {
-                                "$ref": "#/components/schemas/PatchedDashboardUserRequest"
+                                "$ref": "#/components/schemas/PatchedDashboardUserUpdateRequest"
                             }
                         }
                     }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardUserUpdate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/users/{id}/activate/": {
+            "post": {
+                "operationId": "v1_dashboard_users_activate_create",
+                "description": "Read users, PATCH an allowed profile subset, and use explicit status actions.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا user.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DashboardUserRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DashboardUserRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DashboardUserRequest"
+                            }
+                        }
+                    },
+                    "required": true
                 },
                 "security": [
                     {
@@ -9346,9 +8703,12 @@
                         "description": ""
                     }
                 }
-            },
-            "delete": {
-                "operationId": "v1_dashboard_users_destroy",
+            }
+        },
+        "/api/v1/dashboard/users/{id}/deactivate/": {
+            "post": {
+                "operationId": "v1_dashboard_users_deactivate_create",
+                "description": "Read users, PATCH an allowed profile subset, and use explicit status actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -9363,6 +8723,26 @@
                 "tags": [
                     "v1"
                 ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DashboardUserRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DashboardUserRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DashboardUserRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
                 "security": [
                     {
                         "jwtAuth": []
@@ -9372,8 +8752,15 @@
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No response body"
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardUser"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -9514,6 +8901,7 @@
         "/api/v1/dashboard/verifications/": {
             "get": {
                 "operationId": "v1_dashboard_verifications_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -9618,57 +9006,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_dashboard_verifications_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerificationRequestRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerificationRequestRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerificationRequestRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/VerificationRequest"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/dashboard/verifications/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_verifications_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -9701,93 +9044,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_dashboard_verifications_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا verification request.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerificationRequestRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerificationRequestRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/VerificationRequestRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/VerificationRequest"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_dashboard_verifications_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا verification request.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -10029,6 +9285,7 @@
         "/api/v1/faculties/{faculty_pk}/majors/": {
             "get": {
                 "operationId": "v1_faculties_majors_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -10250,6 +9507,7 @@
         "/api/v1/feedback/mine/": {
             "get": {
                 "operationId": "v1_feedback_mine_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -10370,57 +9628,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_feedback_mine_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppFeedbackRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppFeedbackRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppFeedbackRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppFeedback"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/feedback/mine/{id}/": {
             "get": {
                 "operationId": "v1_feedback_mine_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -10453,93 +9666,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_feedback_mine_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا app feedback.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppFeedbackRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppFeedbackRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/AppFeedbackRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AppFeedback"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_feedback_mine_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا app feedback.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -10623,6 +9749,7 @@
         "/api/v1/feedback/suggestions/": {
             "get": {
                 "operationId": "v1_feedback_suggestions_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -10730,37 +9857,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_feedback_suggestions_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PublicSuggestion"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/feedback/suggestions/{id}/": {
             "get": {
                 "operationId": "v1_feedback_suggestions_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -10793,73 +9895,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_feedback_suggestions_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا app feedback.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PublicSuggestion"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_feedback_suggestions_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا app feedback.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -10867,6 +9902,7 @@
         "/api/v1/files/": {
             "get": {
                 "operationId": "v1_files_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -11007,57 +10043,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_files_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/FileResourceRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/FileResourceRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/FileResourceRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/FileResource"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/files/{id}/": {
             "get": {
                 "operationId": "v1_files_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -11090,93 +10081,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_files_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا file resource.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/FileResourceRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/FileResourceRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/FileResourceRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/FileResource"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_files_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا file resource.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -11223,6 +10127,7 @@
         "/api/v1/groups/": {
             "get": {
                 "operationId": "v1_groups_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "page",
@@ -11266,57 +10171,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_groups_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Group"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/groups/{group_id}/messages/": {
             "get": {
                 "operationId": "v1_groups_messages_list",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -11380,6 +10240,7 @@
             },
             "post": {
                 "operationId": "v1_groups_messages_create",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -11589,6 +10450,7 @@
         "/api/v1/groups/{group_id}/messages/{id}/": {
             "get": {
                 "operationId": "v1_groups_messages_retrieve",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -11633,6 +10495,7 @@
             },
             "delete": {
                 "operationId": "v1_groups_messages_destroy",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -11672,6 +10535,7 @@
         "/api/v1/groups/{group_pk}/files/": {
             "get": {
                 "operationId": "v1_groups_files_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -11825,6 +10689,7 @@
         "/api/v1/groups/{id}/": {
             "get": {
                 "operationId": "v1_groups_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -11857,93 +10722,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_groups_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا group.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Group"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_groups_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا group.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -12065,6 +10843,7 @@
         "/api/v1/groups/available/": {
             "get": {
                 "operationId": "v1_groups_available_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -12168,57 +10947,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_groups_available_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Group"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/groups/available/{id}/": {
             "get": {
                 "operationId": "v1_groups_available_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -12251,93 +10985,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_groups_available_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا group.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Group"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_groups_available_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا group.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -12345,6 +10992,7 @@
         "/api/v1/groups/my/": {
             "get": {
                 "operationId": "v1_groups_my_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "page",
@@ -12388,57 +11036,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_groups_my_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Group"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/groups/my/{id}/": {
             "get": {
                 "operationId": "v1_groups_my_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -12471,93 +11074,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_groups_my_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا group.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/GroupRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Group"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_groups_my_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا group.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -12639,6 +11155,7 @@
         "/api/v1/lectures/": {
             "get": {
                 "operationId": "v1_lectures_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "page",
@@ -12676,32 +11193,6 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/PaginatedLectureList"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "post": {
-                "operationId": "v1_lectures_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Lecture"
                                 }
                             }
                         },
@@ -12867,6 +11358,7 @@
         "/api/v1/lectures/{id}/": {
             "get": {
                 "operationId": "v1_lectures_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -12899,73 +11391,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_lectures_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا lecture.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Lecture"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_lectures_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا lecture.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -13312,6 +11737,7 @@
         "/api/v1/majors/{major_pk}/subjects/": {
             "get": {
                 "operationId": "v1_majors_subjects_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -13680,6 +12106,7 @@
         "/api/v1/notifications/": {
             "get": {
                 "operationId": "v1_notifications_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "ordering",
@@ -13732,37 +12159,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_notifications_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Notification"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/notifications/{id}/": {
             "get": {
                 "operationId": "v1_notifications_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -13795,73 +12197,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_notifications_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا notification.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Notification"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_notifications_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا notification.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -13907,6 +12242,7 @@
         "/api/v1/notifications/device-tokens/": {
             "post": {
                 "operationId": "v1_notifications_device_tokens_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "tags": [
                     "v1"
                 ],
@@ -13955,6 +12291,7 @@
         "/api/v1/notifications/device-tokens/{id}/": {
             "delete": {
                 "operationId": "v1_notifications_device_tokens_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
                 "parameters": [
                     {
                         "in": "path",
@@ -14318,6 +12655,7 @@
         "/api/v1/printing/orders/my/": {
             "get": {
                 "operationId": "v1_printing_orders_my_list",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "name": "ordering",
@@ -14401,37 +12739,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_printing_orders_my_create",
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MobilePrintOrder"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/printing/orders/my/{id}/": {
             "get": {
                 "operationId": "v1_printing_orders_my_retrieve",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "in": "path",
@@ -14464,73 +12777,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_printing_orders_my_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا print order.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MobilePrintOrder"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_printing_orders_my_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا print order.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -14538,6 +12784,7 @@
         "/api/v1/printing/pickup-locations/": {
             "get": {
                 "operationId": "v1_printing_pickup_locations_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "tags": [
                     "v1"
                 ],
@@ -14564,57 +12811,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_printing_pickup_locations_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PrintPickupLocationRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PrintPickupLocationRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PrintPickupLocationRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PrintPickupLocation"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/printing/pickup-locations/{id}/": {
             "get": {
                 "operationId": "v1_printing_pickup_locations_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -14647,93 +12849,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_printing_pickup_locations_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا print pickup location.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PrintPickupLocationRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PrintPickupLocationRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/PrintPickupLocationRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/PrintPickupLocation"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_printing_pickup_locations_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا print pickup location.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -14885,6 +13000,7 @@
         "/api/v1/semesters/": {
             "get": {
                 "operationId": "v1_semesters_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -14954,58 +13070,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_semesters_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SemesterRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SemesterRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SemesterRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Semester"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/semesters/{id}/": {
             "get": {
                 "operationId": "v1_semesters_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -15039,95 +13109,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_semesters_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا semester.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SemesterRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SemesterRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SemesterRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Semester"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_semesters_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا semester.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -15315,6 +13296,7 @@
         "/api/v1/support/tickets/": {
             "get": {
                 "operationId": "v1_support_tickets_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -15465,6 +13447,7 @@
         "/api/v1/support/tickets/{id}/": {
             "get": {
                 "operationId": "v1_support_tickets_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -15497,73 +13480,6 @@
                             }
                         },
                         "description": ""
-                    }
-                }
-            },
-            "put": {
-                "operationId": "v1_support_tickets_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا support ticket.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/MobileSupportTicket"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_support_tickets_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا support ticket.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
                     }
                 }
             }
@@ -15629,6 +13545,7 @@
         "/api/v1/support/tickets/my/": {
             "get": {
                 "operationId": "v1_support_tickets_my_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "query",
@@ -15733,6 +13650,7 @@
         "/api/v1/universities/": {
             "get": {
                 "operationId": "v1_universities_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "ordering",
@@ -15795,58 +13713,12 @@
                         "description": ""
                     }
                 }
-            },
-            "post": {
-                "operationId": "v1_universities_create",
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UniversityRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UniversityRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UniversityRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/University"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
             }
         },
         "/api/v1/universities/{id}/": {
             "get": {
                 "operationId": "v1_universities_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "in": "path",
@@ -15882,100 +13754,12 @@
                         "description": ""
                     }
                 }
-            },
-            "put": {
-                "operationId": "v1_universities_update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا university.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UniversityRequest"
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UniversityRequest"
-                            }
-                        },
-                        "multipart/form-data": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UniversityRequest"
-                            }
-                        }
-                    },
-                    "required": true
-                },
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/University"
-                                }
-                            }
-                        },
-                        "description": ""
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "v1_universities_destroy",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "schema": {
-                            "type": "integer"
-                        },
-                        "description": "نوع رقم صحيح فريد يحدد هذا university.",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "v1"
-                ],
-                "security": [
-                    {
-                        "jwtAuth": []
-                    },
-                    {
-                        "bearerAuth": []
-                    },
-                    {}
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No response body"
-                    }
-                }
             }
         },
         "/api/v1/universities/{university_pk}/faculties/": {
             "get": {
                 "operationId": "v1_universities_faculties_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
                 "parameters": [
                     {
                         "name": "ordering",
@@ -16220,8 +14004,9 @@
                     },
                     "order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -16255,8 +14040,9 @@
                     },
                     "order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -17306,18 +15092,21 @@
                     },
                     "cooldown_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "dismiss_cooldown_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "max_prompts_per_30_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "sample_percent": {
                         "type": "integer",
@@ -17388,18 +15177,21 @@
                     },
                     "cooldown_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "dismiss_cooldown_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "max_prompts_per_30_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "sample_percent": {
                         "type": "integer",
@@ -18104,7 +15896,8 @@
                         "$ref": "#/components/schemas/UserRoleEnum"
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "readOnly": true
                     },
                     "is_staff": {
                         "type": "boolean",
@@ -18152,6 +15945,7 @@
                     "email",
                     "full_name",
                     "id",
+                    "is_active",
                     "is_email_verified",
                     "is_phone_verified",
                     "is_staff",
@@ -18171,9 +15965,22 @@
                     },
                     "role": {
                         "$ref": "#/components/schemas/UserRoleEnum"
+                    }
+                },
+                "required": [
+                    "full_name"
+                ]
+            },
+            "DashboardUserUpdate": {
+                "type": "object",
+                "description": "The narrow PATCH surface for dashboard user administration.",
+                "properties": {
+                    "full_name": {
+                        "type": "string",
+                        "maxLength": 255
                     },
-                    "is_active": {
-                        "type": "boolean"
+                    "role": {
+                        "$ref": "#/components/schemas/UserRoleEnum"
                     }
                 },
                 "required": [
@@ -18196,8 +16003,9 @@
                     },
                     "build_number": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "push_token_hint": {
                         "type": "string",
@@ -18266,8 +16074,9 @@
                     },
                     "build_number": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "push_token": {
                         "type": "string",
@@ -19120,60 +16929,6 @@
                 "type": "string",
                 "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left"
             },
-            "GroupRequest": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 255
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "image": {
-                        "type": "string",
-                        "format": "binary",
-                        "nullable": true
-                    },
-                    "university": {
-                        "type": "integer"
-                    },
-                    "faculty": {
-                        "type": "integer",
-                        "nullable": true
-                    },
-                    "major": {
-                        "type": "integer",
-                        "nullable": true
-                    },
-                    "academic_year": {
-                        "type": "integer",
-                        "nullable": true
-                    },
-                    "semester": {
-                        "type": "integer",
-                        "nullable": true
-                    },
-                    "subject": {
-                        "type": "integer",
-                        "nullable": true
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "requires_approval": {
-                        "type": "boolean"
-                    },
-                    "send_messages_permission": {
-                        "$ref": "#/components/schemas/GroupSendMessagesPermissionEnum"
-                    }
-                },
-                "required": [
-                    "name",
-                    "university"
-                ]
-            },
             "GroupSendMessagesPermissionEnum": {
                 "enum": [
                     "all_members",
@@ -19266,8 +17021,9 @@
                     },
                     "page_number": {
                         "type": "integer",
-                        "maximum": 2147483647,
+                        "maximum": 9223372036854775807,
                         "minimum": 0,
+                        "format": "int64",
                         "nullable": true
                     },
                     "selected_text": {
@@ -19324,8 +17080,9 @@
                 "properties": {
                     "page_number": {
                         "type": "integer",
-                        "maximum": 2147483647,
+                        "maximum": 9223372036854775807,
                         "minimum": 0,
+                        "format": "int64",
                         "nullable": true
                     },
                     "selected_text": {
@@ -19471,8 +17228,9 @@
                     },
                     "retry_after_seconds": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_currently_active": {
                         "type": "boolean",
@@ -19534,8 +17292,9 @@
                     },
                     "retry_after_seconds": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     }
                 }
             },
@@ -19843,8 +17602,9 @@
                     },
                     "minimum_supported_build": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "latest_version": {
                         "type": "string",
@@ -19852,8 +17612,9 @@
                     },
                     "latest_build": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "update_mode": {
                         "$ref": "#/components/schemas/UpdateModeEnum"
@@ -19913,8 +17674,9 @@
                     },
                     "minimum_supported_build": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "latest_version": {
                         "type": "string",
@@ -19923,8 +17685,9 @@
                     },
                     "latest_build": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "update_mode": {
                         "$ref": "#/components/schemas/UpdateModeEnum"
@@ -21399,8 +19162,9 @@
                     },
                     "order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -21508,18 +19272,21 @@
                     },
                     "cooldown_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "dismiss_cooldown_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "max_prompts_per_30_days": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "sample_percent": {
                         "type": "integer",
@@ -21635,8 +19402,9 @@
                     }
                 }
             },
-            "PatchedDashboardUserRequest": {
+            "PatchedDashboardUserUpdateRequest": {
                 "type": "object",
+                "description": "The narrow PATCH surface for dashboard user administration.",
                 "properties": {
                     "full_name": {
                         "type": "string",
@@ -21645,9 +19413,6 @@
                     },
                     "role": {
                         "$ref": "#/components/schemas/UserRoleEnum"
-                    },
-                    "is_active": {
-                        "type": "boolean"
                     }
                 }
             },
@@ -21667,8 +19432,9 @@
                     },
                     "build_number": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "push_token": {
                         "type": "string",
@@ -21839,8 +19605,9 @@
                 "properties": {
                     "page_number": {
                         "type": "integer",
-                        "maximum": 2147483647,
+                        "maximum": 9223372036854775807,
                         "minimum": 0,
+                        "format": "int64",
                         "nullable": true
                     },
                     "selected_text": {
@@ -21915,8 +19682,9 @@
                     },
                     "retry_after_seconds": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     }
                 }
             },
@@ -21952,8 +19720,9 @@
                     },
                     "minimum_supported_build": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "latest_version": {
                         "type": "string",
@@ -21962,8 +19731,9 @@
                     },
                     "latest_build": {
                         "type": "integer",
-                        "maximum": 2147483647,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "update_mode": {
                         "$ref": "#/components/schemas/UpdateModeEnum"
@@ -22060,8 +19830,9 @@
                     },
                     "sort_order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     }
                 }
             },
@@ -22174,8 +19945,9 @@
                     },
                     "order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -22733,8 +20505,9 @@
                     },
                     "sort_order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     }
                 },
                 "required": [
@@ -22761,8 +20534,9 @@
                     },
                     "sort_order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     }
                 },
                 "required": [
@@ -23140,8 +20914,9 @@
                     },
                     "order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -23175,8 +20950,9 @@
                     },
                     "order": {
                         "type": "integer",
-                        "maximum": 32767,
-                        "minimum": 0
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -23244,6 +21020,19 @@
                 },
                 "required": [
                     "purpose"
+                ]
+            },
+            "SessionVersionTokenRefreshRequest": {
+                "type": "object",
+                "description": "Reject old refresh tokens before SimpleJWT rotates them.",
+                "properties": {
+                    "refresh": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "refresh"
                 ]
             },
             "SidesEnum": {
@@ -23821,18 +21610,6 @@
                     "version"
                 ]
             },
-            "TokenRefreshRequest": {
-                "type": "object",
-                "properties": {
-                    "refresh": {
-                        "type": "string",
-                        "minLength": 1
-                    }
-                },
-                "required": [
-                    "refresh"
-                ]
-            },
             "TypeEnum": {
                 "enum": [
                     "verification",
@@ -23968,6 +21745,13 @@
                         "nullable": true,
                         "readOnly": true
                     },
+                    "effective_capabilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
                     "date_joined": {
                         "type": "string",
                         "format": "date-time",
@@ -23976,6 +21760,7 @@
                 },
                 "required": [
                     "date_joined",
+                    "effective_capabilities",
                     "email",
                     "full_name",
                     "id",

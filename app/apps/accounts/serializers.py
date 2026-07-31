@@ -2,7 +2,6 @@ from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.db.models import Q
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
@@ -13,8 +12,10 @@ from apps.universities.serializers import (
     UniversitySerializer,
 )
 
+from .authentication import SessionVersionRefreshToken
 from .choices import OTPDeliveryChannel, OTPPurpose, StudentVerificationStatus, UserRole
 from .models import StudentProfile, User
+from .permissions import Capability, PermissionService
 from .services import OTPService
 from .student_number import FACULTY_CODE_LABELS, StudentNumberParser, apply_student_number_parse
 
@@ -127,6 +128,7 @@ class StudentAcademicProfileSerializer(StudentProfileSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     student_verification_status = serializers.SerializerMethodField()
+    effective_capabilities = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -140,6 +142,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_phone_verified",
             "is_email_verified",
             "student_verification_status",
+            "effective_capabilities",
             "date_joined",
         ]
         read_only_fields = [
@@ -150,12 +153,20 @@ class UserSerializer(serializers.ModelSerializer):
             "is_phone_verified",
             "is_email_verified",
             "student_verification_status",
+            "effective_capabilities",
             "date_joined",
         ]
 
     def get_student_verification_status(self, obj: User) -> str | None:
         profile = getattr(obj, "student_profile", None)
         return profile.verification_status if profile else None
+
+    def get_effective_capabilities(self, obj: User) -> list[str]:
+        return sorted(
+            value
+            for name, value in vars(Capability).items()
+            if name.isupper() and isinstance(value, str) and PermissionService.has(obj, value)
+        )
 
     def validate_username(self, value: str | None) -> str | None:
         if value == "":
@@ -264,7 +275,7 @@ class LoginSerializer(serializers.Serializer):
         if not (user.is_email_verified or user.is_phone_verified):
             raise serializers.ValidationError({"identifier": "Account verification is required before login."})
 
-        refresh = RefreshToken.for_user(user)
+        refresh = SessionVersionRefreshToken.for_user(user)
         attrs["user"] = user
         attrs["access"] = str(refresh.access_token)
         attrs["refresh"] = str(refresh)
@@ -289,14 +300,12 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def save(self, **kwargs):
         from django.utils import timezone
-        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
         user = self.context["request"].user
         user.set_password(self.validated_data["new_password"])
         user.last_password_change_at = timezone.now()
         user.save(update_fields=["password", "last_password_change_at", "updated_at"])
-        for token in OutstandingToken.objects.filter(user=user):
-            BlacklistedToken.objects.get_or_create(token=token)
+        user.invalidate_sessions()
         return user
 
 
@@ -405,7 +414,6 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
     @transaction.atomic
     def save(self, **kwargs):
         from django.utils import timezone
-        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
         identifier = self.validated_data["identifier"]
         channel = self.validated_data["channel"]
@@ -421,6 +429,5 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
         user.set_password(self.validated_data["new_password"])
         user.last_password_change_at = timezone.now()
         user.save(update_fields=["password", "last_password_change_at", "updated_at"])
-        for token in OutstandingToken.objects.filter(user=user):
-            BlacklistedToken.objects.get_or_create(token=token)
+        user.invalidate_sessions()
         return user

@@ -1,4 +1,5 @@
 import importlib
+import logging
 import sys
 from unittest.mock import patch
 
@@ -12,6 +13,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.choices import UserRole
 from apps.accounts.models import User
+from apps.common.logging import JSONFormatter, SensitiveDataFilter
 
 
 def test_get_csv_env_uses_primary_before_fallback(monkeypatch):
@@ -115,6 +117,25 @@ def test_health_endpoint_is_public():
             "service": "panorama_backend",
         },
     }
+
+
+def test_structured_logging_redacts_sensitive_values():
+    record = logging.LogRecord(
+        "panorama.test",
+        logging.INFO,
+        __file__,
+        1,
+        "Authorization=Bearer should-not-appear password=never-log",
+        (),
+        None,
+    )
+    record.request_id = "request-test"
+    assert SensitiveDataFilter().filter(record) is True
+    rendered = JSONFormatter().format(record)
+
+    assert "should-not-appear" not in rendered
+    assert "never-log" not in rendered
+    assert "request-test" in rendered
 
 
 def test_liveness_endpoint_is_public_and_does_not_require_dependencies():

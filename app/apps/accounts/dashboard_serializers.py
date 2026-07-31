@@ -39,6 +39,7 @@ class DashboardUserSerializer(serializers.ModelSerializer):
             "username",
             "email",
             "phone_number",
+            "is_active",
             "is_staff",
             "is_phone_verified",
             "is_email_verified",
@@ -53,9 +54,41 @@ class DashboardUserSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_overrides(self, obj) -> list[dict[str, object]]:
-        return UserPermissionOverrideSerializer(
-            obj.permission_overrides.filter(is_deleted=False).order_by("permission_code"), many=True
-        ).data
+        return list(
+            UserPermissionOverrideSerializer(
+                obj.permission_overrides.filter(is_deleted=False).order_by("permission_code"),
+                many=True,
+            ).data
+        )
+
+
+class DashboardUserUpdateSerializer(serializers.ModelSerializer):
+    """The narrow PATCH surface for dashboard user administration."""
+
+    class Meta:
+        model = User
+        fields = ["full_name", "role"]
+
+    def validate(self, attrs):
+        unexpected = set(self.initial_data) - set(self.fields)
+        if unexpected:
+            raise serializers.ValidationError(
+                {field: "This field is not writable through dashboard user PATCH." for field in sorted(unexpected)}
+            )
+        instance = self.instance
+        request = self.context["request"]
+        if instance and instance.pk == request.user.pk and attrs.get("role", instance.role) != instance.role:
+            raise serializers.ValidationError({"role": "You cannot change your own role."})
+        if (
+            instance
+            and instance.role == UserRole.IT_SUPPORT
+            and attrs.get("role", instance.role) != UserRole.IT_SUPPORT
+            and not User.objects.filter(role=UserRole.IT_SUPPORT, is_active=True, is_deleted=False)
+            .exclude(pk=instance.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError({"role": "The system must keep at least one active IT Support account."})
+        return attrs
 
     def validate_role(self, value):
         request = self.context["request"]
@@ -63,26 +96,9 @@ class DashboardUserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Only IT Support can grant the IT Support role.")
         return value
 
-    def update(self, instance, validated_data):
-        request = self.context["request"]
-        if instance.pk == request.user.pk:
-            if "role" in validated_data and validated_data["role"] != instance.role:
-                raise serializers.ValidationError({"role": "You cannot change your own role."})
-            if validated_data.get("is_active") is False:
-                raise serializers.ValidationError({"is_active": "You cannot disable your own account."})
-        if instance.role == UserRole.IT_SUPPORT and instance.is_active:
-            removing_last = (
-                validated_data.get("role", instance.role) != UserRole.IT_SUPPORT
-                or validated_data.get("is_active", instance.is_active) is False
-            )
-            if (
-                removing_last
-                and not User.objects.filter(role=UserRole.IT_SUPPORT, is_active=True, is_deleted=False)
-                .exclude(pk=instance.pk)
-                .exists()
-            ):
-                raise serializers.ValidationError("The system must keep at least one active IT Support account.")
-        return super().update(instance, validated_data)
+
+class DashboardDeactivateUserSerializer(serializers.Serializer):
+    reason = serializers.CharField(min_length=3, max_length=255, trim_whitespace=True)
 
 
 class UserPermissionOverrideSerializer(serializers.ModelSerializer):

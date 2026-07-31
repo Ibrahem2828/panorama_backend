@@ -4,7 +4,6 @@ from rest_framework import permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.common.responses import error_response, success_response
@@ -17,6 +16,7 @@ from apps.common.throttles import (
 )
 from apps.product.services import feature_enabled_or_raise
 
+from .authentication import SessionVersionTokenRefreshSerializer
 from .serializers import (
     ChangePasswordSerializer,
     ConfirmPasswordResetSerializer,
@@ -36,7 +36,7 @@ class NormalUserRegisterView(APIView):
     throttle_classes = [RegistrationRateThrottle]
     serializer_class = NormalUserRegisterSerializer
 
-    @extend_schema(request=NormalUserRegisterSerializer, responses={201: UserSerializer})
+    @extend_schema(auth=[], request=NormalUserRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
         feature_enabled_or_raise("registrations_enabled", request=request)
         serializer = NormalUserRegisterSerializer(data=request.data)
@@ -60,7 +60,7 @@ class StudentRegisterView(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     serializer_class = StudentRegisterSerializer
 
-    @extend_schema(request=StudentRegisterSerializer, responses={201: UserSerializer})
+    @extend_schema(auth=[], request=StudentRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
         feature_enabled_or_raise("registrations_enabled", request=request)
         serializer = StudentRegisterSerializer(data=request.data)
@@ -83,7 +83,7 @@ class LoginView(APIView):
     throttle_classes = [LoginRateThrottle]
     serializer_class = LoginSerializer
 
-    @extend_schema(request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
+    @extend_schema(auth=[], request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
     def post(self, request):
         feature_enabled_or_raise("otp_email_enabled", request=request)
         serializer = LoginSerializer(data=request.data)
@@ -104,12 +104,16 @@ class LoginView(APIView):
 class TokenRefreshView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [LoginRateThrottle]
-    serializer_class = TokenRefreshSerializer
+    serializer_class = SessionVersionTokenRefreshSerializer
 
-    @extend_schema(request=TokenRefreshSerializer, responses={200: OpenApiResponse(description="JWT refresh response")})
+    @extend_schema(
+        auth=[],
+        request=SessionVersionTokenRefreshSerializer,
+        responses={200: OpenApiResponse(description="JWT refresh response")},
+    )
     def post(self, request):
         feature_enabled_or_raise("otp_email_enabled", request=request)
-        serializer = TokenRefreshSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         return success_response(
             data=serializer.validated_data,
@@ -174,7 +178,7 @@ class SendOTPView(APIView):
     throttle_classes = [OTPRequestRateThrottle]
     serializer_class = SendOTPSerializer
 
-    @extend_schema(request=SendOTPSerializer)
+    @extend_schema(auth=[], request=SendOTPSerializer)
     def post(self, request):
         serializer = SendOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -195,7 +199,7 @@ class VerifyOTPView(APIView):
     throttle_classes = [OTPVerifyRateThrottle]
     serializer_class = VerifyOTPSerializer
 
-    @extend_schema(request=VerifyOTPSerializer)
+    @extend_schema(auth=[], request=VerifyOTPSerializer)
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -208,7 +212,7 @@ class RequestPasswordResetView(APIView):
     throttle_classes = [PasswordResetRateThrottle]
     serializer_class = RequestPasswordResetSerializer
 
-    @extend_schema(request=RequestPasswordResetSerializer)
+    @extend_schema(auth=[], request=RequestPasswordResetSerializer)
     def post(self, request):
         serializer = RequestPasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -231,7 +235,7 @@ class ConfirmPasswordResetView(APIView):
     throttle_classes = [OTPVerifyRateThrottle]
     serializer_class = ConfirmPasswordResetSerializer
 
-    @extend_schema(request=ConfirmPasswordResetSerializer)
+    @extend_schema(auth=[], request=ConfirmPasswordResetSerializer)
     def post(self, request):
         serializer = ConfirmPasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

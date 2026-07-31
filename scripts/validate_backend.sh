@@ -57,6 +57,11 @@ if [[ "${DEPLOY_CHECK}" == "1" ]]; then
     export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-https://dashboard.example.com}"
     export DATABASE_URL="${DATABASE_URL:-postgres://user:pass@localhost:5432/panorama}"
     export REDIS_URL="${REDIS_URL:-redis://localhost:6379/0}"
+    export FIELD_ENCRYPTION_KEY="${FIELD_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}"
+    export EMAIL_HOST="${EMAIL_HOST:-smtp.example.test}"
+    export EMAIL_HOST_USER="${EMAIL_HOST_USER:-validation@example.test}"
+    export EMAIL_HOST_PASSWORD="${EMAIL_HOST_PASSWORD:-validation-only-password}"
+    export STORAGE_BACKEND="${STORAGE_BACKEND:-local}"
     export SECURE_SSL_REDIRECT="${SECURE_SSL_REDIRECT:-True}"
     export SESSION_COOKIE_SECURE="${SESSION_COOKIE_SECURE:-True}"
     export CSRF_COOKIE_SECURE="${CSRF_COOKIE_SECURE:-True}"
@@ -77,26 +82,16 @@ trap 'rm -f "${SCHEMA_PATH}"' EXIT
 "${PYTHON}" app/manage.py spectacular --file "${SCHEMA_PATH}" --validate --settings config.settings.testing
 
 step "focused pytest: API contract"
-"${PYTHON}" -m pytest app/apps/common/tests_api_contract_collections.py
+"${PYTHON}" -m pytest app/apps/common/tests_mvp_hardening.py app/apps/common/tests_readonly_contract.py
 
 step "focused pytest: production hardening"
 "${PYTHON}" -m pytest app/apps/common/tests_production_hardening.py
 
 step "focused pytest: Phase 2 security"
-"${PYTHON}" -m pytest app/apps/common/tests_phase2_security.py
+"${PYTHON}" -m pytest app/apps/common/tests_phase2.py
 
 step "focused pytest: Phase 3 reliability"
-"${PYTHON}" -m pytest app/apps/common/tests_phase3_reliability.py
-
-if [[ -f app/apps/common/tests_phase4_observability.py ]]; then
-    step "focused pytest: Phase 4 observability"
-    "${PYTHON}" -m pytest app/apps/common/tests_phase4_observability.py
-fi
-
-if [[ -f app/apps/common/tests_phase5_deployment.py ]]; then
-    step "focused pytest: Phase 5 deployment"
-    "${PYTHON}" -m pytest app/apps/common/tests_phase5_deployment.py
-fi
+"${PYTHON}" -m pytest app/apps/common/tests_phase3.py
 
 step "pytest"
 "${PYTHON}" -m pytest

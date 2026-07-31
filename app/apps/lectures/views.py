@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from django.db import transaction
@@ -20,7 +21,7 @@ from apps.common.throttles import LectureNotesRateThrottle, LectureViewerRateThr
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 from apps.product.services import feature_enabled_or_raise
 
-from .models import Lecture, LectureNote, LecturePage, LectureViewEvent
+from .models import Lecture, LectureNote, LecturePage, LectureProcessingStatus, LectureViewEvent
 from .serializers import DashboardLectureSerializer, LectureNoteSerializer, LectureSerializer
 from .services import (
     accessible_lectures_for_user,
@@ -29,6 +30,24 @@ from .services import (
     user_can_manage_lectures,
 )
 from .tasks import process_lecture_document
+
+logger = logging.getLogger(__name__)
+
+
+def _dispatch_lecture_processing(lecture_id: int) -> None:
+    """Dispatch after commit and make a broker failure observable and recoverable."""
+
+    try:
+        process_lecture_document.delay(lecture_id)
+    except Exception:
+        with transaction.atomic():
+            lecture = Lecture.objects.select_for_update().filter(pk=lecture_id, is_deleted=False).first()
+            if lecture and lecture.status == LectureProcessingStatus.QUEUED:
+                lecture.status = LectureProcessingStatus.FAILED
+                lecture.failure_code = "DISPATCH_FAILED"
+                lecture.failure_message = "Processing dispatch failed. Retry from the dashboard."
+                lecture.save(update_fields=["status", "failure_code", "failure_message", "updated_at"])
+        logger.exception("lecture_processing_dispatch_failed", extra={"lecture_id": lecture_id})
 
 
 class NoteVersionConflict(APIException):
@@ -76,16 +95,22 @@ class DashboardLectureViewSet(StandardModelViewSet):
 
     def perform_create(self, serializer):
         feature_enabled_or_raise("lecture_upload_enabled", request=self.request)
-        lecture = serializer.save(uploaded_by=self.request.user)
-        AuditLogService.log(
-            actor=self.request.user,
-            action=AuditAction.LECTURE_UPLOADED,
-            target=lecture,
-            new_value={"subject_id": lecture.subject_id, "sha256": lecture.original_sha256},
-            request=self.request,
-        )
         feature_enabled_or_raise("lecture_processing_enabled", request=self.request)
-        transaction.on_commit(lambda: process_lecture_document.delay(lecture.id))
+        with transaction.atomic():
+            lecture = serializer.save(uploaded_by=self.request.user)
+            AuditLogService.log(
+                actor=self.request.user,
+                action=AuditAction.LECTURE_UPLOADED,
+                target=lecture,
+                new_value={"subject_id": lecture.subject_id, "sha256": lecture.original_sha256},
+                request=self.request,
+            )
+            lecture_id = lecture.id
+
+            def dispatch() -> None:
+                _dispatch_lecture_processing(lecture_id)
+
+            transaction.on_commit(dispatch)
 
 
 class LectureViewerManifestView(APIView):
@@ -175,7 +200,7 @@ class LectureViewerTextView(APIView):
 class LectureProcessingStatusView(APIView):
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, pk: int):
-        feature_enabled_or_raise("lecture_notes_enabled", request=request)
+        feature_enabled_or_raise("lecture_processing_enabled", request=request)
         lecture = get_object_or_404(accessible_lectures_for_user(request.user), pk=pk)
         data = {"status": lecture.status, "page_count": lecture.page_count, "is_ready": lecture.is_ready_for_students}
         if user_can_manage_lectures(request.user):

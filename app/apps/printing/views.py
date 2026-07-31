@@ -19,7 +19,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle
-from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
+from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import (
     PrintBindingPrice,
@@ -103,7 +103,7 @@ class PrintPickupLocationViewSet(StandardReadOnlyModelViewSet):
         return PrintPickupLocation.objects.filter(is_active=True, is_deleted=False)
 
 
-class MyPrintOrderViewSet(StandardReadOnlyModelViewSet):
+class MyPrintOrderViewSet(StandardExplicitActionViewSet):
     serializer_class = MobilePrintOrderSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["status", "priority"]

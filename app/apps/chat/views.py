@@ -16,7 +16,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 from apps.common.throttles import ChatMessageRateThrottle, ChatReportRateThrottle, FileTicketRateThrottle
-from apps.common.viewsets import StandardReadOnlyModelViewSet
+from apps.common.viewsets import StandardExplicitActionViewSet
 from apps.groups.models import Group
 
 from .models import Message, MessageAttachmentAccessTicket, MessageReport
@@ -24,7 +24,7 @@ from .serializers import MessageCreateSerializer, MessageReportSerializer, Messa
 from .services import ChatPermissionService
 
 
-class GroupMessageViewSet(StandardReadOnlyModelViewSet):
+class GroupMessageViewSet(StandardExplicitActionViewSet):
     serializer_class = MessageSerializer
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     filter_backends = [filters.OrderingFilter]

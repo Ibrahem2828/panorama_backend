@@ -7,6 +7,11 @@ paths:
   /api/v1/academic-years/:
     get:
       operationId: v1_academic_years_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: is_active
@@ -49,36 +54,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAcademicYearList'
           description: ''
-    post:
-      operationId: v1_academic_years_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AcademicYearRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AcademicYearRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AcademicYearRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AcademicYear'
-          description: ''
   /api/v1/academic-years/{id}/:
     get:
       operationId: v1_academic_years_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -99,58 +82,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/AcademicYear'
           description: ''
-    put:
-      operationId: v1_academic_years_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا academic year.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AcademicYearRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AcademicYearRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AcademicYearRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AcademicYear'
-          description: ''
-    delete:
-      operationId: v1_academic_years_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا academic year.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '204':
-          description: No response body
   /api/v1/account/deletion/cancel/:
     post:
       operationId: v1_account_deletion_cancel_create
@@ -210,6 +141,11 @@ paths:
   /api/v1/announcements/:
     get:
       operationId: v1_announcements_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: ordering
         required: false
@@ -283,35 +219,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAnnouncementList'
           description: ''
-    post:
-      operationId: v1_announcements_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Announcement'
-          description: ''
   /api/v1/announcements/{id}/:
     get:
       operationId: v1_announcements_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -331,56 +246,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Announcement'
           description: ''
-    put:
-      operationId: v1_announcements_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا announcement.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AnnouncementRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Announcement'
-          description: ''
-    delete:
-      operationId: v1_announcements_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا announcement.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/auth/change-password/:
     post:
       operationId: v1_auth_change_password_create
@@ -421,10 +286,6 @@ paths:
             schema:
               $ref: '#/components/schemas/ConfirmPasswordResetRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -449,10 +310,6 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '200':
           description: JWT login response
@@ -540,10 +397,6 @@ paths:
             schema:
               $ref: '#/components/schemas/SendOTPRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -568,10 +421,6 @@ paths:
             schema:
               $ref: '#/components/schemas/VerifyOTPRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -596,10 +445,6 @@ paths:
             schema:
               $ref: '#/components/schemas/NormalUserRegisterRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '201':
           content:
@@ -624,10 +469,6 @@ paths:
             schema:
               $ref: '#/components/schemas/StudentRegisterRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '201':
           content:
@@ -651,10 +492,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/RequestPasswordResetRequest'
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -671,24 +508,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
+              $ref: '#/components/schemas/SessionVersionTokenRefreshRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
+              $ref: '#/components/schemas/SessionVersionTokenRefreshRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
+              $ref: '#/components/schemas/SessionVersionTokenRefreshRequest'
         required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
       responses:
         '200':
           description: JWT refresh response
   /api/v1/dashboard/academic-years/:
     get:
       operationId: v1_dashboard_academic_years_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: is_active
@@ -732,6 +566,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_academic_years_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -759,6 +594,7 @@ paths:
   /api/v1/dashboard/academic-years/{id}/:
     get:
       operationId: v1_dashboard_academic_years_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -780,6 +616,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_academic_years_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -813,6 +650,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_academic_years_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -845,6 +683,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_academic_years_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -863,6 +702,7 @@ paths:
   /api/v1/dashboard/announcements/:
     get:
       operationId: v1_dashboard_announcements_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: is_active
@@ -942,6 +782,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_announcements_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -969,6 +810,7 @@ paths:
   /api/v1/dashboard/announcements/{id}/:
     get:
       operationId: v1_dashboard_announcements_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -990,6 +832,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_announcements_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1023,6 +866,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_announcements_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1055,6 +899,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_announcements_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1073,6 +918,11 @@ paths:
   /api/v1/dashboard/audit-logs/:
     get:
       operationId: v1_dashboard_audit_logs_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: action
@@ -1240,23 +1090,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAuditLogList'
           description: ''
-    post:
-      operationId: v1_dashboard_audit_logs_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuditLog'
-          description: ''
   /api/v1/dashboard/audit-logs/{id}/:
     get:
       operationId: v1_dashboard_audit_logs_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -1276,44 +1117,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuditLog'
           description: ''
-    put:
-      operationId: v1_dashboard_audit_logs_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا audit log.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuditLog'
-          description: ''
-    delete:
-      operationId: v1_dashboard_audit_logs_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا audit log.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/dashboard/capabilities/:
     get:
       operationId: v1_dashboard_capabilities_retrieve
@@ -1333,6 +1136,7 @@ paths:
   /api/v1/dashboard/faculties/:
     get:
       operationId: v1_dashboard_faculties_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: is_active
@@ -1380,6 +1184,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_faculties_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -1407,6 +1212,7 @@ paths:
   /api/v1/dashboard/faculties/{id}/:
     get:
       operationId: v1_dashboard_faculties_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1428,6 +1234,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_faculties_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1461,6 +1268,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_faculties_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1493,6 +1301,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_faculties_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1511,6 +1320,7 @@ paths:
   /api/v1/dashboard/feature-flags/:
     get:
       operationId: v1_dashboard_feature_flags_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - name: page
         required: false
@@ -1538,6 +1348,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_feature_flags_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -1565,6 +1376,7 @@ paths:
   /api/v1/dashboard/feature-flags/{id}/:
     get:
       operationId: v1_dashboard_feature_flags_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1586,6 +1398,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_feature_flags_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1619,6 +1432,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_feature_flags_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1651,6 +1465,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_feature_flags_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1669,6 +1484,11 @@ paths:
   /api/v1/dashboard/feedback/:
     get:
       operationId: v1_dashboard_feedback_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: action_key
@@ -1820,20 +1640,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedDashboardFeedbackList'
           description: ''
-    post:
-      operationId: v1_dashboard_feedback_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardFeedback'
-          description: ''
   /api/v1/dashboard/feedback-analytics/:
     get:
       operationId: v1_dashboard_feedback_analytics_retrieve
@@ -1853,6 +1659,7 @@ paths:
   /api/v1/dashboard/feedback-prompt-policies/:
     get:
       operationId: v1_dashboard_feedback_prompt_policies_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       security:
@@ -1869,6 +1676,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_feedback_prompt_policies_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -1896,6 +1704,7 @@ paths:
   /api/v1/dashboard/feedback-prompt-policies/{id}/:
     get:
       operationId: v1_dashboard_feedback_prompt_policies_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1917,6 +1726,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_feedback_prompt_policies_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1950,6 +1760,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_feedback_prompt_policies_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -1982,6 +1793,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_feedback_prompt_policies_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2000,6 +1812,11 @@ paths:
   /api/v1/dashboard/feedback/{id}/:
     get:
       operationId: v1_dashboard_feedback_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -2019,44 +1836,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardFeedback'
           description: ''
-    put:
-      operationId: v1_dashboard_feedback_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا app feedback.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardFeedback'
-          description: ''
-    delete:
-      operationId: v1_dashboard_feedback_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا app feedback.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/dashboard/feedback/{id}/workflow/:
     patch:
       operationId: v1_dashboard_feedback_workflow_partial_update
@@ -2092,6 +1871,7 @@ paths:
   /api/v1/dashboard/files/:
     get:
       operationId: v1_dashboard_files_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: academic_year
@@ -2185,6 +1965,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_files_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -2212,6 +1993,7 @@ paths:
   /api/v1/dashboard/files/{id}/:
     get:
       operationId: v1_dashboard_files_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2233,6 +2015,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_files_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2266,6 +2049,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_files_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2298,6 +2082,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_files_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2411,6 +2196,7 @@ paths:
   /api/v1/dashboard/groups/:
     get:
       operationId: v1_dashboard_groups_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: academic_year
@@ -2478,6 +2264,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_groups_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -2505,6 +2292,11 @@ paths:
   /api/v1/dashboard/groups/{group_pk}/join-requests/:
     get:
       operationId: v1_dashboard_groups_join_requests_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: group_pk
@@ -2578,6 +2370,11 @@ paths:
   /api/v1/dashboard/groups/{group_pk}/memberships/:
     get:
       operationId: v1_dashboard_groups_memberships_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: group_pk
@@ -2651,6 +2448,7 @@ paths:
   /api/v1/dashboard/groups/{id}/:
     get:
       operationId: v1_dashboard_groups_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2672,6 +2470,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_groups_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2705,6 +2504,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_groups_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2737,6 +2537,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_groups_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2788,6 +2589,7 @@ paths:
   /api/v1/dashboard/lectures/:
     get:
       operationId: v1_dashboard_lectures_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - name: page
         required: false
@@ -2815,6 +2617,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_lectures_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -2842,6 +2645,7 @@ paths:
   /api/v1/dashboard/lectures/{id}/:
     get:
       operationId: v1_dashboard_lectures_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2863,6 +2667,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_lectures_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2896,6 +2701,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_lectures_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2928,6 +2734,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_lectures_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -2963,6 +2770,7 @@ paths:
   /api/v1/dashboard/maintenance-modes/:
     get:
       operationId: v1_dashboard_maintenance_modes_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - name: page
         required: false
@@ -2990,6 +2798,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_maintenance_modes_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -3016,6 +2825,7 @@ paths:
   /api/v1/dashboard/maintenance-modes/{id}/:
     get:
       operationId: v1_dashboard_maintenance_modes_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3037,6 +2847,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_maintenance_modes_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3069,6 +2880,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_maintenance_modes_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3101,6 +2913,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_maintenance_modes_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3119,6 +2932,7 @@ paths:
   /api/v1/dashboard/majors/:
     get:
       operationId: v1_dashboard_majors_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: faculty
@@ -3170,6 +2984,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_majors_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -3197,6 +3012,7 @@ paths:
   /api/v1/dashboard/majors/{id}/:
     get:
       operationId: v1_dashboard_majors_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3218,6 +3034,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_majors_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3251,6 +3068,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_majors_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3283,6 +3101,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_majors_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3301,6 +3120,7 @@ paths:
   /api/v1/dashboard/mobile-release-policies/:
     get:
       operationId: v1_dashboard_mobile_release_policies_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - name: page
         required: false
@@ -3328,6 +3148,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_mobile_release_policies_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -3355,6 +3176,7 @@ paths:
   /api/v1/dashboard/mobile-release-policies/{id}/:
     get:
       operationId: v1_dashboard_mobile_release_policies_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3376,6 +3198,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_mobile_release_policies_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3409,6 +3232,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_mobile_release_policies_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3441,6 +3265,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_mobile_release_policies_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -3646,6 +3471,11 @@ paths:
   /api/v1/dashboard/printing/orders/:
     get:
       operationId: v1_dashboard_printing_orders_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: assigned_to
@@ -3729,23 +3559,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedDashboardPrintOrderList'
           description: ''
-    post:
-      operationId: v1_dashboard_printing_orders_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardPrintOrder'
-          description: ''
   /api/v1/dashboard/printing/orders/{id}/:
     get:
       operationId: v1_dashboard_printing_orders_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -3765,44 +3586,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardPrintOrder'
           description: ''
-    put:
-      operationId: v1_dashboard_printing_orders_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا print order.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardPrintOrder'
-          description: ''
-    delete:
-      operationId: v1_dashboard_printing_orders_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا print order.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/dashboard/printing/orders/{id}/assign/:
     patch:
       operationId: v1_dashboard_printing_orders_assign_partial_update
@@ -4278,6 +4061,7 @@ paths:
   /api/v1/dashboard/privacy-policy-versions/:
     get:
       operationId: v1_dashboard_privacy_policy_versions_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - name: page
         required: false
@@ -4305,6 +4089,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_privacy_policy_versions_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -4332,6 +4117,7 @@ paths:
   /api/v1/dashboard/privacy-policy-versions/{id}/:
     get:
       operationId: v1_dashboard_privacy_policy_versions_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4353,6 +4139,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_privacy_policy_versions_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4386,6 +4173,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_privacy_policy_versions_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4418,6 +4206,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_privacy_policy_versions_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4436,6 +4225,7 @@ paths:
   /api/v1/dashboard/semesters/:
     get:
       operationId: v1_dashboard_semesters_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: is_active
@@ -4479,6 +4269,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_semesters_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -4506,6 +4297,7 @@ paths:
   /api/v1/dashboard/semesters/{id}/:
     get:
       operationId: v1_dashboard_semesters_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4527,6 +4319,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_semesters_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4560,6 +4353,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_semesters_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4592,6 +4386,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_semesters_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4625,6 +4420,7 @@ paths:
   /api/v1/dashboard/subjects/:
     get:
       operationId: v1_dashboard_subjects_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: academic_year
@@ -4680,6 +4476,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_subjects_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -4707,6 +4504,7 @@ paths:
   /api/v1/dashboard/subjects/{id}/:
     get:
       operationId: v1_dashboard_subjects_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4728,6 +4526,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_subjects_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4761,6 +4560,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_subjects_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4793,6 +4593,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_subjects_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -4811,6 +4612,11 @@ paths:
   /api/v1/dashboard/support/tickets/:
     get:
       operationId: v1_dashboard_support_tickets_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: assigned_to
@@ -4908,23 +4714,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedDashboardSupportTicketList'
           description: ''
-    post:
-      operationId: v1_dashboard_support_tickets_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardSupportTicket'
-          description: ''
   /api/v1/dashboard/support/tickets/{id}/:
     get:
       operationId: v1_dashboard_support_tickets_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -4944,44 +4741,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardSupportTicket'
           description: ''
-    put:
-      operationId: v1_dashboard_support_tickets_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا support ticket.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardSupportTicket'
-          description: ''
-    delete:
-      operationId: v1_dashboard_support_tickets_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا support ticket.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/dashboard/support/tickets/{id}/assign/:
     post:
       operationId: v1_dashboard_support_tickets_assign_create
@@ -5115,6 +4874,7 @@ paths:
   /api/v1/dashboard/terms-versions/:
     get:
       operationId: v1_dashboard_terms_versions_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - name: page
         required: false
@@ -5142,6 +4902,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_terms_versions_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -5169,6 +4930,7 @@ paths:
   /api/v1/dashboard/terms-versions/{id}/:
     get:
       operationId: v1_dashboard_terms_versions_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5190,6 +4952,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_terms_versions_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5223,6 +4986,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_terms_versions_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5255,6 +5019,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_terms_versions_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5273,6 +5038,7 @@ paths:
   /api/v1/dashboard/universities/:
     get:
       operationId: v1_dashboard_universities_list
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
         name: is_active
@@ -5316,6 +5082,7 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_universities_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - Dashboard
       requestBody:
@@ -5343,6 +5110,7 @@ paths:
   /api/v1/dashboard/universities/{id}/:
     get:
       operationId: v1_dashboard_universities_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5364,6 +5132,7 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_universities_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5397,6 +5166,7 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_universities_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5429,6 +5199,7 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_universities_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -5447,6 +5218,8 @@ paths:
   /api/v1/dashboard/users/:
     get:
       operationId: v1_dashboard_users_list
+      description: Read users, PATCH an allowed profile subset, and use explicit status
+        actions.
       parameters:
       - in: query
         name: is_active
@@ -5516,35 +5289,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedDashboardUserList'
           description: ''
-    post:
-      operationId: v1_dashboard_users_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DashboardUserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DashboardUserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DashboardUserRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardUser'
-          description: ''
   /api/v1/dashboard/users/{id}/:
     get:
       operationId: v1_dashboard_users_retrieve
+      description: Read users, PATCH an allowed profile subset, and use explicit status
+        actions.
       parameters:
       - in: path
         name: id
@@ -5554,39 +5303,6 @@ paths:
         required: true
       tags:
       - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardUser'
-          description: ''
-    put:
-      operationId: v1_dashboard_users_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا user.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DashboardUserRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DashboardUserRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DashboardUserRequest'
-        required: true
       security:
       - jwtAuth: []
       - bearerAuth: []
@@ -5599,6 +5315,8 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_users_partial_update
+      description: Read users, PATCH an allowed profile subset, and use explicit status
+        actions.
       parameters:
       - in: path
         name: id
@@ -5612,13 +5330,49 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedDashboardUserRequest'
+              $ref: '#/components/schemas/PatchedDashboardUserUpdateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedDashboardUserRequest'
+              $ref: '#/components/schemas/PatchedDashboardUserUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedDashboardUserRequest'
+              $ref: '#/components/schemas/PatchedDashboardUserUpdateRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardUserUpdate'
+          description: ''
+  /api/v1/dashboard/users/{id}/activate/:
+    post:
+      operationId: v1_dashboard_users_activate_create
+      description: Read users, PATCH an allowed profile subset, and use explicit status
+        actions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا user.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+        required: true
       security:
       - jwtAuth: []
       - bearerAuth: []
@@ -5629,8 +5383,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardUser'
           description: ''
-    delete:
-      operationId: v1_dashboard_users_destroy
+  /api/v1/dashboard/users/{id}/deactivate/:
+    post:
+      operationId: v1_dashboard_users_deactivate_create
+      description: Read users, PATCH an allowed profile subset, and use explicit status
+        actions.
       parameters:
       - in: path
         name: id
@@ -5640,12 +5397,28 @@ paths:
         required: true
       tags:
       - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+        required: true
       security:
       - jwtAuth: []
       - bearerAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardUser'
+          description: ''
   /api/v1/dashboard/users/{user_id}/permission-overrides/:
     get:
       operationId: v1_dashboard_users_permission_overrides_retrieve
@@ -5725,6 +5498,11 @@ paths:
   /api/v1/dashboard/verifications/:
     get:
       operationId: v1_dashboard_verifications_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: academic_year
@@ -5794,35 +5572,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedVerificationRequestList'
           description: ''
-    post:
-      operationId: v1_dashboard_verifications_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerificationRequestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/VerificationRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/VerificationRequestRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerificationRequest'
-          description: ''
   /api/v1/dashboard/verifications/{id}/:
     get:
       operationId: v1_dashboard_verifications_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -5842,56 +5599,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/VerificationRequest'
           description: ''
-    put:
-      operationId: v1_dashboard_verifications_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا verification request.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/VerificationRequestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/VerificationRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/VerificationRequestRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerificationRequest'
-          description: ''
-    delete:
-      operationId: v1_dashboard_verifications_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا verification request.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/dashboard/verifications/{id}/approve/:
     post:
       operationId: v1_dashboard_verifications_approve_create
@@ -6028,6 +5735,11 @@ paths:
   /api/v1/faculties/{faculty_pk}/majors/:
     get:
       operationId: v1_faculties_majors_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: faculty_pk
@@ -6157,6 +5869,11 @@ paths:
   /api/v1/feedback/mine/:
     get:
       operationId: v1_feedback_mine_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: context
@@ -6272,35 +5989,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAppFeedbackList'
           description: ''
-    post:
-      operationId: v1_feedback_mine_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AppFeedbackRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AppFeedbackRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AppFeedbackRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppFeedback'
-          description: ''
   /api/v1/feedback/mine/{id}/:
     get:
       operationId: v1_feedback_mine_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -6320,56 +6016,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppFeedback'
           description: ''
-    put:
-      operationId: v1_feedback_mine_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا app feedback.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AppFeedbackRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AppFeedbackRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AppFeedbackRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppFeedback'
-          description: ''
-    delete:
-      operationId: v1_feedback_mine_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا app feedback.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/feedback/prompt/:
     get:
       operationId: v1_feedback_prompt_retrieve
@@ -6415,6 +6061,11 @@ paths:
   /api/v1/feedback/suggestions/:
     get:
       operationId: v1_feedback_suggestions_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: context
@@ -6516,23 +6167,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedPublicSuggestionList'
           description: ''
-    post:
-      operationId: v1_feedback_suggestions_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicSuggestion'
-          description: ''
   /api/v1/feedback/suggestions/{id}/:
     get:
       operationId: v1_feedback_suggestions_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -6552,47 +6194,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicSuggestion'
           description: ''
-    put:
-      operationId: v1_feedback_suggestions_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا app feedback.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicSuggestion'
-          description: ''
-    delete:
-      operationId: v1_feedback_suggestions_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا app feedback.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/files/:
     get:
       operationId: v1_files_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: academic_year
@@ -6684,35 +6293,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedFileResourceList'
           description: ''
-    post:
-      operationId: v1_files_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FileResourceRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/FileResourceRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/FileResourceRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileResource'
-          description: ''
   /api/v1/files/{id}/:
     get:
       operationId: v1_files_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -6732,56 +6320,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/FileResource'
           description: ''
-    put:
-      operationId: v1_files_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا file resource.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FileResourceRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/FileResourceRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/FileResourceRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileResource'
-          description: ''
-    delete:
-      operationId: v1_files_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا file resource.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/files/{id}/access-ticket/:
     post:
       operationId: v1_files_access_ticket_create
@@ -6807,6 +6345,11 @@ paths:
   /api/v1/groups/:
     get:
       operationId: v1_groups_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: page
         required: false
@@ -6832,35 +6375,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedGroupList'
           description: ''
-    post:
-      operationId: v1_groups_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-          description: ''
   /api/v1/groups/{group_id}/messages/:
     get:
       operationId: v1_groups_messages_list
+      description: Base for a deliberately small set of custom, documented write actions.
       parameters:
       - in: path
         name: group_id
@@ -6899,6 +6417,7 @@ paths:
           description: ''
     post:
       operationId: v1_groups_messages_create
+      description: Base for a deliberately small set of custom, documented write actions.
       parameters:
       - in: path
         name: group_id
@@ -7018,6 +6537,7 @@ paths:
   /api/v1/groups/{group_id}/messages/{id}/:
     get:
       operationId: v1_groups_messages_retrieve
+      description: Base for a deliberately small set of custom, documented write actions.
       parameters:
       - in: path
         name: group_id
@@ -7043,6 +6563,7 @@ paths:
           description: ''
     delete:
       operationId: v1_groups_messages_destroy
+      description: Base for a deliberately small set of custom, documented write actions.
       parameters:
       - in: path
         name: group_id
@@ -7065,6 +6586,11 @@ paths:
   /api/v1/groups/{group_pk}/files/:
     get:
       operationId: v1_groups_files_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: academic_year
@@ -7164,6 +6690,11 @@ paths:
   /api/v1/groups/{id}/:
     get:
       operationId: v1_groups_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -7183,56 +6714,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
-    put:
-      operationId: v1_groups_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا group.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-          description: ''
-    delete:
-      operationId: v1_groups_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا group.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/groups/{id}/join/:
     post:
       operationId: v1_groups_join_create
@@ -7299,6 +6780,11 @@ paths:
   /api/v1/groups/available/:
     get:
       operationId: v1_groups_available_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: academic_year
@@ -7360,35 +6846,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedGroupList'
           description: ''
-    post:
-      operationId: v1_groups_available_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-          description: ''
   /api/v1/groups/available/{id}/:
     get:
       operationId: v1_groups_available_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -7408,59 +6873,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
-    put:
-      operationId: v1_groups_available_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا group.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-          description: ''
-    delete:
-      operationId: v1_groups_available_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا group.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/groups/my/:
     get:
       operationId: v1_groups_my_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: page
         required: false
@@ -7486,35 +6906,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedGroupList'
           description: ''
-    post:
-      operationId: v1_groups_my_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-          description: ''
   /api/v1/groups/my/{id}/:
     get:
       operationId: v1_groups_my_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -7534,56 +6933,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
-    put:
-      operationId: v1_groups_my_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا group.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/GroupRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-          description: ''
-    delete:
-      operationId: v1_groups_my_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا group.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/health/:
     get:
       operationId: v1_health_retrieve
@@ -7635,6 +6984,11 @@ paths:
   /api/v1/lectures/:
     get:
       operationId: v1_lectures_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: page
         required: false
@@ -7659,20 +7013,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedLectureList'
-          description: ''
-    post:
-      operationId: v1_lectures_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Lecture'
           description: ''
   /api/v1/lectures/{lecture_id}/notes/{note_id}/:
     get:
@@ -7765,6 +7105,11 @@ paths:
   /api/v1/lectures/{id}/:
     get:
       operationId: v1_lectures_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -7784,44 +7129,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Lecture'
           description: ''
-    put:
-      operationId: v1_lectures_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا lecture.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Lecture'
-          description: ''
-    delete:
-      operationId: v1_lectures_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا lecture.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/lectures/{id}/notes/:
     get:
       operationId: v1_lectures_notes_list
@@ -8017,6 +7324,11 @@ paths:
   /api/v1/majors/{major_pk}/subjects/:
     get:
       operationId: v1_majors_subjects_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: academic_year
@@ -8233,6 +7545,11 @@ paths:
   /api/v1/notifications/:
     get:
       operationId: v1_notifications_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: ordering
         required: false
@@ -8264,23 +7581,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedNotificationList'
           description: ''
-    post:
-      operationId: v1_notifications_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Notification'
-          description: ''
   /api/v1/notifications/{id}/:
     get:
       operationId: v1_notifications_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -8300,44 +7608,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Notification'
           description: ''
-    put:
-      operationId: v1_notifications_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا notification.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Notification'
-          description: ''
-    delete:
-      operationId: v1_notifications_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا notification.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/notifications/{id}/read/:
     post:
       operationId: v1_notifications_read_create
@@ -8362,6 +7632,7 @@ paths:
   /api/v1/notifications/device-tokens/:
     post:
       operationId: v1_notifications_device_tokens_create
+      description: Standard envelopes for the two methods safe for read-only resources.
       tags:
       - v1
       requestBody:
@@ -8389,6 +7660,7 @@ paths:
   /api/v1/notifications/device-tokens/{id}/:
     delete:
       operationId: v1_notifications_device_tokens_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: path
         name: id
@@ -8591,6 +7863,7 @@ paths:
   /api/v1/printing/orders/my/:
     get:
       operationId: v1_printing_orders_my_list
+      description: Base for a deliberately small set of custom, documented write actions.
       parameters:
       - name: ordering
         required: false
@@ -8656,23 +7929,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedMobilePrintOrderList'
           description: ''
-    post:
-      operationId: v1_printing_orders_my_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MobilePrintOrder'
-          description: ''
   /api/v1/printing/orders/my/{id}/:
     get:
       operationId: v1_printing_orders_my_retrieve
+      description: Base for a deliberately small set of custom, documented write actions.
       parameters:
       - in: path
         name: id
@@ -8692,47 +7952,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/MobilePrintOrder'
           description: ''
-    put:
-      operationId: v1_printing_orders_my_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا print order.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MobilePrintOrder'
-          description: ''
-    delete:
-      operationId: v1_printing_orders_my_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا print order.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/printing/pickup-locations/:
     get:
       operationId: v1_printing_pickup_locations_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       tags:
       - v1
       security:
@@ -8747,35 +7974,14 @@ paths:
                 items:
                   $ref: '#/components/schemas/PrintPickupLocation'
           description: ''
-    post:
-      operationId: v1_printing_pickup_locations_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PrintPickupLocationRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PrintPickupLocationRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PrintPickupLocationRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PrintPickupLocation'
-          description: ''
   /api/v1/printing/pickup-locations/{id}/:
     get:
       operationId: v1_printing_pickup_locations_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -8795,56 +8001,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PrintPickupLocation'
           description: ''
-    put:
-      operationId: v1_printing_pickup_locations_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا print pickup location.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PrintPickupLocationRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PrintPickupLocationRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PrintPickupLocationRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PrintPickupLocation'
-          description: ''
-    delete:
-      operationId: v1_printing_pickup_locations_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا print pickup location.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/printing/quote/:
     post:
       operationId: v1_printing_quote_create
@@ -8929,6 +8085,11 @@ paths:
   /api/v1/semesters/:
     get:
       operationId: v1_semesters_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: is_active
@@ -8971,36 +8132,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSemesterList'
           description: ''
-    post:
-      operationId: v1_semesters_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SemesterRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SemesterRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SemesterRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Semester'
-          description: ''
   /api/v1/semesters/{id}/:
     get:
       operationId: v1_semesters_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -9021,58 +8160,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Semester'
           description: ''
-    put:
-      operationId: v1_semesters_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا semester.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SemesterRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SemesterRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SemesterRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Semester'
-          description: ''
-    delete:
-      operationId: v1_semesters_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا semester.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '204':
-          description: No response body
   /api/v1/students/me/profile/:
     get:
       operationId: v1_students_me_profile_retrieve
@@ -9176,6 +8263,11 @@ paths:
   /api/v1/support/tickets/:
     get:
       operationId: v1_support_tickets_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: category
@@ -9288,6 +8380,11 @@ paths:
   /api/v1/support/tickets/{id}/:
     get:
       operationId: v1_support_tickets_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -9307,44 +8404,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/MobileSupportTicket'
           description: ''
-    put:
-      operationId: v1_support_tickets_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا support ticket.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MobileSupportTicket'
-          description: ''
-    delete:
-      operationId: v1_support_tickets_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا support ticket.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/v1/support/tickets/{id}/messages/:
     post:
       operationId: v1_support_tickets_messages_create
@@ -9381,6 +8440,11 @@ paths:
   /api/v1/support/tickets/my/:
     get:
       operationId: v1_support_tickets_my_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: query
         name: category
@@ -9467,6 +8531,11 @@ paths:
   /api/v1/universities/:
     get:
       operationId: v1_universities_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: ordering
         required: false
@@ -9505,36 +8574,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedUniversityList'
           description: ''
-    post:
-      operationId: v1_universities_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UniversityRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UniversityRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UniversityRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/University'
-          description: ''
   /api/v1/universities/{id}/:
     get:
       operationId: v1_universities_retrieve
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - in: path
         name: id
@@ -9555,61 +8602,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/University'
           description: ''
-    put:
-      operationId: v1_universities_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا university.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UniversityRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UniversityRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UniversityRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/University'
-          description: ''
-    delete:
-      operationId: v1_universities_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: نوع رقم صحيح فريد يحدد هذا university.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      - bearerAuth: []
-      - {}
-      responses:
-        '204':
-          description: No response body
   /api/v1/universities/{university_pk}/faculties/:
     get:
       operationId: v1_universities_faculties_list
+      description: |-
+        List/retrieve only.
+
+        DRF routers discover actions by attribute. Write methods must never be added
+        to this class, otherwise a nominally read-only resource becomes writable.
       parameters:
       - name: ordering
         required: false
@@ -9753,8 +8753,9 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_active:
           type: boolean
         created_at:
@@ -9780,8 +8781,9 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_active:
           type: boolean
       required:
@@ -10665,16 +9667,19 @@ components:
           maxLength: 32
         cooldown_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         dismiss_cooldown_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         max_prompts_per_30_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         sample_percent:
           type: integer
           maximum: 100
@@ -10729,16 +9734,19 @@ components:
           maxLength: 32
         cooldown_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         dismiss_cooldown_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         max_prompts_per_30_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         sample_percent:
           type: integer
           maximum: 100
@@ -11262,6 +10270,7 @@ components:
           $ref: '#/components/schemas/UserRoleEnum'
         is_active:
           type: boolean
+          readOnly: true
         is_staff:
           type: boolean
           readOnly: true
@@ -11298,6 +10307,7 @@ components:
       - email
       - full_name
       - id
+      - is_active
       - is_email_verified
       - is_phone_verified
       - is_staff
@@ -11314,8 +10324,17 @@ components:
           maxLength: 255
         role:
           $ref: '#/components/schemas/UserRoleEnum'
-        is_active:
-          type: boolean
+      required:
+      - full_name
+    DashboardUserUpdate:
+      type: object
+      description: The narrow PATCH surface for dashboard user administration.
+      properties:
+        full_name:
+          type: string
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
       required:
       - full_name
     DeviceInstallation:
@@ -11331,8 +10350,9 @@ components:
           maxLength: 32
         build_number:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         push_token_hint:
           type: string
           readOnly: true
@@ -11385,8 +10405,9 @@ components:
           maxLength: 32
         build_number:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         push_token:
           type: string
           writeOnly: true
@@ -12051,45 +11072,6 @@ components:
         * `rejected` - Rejected
         * `blocked` - Blocked
         * `left` - Left
-    GroupRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        description:
-          type: string
-        image:
-          type: string
-          format: binary
-          nullable: true
-        university:
-          type: integer
-        faculty:
-          type: integer
-          nullable: true
-        major:
-          type: integer
-          nullable: true
-        academic_year:
-          type: integer
-          nullable: true
-        semester:
-          type: integer
-          nullable: true
-        subject:
-          type: integer
-          nullable: true
-        is_active:
-          type: boolean
-        requires_approval:
-          type: boolean
-        send_messages_permission:
-          $ref: '#/components/schemas/GroupSendMessagesPermissionEnum'
-      required:
-      - name
-      - university
     GroupSendMessagesPermissionEnum:
       enum:
       - all_members
@@ -12163,8 +11145,9 @@ components:
           readOnly: true
         page_number:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           nullable: true
         selected_text:
           type: string
@@ -12207,8 +11190,9 @@ components:
       properties:
         page_number:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           nullable: true
         selected_text:
           type: string
@@ -12326,8 +11310,9 @@ components:
           type: boolean
         retry_after_seconds:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_currently_active:
           type: boolean
           readOnly: true
@@ -12373,8 +11358,9 @@ components:
           type: boolean
         retry_after_seconds:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
     Major:
       type: object
       properties:
@@ -12610,15 +11596,17 @@ components:
           maxLength: 32
         minimum_supported_build:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         latest_version:
           type: string
           maxLength: 32
         latest_build:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         update_mode:
           $ref: '#/components/schemas/UpdateModeEnum'
         store_url:
@@ -12659,16 +11647,18 @@ components:
           maxLength: 32
         minimum_supported_build:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         latest_version:
           type: string
           minLength: 1
           maxLength: 32
         latest_build:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         update_mode:
           $ref: '#/components/schemas/UpdateModeEnum'
         store_url:
@@ -13762,8 +12752,9 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_active:
           type: boolean
     PatchedAnnouncementRequest:
@@ -13840,16 +12831,19 @@ components:
           maxLength: 32
         cooldown_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         dismiss_cooldown_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         max_prompts_per_30_days:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         sample_percent:
           type: integer
           maximum: 100
@@ -13930,8 +12924,9 @@ components:
           writeOnly: true
         is_published:
           type: boolean
-    PatchedDashboardUserRequest:
+    PatchedDashboardUserUpdateRequest:
       type: object
+      description: The narrow PATCH surface for dashboard user administration.
       properties:
         full_name:
           type: string
@@ -13939,8 +12934,6 @@ components:
           maxLength: 255
         role:
           $ref: '#/components/schemas/UserRoleEnum'
-        is_active:
-          type: boolean
     PatchedDeviceInstallationRequest:
       type: object
       properties:
@@ -13954,8 +12947,9 @@ components:
           maxLength: 32
         build_number:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         push_token:
           type: string
           writeOnly: true
@@ -14074,8 +13068,9 @@ components:
       properties:
         page_number:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
           nullable: true
         selected_text:
           type: string
@@ -14130,8 +13125,9 @@ components:
           type: boolean
         retry_after_seconds:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
     PatchedMajorRequest:
       type: object
       properties:
@@ -14156,16 +13152,18 @@ components:
           maxLength: 32
         minimum_supported_build:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         latest_version:
           type: string
           minLength: 1
           maxLength: 32
         latest_build:
           type: integer
-          maximum: 2147483647
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         update_mode:
           $ref: '#/components/schemas/UpdateModeEnum'
         store_url:
@@ -14230,8 +13228,9 @@ components:
           type: boolean
         sort_order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
     PatchedPrintPricingRuleRequest:
       type: object
       properties:
@@ -14310,8 +13309,9 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_active:
           type: boolean
     PatchedStudentAcademicProfileRequest:
@@ -14723,8 +13723,9 @@ components:
           type: boolean
         sort_order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
       required:
       - id
       - name
@@ -14743,8 +13744,9 @@ components:
           type: boolean
         sort_order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
       required:
       - name
     PrintPricingRule:
@@ -15017,8 +14019,9 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_active:
           type: boolean
         created_at:
@@ -15044,8 +14047,9 @@ components:
           maxLength: 100
         order:
           type: integer
-          maximum: 32767
+          maximum: 9223372036854775807
           minimum: 0
+          format: int64
         is_active:
           type: boolean
       required:
@@ -15094,6 +14098,15 @@ components:
           $ref: '#/components/schemas/SendOTPPurposeEnum'
       required:
       - purpose
+    SessionVersionTokenRefreshRequest:
+      type: object
+      description: Reject old refresh tokens before SimpleJWT rotates them.
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
     SidesEnum:
       enum:
       - one_sided
@@ -15529,14 +14542,6 @@ components:
           format: date-time
       required:
       - version
-    TokenRefreshRequest:
-      type: object
-      properties:
-        refresh:
-          type: string
-          minLength: 1
-      required:
-      - refresh
     TypeEnum:
       enum:
       - verification
@@ -15651,12 +14656,18 @@ components:
           type: string
           nullable: true
           readOnly: true
+        effective_capabilities:
+          type: array
+          items:
+            type: string
+          readOnly: true
         date_joined:
           type: string
           format: date-time
           readOnly: true
       required:
       - date_joined
+      - effective_capabilities
       - email
       - full_name
       - id
