@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING, Any, cast
+
 from django.contrib.auth.base_user import BaseUserManager
 
 from .choices import UserRole
+
+if TYPE_CHECKING:
+    from .models import User
 
 
 class UserManager(BaseUserManager):
@@ -9,19 +14,21 @@ class UserManager(BaseUserManager):
     def _normalize_email(self, email: str) -> str:
         return self.normalize_email(email).lower()
 
-    def create_user(self, email: str, phone_number: str, password: str | None = None, **extra_fields):
+    def create_user(self, email: str, phone_number: str, password: str | None = None, **extra_fields: Any) -> "User":
         if not email:
             raise ValueError("Users must have an email address")
         if not phone_number:
             raise ValueError("Users must have a phone number")
 
         email = self._normalize_email(email)
-        user = self.model(email=email, phone_number=phone_number.strip(), **extra_fields)
+        user = cast("User", self.model(email=email, phone_number=phone_number.strip(), **extra_fields))
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, phone_number: str, password: str | None = None, **extra_fields):
+    def create_superuser(
+        self, email: str, phone_number: str, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         extra_fields.setdefault("role", UserRole.IT_SUPPORT)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)

@@ -24,7 +24,18 @@ class SensitiveDataFilter(logging.Filter):
 class JSONFormatter(logging.Formatter):
     """Emit a stable, one-line JSON log record without request payloads."""
 
-    request_fields = ("request_id", "user_id_hash", "route", "method", "status", "duration_ms")
+    request_fields = (
+        "request_id",
+        "user_id_hash",
+        "route",
+        "method",
+        "status",
+        "duration_ms",
+        "code",
+        "dependency",
+        "failure_class",
+        "pending_migration_count",
+    )
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {

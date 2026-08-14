@@ -44,7 +44,7 @@ print("Python syntax check passed")
 PY
 
 step "Django system check"
-"${PYTHON}" app/manage.py check
+"${PYTHON}" app/manage.py check --settings config.settings.testing
 
 step "Django migration check"
 "${PYTHON}" app/manage.py makemigrations --check --dry-run --settings config.settings.testing
@@ -73,25 +73,24 @@ if [[ "${DEPLOY_CHECK}" == "1" ]]; then
     "${PYTHON}" app/manage.py check --deploy --settings config.settings.production
 fi
 
-step "API collection JSON validation"
-"${PYTHON}" -c "import json, pathlib; [json.loads(pathlib.Path(p).read_text(encoding='utf-8')) for p in ('docs/api/mobile_api_collection.json', 'docs/api/dashboard_api_collection.json')]; print('API collections are valid JSON')"
+step "Canonical OpenAPI validation"
+"${PYTHON}" scripts/openapi_contract.py validate
 
-step "OpenAPI schema validation"
-SCHEMA_PATH="$(mktemp "${TMPDIR:-/tmp}/panorama_openapi.XXXXXX.yml")"
-trap 'rm -f "${SCHEMA_PATH}"' EXIT
-"${PYTHON}" app/manage.py spectacular --file "${SCHEMA_PATH}" --validate --settings config.settings.testing
+step "Canonical OpenAPI drift check"
+"${PYTHON}" scripts/openapi_contract.py check-drift
 
-step "focused pytest: API contract"
-"${PYTHON}" -m pytest app/apps/common/tests_mvp_hardening.py app/apps/common/tests_readonly_contract.py
+step "Ruff"
+"${PYTHON}" -m ruff check .
+"${PYTHON}" -m ruff format --check .
 
-step "focused pytest: production hardening"
-"${PYTHON}" -m pytest app/apps/common/tests_production_hardening.py
+step "Mypy"
+"${PYTHON}" -m mypy app
 
-step "focused pytest: Phase 2 security"
-"${PYTHON}" -m pytest app/apps/common/tests_phase2.py
+step "Bandit"
+"${PYTHON}" -m bandit -q -r app -x '*/migrations/*,*/tests/*' --severity-level medium
 
-step "focused pytest: Phase 3 reliability"
-"${PYTHON}" -m pytest app/apps/common/tests_phase3.py
+step "focused pytest: WebSocket hardening"
+"${PYTHON}" -m pytest app/apps/chat/tests_handshake_tickets.py
 
 step "pytest"
 "${PYTHON}" -m pytest

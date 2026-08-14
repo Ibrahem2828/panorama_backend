@@ -71,10 +71,10 @@ def triage_feedback(self, feedback_id: int) -> str:
         triage.model = "rules"
         triage.model_version = "1"
         triage.redacted_text = redacted
-        triage.topic = result["topic"]
-        triage.sentiment = result["sentiment"]
-        triage.suggested_priority = result["priority"]
-        triage.confidence = result["confidence"]
+        triage.topic = str(result["topic"])
+        triage.sentiment = str(result["sentiment"])
+        triage.suggested_priority = str(result["priority"])
+        triage.confidence = str(result["confidence"])
         triage.failure_reason = ""
         triage.save()
         return "completed"

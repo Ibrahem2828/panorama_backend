@@ -44,7 +44,7 @@ class OTPService:
             OTPPurpose.REGISTER: "إنشاء الحساب",
             OTPPurpose.VERIFY_PHONE: "تأكيد الحساب",
         }
-        purpose_label = purpose_labels.get(purpose, "تأكيد الحساب")
+        purpose_label = purpose_labels.get(OTPPurpose(purpose), "تأكيد الحساب")
         body = (
             "مرحبًا بك في بانوراما،\n\n"
             f"رمز التحقق الخاص بعملية {purpose_label} هو: {raw_code}\n"

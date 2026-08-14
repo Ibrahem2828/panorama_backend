@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
+from typing import Any, cast
 
 from rest_framework import serializers
 
@@ -28,16 +30,21 @@ class PrintOrderItemInputSerializer(serializers.Serializer):
     )
     uploaded_file = serializers.FileField(required=False, allow_null=True, write_only=True)
     copies = serializers.IntegerField(min_value=1, max_value=99, default=1)
-    color_mode = serializers.ChoiceField(choices=PrintOrderItem._meta.get_field("color_mode").choices)
-    paper_size = serializers.ChoiceField(choices=PrintOrderItem._meta.get_field("paper_size").choices)
-    sides = serializers.ChoiceField(choices=PrintOrderItem._meta.get_field("sides").choices)
-    binding = serializers.ChoiceField(choices=PrintOrderItem._meta.get_field("binding").choices)
+    color_mode = serializers.ChoiceField(
+        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("color_mode").choices)
+    )
+    paper_size = serializers.ChoiceField(
+        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("paper_size").choices)
+    )
+    sides = serializers.ChoiceField(choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("sides").choices))
+    binding = serializers.ChoiceField(choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("binding").choices))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request and request.user.is_authenticated:
-            self.fields["source_file"].queryset = accessible_files_for_user(request.user).filter(is_printable=True)
+            source_file = cast(serializers.PrimaryKeyRelatedField, self.fields["source_file"])
+            source_file.queryset = accessible_files_for_user(request.user).filter(is_printable=True)
 
     def validate_uploaded_file(self, value):
         return validate_document_upload(value, "uploaded_file") if value else value
@@ -219,11 +226,11 @@ class BasePrintRequestSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request and "items" in self.fields:
-            item_serializer = self.fields["items"].child
+            items = cast(serializers.ListSerializer, self.fields["items"])
+            item_serializer = cast(PrintOrderItemInputSerializer, items.child)
             item_serializer.context.update({"request": request})
-            item_serializer.fields["source_file"].queryset = accessible_files_for_user(request.user).filter(
-                is_printable=True
-            )
+            source_file = cast(serializers.PrimaryKeyRelatedField, item_serializer.fields["source_file"])
+            source_file.queryset = accessible_files_for_user(request.user).filter(is_printable=True)
 
     def to_internal_value(self, data):
         mutable = data.copy()

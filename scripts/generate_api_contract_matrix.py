@@ -29,11 +29,7 @@ def consumer_for(path: str) -> str:
 
 def authentication_for(path: str, operation: dict[str, Any]) -> str:
     security = operation.get("security")
-    if (
-        path.startswith(PUBLIC_PREFIXES)
-        or security in (None, [])
-        or any(requirement == {} for requirement in security)
-    ):
+    if path.startswith(PUBLIC_PREFIXES) or security in (None, []) or any(requirement == {} for requirement in security):
         return "Public"
     return "Bearer JWT"
 

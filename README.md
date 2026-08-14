@@ -24,6 +24,15 @@ and [Mobile collection](integrations/api/panorama-mobile-api.postman_collection.
 .venv\Scripts\python.exe app\manage.py makemigrations --check --dry-run --settings=config.settings.testing
 .venv\Scripts\python.exe app\manage.py storage_status --settings=config.settings.testing --write-test
 .venv\Scripts\python.exe app\manage.py document_pipeline_status --settings=config.settings.testing
+.venv\Scripts\python.exe scripts\openapi_contract.py validate
+.venv\Scripts\python.exe scripts\openapi_contract.py check-drift
+.\scripts\validate_backend.ps1 -DeployCheck
+```
+
+After a deliberate API change, regenerate every canonical consumer artifact:
+
+```powershell
+.venv\Scripts\python.exe scripts\openapi_contract.py generate
 ```
 
 Testing uses SQLite, in-memory Channels, and local cache. It is intentionally

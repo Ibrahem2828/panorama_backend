@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 271
+**Operations:** 272
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -200,6 +200,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_groups_available_retrieve | GET | /api/v1/groups/available/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_my_list | GET | /api/v1/groups/my/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_my_retrieve | GET | /api/v1/groups/my/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_groups_chat_ticket_create | POST | /api/v1/groups/{group_id}/chat-ticket/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 201 | 401, 403, 429, 503 | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_list | GET | /api/v1/groups/{group_id}/messages/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_create | POST | /api/v1/groups/{group_id}/messages/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/MessageCreateRequest; multipart/form-data: #/components/schemas/MessageCreateRequest; application/x-www-form-urlencoded: #/components/schemas/MessageCreateRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_destroy | DELETE | /api/v1/groups/{group_id}/messages/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 204 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
@@ -256,7 +257,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_printing_pickup_locations_retrieve | GET | /api/v1/printing/pickup-locations/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_printing_quote_create | POST | /api/v1/printing/quote/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PrintQuoteRequest; multipart/form-data: #/components/schemas/PrintQuoteRequest; application/x-www-form-urlencoded: #/components/schemas/PrintQuoteRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_protected_chat_attachments_retrieve | GET | /api/v1/protected-chat-attachments/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
-| v1_protected_files_retrieve | GET | /api/v1/protected-files/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_protected_files_retrieve | GET | /api/v1/protected-files/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200, 206 | 416 | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_protected_print_items_retrieve | GET | /api/v1/protected-print-items/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_semesters_list | GET | /api/v1/semesters/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_semesters_retrieve | GET | /api/v1/semesters/{id}/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |

@@ -15,13 +15,56 @@ from rest_framework.views import APIView
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
-from apps.common.throttles import ChatMessageRateThrottle, ChatReportRateThrottle, FileTicketRateThrottle
+from apps.common.throttles import (
+    ChatMessageRateThrottle,
+    ChatReportRateThrottle,
+    ChatTicketRateThrottle,
+    FileTicketRateThrottle,
+)
 from apps.common.viewsets import StandardExplicitActionViewSet
 from apps.groups.models import Group
 
 from .models import Message, MessageAttachmentAccessTicket, MessageReport
-from .serializers import MessageCreateSerializer, MessageReportSerializer, MessageSerializer
-from .services import ChatPermissionService
+from .serializers import (
+    ChatHandshakeTicketSerializer,
+    MessageCreateSerializer,
+    MessageReportSerializer,
+    MessageSerializer,
+)
+from .services import ChatHandshakeTicketService, ChatPermissionService
+
+
+class GroupChatHandshakeTicketView(APIView):
+    """Create the sole supported credential for a group-chat WebSocket handshake."""
+
+    throttle_classes = [ChatTicketRateThrottle]
+    serializer_class = ChatHandshakeTicketSerializer
+
+    @extend_schema(
+        tags=["Chat"],
+        request=None,
+        responses={
+            201: ChatHandshakeTicketSerializer,
+            401: OpenApiResponse(description="REST authentication is required."),
+            403: OpenApiResponse(description="The authenticated user cannot access this group's chat."),
+            429: OpenApiResponse(description="Chat-ticket issuance is throttled per authenticated user."),
+            503: OpenApiResponse(description="The required ticket cache is temporarily unavailable."),
+        },
+    )
+    def post(self, request, group_id: int):
+        group = get_object_or_404(Group, pk=group_id, is_active=True, is_deleted=False)
+        ticket = ChatHandshakeTicketService.issue(user=request.user, group=group)
+        return success_response(
+            data={
+                "ticket": ticket.token,
+                "expires_at": ticket.expires_at,
+                "websocket_path": f"/ws/v1/groups/{group.pk}/chat/",
+            },
+            message="Short-lived group chat handshake ticket issued",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="CHAT_HANDSHAKE_TICKET_ISSUED",
+        )
 
 
 class GroupMessageViewSet(StandardExplicitActionViewSet):

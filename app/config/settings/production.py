@@ -39,6 +39,13 @@ CHANNEL_LAYERS = {
     }
 }
 
+if not 30 <= WEBSOCKET_CHAT_TICKET_TTL_SECONDS <= 60:  # noqa: F405
+    raise ImproperlyConfigured("WEBSOCKET_CHAT_TICKET_TTL_SECONDS must be between 30 and 60 seconds in production.")
+if WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED:  # noqa: F405
+    raise ImproperlyConfigured(
+        "WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED is deprecated and must remain disabled in production."
+    )
+
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=True)

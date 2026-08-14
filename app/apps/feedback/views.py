@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
@@ -9,6 +11,7 @@ from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import filters, status
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import CanManageFeedback
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
@@ -127,7 +130,9 @@ class MyFeedbackViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return AppFeedback.objects.none()
-        return AppFeedback.objects.filter(user=self.request.user, is_deleted=False).annotate(votes_count=Count("votes"))
+        return AppFeedback.objects.filter(user=cast(User, self.request.user), is_deleted=False).annotate(
+            votes_count=Count("votes")
+        )
 
 
 class PublicSuggestionViewSet(StandardReadOnlyModelViewSet):

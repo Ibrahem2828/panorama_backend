@@ -1,21 +1,29 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+from datetime import timedelta
 from pathlib import Path
+from typing import cast
+from urllib.parse import urlparse
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured, SuspiciousFileOperation
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage, default_storage
 from django.core.management import call_command
+from django.http import StreamingHttpResponse
 from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.accounts.choices import UserRole
-from apps.accounts.models import User
+from apps.accounts.choices import StudentVerificationStatus, UserRole
+from apps.accounts.models import StudentProfile, User
 from apps.common.health_views import _local_media_is_ready
 from apps.common.storage import PrivateFileSystemStorage
-from apps.files.models import FileAccessTicket, FileResource
+from apps.files.models import FileAccessTicket, FileResource, FileVisibility
+from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
+from apps.universities.models import University
 
 
 def _local_storage_settings(media_root: Path) -> dict[str, object]:
@@ -153,7 +161,89 @@ def test_protected_file_stream_requires_ticket_owner_and_authentication(isolated
     assert ticket.use_count == 0
 
     client.force_authenticate(owner)
+    issued = client.post(f"/api/v1/files/{resource.pk}/access-ticket/", {"purpose": "view"}, format="json")
+    assert issued.status_code == status.HTTP_201_CREATED
+    issued_preview_path = urlparse(issued.data["data"]["preview_url"]).path
+    assert client.get(issued_preview_path).status_code == status.HTTP_200_OK
+
     owner_response = client.get(url)
     assert owner_response.status_code == status.HTTP_200_OK
     assert owner_response["Cache-Control"] == "private, no-store, max-age=0"
     assert owner_response["X-Content-Type-Options"] == "nosniff"
+    assert owner_response["Content-Disposition"].startswith("inline;")
+    assert owner_response["Content-Type"] == "application/pdf"
+
+    # The ticket intentionally supports multiple protected stream requests so a
+    # PDF/WebView range-or-retry sequence is not invalidated after its first GET.
+    second_owner_response = client.get(url)
+    assert second_owner_response.status_code == status.HTTP_200_OK
+    ticket.refresh_from_db()
+    assert ticket.use_count == 2
+
+    range_ticket = FileAccessTicket.issue(file_resource=resource, user=owner)
+    range_response = client.get(f"/api/v1/protected-files/{range_ticket.token}/", HTTP_RANGE="bytes=0-3")
+    assert range_response.status_code == status.HTTP_206_PARTIAL_CONTENT
+    assert range_response["Accept-Ranges"] == "bytes"
+    assert range_response["Content-Range"] == "bytes 0-3/16"
+    assert range_response["Content-Length"] == "4"
+    range_content = cast(StreamingHttpResponse, range_response).streaming_content
+    assert b"".join(cast(Iterable[bytes], range_content)) == b"%PDF"
+    range_ticket.refresh_from_db()
+    assert range_ticket.use_count == 1
+
+    expired_ticket = FileAccessTicket.issue(file_resource=resource, user=owner)
+    expired_ticket.expires_at = timezone.now() - timedelta(seconds=1)
+    expired_ticket.save(update_fields=["expires_at", "updated_at"])
+    assert client.get(f"/api/v1/protected-files/{expired_ticket.token}/").status_code == status.HTTP_404_NOT_FOUND
+
+    revoked_ticket = FileAccessTicket.issue(file_resource=resource, user=owner)
+    revoked_ticket.revoked_at = timezone.now()
+    revoked_ticket.save(update_fields=["revoked_at", "updated_at"])
+    assert client.get(f"/api/v1/protected-files/{revoked_ticket.token}/").status_code == status.HTTP_404_NOT_FOUND
+
+    traversal = client.get("/api/v1/protected-files/%2e%2e%2fprivate.pdf/")
+    assert traversal.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+def test_protected_file_stream_rechecks_live_group_eligibility(isolated_local_storage):
+    admin = User.objects.create_user(
+        full_name="File administrator",
+        email="file-admin@example.test",
+        phone_number="+963900001011",
+        password="StrongPass123!",
+        role=UserRole.ADMIN,
+    )
+    student = User.objects.create_user(
+        full_name="Eligible file student",
+        email="file-student@example.test",
+        phone_number="+963900001012",
+        password="StrongPass123!",
+        role=UserRole.STUDENT,
+    )
+    university = University.objects.create(name="Protected File University", code="PFU")
+    StudentProfile.objects.create(
+        user=student,
+        university=university,
+        verification_status=StudentVerificationStatus.APPROVED,
+    )
+    group = Group.objects.create(name="Protected file group", university=university, created_by=admin)
+    membership = GroupMembership.objects.create(group=group, user=student, status=GroupMembershipStatus.APPROVED)
+    resource = FileResource.objects.create(
+        title="Group-only document",
+        file=ContentFile(b"%PDF-1.4 group", name="group.pdf"),
+        uploaded_by=admin,
+        group=group,
+        visibility=FileVisibility.GROUP_ONLY,
+    )
+    ticket = FileAccessTicket.issue(file_resource=resource, user=student)
+    membership.status = GroupMembershipStatus.BLOCKED
+    membership.save(update_fields=["status", "updated_at"])
+
+    client = APIClient()
+    client.force_authenticate(student)
+    response = client.get(f"/api/v1/protected-files/{ticket.token}/")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    ticket.refresh_from_db()
+    assert ticket.use_count == 0

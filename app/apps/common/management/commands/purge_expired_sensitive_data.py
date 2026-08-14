@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
+from typing import Any
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -39,7 +40,7 @@ class Command(BaseCommand):
         )
 
         ticket_before = now - timedelta(hours=getattr(settings, "ACCESS_TICKET_RETENTION_HOURS", 24))
-        ticket_models = {
+        ticket_models: dict[str, Any] = {
             "verification_card_tickets": VerificationCardAccessTicket,
             "file_access_tickets": FileAccessTicket,
             "external_channel_tickets": ExternalChannelAccessTicket,

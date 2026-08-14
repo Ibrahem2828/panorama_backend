@@ -1,3 +1,5 @@
+from typing import Any
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import filters, permissions
@@ -17,7 +19,11 @@ from .serializers import (
 
 
 class AcademicQuerysetMixin:
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends: Any = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     search_fields = ["name", "code"]
     ordering_fields = ["id", "name", "code", "created_at", "updated_at", "order"]
     ordering = ["id"]

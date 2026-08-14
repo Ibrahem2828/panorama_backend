@@ -4,9 +4,10 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import connection
+from django.db import DatabaseError, connection
 from django.db.migrations.executor import MigrationExecutor
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from redis.exceptions import RedisError
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
@@ -85,7 +86,7 @@ class ReadinessHealthCheckView(APIView):
         },
     )
     def get(self, request):
-        checks = _dependency_checks()
+        checks = _dependency_checks(request=request, check_migrations=True, check_configuration=True)
         if checks is None:
             return _not_ready(request)
         return success_response(
@@ -110,7 +111,7 @@ class StartupHealthCheckView(APIView):
         },
     )
     def get(self, request):
-        checks = _dependency_checks(check_migrations=True, check_configuration=True)
+        checks = _dependency_checks(request=request, check_migrations=True, check_configuration=True)
         if checks is None:
             return _not_ready(request, code="STARTUP_NOT_READY")
         return success_response(
@@ -121,31 +122,64 @@ class StartupHealthCheckView(APIView):
         )
 
 
-def _dependency_checks(*, check_migrations: bool = True, check_configuration: bool = True):
+def _dependency_checks(*, request=None, check_migrations: bool, check_configuration: bool):
     """Return safe dependency state, or None without exposing dependency details."""
 
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
-        cache.get("panorama:readiness")
-        checks = {"database": "healthy", "cache": "healthy"}
-        if check_migrations:
-            executor = MigrationExecutor(connection)
-            if executor.migration_plan(executor.loader.graph.leaf_nodes()):
-                health_logger.warning("health_pending_migrations")
-                return None
-            checks["migrations"] = "current"
-        if check_configuration and not _critical_configuration_is_valid():
-            health_logger.warning("health_invalid_critical_configuration")
-            return None
-        if check_configuration:
-            checks["configuration"] = "valid"
-            checks["storage"] = "healthy"
-        return checks
-    except Exception as exc:  # Deliberately do not expose database/cache internals.
-        health_logger.warning("health_dependency_check_failed:%s", type(exc).__name__)
+    except (DatabaseError, OSError, TimeoutError) as exc:
+        _log_dependency_failure(request, "database", exc)
         return None
+
+    try:
+        cache.get("panorama:readiness")
+    except (RedisError, OSError, TimeoutError) as exc:
+        _log_dependency_failure(request, "cache", exc)
+        return None
+
+    checks = {"database": "healthy", "cache": "healthy"}
+    if check_migrations:
+        try:
+            executor = MigrationExecutor(connection)
+            pending_migrations = executor.migration_plan(executor.loader.graph.leaf_nodes())
+        except (DatabaseError, OSError, TimeoutError) as exc:
+            _log_dependency_failure(request, "migrations", exc)
+            return None
+        if pending_migrations:
+            health_logger.warning(
+                "health_pending_migrations",
+                extra={
+                    "request_id": getattr(request, "request_id", None),
+                    "pending_migration_count": len(pending_migrations),
+                },
+            )
+            return None
+        checks["migrations"] = "current"
+    if check_configuration and not _critical_configuration_is_valid():
+        health_logger.warning(
+            "health_invalid_critical_configuration",
+            extra={"request_id": getattr(request, "request_id", None)},
+        )
+        return None
+    if check_configuration:
+        checks["configuration"] = "valid"
+        checks["storage"] = "healthy"
+    return checks
+
+
+def _log_dependency_failure(request, dependency: str, exc: Exception) -> None:
+    """Keep client health output opaque while retaining safe diagnostics in server logs."""
+
+    health_logger.warning(
+        "health_dependency_check_failed",
+        extra={
+            "request_id": getattr(request, "request_id", None),
+            "dependency": dependency,
+            "failure_class": type(exc).__name__,
+        },
+    )
 
 
 def _local_media_is_ready() -> bool:

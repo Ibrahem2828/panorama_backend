@@ -60,6 +60,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "apps.common.middleware.RequestIDMiddleware",
+    "apps.common.middleware.APIErrorEnvelopeMiddleware",
     "apps.common.middleware.StructuredRequestLogMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -160,6 +161,7 @@ REST_FRAMEWORK = {
         "file_ticket": config("THROTTLE_FILE_TICKET", default="60/hour"),
         "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),
         "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/min"),
+        "chat_ticket": config("THROTTLE_CHAT_TICKET", default="30/min"),
         "chat_report": config("THROTTLE_CHAT_REPORT", default="10/day"),
         "support_ticket": config("THROTTLE_SUPPORT_TICKET", default="5/hour"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
@@ -347,6 +349,8 @@ APP_BASE_URL = config("APP_BASE_URL", default="http://localhost:8000").rstrip("/
 FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
 FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
 EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
+WEBSOCKET_CHAT_TICKET_TTL_SECONDS = config("WEBSOCKET_CHAT_TICKET_TTL_SECONDS", default=45, cast=int)
+WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED = get_bool_env("WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED", default=False)
 VERIFICATION_CARD_RETENTION_DAYS = config("VERIFICATION_CARD_RETENTION_DAYS", default=90, cast=int)
 OTP_RETENTION_DAYS = config("OTP_RETENTION_DAYS", default=7, cast=int)
 ACCESS_TICKET_RETENTION_HOURS = config("ACCESS_TICKET_RETENTION_HOURS", default=24, cast=int)

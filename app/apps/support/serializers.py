@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from typing import Any, cast
+
 from rest_framework import serializers
 
 from apps.accounts.choices import UserRole
@@ -82,7 +85,7 @@ class DashboardSupportTicketSerializer(serializers.ModelSerializer):
 
 
 class SupportTicketCreateSerializer(serializers.Serializer):
-    category = serializers.ChoiceField(choices=SupportTicket._meta.get_field("category").choices)
+    category = serializers.ChoiceField(choices=cast(Sequence[Any], SupportTicket._meta.get_field("category").choices))
     subject = serializers.CharField(max_length=255, trim_whitespace=True)
     message = serializers.CharField(trim_whitespace=True)
     attachment = serializers.FileField(required=False, allow_null=True, write_only=True)

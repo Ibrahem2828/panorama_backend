@@ -6375,6 +6375,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedGroupList'
           description: ''
+  /api/v1/groups/{group_id}/chat-ticket/:
+    post:
+      operationId: v1_groups_chat_ticket_create
+      description: Create the sole supported credential for a group-chat WebSocket
+        handshake.
+      parameters:
+      - in: path
+        name: group_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Chat
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatHandshakeTicket'
+          description: ''
+        '401':
+          description: REST authentication is required.
+        '403':
+          description: The authenticated user cannot access this group's chat.
+        '429':
+          description: Chat-ticket issuance is throttled per authenticated user.
+        '503':
+          description: The required ticket cache is temporarily unavailable.
   /api/v1/groups/{group_id}/messages/:
     get:
       operationId: v1_groups_messages_list
@@ -8050,6 +8081,11 @@ paths:
     get:
       operationId: v1_protected_files_retrieve
       parameters:
+      - in: header
+        name: Range
+        schema:
+          type: string
+        description: Optional single RFC 7233 byte range for PDF/WebView streaming.
       - in: path
         name: token
         schema:
@@ -8063,7 +8099,11 @@ paths:
       - bearerAuth: []
       responses:
         '200':
-          description: Inline protected file stream
+          description: Inline protected file stream.
+        '206':
+          description: Requested byte range of an inline protected file stream.
+        '416':
+          description: The requested byte range is invalid or unsatisfiable.
   /api/v1/protected-print-items/{token}/:
     get:
       operationId: v1_protected_print_items_retrieve
@@ -9360,6 +9400,24 @@ components:
       - new_password
       - new_password_confirm
       - old_password
+    ChatHandshakeTicket:
+      type: object
+      description: Response contract for a short-lived group-chat WebSocket handshake.
+      properties:
+        ticket:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        websocket_path:
+          type: string
+          readOnly: true
+      required:
+      - expires_at
+      - ticket
+      - websocket_path
     ColorModeEnum:
       enum:
       - black_white

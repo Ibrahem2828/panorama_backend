@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -12,6 +14,14 @@ from .services import ChatMessageService
 class MessageSenderSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     full_name = serializers.CharField()
+
+
+class ChatHandshakeTicketSerializer(serializers.Serializer):
+    """Response contract for a short-lived group-chat WebSocket handshake."""
+
+    ticket = serializers.CharField(read_only=True)
+    expires_at = serializers.DateTimeField(read_only=True)
+    websocket_path = serializers.CharField(read_only=True)
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -59,7 +69,8 @@ class MessageCreateSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
         group = self.context.get("group")
         if group:
-            self.fields["reply_to"].queryset = Message.objects.filter(group=group, is_deleted=False)
+            reply_to = cast(serializers.PrimaryKeyRelatedField, self.fields["reply_to"])
+            reply_to.queryset = Message.objects.filter(group=group, is_deleted=False)
 
     def validate_attachment(self, value):
         return validate_document_upload(value, "attachment") if value else value

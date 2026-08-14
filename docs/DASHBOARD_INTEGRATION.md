@@ -1,7 +1,7 @@
 # Dashboard integration
 
 Owner: Backend Platform Team  
-Last reviewed: 2026-07-31  
+Last reviewed: 2026-08-14
 Contract: `/api/v1/`
 
 ## Authorization boundary
@@ -51,3 +51,19 @@ collections under `docs/api/`.
 The generator and validator compare all documented HTTP operations to the two
 collections. Fixtures, package locks, and unrelated JSON are outside this
 mapping and are preserved.
+
+## DASHBOARD INTEGRATION HANDOFF
+
+- Canonical contract: `docs/api/openapi.json` (OpenAPI 3.0.3), SHA-256
+  `EA9745F55299680F4B76F63ACD495306B658306F5ED9A36A3BB2A976148DC653`;
+  generated alongside `docs/api/openapi.yaml` and the Dashboard collection.
+- Contract count: 184 paths and 272 documented HTTP operations. Regenerate it
+  with `python scripts/openapi_contract.py generate`; CI validates and rejects
+  schema drift.
+- Dashboard authentication and capability rules are unchanged: send
+  `Authorization: Bearer <access-token>` and `X-Request-ID`; permissions remain
+  server-side. There are no added, removed, or deprecated Dashboard endpoints
+  in this handoff.
+- The additive chat handshake endpoint is Mobile-facing:
+  `POST /api/v1/groups/{group_id}/chat-ticket/`. Dashboard clients should not
+  send an access JWT in a WebSocket query string.
