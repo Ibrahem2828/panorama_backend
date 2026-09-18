@@ -129,7 +129,7 @@ jobs:
           BUILD_DATE: 2026-01-01T00:00:00Z
         run: docker compose -f docker-compose.coolify.yml config --quiet
       - name: Scan image for critical and high vulnerabilities
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: panorama-backend:${{ github.sha }}
           format: sarif
@@ -143,7 +143,7 @@ jobs:
         with:
           sarif_file: trivy-image.sarif
       - name: Scan Docker and Compose configuration
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: config
           scan-ref: .

@@ -4,6 +4,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
+from django.db import ProgrammingError
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -21,7 +22,7 @@ from .models import (
     TermsVersion,
     UserConsent,
 )
-from .services import AccountDeletionService
+from .services import AccountDeletionService, ProductConfigurationService
 
 
 @pytest.fixture
@@ -78,6 +79,21 @@ def test_maintenance_returns_retry_after_and_exempts_health(client):
     assert blocked["Retry-After"] == "47"
     health = client.get("/api/v1/health/live/")
     assert health.status_code == 200
+
+
+def test_lifecycle_lookup_database_failure_keeps_api_serving(client, monkeypatch):
+    """A missing/broken lifecycle table must not return raw HTML 500 for every endpoint.
+
+    Reproduces the 2026-09 production outage: unapplied `product` migrations made this
+    middleware raise on every non-exempt request, outside DRF's exception handling.
+    """
+
+    def unmigrated_table():
+        raise ProgrammingError('relation "product_maintenancemode" does not exist')
+
+    monkeypatch.setattr(ProductConfigurationService, "active_maintenance", staticmethod(unmigrated_table))
+    response = client.get("/api/v1/auth/me/")
+    assert response.status_code == 200
 
 
 def test_device_registration_idempotency_and_cross_account_isolation(client, user):
