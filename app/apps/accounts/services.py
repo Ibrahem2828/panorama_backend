@@ -9,6 +9,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException, ValidationError
 
+from apps.common.crypto import encrypt_text
+
 from .choices import OTPDeliveryChannel, OTPPurpose
 from .models import OTPCode, User
 
@@ -59,6 +61,33 @@ class OTPService:
             recipient_list=[identifier],
             fail_silently=False,
         )
+
+    @classmethod
+    def _enqueue_email(cls, otp: OTPCode, raw_code: str) -> None:
+        """Queue delivery after the surrounding transaction commits.
+
+        If the broker is unreachable the code is sent inline instead, so an outage in Redis
+        degrades to the previous synchronous behaviour rather than silently losing the OTP.
+        """
+
+        from .tasks import send_otp_email
+
+        if not settings.EMAIL_HOST_PASSWORD and "smtp" in settings.EMAIL_BACKEND:
+            raise OTPDeliveryUnavailable("SMTP credentials are not configured.")
+        otp_id, identifier, purpose = otp.pk, otp.email, otp.purpose
+        encrypted = encrypt_text(raw_code)
+
+        def dispatch() -> None:
+            try:
+                send_otp_email.apply_async(args=(otp_id, encrypted), expires=settings.OTP_EXPIRY_MINUTES * 60)
+            except Exception:  # noqa: BLE001 - broker down: fall back to inline delivery
+                logger.exception("otp_email_enqueue_failed", extra={"otp_id": otp_id})
+                try:
+                    cls._deliver_email(identifier, raw_code, purpose)
+                except Exception:  # noqa: BLE001 - the user can request a new code after the cooldown
+                    logger.exception("otp_email_inline_fallback_failed", extra={"otp_id": otp_id})
+
+        transaction.on_commit(dispatch, robust=True)
 
     @staticmethod
     def _deliver_phone(identifier: str, raw_code: str, purpose: str) -> None:
@@ -121,7 +150,10 @@ class OTPService:
 
         try:
             if channel == OTPDeliveryChannel.EMAIL:
-                cls._deliver_email(identifier, raw_code, purpose)
+                if settings.OTP_EMAIL_ASYNC:
+                    cls._enqueue_email(otp, raw_code)
+                else:
+                    cls._deliver_email(identifier, raw_code, purpose)
             else:
                 cls._deliver_phone(identifier, raw_code, purpose)
         except Exception:

@@ -79,6 +79,7 @@ try:
     Fernet(FIELD_ENCRYPTION_KEY.encode("ascii"))
 except Exception as exc:  # noqa: BLE001
     raise ImproperlyConfigured("FIELD_ENCRYPTION_KEY must be a valid Fernet key.") from exc
+OTP_EMAIL_ASYNC = get_bool_env("OTP_EMAIL_ASYNC", default=True)
 EMAIL_HOST = require_env("EMAIL_HOST")
 EMAIL_HOST_USER = require_env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = require_env("EMAIL_HOST_PASSWORD")

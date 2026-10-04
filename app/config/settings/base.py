@@ -342,6 +342,8 @@ OTP_EXPIRY_MINUTES = config("OTP_EXPIRY_MINUTES", default=10, cast=int)
 OTP_RESEND_COOLDOWN_SECONDS = config("OTP_RESEND_COOLDOWN_SECONDS", default=60, cast=int)
 OTP_MAX_ATTEMPTS = config("OTP_MAX_ATTEMPTS", default=5, cast=int)
 OTP_EMAIL_SUBJECT = config("OTP_EMAIL_SUBJECT", default="رمز التحقق الخاص بتطبيق بانوراما")
+# Send OTP emails from a Celery worker instead of inside the request (production enables it).
+OTP_EMAIL_ASYNC = get_bool_env("OTP_EMAIL_ASYNC", default=False)
 SMS_OTP_PROVIDER_ENABLED = get_bool_env("SMS_OTP_PROVIDER_ENABLED", default=False)
 
 FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
