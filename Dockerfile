@@ -21,7 +21,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m venv /opt/venv
+RUN python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade "pip>=26.1.2,<27"
 
 ENV PATH="/opt/venv/bin:${PATH}"
 
@@ -58,7 +59,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TMPDIR="/tmp/panorama" \
     PORT=8000
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+RUN /usr/local/bin/python -m pip install --no-cache-dir --upgrade "pip>=26.1.2,<27" \
+    && DEBIAN_FRONTEND=noninteractive apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         libpq5 \
