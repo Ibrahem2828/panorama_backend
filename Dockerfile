@@ -21,8 +21,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir --upgrade "pip>=26.1.2,<27"
+RUN python -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:${PATH}"
 
@@ -59,8 +58,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     TMPDIR="/tmp/panorama" \
     PORT=8000
 
-RUN /usr/local/bin/python -m pip install --no-cache-dir --upgrade "pip>=26.1.2,<27" \
-    && DEBIAN_FRONTEND=noninteractive apt-get update \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -78,6 +76,11 @@ RUN /usr/local/bin/python -m pip install --no-cache-dir --upgrade "pip>=26.1.2,<
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
+
+# The runtime never installs packages. Removing pip also drops the libraries it vendors
+# (urllib3, msgpack, setuptools), which the image scan reports as vulnerabilities.
+RUN /usr/local/bin/python -m pip uninstall -y pip \
+    && rm -rf /opt/venv/bin/pip* /opt/venv/lib/python3.12/site-packages/pip /opt/venv/lib/python3.12/site-packages/pip-*.dist-info
 COPY --chown=panorama:panorama app /app/app
 COPY --chown=panorama:panorama docker /app/docker
 
