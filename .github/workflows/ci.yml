@@ -41,6 +41,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # gitleaks needs the PR's parent commits
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
