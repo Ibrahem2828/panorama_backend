@@ -47,6 +47,7 @@ jobs:
       - name: Scan published image
         uses: aquasecurity/trivy-action@v0.33.1
         with:
+          version: v0.75.0
           image-ref: ghcr.io/${{ github.repository }}@${{ steps.image.outputs.digest }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true

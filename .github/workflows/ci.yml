@@ -133,6 +133,7 @@ jobs:
       - name: Scan image for critical and high vulnerabilities
         uses: aquasecurity/trivy-action@v0.33.1
         with:
+          version: v0.75.0
           image-ref: panorama-backend:${{ github.sha }}
           format: sarif
           output: trivy-image.sarif
@@ -147,6 +148,7 @@ jobs:
       - name: Scan Docker and Compose configuration
         uses: aquasecurity/trivy-action@v0.33.1
         with:
+          version: v0.75.0
           scan-type: config
           scan-ref: .
           severity: CRITICAL,HIGH
