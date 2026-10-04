@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from datetime import timedelta
+from functools import partial
 
 from django.conf import settings
 from django.db import transaction
@@ -267,7 +268,7 @@ class FeedbackService:
         if getattr(settings, "FEEDBACK_AI_TRIAGE_ENABLED", False):
             from .tasks import triage_feedback
 
-            transaction.on_commit(lambda feedback_id=feedback.pk: triage_feedback.delay(feedback_id))
+            transaction.on_commit(partial(triage_feedback.delay, feedback.pk))
         return feedback
 
     @staticmethod

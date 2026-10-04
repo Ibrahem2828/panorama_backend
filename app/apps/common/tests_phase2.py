@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
@@ -424,7 +426,7 @@ def test_announcement_targeting(api_client, admin_user, normal_user, student_use
         title="Expired",
         description="Expired",
         created_by=admin_user,
-        ends_at=timezone.now() - timezone.timedelta(days=1),
+        ends_at=timezone.now() - timedelta(days=1),
     )
 
     authenticate(api_client, normal_user)

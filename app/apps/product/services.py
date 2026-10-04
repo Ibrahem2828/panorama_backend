@@ -11,6 +11,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 
+from apps.accounts.choices import UserRole
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 
@@ -85,7 +86,7 @@ class FeatureFlagService:
         # avoid coupling this path to Redis availability. Signals evict known scopes.
         if key:
             for platform in ("", "android", "ios"):
-                for role in ("", "admin", "it_support", "student", "normal_user"):
+                for role in ("", *UserRole.values):
                     try:
                         cache.delete(cls._cache_key(key, platform, role))
                     except Exception:

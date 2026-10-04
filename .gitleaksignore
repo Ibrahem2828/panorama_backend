@@ -1,0 +1,7 @@
+# Reviewed false positives (gitleaks fingerprints: commit:file:rule:line)
+# SHA-256 of the frozen OpenAPI file, not a credential
+dbee14ef0840aa68e6c39dd4516cbbfe128edfbb:docs/reports/BACKEND_RECOVERY_BASELINE_AR.md:generic-api-key:30
+# Dummy Fernet key used only by the production-settings unit test (decodes to 0123456789abcdef0123456789abcdef)
+dbee14ef0840aa68e6c39dd4516cbbfe128edfbb:app/apps/common/tests_production_hardening.py:generic-api-key:28
+# Same dummy key in the CI test environment
+e5bab799bbd827c8c713d34b87ee4afc048c36aa:.github/workflows/ci.yml:generic-api-key:101

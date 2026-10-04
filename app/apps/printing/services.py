@@ -285,7 +285,7 @@ class PrintStatusService:
         request=None,
     ) -> PrintOrder:
         order = PrintOrder.objects.select_for_update().get(pk=order.pk, is_deleted=False)
-        allowed = VALID_TRANSITIONS.get(order.status, set())
+        allowed = VALID_TRANSITIONS.get(PrintOrderStatus(order.status), set())
         if new_status not in allowed:
             raise ValidationError({"status": f"Invalid transition from {order.status} to {new_status}."})
         if new_status == PrintOrderStatus.REJECTED and not (rejected_reason or public_note or internal_note).strip():

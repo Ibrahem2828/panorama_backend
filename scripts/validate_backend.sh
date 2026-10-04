@@ -44,7 +44,7 @@ print("Python syntax check passed")
 PY
 
 step "Django system check"
-"${PYTHON}" app/manage.py check
+"${PYTHON}" app/manage.py check --settings config.settings.testing
 
 step "Django migration check"
 "${PYTHON}" app/manage.py makemigrations --check --dry-run --settings config.settings.testing
@@ -57,6 +57,11 @@ if [[ "${DEPLOY_CHECK}" == "1" ]]; then
     export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-https://dashboard.example.com}"
     export DATABASE_URL="${DATABASE_URL:-postgres://user:pass@localhost:5432/panorama}"
     export REDIS_URL="${REDIS_URL:-redis://localhost:6379/0}"
+    export FIELD_ENCRYPTION_KEY="${FIELD_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}"
+    export EMAIL_HOST="${EMAIL_HOST:-smtp.example.test}"
+    export EMAIL_HOST_USER="${EMAIL_HOST_USER:-validation@example.test}"
+    export EMAIL_HOST_PASSWORD="${EMAIL_HOST_PASSWORD:-validation-only-password}"
+    export STORAGE_BACKEND="${STORAGE_BACKEND:-local}"
     export SECURE_SSL_REDIRECT="${SECURE_SSL_REDIRECT:-True}"
     export SESSION_COOKIE_SECURE="${SESSION_COOKIE_SECURE:-True}"
     export CSRF_COOKIE_SECURE="${CSRF_COOKIE_SECURE:-True}"
@@ -68,35 +73,24 @@ if [[ "${DEPLOY_CHECK}" == "1" ]]; then
     "${PYTHON}" app/manage.py check --deploy --settings config.settings.production
 fi
 
-step "API collection JSON validation"
-"${PYTHON}" -c "import json, pathlib; [json.loads(pathlib.Path(p).read_text(encoding='utf-8')) for p in ('docs/api/mobile_api_collection.json', 'docs/api/dashboard_api_collection.json')]; print('API collections are valid JSON')"
+step "Canonical OpenAPI validation"
+"${PYTHON}" scripts/openapi_contract.py validate
 
-step "OpenAPI schema validation"
-SCHEMA_PATH="$(mktemp "${TMPDIR:-/tmp}/panorama_openapi.XXXXXX.yml")"
-trap 'rm -f "${SCHEMA_PATH}"' EXIT
-"${PYTHON}" app/manage.py spectacular --file "${SCHEMA_PATH}" --validate --settings config.settings.testing
+step "Canonical OpenAPI drift check"
+"${PYTHON}" scripts/openapi_contract.py check-drift
 
-step "focused pytest: API contract"
-"${PYTHON}" -m pytest app/apps/common/tests_api_contract_collections.py
+step "Ruff"
+"${PYTHON}" -m ruff check .
+"${PYTHON}" -m ruff format --check .
 
-step "focused pytest: production hardening"
-"${PYTHON}" -m pytest app/apps/common/tests_production_hardening.py
+step "Mypy"
+"${PYTHON}" -m mypy app
 
-step "focused pytest: Phase 2 security"
-"${PYTHON}" -m pytest app/apps/common/tests_phase2_security.py
+step "Bandit"
+"${PYTHON}" -m bandit -q -r app -x '*/migrations/*,*/tests/*' --severity-level medium
 
-step "focused pytest: Phase 3 reliability"
-"${PYTHON}" -m pytest app/apps/common/tests_phase3_reliability.py
-
-if [[ -f app/apps/common/tests_phase4_observability.py ]]; then
-    step "focused pytest: Phase 4 observability"
-    "${PYTHON}" -m pytest app/apps/common/tests_phase4_observability.py
-fi
-
-if [[ -f app/apps/common/tests_phase5_deployment.py ]]; then
-    step "focused pytest: Phase 5 deployment"
-    "${PYTHON}" -m pytest app/apps/common/tests_phase5_deployment.py
-fi
+step "focused pytest: WebSocket hardening"
+"${PYTHON}" -m pytest app/apps/chat/tests_handshake_tickets.py
 
 step "pytest"
 "${PYTHON}" -m pytest

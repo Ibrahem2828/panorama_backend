@@ -8,8 +8,12 @@ import uuid
 
 from django.conf import settings
 
+from apps.common.error_views import api_error_response
+from apps.common.exceptions import is_dependency_error
+
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 request_logger = logging.getLogger("panorama.request")
+api_error_logger = logging.getLogger("panorama.api.errors")
 
 
 class RequestIDMiddleware:
@@ -28,6 +32,56 @@ class RequestIDMiddleware:
         return response
 
 
+class APIErrorEnvelopeMiddleware:
+    """Prevent Django's HTML error pages from escaping through the versioned API."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        try:
+            response = self.get_response(request)
+        except Exception as exc:  # Django may otherwise render a framework HTML 500 outside DRF.
+            if not request.path.startswith("/api/"):
+                raise
+            return self._exception_response(request, exc)
+
+        if request.path.startswith("/api/") and response.status_code >= 400 and not self._is_json(response):
+            return self._status_response(request, response.status_code)
+        return response
+
+    def process_exception(self, request, exception):
+        """Convert view exceptions before Django's DEBUG handler can render HTML."""
+
+        if not request.path.startswith("/api/"):
+            return None
+        return self._exception_response(request, exception)
+
+    @staticmethod
+    def _is_json(response) -> bool:
+        content_type = response.get("Content-Type", "")
+        return content_type.lower().split(";", 1)[0] == "application/json"
+
+    def _exception_response(self, request, exc: Exception):
+        status_code = 503 if is_dependency_error(exc) else 500
+        code = "SERVICE_DEPENDENCY_UNAVAILABLE" if status_code == 503 else "INTERNAL_SERVER_ERROR"
+        message = "A required service dependency is unavailable." if status_code == 503 else "Server error"
+        api_error_logger.exception(
+            "api_middleware_unhandled_exception",
+            extra={
+                "request_id": getattr(request, "request_id", None),
+                "status": status_code,
+                "code": code,
+                "failure_class": type(exc).__name__,
+            },
+        )
+        return api_error_response(request, status_code=status_code, code=code, message=message)
+
+    @staticmethod
+    def _status_response(request, status_code: int):
+        return api_error_response(request, status_code=status_code)
+
+
 class StructuredRequestLogMiddleware:
     """Log request metadata only; never request bodies, query strings, or credentials."""
 
@@ -40,8 +94,9 @@ class StructuredRequestLogMiddleware:
         if request.path.startswith("/api/"):
             user = getattr(request, "user", None)
             user_id_hash = None
-            if getattr(user, "is_authenticated", False):
-                user_id_hash = hashlib.sha256(str(user.pk).encode("utf-8")).hexdigest()[:16]
+            user_id = getattr(user, "pk", None) if getattr(user, "is_authenticated", False) else None
+            if user_id is not None:
+                user_id_hash = hashlib.sha256(str(user_id).encode("utf-8")).hexdigest()[:16]
             match = getattr(request, "resolver_match", None)
             route = getattr(match, "route", None) or "unresolved"
             request_logger.info(

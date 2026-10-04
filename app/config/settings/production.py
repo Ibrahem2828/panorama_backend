@@ -39,6 +39,13 @@ CHANNEL_LAYERS = {
     }
 }
 
+if not 30 <= WEBSOCKET_CHAT_TICKET_TTL_SECONDS <= 60:  # noqa: F405
+    raise ImproperlyConfigured("WEBSOCKET_CHAT_TICKET_TTL_SECONDS must be between 30 and 60 seconds in production.")
+if WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED:  # noqa: F405
+    raise ImproperlyConfigured(
+        "WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED is deprecated and must remain disabled in production."
+    )
+
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", "DJANGO_SECURE_SSL_REDIRECT", default=True)
@@ -72,6 +79,7 @@ try:
     Fernet(FIELD_ENCRYPTION_KEY.encode("ascii"))
 except Exception as exc:  # noqa: BLE001
     raise ImproperlyConfigured("FIELD_ENCRYPTION_KEY must be a valid Fernet key.") from exc
+OTP_EMAIL_ASYNC = get_bool_env("OTP_EMAIL_ASYNC", default=True)
 EMAIL_HOST = require_env("EMAIL_HOST")
 EMAIL_HOST_USER = require_env("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = require_env("EMAIL_HOST_PASSWORD")

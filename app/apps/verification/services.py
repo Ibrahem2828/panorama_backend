@@ -88,7 +88,7 @@ class VerificationService:
             VerificationStatus.APPROVED: AuditAction.VERIFICATION_APPROVED,
             VerificationStatus.REJECTED: AuditAction.VERIFICATION_REJECTED,
             VerificationStatus.NEEDS_UPDATE: AuditAction.VERIFICATION_NEEDS_UPDATE,
-        }[status]
+        }[VerificationStatus(status)]
         AuditLogService.log(
             actor=reviewer,
             action=action,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 from django.db import transaction
 from django.http import FileResponse, Http404
@@ -11,6 +12,7 @@ from rest_framework import filters, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import CanManageSupport
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
@@ -73,7 +75,7 @@ class MySupportTicketViewSet(StandardReadOnlyModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return SupportTicket.objects.none()
         return (
-            SupportTicket.objects.filter(user=self.request.user, is_deleted=False)
+            SupportTicket.objects.filter(user=cast(User, self.request.user), is_deleted=False)
             .select_related("assigned_to")
             .prefetch_related("messages__sender")
         )

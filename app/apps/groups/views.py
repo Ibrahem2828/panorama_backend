@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from django.db.models import Count, Prefetch, Q
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -8,6 +10,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import filters, permissions, status
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups, IsVerifiedStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
@@ -59,7 +62,7 @@ class AvailableGroupViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Group.objects.none()
-        user = self.request.user
+        user = cast(User, self.request.user)
         profile = user.student_profile
         memberships = GroupMembership.objects.filter(user=user, is_deleted=False)
         queryset = (

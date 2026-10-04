@@ -1,10 +1,15 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import URLPattern, URLResolver, include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-urlpatterns = [
+handler400 = "apps.common.error_views.bad_request"
+handler403 = "apps.common.error_views.permission_denied"
+handler404 = "apps.common.error_views.page_not_found"
+handler500 = "apps.common.error_views.server_error"
+
+urlpatterns: list[URLPattern | URLResolver] = [
     path("admin/", admin.site.urls),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/", include("apps.accounts.dashboard_urls")),

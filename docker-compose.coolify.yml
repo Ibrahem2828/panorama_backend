@@ -1,6 +1,12 @@
 # Coolify production compose. Configure its HTTP health check as GET
 # /api/v1/health/ready/ and require HTTP 200 plus code=READY in the JSON body.
 # The Docker health check below remains liveness-only by design.
+#
+# The `release` service below is NOT started by `docker compose up`: it is
+# profile-gated and must be invoked on every deploy, before new containers take
+# traffic, because `web` never migrates. Skipping it leaves the schema behind the
+# image and pins /health/ready/ at 503 forever. See
+# docs/DEPLOYMENT_AND_OPERATIONS.md, "Wiring the release job in Coolify".
 
 x-app-environment: &app-environment
   DJANGO_SETTINGS_MODULE: config.settings.production

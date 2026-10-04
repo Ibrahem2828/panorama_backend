@@ -18,6 +18,9 @@ safe release evidence on their own.
 | [Dashboard integration](DASHBOARD_INTEGRATION.md) | Dashboard capabilities, product controls, administrative operations, and contract. |
 | [Storage, backup, and recovery](STORAGE_BACKUP_AND_RECOVERY.md) | Local named volume, backup/restore, and future generic S3 migration. |
 | [Quality, testing, and release](QUALITY_TESTING_AND_RELEASE.md) | Baseline, checks, test policy, and release gates. |
+| [Release closure report](reports/BACKEND_FINAL_CLOSURE_REPORT_AR.md) | Evidence-based decision for the current closure branch. |
+| [Operations runbooks](operations/COOLIFY_DEPLOYMENT_RUNBOOK_AR.md) | Deployment, backup/restore, rollback, incidents, and secret rotation. |
+| [ASVS matrix](security/ASVS_L2_MATRIX.md) | Security controls and evidence status. |
 | [OpenAPI artifacts](api/openapi.json) | Generated API v1 schema; YAML is adjacent. |
 | [Dashboard Postman collection](../integrations/api/panorama-dashboard-api.postman_collection.json) | Canonical importable Dashboard collection. |
 | [Mobile Postman collection](../integrations/api/panorama-mobile-api.postman_collection.json) | Canonical importable Mobile collection. |

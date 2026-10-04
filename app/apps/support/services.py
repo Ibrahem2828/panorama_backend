@@ -87,7 +87,7 @@ class SupportTicketService:
         old_status = ticket.status
         if new_status == old_status:
             return ticket
-        if new_status not in cls.VALID_TRANSITIONS.get(old_status, set()):
+        if new_status not in cls.VALID_TRANSITIONS.get(SupportTicketStatus(old_status), set()):
             raise ValidationError({"status": f"Invalid status transition from {old_status} to {new_status}."})
         ticket.status = new_status
         ticket.close_if_needed()

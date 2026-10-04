@@ -1,5 +1,9 @@
 import importlib
+import logging
+import os
+import subprocess
 import sys
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -7,11 +11,46 @@ from config.settings.env import get_bool_env, get_csv_env
 from decouple import UndefinedValueError
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
+from django.db import OperationalError
+from redis.exceptions import ConnectionError as RedisConnectionError
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.choices import UserRole
 from apps.accounts.models import User
+from apps.common.logging import JSONFormatter, SensitiveDataFilter
+
+
+def _set_valid_production_environment(
+    monkeypatch: pytest.MonkeyPatch, *, ticket_ttl: str = "45", legacy_query_auth: str = "False"
+) -> None:
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-that-is-long-enough-to-satisfy-production-validation-123")
+    monkeypatch.setenv("FIELD_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")
+    monkeypatch.setenv("EMAIL_HOST", "smtp.example.test")
+    monkeypatch.setenv("EMAIL_HOST_USER", "mailer@example.test")
+    monkeypatch.setenv("EMAIL_HOST_PASSWORD", "test-smtp-password")
+    monkeypatch.setenv("ALLOWED_HOSTS", "api.example.test,localhost")
+    monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/panorama")
+    monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("CSRF_TRUSTED_ORIGINS", "https://api.example.test")
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://dashboard.example.test")
+    monkeypatch.setenv("SECURE_HSTS_SECONDS", "31536000")
+    monkeypatch.setenv("STORAGE_BACKEND", "local")
+    monkeypatch.setenv("WEBSOCKET_CHAT_TICKET_TTL_SECONDS", ticket_ttl)
+    monkeypatch.setenv("WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED", legacy_query_auth)
+    monkeypatch.setattr("config.settings.env.config", lambda name: (_ for _ in ()).throw(UndefinedValueError(name)))
+
+
+def _import_production_settings_in_fresh_process() -> subprocess.CompletedProcess[str]:
+    django_root = Path(__file__).resolve().parents[2]
+    return subprocess.run(
+        [sys.executable, "-c", "import config.settings.production"],
+        cwd=django_root,
+        env=os.environ.copy(),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 def test_get_csv_env_uses_primary_before_fallback(monkeypatch):
@@ -102,6 +141,30 @@ def test_production_settings_fail_fast_without_required_database(monkeypatch):
         importlib.import_module("config.settings.production")
 
 
+def test_production_settings_accepts_the_supported_chat_ticket_ttl(monkeypatch):
+    _set_valid_production_environment(monkeypatch, ticket_ttl="45")
+    result = _import_production_settings_in_fresh_process()
+
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("ticket_ttl", ("5", "3600"))
+def test_production_settings_rejects_chat_ticket_ttl_outside_policy(monkeypatch, ticket_ttl):
+    _set_valid_production_environment(monkeypatch, ticket_ttl=ticket_ttl)
+    result = _import_production_settings_in_fresh_process()
+
+    assert result.returncode != 0
+    assert "WEBSOCKET_CHAT_TICKET_TTL_SECONDS" in result.stderr
+
+
+def test_production_settings_rejects_legacy_websocket_query_jwt(monkeypatch):
+    _set_valid_production_environment(monkeypatch, legacy_query_auth="True")
+    result = _import_production_settings_in_fresh_process()
+
+    assert result.returncode != 0
+    assert "WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED" in result.stderr
+
+
 def test_health_endpoint_is_public():
     response = APIClient().get("/api/v1/health/")
 
@@ -115,6 +178,25 @@ def test_health_endpoint_is_public():
             "service": "panorama_backend",
         },
     }
+
+
+def test_structured_logging_redacts_sensitive_values():
+    record = logging.LogRecord(
+        "panorama.test",
+        logging.INFO,
+        __file__,
+        1,
+        "Authorization=Bearer should-not-appear password=never-log",
+        (),
+        None,
+    )
+    record.request_id = "request-test"
+    assert SensitiveDataFilter().filter(record) is True
+    rendered = JSONFormatter().format(record)
+
+    assert "should-not-appear" not in rendered
+    assert "never-log" not in rendered
+    assert "request-test" in rendered
 
 
 def test_liveness_endpoint_is_public_and_does_not_require_dependencies():
@@ -137,11 +219,47 @@ def test_readiness_endpoint_checks_dependencies_without_authentication():
 
 @pytest.mark.django_db
 def test_readiness_returns_503_when_cache_dependency_fails():
-    with patch("apps.common.health_views.cache.get", side_effect=RuntimeError):
+    with patch("apps.common.health_views.cache.get", side_effect=RedisConnectionError("unavailable")):
         response = APIClient().get("/api/v1/health/ready/")
 
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
     assert response.data["code"] == "SERVICE_NOT_READY"
+
+
+@pytest.mark.django_db
+def test_readiness_returns_503_without_dependency_details_when_database_fails():
+    with patch("apps.common.health_views.connection.cursor", side_effect=OperationalError("database unavailable")):
+        response = APIClient().get("/api/v1/health/ready/")
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.data == {
+        "success": False,
+        "code": "SERVICE_NOT_READY",
+        "message": "Service dependencies are unavailable",
+        "errors": {},
+        "request_id": response["X-Request-ID"],
+    }
+
+
+@pytest.mark.django_db
+def test_startup_returns_503_when_migrations_are_pending():
+    with patch("apps.common.health_views.MigrationExecutor") as executor_class:
+        executor = executor_class.return_value
+        executor.loader.graph.leaf_nodes.return_value = []
+        executor.migration_plan.return_value = [object()]
+        response = APIClient().get("/api/v1/health/startup/")
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.data["code"] == "STARTUP_NOT_READY"
+
+
+@pytest.mark.django_db
+def test_startup_returns_503_when_critical_storage_configuration_is_invalid():
+    with patch("apps.common.health_views._critical_configuration_is_valid", return_value=False):
+        response = APIClient().get("/api/v1/health/startup/")
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.data["code"] == "STARTUP_NOT_READY"
 
 
 @pytest.mark.django_db

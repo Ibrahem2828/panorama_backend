@@ -1,0 +1,2 @@
+﻿docs/reports/PRE_BACKEND_RECOVERY_UNTRACKED.txt
+docs/reports/PRE_BACKEND_RECOVERY_WORKTREE.patch

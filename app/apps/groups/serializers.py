@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -175,7 +177,7 @@ class DashboardGroupSerializer(GroupSerializer):
 class WhatsAppChannelUpdateSerializer(serializers.Serializer):
     url = serializers.URLField()
     is_active = serializers.BooleanField(default=True)
-    label = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    label = cast(Any, serializers.CharField(required=False, allow_blank=True, max_length=100))
 
     def validate_url(self, value):
         return ExternalChannelService.validate_whatsapp_url(value)

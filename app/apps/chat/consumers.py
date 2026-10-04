@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 MAX_WEBSOCKET_PAYLOAD_BYTES = 16 * 1024
 MAX_MESSAGE_LENGTH = 4000
+AUTHENTICATION_CLOSE_CODE = 4401
+AUTHORIZATION_CLOSE_CODE = 4403
 
 
 class GroupChatConsumer(AsyncWebsocketConsumer):
@@ -26,11 +28,13 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         self.group_id = self.scope["url_route"]["kwargs"]["group_id"]
         self.room_group_name = f"group_chat_{self.group_id}"
         self.user = self.scope.get("user", AnonymousUser())
+        self.session_version = self.scope.get("ws_session_version")
         if not getattr(self.user, "is_authenticated", False):
-            await self.close(code=4401)
+            await self.close(code=AUTHENTICATION_CLOSE_CODE)
             return
-        if not await self.can_access():
-            await self.close(code=4403)
+        close_code = await self.access_close_code()
+        if close_code is not None:
+            await self.close(code=close_code)
             return
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
@@ -40,6 +44,12 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
+        # Authorization is re-evaluated for every client action so security and
+        # membership changes terminate an already-open connection safely.
+        close_code = await self.access_close_code()
+        if close_code is not None:
+            await self.close(code=close_code)
+            return
         if bytes_data is not None:
             await self.send_error("UNSUPPORTED_PAYLOAD", "Binary WebSocket messages are not supported.")
             return
@@ -108,12 +118,27 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         )
 
     @database_sync_to_async
-    def can_access(self):
+    def access_close_code(self) -> int | None:
+        """Return the stable close-code category for the current socket state."""
+
         try:
-            group = Group.objects.get(pk=self.group_id, is_deleted=False)
-            return ChatPermissionService.can_access_group_chat(self.user, group)
+            from apps.accounts.models import User
+
+            user = User.objects.get(pk=self.user.pk, is_active=True, is_deleted=False)
+        except User.DoesNotExist:
+            return AUTHENTICATION_CLOSE_CODE
+
+        if self.session_version is not None and user.session_version != self.session_version:
+            return AUTHENTICATION_CLOSE_CODE
+
+        try:
+            group = Group.objects.get(pk=self.group_id, is_active=True, is_deleted=False)
         except Group.DoesNotExist:
-            return False
+            return AUTHORIZATION_CLOSE_CODE
+
+        if not ChatPermissionService.can_access_group_chat(user, group):
+            return AUTHORIZATION_CLOSE_CODE
+        return None
 
     @database_sync_to_async
     def create_message(self, content: str):

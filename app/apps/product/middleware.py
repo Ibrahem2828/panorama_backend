@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import logging
+
+from django.db import DatabaseError
 from django.http import JsonResponse
 
 from .services import ProductConfigurationService
+
+lifecycle_logger = logging.getLogger("panorama.product.lifecycle")
 
 
 class ProductLifecycleMiddleware:
@@ -10,6 +15,12 @@ class ProductLifecycleMiddleware:
 
     The middleware only acts when a recognized mobile platform header is sent. Browser
     and dashboard clients therefore keep their stable v1 contract during migration.
+
+    Lifecycle lookups fail open. Middleware runs outside DRF, and Django does not route
+    middleware exceptions through ``process_exception``, so an unhandled database error
+    here bypasses the API error envelope and returns raw HTML 500 for every non-exempt
+    request. Serving traffic without a maintenance banner is strictly safer than losing
+    the whole API surface, and readiness still fails closed on unapplied migrations.
     """
 
     _public_prefixes = (
@@ -32,7 +43,7 @@ class ProductLifecycleMiddleware:
             # super-admin can always disable maintenance or correct a release policy.
             return self.get_response(request)
 
-        maintenance = ProductConfigurationService.active_maintenance()
+        maintenance = self._lifecycle_lookup(request, "maintenance", ProductConfigurationService.active_maintenance)
         if maintenance:
             response = self._error(
                 request,
@@ -55,7 +66,9 @@ class ProductLifecycleMiddleware:
         if platform not in {"android", "ios"}:
             return self.get_response(request)
         build = self._safe_int(request.headers.get("X-App-Build", "0"))
-        policy = ProductConfigurationService.active_release_policy(platform)
+        policy = self._lifecycle_lookup(
+            request, "release_policy", ProductConfigurationService.active_release_policy, platform
+        )
         if policy and policy.requires_update_for(build):
             return self._error(
                 request,
@@ -72,6 +85,21 @@ class ProductLifecycleMiddleware:
                 },
             )
         return self.get_response(request)
+
+    @staticmethod
+    def _lifecycle_lookup(request, lookup: str, resolver, *args):
+        try:
+            return resolver(*args)
+        except DatabaseError as exc:
+            lifecycle_logger.warning(
+                "product_lifecycle_lookup_failed",
+                extra={
+                    "request_id": getattr(request, "request_id", None),
+                    "lookup": lookup,
+                    "failure_class": type(exc).__name__,
+                },
+            )
+            return None
 
     @staticmethod
     def _safe_int(value: str) -> int:

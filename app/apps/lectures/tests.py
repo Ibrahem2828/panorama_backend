@@ -29,6 +29,7 @@ from apps.lectures.document_pipeline import (
 )
 from apps.lectures.models import Lecture, LecturePage, LectureProcessingStatus
 from apps.lectures.tasks import process_lecture_document
+from apps.product.models import FeatureFlag
 from apps.universities.models import AcademicYear, Faculty, Major, Semester, Subject, University
 
 
@@ -170,6 +171,41 @@ def test_dashboard_upload_queues_private_lecture(api_client, manager, academic_s
     lecture = Lecture.objects.get(title="Week 1")
     assert lecture.status == LectureProcessingStatus.QUEUED
     delay.assert_called_once_with(lecture.id)
+
+
+@pytest.mark.django_db
+def test_dashboard_upload_validates_processing_flag_before_persisting(api_client, manager, academic_structure):
+    FeatureFlag.objects.create(key="lecture_processing_enabled", enabled=False)
+    api_client.force_authenticate(manager)
+
+    response = api_client.post(
+        "/api/v1/dashboard/lectures/",
+        {
+            "subject": academic_structure["subject"].id,
+            "title": "Must not persist",
+            "original_file": ContentFile(make_pdf(), name="disabled.pdf"),
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert not Lecture.objects.filter(title="Must not persist").exists()
+
+
+@pytest.mark.django_db
+def test_processing_status_uses_processing_feature_flag(api_client, ready_lecture, student):
+    FeatureFlag.objects.create(key="lecture_notes_enabled", enabled=False)
+    api_client.force_authenticate(student)
+
+    available = api_client.get(f"/api/v1/lectures/{ready_lecture.id}/processing-status/")
+    assert available.status_code == status.HTTP_200_OK
+
+    FeatureFlag.objects.update_or_create(
+        key="lecture_processing_enabled",
+        defaults={"enabled": False},
+    )
+    disabled = api_client.get(f"/api/v1/lectures/{ready_lecture.id}/processing-status/")
+    assert disabled.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
 
 
 @pytest.mark.django_db

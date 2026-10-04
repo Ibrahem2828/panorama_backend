@@ -41,6 +41,46 @@ path. Responses set inline disposition where appropriate, `private, no-store`,
 static media route is guarded by `DEBUG` and cannot be enabled by production
 settings.
 
+## WebSocket chat handshake
+
+WebSocket connections do **not** accept access JWTs in the final contract.
+After REST authentication, a client requests
+`POST /api/v1/groups/{group_id}/chat-ticket/`. The server checks the active
+account, the current session version, active group state, approved membership
+where applicable, and capability-based chat access. It returns an opaque,
+cryptographically random, user/group/session-version-bound ticket, an expiry,
+and the WebSocket path.
+
+The client connects once using
+`wss://<host>/ws/v1/groups/{group_id}/chat/?ticket=<opaque-ticket>`. Tickets
+live in Redis/cache for 45 seconds by default (production accepts only
+30–60 seconds), are consumed atomically on the handshake, and must never be
+written to audit records or logs. Production's Django Redis cache implements
+the reservation with `SET ... NX`; one successful reservation is the sole
+consumer and the payload is then deleted. A cache/Redis failure returns a
+controlled `503` while issuing and rejects the WebSocket handshake rather than
+bypassing the ticket.
+
+The socket rechecks account, session version, group, and membership state before
+every client action. Its close-code contract is stable:
+
+- `4401`: authentication or session state is no longer valid (including an
+  inactive account or session-version mismatch). A client may refresh normal
+  REST authentication if appropriate, obtain one fresh chat ticket, and make a
+  bounded reconnect attempt.
+- `4403`: the client is authenticated but no longer has group-chat permission
+  (for example, blocked membership or disabled group). The client must stop
+  blind reconnecting, refresh group/membership state, and present the access
+  state to the user.
+
+The reverse proxy/WebSocket access log must redact or omit the `ticket` query
+parameter. Application and audit logging deliberately record neither a ticket
+value nor a WebSocket query string.
+
+`WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED` exists only for a controlled client
+migration and defaults to `False`; it is deprecated and must remain `False` in
+the final production configuration. It never bypasses session-version checks.
+
 ## Mobile lifecycle and idempotency
 
 Mobile version headers are advisory unless the server has an active required

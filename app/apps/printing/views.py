@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import mimetypes
 from pathlib import Path
+from typing import cast
 
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -14,12 +15,13 @@ from rest_framework import filters, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import CanManagePrinting, Capability, PermissionService
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle
-from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
+from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import (
     PrintBindingPrice,
@@ -103,7 +105,7 @@ class PrintPickupLocationViewSet(StandardReadOnlyModelViewSet):
         return PrintPickupLocation.objects.filter(is_active=True, is_deleted=False)
 
 
-class MyPrintOrderViewSet(StandardReadOnlyModelViewSet):
+class MyPrintOrderViewSet(StandardExplicitActionViewSet):
     serializer_class = MobilePrintOrderSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["status", "priority"]
@@ -114,7 +116,7 @@ class MyPrintOrderViewSet(StandardReadOnlyModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return PrintOrder.objects.none()
         return (
-            PrintOrder.objects.filter(user=self.request.user, is_deleted=False)
+            PrintOrder.objects.filter(user=cast(User, self.request.user), is_deleted=False)
             .select_related("pickup_location", "assigned_to")
             .prefetch_related("items__source_file", "status_history__changed_by")
         )

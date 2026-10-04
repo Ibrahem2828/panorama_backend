@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+from email.message import Message
 from unittest.mock import patch
 from urllib.error import HTTPError
 
@@ -130,6 +131,6 @@ def test_push_provider_rejects_untrusted_endpoint_and_handles_provider_failures(
         request = urlopen.call_args.args[0]
         assert request.full_url.startswith("https://exp.host/")
 
-        error = HTTPError("https://exp.host/--/api/v2/push/send", 503, "unavailable", {}, None)
+        error = HTTPError("https://exp.host/--/api/v2/push/send", 503, "unavailable", Message(), None)
         with patch("apps.notifications.services.urllib_request.urlopen", side_effect=error):
             assert PushNotificationService._send_expo(["ExponentPushToken[test]"], "T", "B") == 0

@@ -47,7 +47,7 @@ try {
     }
 
     Invoke-ValidationStep "Django system check" {
-        & $Python "app\manage.py" check
+        & $Python "app\manage.py" check --settings config.settings.testing
     }
 
     Invoke-ValidationStep "Django migration check" {
@@ -63,6 +63,11 @@ try {
         Set-ValidationDefault "CORS_ALLOWED_ORIGINS" "https://dashboard.example.com" $deployEnv
         Set-ValidationDefault "DATABASE_URL" "postgres://user:pass@localhost:5432/panorama" $deployEnv
         Set-ValidationDefault "REDIS_URL" "redis://localhost:6379/0" $deployEnv
+        Set-ValidationDefault "FIELD_ENCRYPTION_KEY" "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=" $deployEnv
+        Set-ValidationDefault "EMAIL_HOST" "smtp.example.test" $deployEnv
+        Set-ValidationDefault "EMAIL_HOST_USER" "validation@example.test" $deployEnv
+        Set-ValidationDefault "EMAIL_HOST_PASSWORD" "validation-only-password" $deployEnv
+        Set-ValidationDefault "STORAGE_BACKEND" "local" $deployEnv
         Set-ValidationDefault "SECURE_SSL_REDIRECT" "True" $deployEnv
         Set-ValidationDefault "SESSION_COOKIE_SECURE" "True" $deployEnv
         Set-ValidationDefault "CSRF_COOKIE_SECURE" "True" $deployEnv
@@ -75,46 +80,29 @@ try {
         }
     }
 
-    Invoke-ValidationStep "API collection JSON validation" {
-        & $Python -c "import json, pathlib; [json.loads(pathlib.Path(p).read_text(encoding='utf-8')) for p in ('docs/api/mobile_api_collection.json', 'docs/api/dashboard_api_collection.json')]; print('API collections are valid JSON')"
+    Invoke-ValidationStep "Canonical OpenAPI validation" {
+        & $Python "scripts\openapi_contract.py" validate
     }
 
-    Invoke-ValidationStep "OpenAPI schema validation" {
-        $SchemaPath = Join-Path ([System.IO.Path]::GetTempPath()) "panorama_openapi_$PID.yml"
-        try {
-            & $Python "app\manage.py" spectacular --file $SchemaPath --validate --settings config.settings.testing
-        }
-        finally {
-            Remove-Item -LiteralPath $SchemaPath -Force -ErrorAction SilentlyContinue
-        }
+    Invoke-ValidationStep "Canonical OpenAPI drift check" {
+        & $Python "scripts\openapi_contract.py" check-drift
     }
 
-    Invoke-ValidationStep "focused pytest: API contract" {
-        & $Python -m pytest "app\apps\common\tests_api_contract_collections.py"
+    Invoke-ValidationStep "Ruff" {
+        & $Python -m ruff check .
+        & $Python -m ruff format --check .
     }
 
-    Invoke-ValidationStep "focused pytest: production hardening" {
-        & $Python -m pytest "app\apps\common\tests_production_hardening.py"
+    Invoke-ValidationStep "Mypy" {
+        & $Python -m mypy app
     }
 
-    Invoke-ValidationStep "focused pytest: Phase 2 security" {
-        & $Python -m pytest "app\apps\common\tests_phase2_security.py"
+    Invoke-ValidationStep "Bandit" {
+        & $Python -m bandit -q -r app -x '*/migrations/*,*/tests/*' --severity-level medium
     }
 
-    Invoke-ValidationStep "focused pytest: Phase 3 reliability" {
-        & $Python -m pytest "app\apps\common\tests_phase3_reliability.py"
-    }
-
-    if (Test-Path "app\apps\common\tests_phase4_observability.py") {
-        Invoke-ValidationStep "focused pytest: Phase 4 observability" {
-            & $Python -m pytest "app\apps\common\tests_phase4_observability.py"
-        }
-    }
-
-    if (Test-Path "app\apps\common\tests_phase5_deployment.py") {
-        Invoke-ValidationStep "focused pytest: Phase 5 deployment" {
-            & $Python -m pytest "app\apps\common\tests_phase5_deployment.py"
-        }
+    Invoke-ValidationStep "focused pytest: WebSocket hardening" {
+        & $Python -m pytest "app\apps\chat\tests_handshake_tickets.py"
     }
 
     Invoke-ValidationStep "pytest" {

@@ -1,4 +1,5 @@
 import os
+from typing import Any
 from urllib.parse import unquote, urlparse
 
 from decouple import UndefinedValueError, config
@@ -73,7 +74,7 @@ def database_from_url(database_url: str, *, ssl_require: bool = False) -> dict:
     if not parsed.hostname or not parsed.path.strip("/"):
         raise ImproperlyConfigured("DATABASE_URL must include host and database name.")
 
-    database = {
+    database: dict[str, Any] = {
         "ENGINE": engine,
         "NAME": unquote(parsed.path.lstrip("/")),
         "USER": unquote(parsed.username or ""),

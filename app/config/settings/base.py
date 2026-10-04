@@ -60,6 +60,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "apps.common.middleware.RequestIDMiddleware",
+    "apps.common.middleware.APIErrorEnvelopeMiddleware",
     "apps.common.middleware.StructuredRequestLogMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -143,7 +144,7 @@ CORS_ALLOWED_ORIGINS = get_csv_env(
 CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("apps.accounts.authentication.SessionVersionJWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
@@ -160,6 +161,7 @@ REST_FRAMEWORK = {
         "file_ticket": config("THROTTLE_FILE_TICKET", default="60/hour"),
         "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),
         "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/min"),
+        "chat_ticket": config("THROTTLE_CHAT_TICKET", default="30/min"),
         "chat_report": config("THROTTLE_CHAT_REPORT", default="10/day"),
         "support_ticket": config("THROTTLE_SUPPORT_TICKET", default="5/hour"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
@@ -340,6 +342,8 @@ OTP_EXPIRY_MINUTES = config("OTP_EXPIRY_MINUTES", default=10, cast=int)
 OTP_RESEND_COOLDOWN_SECONDS = config("OTP_RESEND_COOLDOWN_SECONDS", default=60, cast=int)
 OTP_MAX_ATTEMPTS = config("OTP_MAX_ATTEMPTS", default=5, cast=int)
 OTP_EMAIL_SUBJECT = config("OTP_EMAIL_SUBJECT", default="رمز التحقق الخاص بتطبيق بانوراما")
+# Send OTP emails from a Celery worker instead of inside the request (production enables it).
+OTP_EMAIL_ASYNC = get_bool_env("OTP_EMAIL_ASYNC", default=False)
 SMS_OTP_PROVIDER_ENABLED = get_bool_env("SMS_OTP_PROVIDER_ENABLED", default=False)
 
 FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
@@ -347,6 +351,8 @@ APP_BASE_URL = config("APP_BASE_URL", default="http://localhost:8000").rstrip("/
 FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
 FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
 EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
+WEBSOCKET_CHAT_TICKET_TTL_SECONDS = config("WEBSOCKET_CHAT_TICKET_TTL_SECONDS", default=45, cast=int)
+WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED = get_bool_env("WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED", default=False)
 VERIFICATION_CARD_RETENTION_DAYS = config("VERIFICATION_CARD_RETENTION_DAYS", default=90, cast=int)
 OTP_RETENTION_DAYS = config("OTP_RETENTION_DAYS", default=7, cast=int)
 ACCESS_TICKET_RETENTION_HOURS = config("ACCESS_TICKET_RETENTION_HOURS", default=24, cast=int)

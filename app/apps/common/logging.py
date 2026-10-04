@@ -8,7 +8,7 @@ import re
 from datetime import UTC, datetime
 from typing import Any
 
-_SENSITIVE_VALUE = re.compile(r"(?i)(authorization|token|password|secret|api[_-]?key|cookie)\\s*([=:])\\s*[^\\s,;]+")
+_SENSITIVE_VALUE = re.compile(r"(?i)(authorization|token|password|secret|api[_-]?key|cookie)\s*([=:])\s*[^,;]+")
 
 
 class SensitiveDataFilter(logging.Filter):
@@ -24,7 +24,18 @@ class SensitiveDataFilter(logging.Filter):
 class JSONFormatter(logging.Formatter):
     """Emit a stable, one-line JSON log record without request payloads."""
 
-    request_fields = ("request_id", "user_id_hash", "route", "method", "status", "duration_ms")
+    request_fields = (
+        "request_id",
+        "user_id_hash",
+        "route",
+        "method",
+        "status",
+        "duration_ms",
+        "code",
+        "dependency",
+        "failure_class",
+        "pending_migration_count",
+    )
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
@@ -37,7 +48,7 @@ class JSONFormatter(logging.Formatter):
             value = getattr(record, field, None)
             if value is not None:
                 payload[field] = value
-        if record.exc_info:
+        if record.exc_info and record.exc_info[0] is not None:
             # Exception strings can contain user input; retain a signal without the payload.
             payload["exception"] = record.exc_info[0].__name__
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)

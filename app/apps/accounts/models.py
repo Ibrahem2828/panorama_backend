@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from apps.common.models import BaseModel
@@ -33,6 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     last_password_change_at = models.DateTimeField(null=True, blank=True)
+    session_version = models.PositiveIntegerField(default=1)
 
     objects = UserManager()
 
@@ -50,6 +51,24 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
     def __str__(self) -> str:
         return f"{self.full_name} <{self.email}>"
+
+    @transaction.atomic
+    def invalidate_sessions(self) -> None:
+        """Revoke refresh tokens and invalidate access tokens issued before this event.
+
+        Existing tokens without the version claim remain compatible only while
+        the user session version is one; a security event advances it and fails
+        legacy access tokens closed.
+        """
+
+        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+
+        locked = type(self).objects.select_for_update().get(pk=self.pk)
+        locked.session_version += 1
+        locked.save(update_fields=["session_version", "updated_at"])
+        for token in OutstandingToken.objects.filter(user=locked):
+            BlacklistedToken.objects.get_or_create(token=token)
+        self.session_version = locked.session_version
 
 
 class StudentProfile(BaseModel):

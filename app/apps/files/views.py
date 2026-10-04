@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import mimetypes
 from pathlib import Path
+from typing import cast
 
 from django.db import transaction
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import CanManageFiles
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
@@ -24,6 +26,48 @@ from apps.groups.models import GroupMembershipStatus
 from .models import FileAccessPurpose, FileAccessTicket, FileResource
 from .serializers import FileResourceSerializer
 from .services import FileAccessService, accessible_files_for_user, user_can_access_file
+
+FILE_RANGE_CHUNK_SIZE = 64 * 1024
+
+
+def _parse_single_range(range_header: str, file_size: int) -> tuple[int, int] | None:
+    """Parse one RFC 7233 byte range without accepting multi-range responses."""
+
+    if not range_header:
+        return None
+    if not range_header.startswith("bytes=") or "," in range_header:
+        raise ValueError("Unsupported range")
+    start_text, separator, end_text = range_header.removeprefix("bytes=").partition("-")
+    if not separator or (not start_text and not end_text):
+        raise ValueError("Invalid range")
+    try:
+        if start_text:
+            start = int(start_text)
+            end = int(end_text) if end_text else file_size - 1
+        else:
+            suffix_length = int(end_text)
+            if suffix_length <= 0:
+                raise ValueError("Invalid suffix range")
+            start = max(file_size - suffix_length, 0)
+            end = file_size - 1
+    except ValueError as exc:
+        raise ValueError("Invalid range") from exc
+    if start < 0 or start >= file_size or end < start:
+        raise ValueError("Unsatisfiable range")
+    return start, min(end, file_size - 1)
+
+
+def _range_chunks(file_handle, length: int):
+    try:
+        remaining = length
+        while remaining:
+            chunk = file_handle.read(min(FILE_RANGE_CHUNK_SIZE, remaining))
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+    finally:
+        file_handle.close()
 
 
 class FileResourceViewSet(StandardReadOnlyModelViewSet):
@@ -66,13 +110,14 @@ class GroupFileResourceViewSet(FileResourceViewSet):
         if getattr(self, "swagger_fake_view", False):
             return FileResource.objects.none()
         group_id = self.kwargs["group_pk"]
-        if not self.request.user.group_memberships.filter(
+        user = cast(User, self.request.user)
+        if not user.group_memberships.filter(
             group_id=group_id,
             status=GroupMembershipStatus.APPROVED,
             is_deleted=False,
         ).exists():
             raise PermissionDenied("You are not an approved member of this group.")
-        return accessible_files_for_user(self.request.user).filter(group_id=group_id)
+        return accessible_files_for_user(user).filter(group_id=group_id)
 
 
 class DashboardFileResourceViewSet(StandardModelViewSet):
@@ -131,7 +176,21 @@ class ProtectedFileStreamView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
-        tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline protected file stream")}
+        tags=["Protected Assets"],
+        parameters=[
+            OpenApiParameter(
+                name="Range",
+                type=str,
+                location=OpenApiParameter.HEADER,
+                required=False,
+                description="Optional single RFC 7233 byte range for PDF/WebView streaming.",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(description="Inline protected file stream."),
+            206: OpenApiResponse(description="Requested byte range of an inline protected file stream."),
+            416: OpenApiResponse(description="The requested byte range is invalid or unsatisfiable."),
+        },
     )
     def get(self, request, token):
         with transaction.atomic():
@@ -150,7 +209,27 @@ class ProtectedFileStreamView(APIView):
             ticket.save(update_fields=["use_count", "updated_at"])
         filename = Path(resource.file.name).name
         content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-        response = FileResponse(resource.file.open("rb"), content_type=content_type)
+        file_size = resource.file.size
+        response: HttpResponse | FileResponse | StreamingHttpResponse
+        try:
+            byte_range = _parse_single_range(request.headers.get("Range", ""), file_size)
+        except ValueError:
+            response = HttpResponse(status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE)
+            response["Content-Range"] = f"bytes */{file_size}"
+            return response
+
+        if byte_range is None:
+            response = FileResponse(resource.file.open("rb"), content_type=content_type)
+        else:
+            start, end = byte_range
+            file_handle = resource.file.open("rb")
+            file_handle.seek(start)
+            response = StreamingHttpResponse(
+                _range_chunks(file_handle, end - start + 1), status=206, content_type=content_type
+            )
+            response["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+            response["Content-Length"] = str(end - start + 1)
+        response["Accept-Ranges"] = "bytes"
         content_disposition = content_disposition_header(False, filename)
         if content_disposition:
             response["Content-Disposition"] = content_disposition
