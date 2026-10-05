@@ -134,3 +134,8 @@ LOGGING = {
         },
     },
 }
+
+# Error tracking (no-op without SENTRY_DSN).
+from config.observability import init_sentry  # noqa: E402
+
+init_sentry()

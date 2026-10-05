@@ -16,3 +16,4 @@ pypdf>=6.15.0,<7.0
 python-decouple>=3.8,<4.0
 redis>=5.0,<7.0
 whitenoise>=6.6,<7.0
+sentry-sdk>=2.40,<3.0
