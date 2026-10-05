@@ -95,6 +95,7 @@ YML
 
 # 3. Build, then run the release job (stops here if checks or migrations fail).
 $P build web
+[ "${STOP_AFTER:-}" = build ] && { echo "Built $SHA; stopping before the release job (STOP_AFTER=build)."; exit 0; }
 $P --profile release run --rm release
 
 # 4. Swap traffic: stop (do not remove) the old container so it can be restarted.
