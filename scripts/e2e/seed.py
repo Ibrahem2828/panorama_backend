@@ -20,7 +20,9 @@ def upsert(email, phone, name, role, **extra):
     return user
 
 
-it_user = upsert("it@e2e.test", "+963990000001", "E2E IT Support", UserRole.IT_SUPPORT, is_staff=True, is_superuser=True)
+it_user = upsert(
+    "it@e2e.test", "+963990000001", "E2E IT Support", UserRole.IT_SUPPORT, is_staff=True, is_superuser=True
+)
 upsert("admin@e2e.test", "+963990000002", "E2E Admin", UserRole.ADMIN, is_staff=True)
 upsert("print@e2e.test", "+963990000003", "E2E Print Staff", UserRole.PRINT_STAFF)
 upsert("normal@e2e.test", "+963990000004", "E2E Normal User", UserRole.NORMAL_USER)
