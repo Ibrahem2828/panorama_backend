@@ -39,3 +39,25 @@ def test_celery_is_configured_for_safe_redelivery():
     assert settings.CELERY_TASK_ACKS_LATE is True
     assert settings.CELERY_TASK_REJECT_ON_WORKER_LOST is True
     assert settings.CELERY_BROKER_TRANSPORT_OPTIONS["visibility_timeout"] > 960  # longer than the longest task
+
+
+def test_websocket_origin_policy_blocks_foreign_browsers_but_not_native_clients():
+    from asgiref.sync import async_to_sync
+    from channels.testing import WebsocketCommunicator
+
+    from config.asgi import application
+
+    path = "/ws/v1/groups/1/chat/"
+
+    async def handshake(headers=None):
+        communicator = WebsocketCommunicator(application, path, headers=headers or [])
+        connected, code = await communicator.connect()
+        return connected, code
+
+    # A native client (no Origin) reaches the consumer, which then refuses it for lack of a ticket (4401).
+    assert async_to_sync(handshake)() == (False, 4401)
+    # A browser on a foreign site is rejected during the handshake, before the consumer runs.
+    connected, code = async_to_sync(handshake)([(b"origin", b"https://evil.example")])
+    assert connected is False and code != 4401
+    # A browser on an allowed host reaches the consumer as well.
+    assert async_to_sync(handshake)([(b"origin", b"http://testserver")]) == (False, 4401)

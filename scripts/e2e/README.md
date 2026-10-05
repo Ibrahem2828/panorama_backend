@@ -22,6 +22,7 @@ node .next/standalone/server.js
 # 3. journeys
 E2E_BASE_URL=http://127.0.0.1:3000 node web/tests/e2e/student-journey.mjs   # one student, every feature (20 steps)
 node backend/scripts/e2e/cross-app.mjs                                       # student <-> staff across both apps (14 steps)
+node backend/scripts/e2e/chat.mjs                                            # realtime chat: two students, tickets, WebSocket (8 steps)
 ```
 
 All e2e accounts use the password `E2eStrongPass#2026`. In a browser, open the dashboard on `localhost` and the web app on
