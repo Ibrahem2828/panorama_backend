@@ -157,6 +157,10 @@ REST_FRAMEWORK = {
         "otp_request": config("THROTTLE_OTP_REQUEST", default="3/10min"),
         "otp_verify": config("THROTTLE_OTP_VERIFY", default="8/10min"),
         "password_reset": config("THROTTLE_PASSWORD_RESET", default="4/hour"),
+        # Per-account budgets, independent of the source IP.
+        "otp_request_account": config("THROTTLE_OTP_REQUEST_ACCOUNT", default="10/hour"),
+        "otp_verify_account": config("THROTTLE_OTP_VERIFY_ACCOUNT", default="20/hour"),
+        "password_reset_account": config("THROTTLE_PASSWORD_RESET_ACCOUNT", default="10/hour"),
         "feedback_submit": config("THROTTLE_FEEDBACK", default="20/day"),
         "file_ticket": config("THROTTLE_FILE_TICKET", default="60/hour"),
         "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),

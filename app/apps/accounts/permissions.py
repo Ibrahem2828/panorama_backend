@@ -81,6 +81,31 @@ class PermissionService:
         return "*" in defaults or permission_code in defaults
 
 
+# Who may act on whom. Everyone below the two management roles shares one rank.
+ROLE_RANK: dict[str, int] = {UserRole.IT_SUPPORT: 100, UserRole.ADMIN: 50}
+DEFAULT_ROLE_RANK = 10
+
+
+def role_rank(role: str) -> int:
+    return ROLE_RANK.get(role, DEFAULT_ROLE_RANK)
+
+
+def actor_outranks(actor, target) -> bool:
+    """IT Support may manage anyone; every other actor only manages strictly lower ranks."""
+    if actor.role == UserRole.IT_SUPPORT:
+        return True
+    return role_rank(target.role) < role_rank(actor.role)
+
+
+def can_delegate_capability(actor, permission_code: str) -> bool:
+    """A grantor can only hand out what they hold; system.manage never leaves IT Support."""
+    if actor.role == UserRole.IT_SUPPORT:
+        return True
+    if permission_code == Capability.SYSTEM_MANAGE:
+        return False
+    return PermissionService.has(actor, permission_code)
+
+
 class RolePermission(BasePermission):
     role: str | None = None
 

@@ -1,3 +1,6 @@
+from functools import cache
+
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.db.models import Q
@@ -18,6 +21,11 @@ from .models import StudentProfile, User
 from .permissions import Capability, PermissionService
 from .services import OTPService
 from .student_number import FACULTY_CODE_LABELS, StudentNumberParser, apply_student_number_parse
+
+
+@cache
+def _dummy_password_hash() -> str:
+    return make_password("panorama-timing-equaliser")
 
 
 class StudentProfileSerializer(serializers.ModelSerializer):
@@ -269,6 +277,9 @@ class LoginSerializer(serializers.Serializer):
         password = attrs["password"]
 
         user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=identifier)).first()
+        if user is None:
+            # Spend the same hashing time as a real check so response timing does not reveal accounts.
+            check_password(password, _dummy_password_hash())
         # Use one generic failure response to prevent account enumeration.
         if user is None or not user.check_password(password) or not user.is_active:
             raise serializers.ValidationError({"identifier": "Invalid credentials."})
@@ -375,7 +386,12 @@ class VerifyOTPSerializer(OTPInputSerializer):
             purpose=self.validated_data["purpose"],
             channel=self.validated_data["channel"],
         )
-        if otp.user:
+        verifying = otp.purpose in {
+            OTPPurpose.VERIFY_EMAIL,
+            OTPPurpose.VERIFY_PHONE,
+            OTPPurpose.REGISTER,
+        }
+        if otp.user and verifying:
             if otp.delivery_channel == OTPDeliveryChannel.EMAIL:
                 otp.user.is_email_verified = True
                 otp.user.save(update_fields=["is_email_verified", "updated_at"])
@@ -394,10 +410,16 @@ class RequestPasswordResetSerializer(OTPInputSerializer):
             if channel == OTPDeliveryChannel.EMAIL
             else User.objects.filter(phone_number=identifier).first()
         )
-        # Deliberately return a generic successful flow when no account exists.
-        if user is None:
+        # Deliberately return a generic successful flow when no account exists, and also when a code
+        # was just sent (cooldown), so the response never tells an attacker the account is real.
+        if user is None or not user.is_active:
             return None, None
-        return OTPService.send_otp(identifier, OTPPurpose.RESET_PASSWORD, user=user, channel=channel)
+        try:
+            return OTPService.send_otp(identifier, OTPPurpose.RESET_PASSWORD, user=user, channel=channel)
+        except serializers.ValidationError as exc:
+            if "identifier" in getattr(exc, "detail", {}):
+                return None, None
+            raise
 
 
 class ConfirmPasswordResetSerializer(OTPInputSerializer):
@@ -411,12 +433,12 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
             raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
         return attrs
 
-    @transaction.atomic
     def save(self, **kwargs):
         from django.utils import timezone
 
         identifier = self.validated_data["identifier"]
         channel = self.validated_data["channel"]
+        # Verified outside any transaction of ours so a wrong guess keeps its attempt count.
         otp = OTPService.verify_otp(
             identifier=identifier,
             code=self.validated_data["code"],
@@ -426,8 +448,9 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
         user = otp.user
         if user is None:
             raise serializers.ValidationError({"code": "Invalid or expired OTP code."})
-        user.set_password(self.validated_data["new_password"])
-        user.last_password_change_at = timezone.now()
-        user.save(update_fields=["password", "last_password_change_at", "updated_at"])
-        user.invalidate_sessions()
+        with transaction.atomic():
+            user.set_password(self.validated_data["new_password"])
+            user.last_password_change_at = timezone.now()
+            user.save(update_fields=["password", "last_password_change_at", "updated_at"])
+            user.invalidate_sessions()
         return user

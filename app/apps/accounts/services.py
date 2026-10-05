@@ -165,27 +165,41 @@ class OTPService:
         return otp, development_code
 
     @classmethod
-    @transaction.atomic
     def verify_otp(cls, identifier: str, code: str, purpose: str, channel: str | None = None) -> OTPCode:
+        """Verify a code and consume it.
+
+        The transaction commits on a wrong code so the failed-attempt counter survives; raising
+        inside the atomic block would roll the increment back and the lockout would never trigger.
+        Callers must not wrap this in their own transaction for the same reason.
+        """
+
         if purpose not in OTPPurpose.values:
             raise ValidationError({"purpose": "Invalid OTP purpose."})
         channel = channel or (OTPDeliveryChannel.EMAIL if "@" in str(identifier) else OTPDeliveryChannel.PHONE)
         identifier = cls._normalise_identifier(identifier, channel)
         lookup = cls._lookup_filter(identifier, channel)
 
-        otp = (
-            OTPCode.objects.select_for_update()
-            .filter(**lookup, purpose=purpose, delivery_channel=channel, is_used=False)
-            .order_by("-created_at")
-            .first()
-        )
-        if otp is None or otp.is_expired():
-            raise ValidationError({"code": "Invalid or expired OTP code."})
-        if otp.is_locked():
-            raise ValidationError({"code": "Too many invalid attempts. Request a new code."})
-        if not otp.verify_code(code):
-            if otp.is_locked():
-                raise ValidationError({"code": "Too many invalid attempts. Request a new code."})
-            raise ValidationError({"code": "Invalid or expired OTP code."})
-        otp.mark_used()
+        failure: str | None = None
+        with transaction.atomic():
+            otp = (
+                OTPCode.objects.select_for_update()
+                .filter(**lookup, purpose=purpose, delivery_channel=channel, is_used=False)
+                .order_by("-created_at")
+                .first()
+            )
+            if otp is None or otp.is_expired():
+                failure = "Invalid or expired OTP code."
+            elif otp.is_locked():
+                failure = "Too many invalid attempts. Request a new code."
+            elif not otp.verify_code(code):
+                failure = (
+                    "Too many invalid attempts. Request a new code."
+                    if otp.is_locked()
+                    else "Invalid or expired OTP code."
+                )
+            else:
+                otp.mark_used()
+        if failure is not None:
+            raise ValidationError({"code": failure})
+        assert otp is not None  # failure is None only when a matching, unused code was verified
         return otp

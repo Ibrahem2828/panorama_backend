@@ -26,7 +26,7 @@ from .dashboard_serializers import (
     UserPermissionOverrideSerializer,
 )
 from .models import User, UserPermissionOverride
-from .permissions import CanManageUsers
+from .permissions import CanManageUsers, actor_outranks, can_delegate_capability
 
 
 class IdempotencyConflict(APIException):
@@ -67,14 +67,22 @@ class DashboardUserViewSet(StandardExplicitActionViewSet):
             return decision, Response(decision.replay_body, status=decision.replay_status)
         return decision, None
 
+    @staticmethod
+    def _assert_can_manage(actor, target) -> None:
+        if not actor_outranks(actor, target):
+            raise PermissionDenied("You cannot manage an account with an equal or higher role.")
+
     def partial_update(self, request, pk=None):
-        user = self.get_object()
-        old = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
-        serializer = self.get_serializer(user, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        if old["role"] != user.role:
-            user.invalidate_sessions()
+        # Lock the row so concurrent role changes cannot both pass the "keep one IT Support" guard.
+        with transaction.atomic():
+            user = get_object_or_404(User.objects.select_for_update(), pk=pk, is_deleted=False)
+            self._assert_can_manage(request.user, user)
+            old = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
+            serializer = self.get_serializer(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            if old["role"] != user.role:
+                user.invalidate_sessions()
         new = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
         audit_action = AuditAction.USER_ROLE_CHANGED if old["role"] != new["role"] else AuditAction.USER_STATUS_CHANGED
         AuditLogService.log(
@@ -100,6 +108,7 @@ class DashboardUserViewSet(StandardExplicitActionViewSet):
             return replay
         with transaction.atomic():
             user = get_object_or_404(User.objects.select_for_update(), pk=pk, is_deleted=False)
+            self._assert_can_manage(request.user, user)
             was_active = user.is_active
             if not was_active:
                 user.is_active = True
@@ -136,6 +145,7 @@ class DashboardUserViewSet(StandardExplicitActionViewSet):
             user = get_object_or_404(User.objects.select_for_update(), pk=pk, is_deleted=False)
             if user.pk == request.user.pk:
                 raise PermissionDenied("You cannot deactivate your own account.")
+            self._assert_can_manage(request.user, user)
             if user.role == UserRole.IT_SUPPORT and user.is_active:
                 has_another_critical_account = (
                     User.objects.filter(role=UserRole.IT_SUPPORT, is_active=True, is_deleted=False)
@@ -178,6 +188,13 @@ class DashboardCapabilitiesView(APIView):
 class DashboardUserPermissionOverridesView(APIView):
     permission_classes = [CanManageUsers]
 
+    @staticmethod
+    def _assert_can_change_overrides(actor, target) -> None:
+        if actor.pk == target.pk:
+            raise PermissionDenied("You cannot change your own permission overrides.")
+        if not actor_outranks(actor, target):
+            raise PermissionDenied("You cannot manage an account with an equal or higher role.")
+
     @extend_schema(tags=["Dashboard"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, user_id: int):
         user = get_object_or_404(User, pk=user_id, is_deleted=False)
@@ -188,9 +205,12 @@ class DashboardUserPermissionOverridesView(APIView):
     @extend_schema(tags=["Dashboard"], request=PermissionOverrideUpsertSerializer, responses={200: OpenApiTypes.OBJECT})
     def put(self, request, user_id: int):
         user = get_object_or_404(User.objects.select_for_update(), pk=user_id, is_deleted=False)
+        self._assert_can_change_overrides(request.user, user)
         serializer = PermissionOverrideUpsertSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.validated_data["permission_code"]
+        if not can_delegate_capability(request.user, code):
+            raise PermissionDenied("You cannot grant or revoke a capability you do not hold.")
         old = UserPermissionOverride.objects.filter(user=user, permission_code=code, is_deleted=False).first()
         override, _ = UserPermissionOverride.objects.update_or_create(
             user=user,
@@ -223,7 +243,10 @@ class DashboardUserPermissionOverridesView(APIView):
     @extend_schema(tags=["Dashboard"], request=OpenApiTypes.OBJECT, responses={200: OpenApiTypes.OBJECT})
     def delete(self, request, user_id: int):
         user = get_object_or_404(User, pk=user_id, is_deleted=False)
+        self._assert_can_change_overrides(request.user, user)
         code = request.data.get("permission_code", "")
+        if not can_delegate_capability(request.user, code):
+            raise PermissionDenied("You cannot grant or revoke a capability you do not hold.")
         override = get_object_or_404(UserPermissionOverride, user=user, permission_code=code, is_deleted=False)
         old = UserPermissionOverrideSerializer(override).data
         override.delete()

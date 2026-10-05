@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from collections.abc import Mapping
 
 from rest_framework.throttling import SimpleRateThrottle
 
@@ -58,7 +59,9 @@ class IdentifierRateThrottle(SimpleRateThrottle):
         return num_requests, multiplier * self._period_units[match.group(2)]
 
     def get_identifier(self, request) -> str:
-        data = getattr(request, "data", {}) or {}
+        data = getattr(request, "data", None)
+        if not isinstance(data, Mapping):
+            return "anonymous"
         for field in self.identifier_fields:
             if data.get(field):
                 return _normalise_identifier(data.get(field))
@@ -70,6 +73,31 @@ class IdentifierRateThrottle(SimpleRateThrottle):
         composite = f"{_request_ip(request)}|{self.get_identifier(request)}"
         digest = hashlib.sha256(composite.encode("utf-8")).hexdigest()
         return self.cache_format % {"scope": self.scope, "ident": digest}
+
+
+class AccountRateThrottle(IdentifierRateThrottle):
+    """Limit by the targeted account only, so rotating source IPs does not reset the budget."""
+
+    def get_cache_key(self, request, view):
+        if not self.rate:
+            return None
+        identifier = self.get_identifier(request)
+        if identifier == "anonymous":
+            return None  # the per-IP throttle already covers requests without an identifier
+        digest = hashlib.sha256(identifier.encode("utf-8")).hexdigest()
+        return self.cache_format % {"scope": self.scope, "ident": digest}
+
+
+class OTPRequestAccountThrottle(AccountRateThrottle):
+    scope = "otp_request_account"
+
+
+class OTPVerifyAccountThrottle(AccountRateThrottle):
+    scope = "otp_verify_account"
+
+
+class PasswordResetAccountThrottle(AccountRateThrottle):
+    scope = "password_reset_account"
 
 
 class LoginRateThrottle(IdentifierRateThrottle):
