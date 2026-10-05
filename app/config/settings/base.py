@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from decouple import config
 
 from .env import get_bool_env, get_csv_env
@@ -157,6 +158,10 @@ REST_FRAMEWORK = {
         "otp_request": config("THROTTLE_OTP_REQUEST", default="3/10min"),
         "otp_verify": config("THROTTLE_OTP_VERIFY", default="8/10min"),
         "password_reset": config("THROTTLE_PASSWORD_RESET", default="4/hour"),
+        # Per-account budgets, independent of the source IP.
+        "otp_request_account": config("THROTTLE_OTP_REQUEST_ACCOUNT", default="10/hour"),
+        "otp_verify_account": config("THROTTLE_OTP_VERIFY_ACCOUNT", default="20/hour"),
+        "password_reset_account": config("THROTTLE_PASSWORD_RESET_ACCOUNT", default="10/hour"),
         "feedback_submit": config("THROTTLE_FEEDBACK", default="20/day"),
         "file_ticket": config("THROTTLE_FILE_TICKET", default="60/hour"),
         "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),
@@ -385,11 +390,25 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, cast=int)
 CELERY_TASK_ROUTES = {"apps.lectures.tasks.*": {"queue": "conversion"}}
+# Redelivery window for unacknowledged tasks; must exceed the longest task (lecture conversion).
+CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 7200}
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 200  # recycle workers; LibreOffice and Pillow leak over time
 CELERY_BEAT_SCHEDULE = {
     "execute-due-account-deletions": {
         "task": "apps.product.tasks.execute_due_account_deletions",
         "schedule": 3600.0,
-    }
+    },
+    # Retention: OTPs, access tickets, expired overrides, verification-card images, audit rows.
+    "purge-expired-sensitive-data": {
+        "task": "apps.common.tasks.purge_expired_sensitive_data",
+        "schedule": crontab(hour=3, minute=15),
+    },
+    # Lectures whose worker died mid-conversion would otherwise stay "processing" forever.
+    "fail-stuck-lectures": {
+        "task": "apps.lectures.tasks.fail_stuck_lectures",
+        "schedule": 600.0,
+    },
 }
 FCM_SERVER_KEY = config("FCM_SERVER_KEY", default="")
 

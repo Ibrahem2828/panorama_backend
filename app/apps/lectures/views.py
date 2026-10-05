@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from uuid import UUID
 
 from django.db import transaction
 from django.http import FileResponse, Http404
@@ -58,9 +59,11 @@ class NoteVersionConflict(APIException):
 
 def _viewer_token(request) -> str:
     token = request.headers.get("X-Viewer-Session", "").strip()
-    if not token:
-        raise Http404("Viewer session is required.")
-    return token
+    try:
+        # The session id is a UUID; anything else must be a 404, not a database validation error (500).
+        return str(UUID(token))
+    except ValueError:
+        raise Http404("Viewer session is required.") from None
 
 
 def _inline_file_response(field_file, filename: str, content_type: str) -> FileResponse:

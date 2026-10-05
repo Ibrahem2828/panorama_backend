@@ -15,6 +15,7 @@ from apps.accounts.choices import UserRole
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 
+from .anonymization import anonymize_user_data
 from .models import (
     AccountDeletionRequest,
     AccountDeletionStatus,
@@ -175,6 +176,9 @@ class IdempotencyDecision:
 class IdempotencyService:
     """A durable, user-scoped idempotency protocol for JSON API writes."""
 
+    #: How long an unfinished first attempt blocks retries before a retry may take the key over.
+    IN_PROGRESS_TIMEOUT_SECONDS = 60
+
     @staticmethod
     def _digest(value: str) -> str:
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
@@ -219,6 +223,11 @@ class IdempotencyService:
                     raise ValueError("Idempotency-Key cannot be reused with a different request payload.") from exc
                 if record.response_status and record.response_body is not None:
                     return IdempotencyDecision(replay_status=record.response_status, replay_body=record.response_body)
+                if record.updated_at <= now - timedelta(seconds=cls.IN_PROGRESS_TIMEOUT_SECONDS):
+                    # The first attempt died or raised before storing a response; without this takeover the
+                    # key stayed "in progress" (409) until it expired a day later.
+                    IdempotencyRecord.objects.filter(pk=record.pk).update(updated_at=now)
+                    return IdempotencyDecision(record_id=record.pk)
                 raise RuntimeError("A request with this Idempotency-Key is already in progress.") from exc
         return IdempotencyDecision(record_id=record.pk)
 
@@ -238,20 +247,23 @@ class IdempotencyService:
 class AccountDeletionService:
     @staticmethod
     def request(user, *, reason: str = "", request=None) -> AccountDeletionRequest:
-        scheduled_for = AccountDeletionRequest.default_scheduled_for()
-        deletion, _ = AccountDeletionRequest.objects.update_or_create(
-            user=user,
-            defaults={
-                "status": AccountDeletionStatus.REQUESTED,
-                "requested_at": timezone.now(),
-                "scheduled_for": scheduled_for,
-                "cancelled_at": None,
-                "completed_at": None,
-                "reason": reason[:500],
-                "is_deleted": False,
-                "deleted_at": None,
-            },
-        )
+        with transaction.atomic():
+            existing = AccountDeletionRequest.objects.select_for_update().filter(user=user).first()
+            if existing is not None and existing.status == AccountDeletionStatus.REQUESTED:
+                return existing
+            deletion, _ = AccountDeletionRequest.objects.update_or_create(
+                user=user,
+                defaults={
+                    "status": AccountDeletionStatus.REQUESTED,
+                    "requested_at": timezone.now(),
+                    "scheduled_for": AccountDeletionRequest.default_scheduled_for(),
+                    "cancelled_at": None,
+                    "completed_at": None,
+                    "reason": reason[:500],
+                    "is_deleted": False,
+                    "deleted_at": None,
+                },
+            )
         AuditLogService.log(actor=user, action=AuditAction.ACCOUNT_DELETION_REQUESTED, target=deletion, request=request)
         return deletion
 
@@ -290,12 +302,13 @@ class AccountDeletionService:
                 suffix = hashlib.sha256(f"{user.pk}:{deletion.pk}".encode()).hexdigest()[:16]
                 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
-                from apps.notifications.models import DeviceToken
                 from apps.product.models import DeviceInstallation
 
+                anonymization_counts = anonymize_user_data(
+                    user, original_email=user.email, original_phone=user.phone_number
+                )
                 for token in OutstandingToken.objects.filter(user=user):
                     BlacklistedToken.objects.get_or_create(token=token)
-                DeviceToken.objects.filter(user=user).update(is_active=False, updated_at=timezone.now())
                 DeviceInstallation.objects.filter(user=user, revoked_at__isnull=True).update(
                     push_token=None,
                     notifications_enabled=False,
@@ -314,6 +327,11 @@ class AccountDeletionService:
                 deletion.status = AccountDeletionStatus.COMPLETED
                 deletion.completed_at = timezone.now()
                 deletion.save(update_fields=["status", "completed_at", "updated_at"])
-                AuditLogService.log(actor=None, action=AuditAction.ACCOUNT_DELETION_COMPLETED, target=deletion)
+                AuditLogService.log(
+                    actor=None,
+                    action=AuditAction.ACCOUNT_DELETION_COMPLETED,
+                    target=deletion,
+                    new_value={"anonymized": anonymization_counts},
+                )
                 completed += 1
         return completed

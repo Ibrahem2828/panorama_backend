@@ -4405,6 +4405,9 @@ paths:
   /api/v1/dashboard/stats/:
     get:
       operationId: v1_dashboard_stats_retrieve
+      description: Aggregate counts, cached for 30 seconds and excluding soft-deleted
+        rows. Each section is only populated when the caller holds the matching capability;
+        otherwise it is an empty object.
       tags:
       - Dashboard
       security:

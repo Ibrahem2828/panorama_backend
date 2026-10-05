@@ -28,6 +28,9 @@ class ProductLifecycleMiddleware:
         "/api/v1/mobile/bootstrap/",
         "/api/v1/mobile/update-policy/",
         "/api/v1/policies/current/",
+        # Staff must still be able to sign in during maintenance to switch it off from the dashboard.
+        "/api/v1/auth/login/",
+        "/api/v1/auth/token/refresh/",
     )
     _dashboard_prefix = "/api/v1/dashboard/"
 

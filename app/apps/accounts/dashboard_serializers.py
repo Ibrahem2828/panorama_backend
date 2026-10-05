@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from .choices import PermissionEffect, UserRole
 from .models import User, UserPermissionOverride
-from .permissions import Capability, PermissionService
+from .permissions import Capability, PermissionService, role_rank
 
 ALL_CAPABILITIES = sorted(
     value for name, value in vars(Capability).items() if name.isupper() and isinstance(value, str)
@@ -94,6 +94,8 @@ class DashboardUserUpdateSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         if value == UserRole.IT_SUPPORT and request.user.role != UserRole.IT_SUPPORT:
             raise serializers.ValidationError("Only IT Support can grant the IT Support role.")
+        if request.user.role != UserRole.IT_SUPPORT and role_rank(value) >= role_rank(request.user.role):
+            raise serializers.ValidationError("You cannot assign a role equal to or above your own.")
         return value
 
 

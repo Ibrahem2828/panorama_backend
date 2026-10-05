@@ -1,5 +1,8 @@
+import json
 import logging
 from typing import Any
+
+from django.core.serializers.json import DjangoJSONEncoder
 
 from apps.common.request_utils import get_client_ip
 
@@ -33,9 +36,16 @@ def sanitize_value(value: Any):
         return {
             key: "[REDACTED]" if key.lower() in SENSITIVE_KEYS else sanitize_value(item) for key, item in value.items()
         }
-    if isinstance(value, list):
+    if isinstance(value, list | tuple):
         return [sanitize_value(item) for item in value]
-    return value
+    if value is None or isinstance(value, str | int | float | bool):
+        return value
+    # Decimals, datetimes, UUIDs and file handles are not JSON native; a failed write here used to
+    # drop the whole audit row silently, so coerce them to something storable.
+    try:
+        return json.loads(json.dumps(value, cls=DjangoJSONEncoder))
+    except (TypeError, ValueError):
+        return str(value)
 
 
 class AuditLogService:

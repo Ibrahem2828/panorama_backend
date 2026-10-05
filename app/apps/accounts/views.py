@@ -9,8 +9,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.common.responses import error_response, success_response
 from apps.common.throttles import (
     LoginRateThrottle,
+    OTPRequestAccountThrottle,
     OTPRequestRateThrottle,
+    OTPVerifyAccountThrottle,
     OTPVerifyRateThrottle,
+    PasswordResetAccountThrottle,
     PasswordResetRateThrottle,
     RegistrationRateThrottle,
 )
@@ -175,7 +178,7 @@ class ChangePasswordView(APIView):
 
 class SendOTPView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OTPRequestRateThrottle]
+    throttle_classes = [OTPRequestRateThrottle, OTPRequestAccountThrottle]
     serializer_class = SendOTPSerializer
 
     @extend_schema(auth=[], request=SendOTPSerializer)
@@ -196,7 +199,7 @@ class SendOTPView(APIView):
 
 class VerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OTPVerifyRateThrottle]
+    throttle_classes = [OTPVerifyRateThrottle, OTPVerifyAccountThrottle]
     serializer_class = VerifyOTPSerializer
 
     @extend_schema(auth=[], request=VerifyOTPSerializer)
@@ -209,7 +212,7 @@ class VerifyOTPView(APIView):
 
 class RequestPasswordResetView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [PasswordResetRateThrottle]
+    throttle_classes = [PasswordResetRateThrottle, PasswordResetAccountThrottle]
     serializer_class = RequestPasswordResetSerializer
 
     @extend_schema(auth=[], request=RequestPasswordResetSerializer)
@@ -232,7 +235,7 @@ class RequestPasswordResetView(APIView):
 
 class ConfirmPasswordResetView(APIView):
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [OTPVerifyRateThrottle]
+    throttle_classes = [OTPVerifyRateThrottle, OTPVerifyAccountThrottle]
     serializer_class = ConfirmPasswordResetSerializer
 
     @extend_schema(auth=[], request=ConfirmPasswordResetSerializer)

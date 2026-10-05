@@ -123,7 +123,8 @@ def test_dashboard_cannot_deactivate_itself_or_last_it_support(client, admin_use
         format="json",
         HTTP_IDEMPOTENCY_KEY="last-it-deactivation",
     )
-    assert last_critical.status_code == status.HTTP_400_BAD_REQUEST
+    # An admin cannot touch IT Support at all, which is stricter than the old "keep one" guard.
+    assert last_critical.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.django_db

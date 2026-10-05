@@ -8,10 +8,10 @@ from django.core.cache import cache
 
 from .models import FeedbackAITriage, FeedbackAITriageStatus, FeedbackKind, FeedbackPriority
 
-_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
-_PHONE_RE = re.compile(r"(?<!\\w)\\+?[0-9][0-9 -]{6,}[0-9](?!\\w)")
-_TOKEN_RE = re.compile(r"(?i)(bearer|token|otp|password)\\s*[:=]\\s*[^\\s]+")
-_URL_RE = re.compile(r"https?://[^\\s]+")
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_PHONE_RE = re.compile(r"(?<!\w)\+?[0-9][0-9 -]{6,}[0-9](?!\w)")
+_TOKEN_RE = re.compile(r"(?i)(bearer|token|otp|password)\s*[:=]\s*[^\s]+")
+_URL_RE = re.compile(r"https?://[^\s]+")
 
 
 def redact_feedback_text(value: str) -> str:
@@ -56,7 +56,7 @@ def triage_feedback(self, feedback_id: int) -> str:
         return "circuit_open"
 
     try:
-        redacted = redact_feedback_text("\\n".join([feedback.title, feedback.comment, feedback.suggestion]))
+        redacted = redact_feedback_text("\n".join([feedback.title, feedback.comment, feedback.suggestion]))
         provider = getattr(settings, "FEEDBACK_AI_PROVIDER", "local_safe_heuristic")
         if provider != "local_safe_heuristic":
             triage.status = FeedbackAITriageStatus.SKIPPED
