@@ -35,7 +35,8 @@ FEATURE_DEFAULTS = {
     "chat_enabled": True,
     "notifications_enabled": True,
     "feedback_enabled": True,
-    "account_deletion_enabled": False,
+    # In-app account deletion is a store requirement, so it is on unless a flag row switches it off.
+    "account_deletion_enabled": True,
 }
 _CONFIG_TTL_SECONDS = 60
 

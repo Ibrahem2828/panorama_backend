@@ -4,6 +4,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
+from django.core.cache import cache
 from django.db import ProgrammingError
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -67,14 +68,14 @@ def test_required_update_blocks_non_exempt_mobile_api_but_not_bootstrap(client):
     headers = {"HTTP_X_APP_PLATFORM": "android", "HTTP_X_APP_BUILD": "19"}
     bootstrap = client.get("/api/v1/mobile/bootstrap/", **headers)
     assert bootstrap.status_code == 200
-    blocked = client.get("/api/v1/auth/me/", **headers)
+    blocked = client.get("/api/v1/announcements/", **headers)
     assert blocked.status_code == 426
     assert blocked.json()["code"] == "APP_UPDATE_REQUIRED"
 
 
 def test_maintenance_returns_retry_after_and_exempts_health(client):
     MaintenanceMode.objects.create(enabled=True, message_en="Maintenance", retry_after_seconds=47)
-    blocked = client.get("/api/v1/auth/me/")
+    blocked = client.get("/api/v1/announcements/")
     assert blocked.status_code == 503
     assert blocked["Retry-After"] == "47"
     health = client.get("/api/v1/health/live/")
@@ -92,7 +93,7 @@ def test_lifecycle_lookup_database_failure_keeps_api_serving(client, monkeypatch
         raise ProgrammingError('relation "product_maintenancemode" does not exist')
 
     monkeypatch.setattr(ProductConfigurationService, "active_maintenance", staticmethod(unmigrated_table))
-    response = client.get("/api/v1/auth/me/")
+    response = client.get("/api/v1/announcements/")
     assert response.status_code == 200
 
 
@@ -141,10 +142,13 @@ def test_policy_acceptance_records_versions_and_is_idempotent(client, user):
 
 
 def test_account_deletion_is_feature_gated_cancellable_and_anonymizes_when_due(client, user):
+    flag = FeatureFlag.objects.create(key="account_deletion_enabled", enabled=False)
     disabled = client.post("/api/v1/account/deletion/request/", {}, format="json")
     assert disabled.status_code == 403
 
-    FeatureFlag.objects.create(key="account_deletion_enabled", enabled=True)
+    flag.enabled = True
+    flag.save()
+    cache.clear()
     requested = client.post(
         "/api/v1/account/deletion/request/",
         {"reason": "No longer needed"},
