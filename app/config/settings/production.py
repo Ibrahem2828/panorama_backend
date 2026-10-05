@@ -27,6 +27,15 @@ if "*" in ALLOWED_HOSTS:
 database_url = require_env("DATABASE_URL")
 DATABASE_SSL_REQUIRE = get_bool_env("DATABASE_SSL_REQUIRE", default=True)
 DATABASES["default"] = database_from_url(database_url, ssl_require=DATABASE_SSL_REQUIRE)  # noqa: F405
+# Reuse connections, fail fast on an unreachable database and cap runaway queries. The release
+# job sets DB_STATEMENT_TIMEOUT_MS=0 because migrations can legitimately run long.
+DATABASES["default"]["CONN_MAX_AGE"] = config("DB_CONN_MAX_AGE", default=60, cast=int)  # noqa: F405
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
+_db_options = DATABASES["default"].setdefault("OPTIONS", {})  # noqa: F405
+_db_options["connect_timeout"] = config("DB_CONNECT_TIMEOUT", default=5, cast=int)
+_statement_timeout_ms = config("DB_STATEMENT_TIMEOUT_MS", default=30000, cast=int)
+if _statement_timeout_ms > 0:
+    _db_options["options"] = f"-c statement_timeout={_statement_timeout_ms}"
 
 REDIS_URL = require_env("REDIS_URL")
 CACHES["default"]["LOCATION"] = REDIS_URL  # noqa: F405

@@ -59,9 +59,13 @@ class DatabaseHealthCheckView(APIView):
         responses={200: OpenApiResponse(description="Database health status")},
     )
     def get(self, request):
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+        except (DatabaseError, OSError, TimeoutError) as exc:
+            _log_dependency_failure(request, "database", exc)
+            return _not_ready(request)
         return success_response(
             message="OK",
             data={
@@ -69,6 +73,8 @@ class DatabaseHealthCheckView(APIView):
                 "service": "panorama_backend",
                 "database": "healthy",
             },
+            request=request,
+            code="OK",
         )
 
 

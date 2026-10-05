@@ -123,7 +123,13 @@ def test_production_settings_start_with_local_storage_and_no_cloud_credentials(m
 
     assert production.ALLOWED_HOSTS == ["coolify.sslip.io", "localhost"]
     assert production.DEBUG is False
-    assert production.DATABASES["default"]["OPTIONS"] == {"sslmode": "require"}
+    assert production.DATABASES["default"]["OPTIONS"] == {
+        "sslmode": "require",
+        "connect_timeout": 5,
+        "options": "-c statement_timeout=30000",
+    }
+    assert production.DATABASES["default"]["CONN_MAX_AGE"] == 60
+    assert production.DATABASES["default"]["CONN_HEALTH_CHECKS"] is True
     assert production.STORAGE_BACKEND == "local"
     assert production.MEDIA_ROOT == production.BASE_DIR / "media"
     assert production.STORAGES["default"]["BACKEND"] == "apps.common.storage.PrivateFileSystemStorage"

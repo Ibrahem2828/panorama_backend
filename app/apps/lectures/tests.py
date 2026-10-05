@@ -419,3 +419,28 @@ def test_document_task_quarantines_and_is_idempotent_when_ready(ready_lecture):
     ready_lecture.viewer_pdf = ContentFile(make_pdf(), name="already-ready.pdf")
     ready_lecture.save(update_fields=["status", "viewer_pdf", "updated_at"])
     assert process_lecture_document.apply(args=[ready_lecture.id]).get() == "ready"
+
+
+def test_stuck_lectures_are_failed_but_fresh_ones_are_left_alone(ready_lecture):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.lectures.tasks import fail_stuck_lectures
+
+    Lecture.objects.filter(pk=ready_lecture.pk).update(
+        status=LectureProcessingStatus.RENDERING, updated_at=timezone.now() - timedelta(minutes=45)
+    )
+    fresh = Lecture.objects.get(pk=ready_lecture.pk)
+    fresh.pk = None
+    fresh.id = None
+    fresh.status = LectureProcessingStatus.RENDERING
+    fresh.original_sha256 = "b" * 64
+    fresh.save()
+
+    assert fail_stuck_lectures() == 1
+    ready_lecture.refresh_from_db()
+    fresh.refresh_from_db()
+    assert ready_lecture.status == LectureProcessingStatus.FAILED
+    assert ready_lecture.failure_code == "processing_timeout"
+    assert fresh.status == LectureProcessingStatus.RENDERING

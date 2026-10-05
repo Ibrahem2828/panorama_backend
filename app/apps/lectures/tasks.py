@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 from celery import shared_task
 from django.db import transaction
@@ -28,8 +29,8 @@ def _set_status(lecture: Lecture, status: str, *, failure_code: str = "", failur
     retry_backoff=True,
     retry_jitter=True,
     retry_kwargs={"max_retries": 3},
-    soft_time_limit=150,
-    time_limit=180,
+    soft_time_limit=900,  # large decks render page by page; 150s could never finish 300 pages
+    time_limit=960,
 )
 def process_lecture_document(self, lecture_id: int) -> str:
     """Convert and render a lecture on the dedicated conversion queue.
@@ -113,3 +114,28 @@ def process_lecture_document(self, lecture_id: int) -> str:
         )
         logger.exception("lecture_document_processing_unexpected_failure", extra={"lecture_id": lecture.id})
         raise
+
+
+_IN_FLIGHT_STATUSES = (
+    LectureProcessingStatus.SCANNING,
+    LectureProcessingStatus.CONVERTING,
+    LectureProcessingStatus.EXTRACTING,
+    LectureProcessingStatus.RENDERING,
+)
+
+
+@shared_task(ignore_result=True)
+def fail_stuck_lectures(max_age_minutes: int = 30) -> int:
+    """Mark lectures whose worker died mid-conversion as failed so managers can retry them."""
+
+    cutoff = timezone.now() - timedelta(minutes=max_age_minutes)
+    stuck = Lecture.objects.filter(status__in=_IN_FLIGHT_STATUSES, updated_at__lt=cutoff, is_deleted=False)
+    count = stuck.update(
+        status=LectureProcessingStatus.FAILED,
+        failure_code="processing_timeout",
+        failure_message="Processing did not finish. Please upload the document again.",
+        updated_at=timezone.now(),
+    )
+    if count:
+        logger.warning("lectures_marked_failed_after_timeout", extra={"count": count})
+    return count

@@ -1,5 +1,8 @@
 #!/bin/sh
 set -eu
+
+# Migrations may exceed the web statement timeout.
+export DB_STATEMENT_TIMEOUT_MS=0
 cd /app/app
 python manage.py check --deploy
 python manage.py validate_production_env
