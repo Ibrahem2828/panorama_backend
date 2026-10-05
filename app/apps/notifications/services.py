@@ -65,6 +65,9 @@ class NotificationService:
             for user in users:
                 if user.id not in created_user_ids:
                     continue
+                preference = preferences.get(user.id)
+                if preference is not None and not preference.push_enabled:
+                    continue  # the single-user path honours this; campaigns must too
                 transaction.on_commit(
                     partial(deliver_push_notification.delay, user.id, title, body, data or {}), robust=True
                 )

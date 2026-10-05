@@ -175,6 +175,9 @@ class IdempotencyDecision:
 class IdempotencyService:
     """A durable, user-scoped idempotency protocol for JSON API writes."""
 
+    #: How long an unfinished first attempt blocks retries before a retry may take the key over.
+    IN_PROGRESS_TIMEOUT_SECONDS = 60
+
     @staticmethod
     def _digest(value: str) -> str:
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
@@ -219,6 +222,11 @@ class IdempotencyService:
                     raise ValueError("Idempotency-Key cannot be reused with a different request payload.") from exc
                 if record.response_status and record.response_body is not None:
                     return IdempotencyDecision(replay_status=record.response_status, replay_body=record.response_body)
+                if record.updated_at <= now - timedelta(seconds=cls.IN_PROGRESS_TIMEOUT_SECONDS):
+                    # The first attempt died or raised before storing a response; without this takeover the
+                    # key stayed "in progress" (409) until it expired a day later.
+                    IdempotencyRecord.objects.filter(pk=record.pk).update(updated_at=now)
+                    return IdempotencyDecision(record_id=record.pk)
                 raise RuntimeError("A request with this Idempotency-Key is already in progress.") from exc
         return IdempotencyDecision(record_id=record.pk)
 
