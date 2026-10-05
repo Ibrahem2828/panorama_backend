@@ -63,7 +63,7 @@ def content_fingerprint(validated_data: dict) -> str:
 def abuse_flags(validated_data: dict) -> list[str]:
     text = _feedback_text(validated_data)
     flags: list[str] = []
-    if re.search(r"(.)\\1{12,}", text):
+    if re.search(r"(.)\1{12,}", text):
         flags.append("repeated_characters")
     if re.search(r"https?://", text):
         flags.append("contains_url")
@@ -291,7 +291,8 @@ class FeedbackService:
 
     @staticmethod
     def analytics(queryset=None) -> dict:
-        queryset = queryset or AppFeedback.objects.filter(is_deleted=False)
+        if queryset is None:
+            queryset = AppFeedback.objects.filter(is_deleted=False)
         ratings = queryset.filter(kind=FeedbackKind.RATING, rating__isnull=False)
         csat = queryset.filter(metric_type=FeedbackMetricType.CSAT, metric_value__isnull=False)
         ces = queryset.filter(metric_type=FeedbackMetricType.CES, metric_value__isnull=False)

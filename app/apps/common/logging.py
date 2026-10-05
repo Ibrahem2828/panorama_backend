@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import traceback
 from datetime import UTC, datetime
 from typing import Any
 
@@ -15,9 +16,13 @@ class SensitiveDataFilter(logging.Filter):
     """Remove common credential forms before a record reaches stdout."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if isinstance(record.msg, str):
-            record.msg = _SENSITIVE_VALUE.sub(r"\\1\\2[REDACTED]", record.msg)
-            record.args = ()
+        # Format first so %-arguments are redacted too and are not lost when the args are cleared.
+        try:
+            message = record.getMessage()
+        except Exception:  # noqa: BLE001 - a malformed log call must never break the request
+            message = str(record.msg)
+        record.msg = _SENSITIVE_VALUE.sub(r"\1\2[REDACTED]", message)
+        record.args = ()
         return True
 
 
@@ -49,6 +54,10 @@ class JSONFormatter(logging.Formatter):
             if value is not None:
                 payload[field] = value
         if record.exc_info and record.exc_info[0] is not None:
-            # Exception strings can contain user input; retain a signal without the payload.
+            # Exception strings can contain user input, so keep the class and the call sites only.
             payload["exception"] = record.exc_info[0].__name__
+            payload["frames"] = [
+                f"{frame.filename.rsplit('site-packages/', 1)[-1]}:{frame.lineno}:{frame.name}"
+                for frame in traceback.extract_tb(record.exc_info[2])[-8:]
+            ]
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
