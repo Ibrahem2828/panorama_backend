@@ -44,7 +44,6 @@ def test_celery_is_configured_for_safe_redelivery():
 def test_websocket_origin_policy_blocks_foreign_browsers_but_not_native_clients():
     from asgiref.sync import async_to_sync
     from channels.testing import WebsocketCommunicator
-
     from config.asgi import application
 
     path = "/ws/v1/groups/1/chat/"
