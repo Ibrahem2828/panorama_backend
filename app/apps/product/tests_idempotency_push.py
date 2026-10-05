@@ -31,6 +31,7 @@ def test_a_fresh_unfinished_attempt_still_blocks_a_concurrent_retry():
 @pytest.mark.django_db
 def test_a_stuck_attempt_can_be_taken_over_instead_of_409_for_a_day():
     first = IdempotencyService.begin(fake_request(), endpoint="x")
+    assert first.record_id is not None
     IdempotencyRecord.objects.filter(pk=first.record_id).update(
         updated_at=timezone.now() - timedelta(seconds=IdempotencyService.IN_PROGRESS_TIMEOUT_SECONDS + 5)
     )
