@@ -39,3 +39,38 @@ def test_celery_is_configured_for_safe_redelivery():
     assert settings.CELERY_TASK_ACKS_LATE is True
     assert settings.CELERY_TASK_REJECT_ON_WORKER_LOST is True
     assert settings.CELERY_BROKER_TRANSPORT_OPTIONS["visibility_timeout"] > 960  # longer than the longest task
+
+
+@pytest.mark.django_db(transaction=True)
+def test_websocket_origin_policy_blocks_foreign_browsers_but_not_native_clients():
+    # Plain asgiref communicator: channels.testing imports daphne, which is not part of the test environment.
+    from asgiref.sync import async_to_sync
+    from asgiref.testing import ApplicationCommunicator
+    from config.asgi import application
+
+    path = "/ws/v1/groups/1/chat/"
+
+    async def handshake(headers=None):
+        scope = {
+            "type": "websocket",
+            "path": path,
+            "raw_path": path.encode(),
+            "query_string": b"",
+            "headers": headers or [],
+            "subprotocols": [],
+            "client": ("127.0.0.1", 50000),
+            "server": ("testserver", 80),
+        }
+        communicator = ApplicationCommunicator(application, scope)
+        await communicator.send_input({"type": "websocket.connect"})
+        message = await communicator.receive_output(timeout=5)
+        await communicator.wait()
+        return message
+
+    # No Origin (React Native): the router and consumer run, and refuse the missing ticket with the app's own 4401.
+    assert async_to_sync(handshake)() == {"type": "websocket.close", "code": 4401}
+    # A browser on a foreign site is refused by the origin validator itself (a bare close, never the consumer's 4401).
+    refused = async_to_sync(handshake)([(b"origin", b"https://evil.example")])
+    assert refused["type"] == "websocket.close" and refused.get("code") != 4401
+    # A browser on an allowed host reaches the consumer.
+    assert async_to_sync(handshake)([(b"origin", b"http://testserver")]) == {"type": "websocket.close", "code": 4401}

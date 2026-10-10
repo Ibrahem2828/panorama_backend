@@ -28,9 +28,11 @@ class ProductLifecycleMiddleware:
         "/api/v1/mobile/bootstrap/",
         "/api/v1/mobile/update-policy/",
         "/api/v1/policies/current/",
-        # Staff must still be able to sign in during maintenance to switch it off from the dashboard.
+        # Staff must still be able to sign in during maintenance to switch it off from the dashboard. Both web
+        # apps read /auth/me/ right after login to build the session, so it has to stay reachable too.
         "/api/v1/auth/login/",
         "/api/v1/auth/token/refresh/",
+        "/api/v1/auth/me/",
     )
     _dashboard_prefix = "/api/v1/dashboard/"
 
