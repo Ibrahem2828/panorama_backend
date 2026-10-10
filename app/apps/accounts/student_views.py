@@ -1,5 +1,7 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 
 from apps.accounts.choices import UserRole
@@ -39,5 +41,8 @@ class StudentNumberParseView(APIView):
 
     @extend_schema(tags=["Student Number Parsing"])
     def get(self, request):
-        parsed = StudentNumberParser.parse(request.query_params.get("student_number", ""))
+        try:
+            parsed = StudentNumberParser.parse(request.query_params.get("student_number", ""))
+        except DjangoValidationError as exc:
+            raise ValidationError({"student_number": exc.messages}) from exc
         return success_response(data=parsed)

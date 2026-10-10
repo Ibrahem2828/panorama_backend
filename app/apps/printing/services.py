@@ -15,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.exceptions import IdempotencyKeyReused
 from apps.files.document_inspection import detect_pages_count
 from apps.files.services import user_can_access_file
 from apps.notifications.models import NotificationType
@@ -39,6 +40,34 @@ VALID_TRANSITIONS = {
     PrintOrderStatus.PRINTING: {PrintOrderStatus.READY},
     PrintOrderStatus.READY: {PrintOrderStatus.DELIVERED},
 }
+
+
+def _request_fingerprint(items_data: list[dict], user_notes: str, pickup_location) -> str:
+    """Stable digest of what the user asked for, so a reused Idempotency-Key with a different body is detectable."""
+
+    def source(item: dict):
+        if item.get("uploaded_file"):
+            uploaded = item["uploaded_file"]
+            return ["upload", getattr(uploaded, "name", ""), getattr(uploaded, "size", 0)]
+        source_file = item.get("source_file")
+        return ["file", getattr(source_file, "pk", source_file)]
+
+    canonical = [
+        [
+            source(item),
+            item.get("copies"),
+            str(item.get("color_mode")),
+            str(item.get("paper_size")),
+            str(item.get("sides")),
+            str(item.get("binding")),
+            str(item.get("page_range") or ""),
+        ]
+        for item in items_data
+    ]
+    payload = json.dumps(
+        [canonical, user_notes or "", getattr(pickup_location, "pk", None)], sort_keys=True, default=str
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -203,6 +232,7 @@ class PrintOrderService:
     ) -> PrintOrder:
         user = user.__class__.objects.select_for_update().get(pk=user.pk)
         key_hash = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest() if idempotency_key else ""
+        fingerprint = _request_fingerprint(items_data, user_notes, pickup_location)
         if key_hash:
             existing = (
                 PrintOrder.objects.select_for_update()
@@ -214,6 +244,10 @@ class PrintOrderService:
                 .first()
             )
             if existing:
+                stored = (existing.pricing_snapshot or {}).get("request_fingerprint")
+                # Orders created before fingerprints existed have none: replay them as before.
+                if stored and stored != fingerprint:
+                    raise IdempotencyKeyReused()
                 return existing
         quote = PrintPricingService.quote(user, items_data)
         order = PrintOrder.objects.create(
@@ -231,6 +265,7 @@ class PrintOrderService:
                 "total_price": str(quote["total_price"]),
                 "pricing_revision": quote["pricing_revision"],
                 "calculated_at": quote["calculated_at"].isoformat(),
+                "request_fingerprint": fingerprint,
             },
         )
         for priced in quote["items"]:

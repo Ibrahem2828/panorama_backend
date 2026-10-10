@@ -9,16 +9,20 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.accounts.permissions import CanManageSupport
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.exceptions import IdempotencyInProgress, IdempotencyKeyReused
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle, SupportMessageRateThrottle, SupportTicketRateThrottle
 from apps.common.viewsets import StandardReadOnlyModelViewSet
+from apps.product.services import IdempotencyService
 
 from .models import SupportAttachmentAccessTicket, SupportTicket, SupportTicketMessage
 from .serializers import (
@@ -31,6 +35,23 @@ from .serializers import (
     SupportTicketStatusSerializer,
 )
 from .services import SupportTicketService
+
+
+def _idempotency(request, endpoint: str):
+    """Replay a finished request, reject a reused key with another body (400/409), or let the write proceed."""
+    try:
+        decision = IdempotencyService.begin(request, endpoint=endpoint)
+    except ValueError as exc:
+        raise (
+            IdempotencyKeyReused()
+            if "different request" in str(exc)
+            else ValidationError({"Idempotency-Key": str(exc)})
+        ) from exc
+    except RuntimeError as exc:
+        raise IdempotencyInProgress() from exc
+    if decision.replay_body is not None and decision.replay_status is not None:
+        return decision, Response(decision.replay_body, status=decision.replay_status)
+    return decision, None
 
 
 def _serialize(ticket, request, dashboard=False):
@@ -52,16 +73,21 @@ class SupportTicketCreateView(APIView):
         tags=["Support"], request=SupportTicketCreateSerializer, responses={201: MobileSupportTicketSerializer}
     )
     def post(self, request):
+        decision, replay = _idempotency(request, "support-ticket-create")
+        if replay:
+            return replay
         serializer = self.serializer_class(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         ticket = serializer.save()
-        return success_response(
+        response = success_response(
             data=_serialize(ticket, request),
             message="Support ticket created successfully",
             status_code=status.HTTP_201_CREATED,
             request=request,
             code="SUPPORT_TICKET_CREATED",
         )
+        IdempotencyService.complete(decision, response)
+        return response
 
 
 class MySupportTicketViewSet(StandardReadOnlyModelViewSet):
@@ -91,16 +117,21 @@ class SupportTicketMessageView(APIView):
     )
     def post(self, request, pk: int):
         ticket = get_object_or_404(SupportTicket, pk=pk, user=request.user, is_deleted=False)
+        decision, replay = _idempotency(request, f"support-ticket-message:{ticket.pk}")
+        if replay:
+            return replay
         serializer = self.serializer_class(data=request.data, context={"request": request, "ticket": ticket})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return success_response(
+        response = success_response(
             data=_serialize(ticket, request),
             message="Support ticket message added",
             status_code=status.HTTP_201_CREATED,
             request=request,
             code="SUPPORT_MESSAGE_ADDED",
         )
+        IdempotencyService.complete(decision, response)
+        return response
 
 
 class SupportAttachmentTicketView(APIView):
