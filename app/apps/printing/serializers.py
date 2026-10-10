@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from collections.abc import Sequence
 from typing import Any, cast
@@ -233,7 +234,8 @@ class BasePrintRequestSerializer(serializers.Serializer):
             source_file.queryset = accessible_files_for_user(request.user).filter(is_printable=True)
 
     def to_internal_value(self, data):
-        mutable = data.copy()
+        # QueryDict.copy() deep-copies, which fails for large uploads (disk-backed temporary files cannot be pickled).
+        mutable = copy.copy(data)
         if isinstance(mutable.get("items"), str):
             try:
                 mutable["items"] = json.loads(mutable["items"])

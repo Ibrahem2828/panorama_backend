@@ -35,7 +35,8 @@ class StudentNumberParser:
     @staticmethod
     def parse(student_number: str) -> dict:
         raw = str(student_number or "").strip()
-        if not raw.isdigit():
+        # ASCII digits only: str.isdigit() also accepts superscripts and other scripts that int() cannot convert.
+        if not (raw.isascii() and raw.isdigit()):
             raise ValidationError("Student number must contain digits only.")
         if len(raw) < 7:
             raise ValidationError("Student number must be at least 7 digits.")

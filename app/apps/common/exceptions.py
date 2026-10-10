@@ -16,6 +16,21 @@ from apps.common.responses import error_response
 
 api_error_logger = logging.getLogger("panorama.api.errors")
 
+
+class IdempotencyInProgress(exceptions.APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "A request with this Idempotency-Key is already in progress."
+    default_code = "idempotency_in_progress"
+
+
+class IdempotencyKeyReused(exceptions.APIException):
+    """The same Idempotency-Key was sent with a different request body (the retry is not a retry)."""
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "This Idempotency-Key was already used for a different request."
+    default_code = "idempotency_key_reused"
+
+
 DEPENDENCY_EXCEPTION_TYPES = (DatabaseError, RedisError, TimeoutError, SocketTimeout, ImproperlyConfigured)
 
 
@@ -96,6 +111,8 @@ def _error_code(exc: Exception, status_code: int) -> str:
         return "FEATURE_DISABLED"
     if getattr(exc, "default_code", "") == "idempotency_in_progress":
         return "IDEMPOTENCY_IN_PROGRESS"
+    if getattr(exc, "default_code", "") == "idempotency_key_reused":
+        return "IDEMPOTENCY_KEY_REUSED"
     if getattr(exc, "default_code", "") == "chat_ticket_storage_unavailable":
         return "CHAT_TICKET_SERVICE_UNAVAILABLE"
     return mapping.get(status_code, "SERVER_ERROR" if status_code >= 500 else "REQUEST_FAILED")

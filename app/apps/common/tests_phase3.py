@@ -276,6 +276,90 @@ def test_print_order_uploaded_file_and_priority(api_client, normal_user, student
 
 
 @pytest.mark.django_db
+def test_print_order_accepts_uploads_larger_than_the_in_memory_limit(api_client, normal_user, settings):
+    # Disk-backed temporary uploads cannot be deep-copied: regression for a 500 on multipart orders of a few MB and up.
+    import io
+
+    from pypdf import PdfWriter
+
+    settings.FILE_UPLOAD_MAX_MEMORY_SIZE = 1024
+    configure_printing()
+    writer = PdfWriter()
+    writer.add_blank_page(200, 200)
+    writer.add_attachment("pad.bin", b"x" * 20_000)
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    auth(api_client, normal_user)
+    response = api_client.post(
+        "/api/v1/printing/orders/",
+        {
+            "items[0]uploaded_file": SimpleUploadedFile("big.pdf", buffer.getvalue(), content_type="application/pdf"),
+            "items[0]copies": "1",
+            "items[0]color_mode": "black_white",
+            "items[0]paper_size": "A4",
+            "items[0]sides": "one_sided",
+            "items[0]binding": "none",
+        },
+        format="multipart",
+        HTTP_IDEMPOTENCY_KEY="large-upload-regression",
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.content
+
+
+@pytest.mark.django_db
+def test_support_ticket_idempotency_replays_the_same_body_and_rejects_a_different_one(api_client, normal_user):
+    auth(api_client, normal_user)
+    body = {"category": "technical", "subject": "Bug report", "message": "The application stopped working."}
+    first = api_client.post("/api/v1/support/tickets/", body, format="json", HTTP_IDEMPOTENCY_KEY="ticket-key-0001")
+    retry = api_client.post("/api/v1/support/tickets/", body, format="json", HTTP_IDEMPOTENCY_KEY="ticket-key-0001")
+    assert first.status_code == retry.status_code == status.HTTP_201_CREATED
+    assert retry.data["data"]["id"] == first.data["data"]["id"]
+    assert SupportTicket.objects.filter(user=normal_user).count() == 1
+    changed = api_client.post(
+        "/api/v1/support/tickets/",
+        {**body, "subject": "Something else"},
+        format="json",
+        HTTP_IDEMPOTENCY_KEY="ticket-key-0001",
+    )
+    assert changed.status_code == status.HTTP_409_CONFLICT
+    assert changed.data["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert SupportTicket.objects.filter(user=normal_user).count() == 1
+
+
+@pytest.mark.django_db
+def test_print_order_idempotency_key_reused_with_different_copies_is_a_conflict(api_client, normal_user):
+    configure_printing()
+    printable = FileResource.objects.create(
+        title="Printable", file=upload(), uploaded_by=normal_user, visibility=FileVisibility.PUBLIC, pages_count=1
+    )
+    auth(api_client, normal_user)
+    first = api_client.post(
+        "/api/v1/printing/orders/",
+        {"items": [print_item(printable, copies=1)]},
+        format="json",
+        HTTP_IDEMPOTENCY_KEY="print-key-0001",
+    )
+    assert first.status_code == status.HTTP_201_CREATED, first.data
+    conflict = api_client.post(
+        "/api/v1/printing/orders/",
+        {"items": [print_item(printable, copies=5)]},
+        format="json",
+        HTTP_IDEMPOTENCY_KEY="print-key-0001",
+    )
+    assert conflict.status_code == status.HTTP_409_CONFLICT
+    assert conflict.data["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert PrintOrder.objects.filter(user=normal_user).count() == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("value", ["abc", "'", "{{7*7}}", "٣٤٥٦٧٨٩", "²²²²²²²", ""])
+def test_student_number_parse_endpoint_rejects_bad_input_with_400(api_client, normal_user, value):
+    auth(api_client, normal_user)
+    response = api_client.get("/api/v1/students/student-number/parse/", {"student_number": value})
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, response.content
+
+
+@pytest.mark.django_db
 def test_print_order_source_file_access_and_owner_visibility(api_client, normal_user, other_user, admin_user):
     configure_printing()
     public_file = FileResource.objects.create(
