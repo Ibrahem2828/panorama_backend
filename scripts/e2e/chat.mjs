@@ -60,6 +60,17 @@ function openSocket(url) {
   });
 }
 
+// The history is oldest-first and paginated: the newest messages are on the last page (the group keeps growing across runs).
+async function latestMessages(who) {
+  const first = await who.call(`${API}/groups/${groupId}/messages/`);
+  ok(first);
+  const pages = first.json?.data?.total_pages ?? 1;
+  if (pages <= 1) return first;
+  const last = await who.call(`${API}/groups/${groupId}/messages/?page=${pages}`);
+  ok(last);
+  return last;
+}
+
 console.log(`Chat journey: web=${WEB} ws=${WS_BASE}`);
 const alice = new Session();
 const bob = new Session();
@@ -108,8 +119,7 @@ await step("a message sent by one student arrives live for the other (and echoes
 });
 
 await step("the message was persisted and is returned by the REST history", async () => {
-  const history = await bob.call(`${API}/groups/${groupId}/messages/`);
-  ok(history);
+  const history = await latestMessages(bob);
   assert.ok(history.rows.some((m) => m.content === text), "message missing from REST history");
 });
 
@@ -132,7 +142,7 @@ await step("REST message posting reaches connected sockets too", async () => {
   const posted = await bob.call(`${API}/groups/${groupId}/messages/`, { method: "POST", body: { content } });
   ok(posted);
   // delivery over the channel layer depends on the view broadcasting; at minimum it must be in the history
-  const history = await alice.call(`${API}/groups/${groupId}/messages/`);
+  const history = await latestMessages(alice);
   assert.ok(history.rows.some((m) => m.content === content), "REST-posted message missing from history");
 });
 
