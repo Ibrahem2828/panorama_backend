@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os
 import shutil
-import subprocess
 import tempfile
 import zipfile
 from dataclasses import dataclass
@@ -12,11 +10,13 @@ from django.conf import settings
 from django.core.files import File
 from django.core.files.base import ContentFile
 from pypdf import PdfReader
+from rest_framework.exceptions import ValidationError
 
 from apps.common.file_validation import LECTURE_DOCUMENT_POLICY, validate_uploaded_file
 from apps.files.document_inspection import compute_sha256
 
 from .models import Lecture, LecturePage
+from .sandbox import SandboxError, conversion_job, run_sandboxed
 
 OLE_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
 PDF_SIGNATURE = b"%PDF-"
@@ -86,7 +86,10 @@ def _validate_openxml(uploaded_file, extension: str) -> None:
 def inspect_lecture_document(uploaded_file) -> LectureDocumentInspection:
     """Validate type/signature and return metadata without persisting an upload."""
 
-    validate_uploaded_file(uploaded_file, LECTURE_DOCUMENT_POLICY)
+    try:
+        validate_uploaded_file(uploaded_file, LECTURE_DOCUMENT_POLICY)
+    except ValidationError as exc:
+        raise DocumentPipelineError("Document content does not match the declared format.") from exc
     extension = Path(str(getattr(uploaded_file, "name", ""))).suffix.lower()
     head = _read_head(uploaded_file)
     if extension == ".pdf" and not head.startswith(PDF_SIGNATURE):
@@ -111,19 +114,38 @@ def _copy_field_file_to_path(field_file, destination: Path) -> None:
             target.write(chunk)
 
 
+def _run_converter(command: list[str], *, limit_memory: bool = True):
+    """Run a converter in the sandbox (scrubbed env, rlimits, group-kill timeout); never leaks stderr."""
+    with conversion_job() as job_dir:
+        try:
+            return run_sandboxed(
+                command,
+                job_dir=job_dir,
+                timeout=getattr(settings, "DOCUMENT_CONVERSION_TIME_LIMIT", 180),
+                limit_memory=limit_memory,
+            )
+        except SandboxError as exc:
+            raise DocumentPipelineError("Document conversion failed.") from exc
+
+
+def _output_ok(path: Path, max_bytes: int) -> bool:
+    return path.is_file() and 0 < path.stat().st_size <= max_bytes
+
+
 def _scan_if_enabled(source: Path) -> None:
     if not getattr(settings, "DOCUMENT_ANTIVIRUS_ENABLED", False):
         return
     scanner = shutil.which("clamscan")
     if not scanner:
         raise DocumentPipelineError("Antivirus scanning is enabled but unavailable.")
-    result = subprocess.run(
-        [scanner, "--no-summary", str(source)],
-        check=False,
-        capture_output=True,
-        shell=False,
-        timeout=60,
-    )
+    # clamscan loads its whole signature database into memory, so no address-space limit here.
+    try:
+        with conversion_job() as job_dir:
+            result = run_sandboxed(
+                [scanner, "--no-summary", str(source)], job_dir=job_dir, timeout=60, limit_memory=False
+            )
+    except SandboxError as exc:
+        raise DocumentPipelineError("Antivirus scanner failed.") from exc
     if result.returncode == 1:
         raise QuarantinedDocumentError("Document failed antivirus scanning.")
     if result.returncode != 0:
@@ -139,32 +161,37 @@ def convert_to_pdf(source: Path, extension: str, workspace: Path) -> Path:
     if not soffice:
         raise DocumentPipelineError("Document conversion capability is unavailable.")
     output_dir = workspace / "output"
-    profile_dir = workspace / "profile"
     output_dir.mkdir()
-    profile_dir.mkdir()
-    result = subprocess.run(
-        [
-            soffice,
-            "--headless",
-            "--nologo",
-            "--nodefault",
-            "--nofirststartwizard",
-            "--nolockcheck",
-            f"-env:UserInstallation={profile_dir.as_uri()}",
-            "--convert-to",
-            "pdf",
-            "--outdir",
-            str(output_dir),
-            str(source),
-        ],
-        check=False,
-        capture_output=True,
-        shell=False,
-        timeout=getattr(settings, "DOCUMENT_CONVERSION_TIME_LIMIT", 180),
-        env={**os.environ, "HOME": str(profile_dir)},
-    )
+    with conversion_job() as job_dir:
+        profile_dir = job_dir / "profile"
+        profile_dir.mkdir()
+        try:
+            result = run_sandboxed(
+                [
+                    soffice,
+                    "--headless",
+                    "--nologo",
+                    "--nodefault",
+                    "--nofirststartwizard",
+                    "--nolockcheck",
+                    f"-env:UserInstallation={profile_dir.as_uri()}",
+                    "--convert-to",
+                    "pdf",
+                    "--outdir",
+                    str(output_dir),
+                    str(source),
+                ],
+                job_dir=job_dir,
+                timeout=getattr(settings, "DOCUMENT_CONVERSION_TIME_LIMIT", 180),
+                # LibreOffice reserves a large virtual address space, so RLIMIT_AS would kill a healthy conversion;
+                # real memory is bounded by the container's cgroup limit (conversion-worker: 2G in the compose file).
+                limit_memory=False,
+            )
+        except SandboxError as exc:
+            raise DocumentPipelineError("Document conversion failed.") from exc
     output = output_dir / f"{source.stem}.pdf"
-    if result.returncode != 0 or not output.is_file() or output.stat().st_size == 0:
+    max_bytes = int(getattr(settings, "DOCUMENT_CONVERSION_MAX_OUTPUT_BYTES", 256 * 1024 * 1024))
+    if result.returncode != 0 or not _output_ok(output, max_bytes):
         raise DocumentPipelineError("Document conversion failed.")
     return output
 
@@ -174,25 +201,12 @@ def _render_page(pdf: Path, page_number: int, workspace: Path) -> bytes:
     if not renderer:
         raise DocumentPipelineError("Page rendering capability is unavailable.")
     output_prefix = workspace / f"page-{page_number}"
-    result = subprocess.run(
-        [
-            renderer,
-            "-f",
-            str(page_number),
-            "-l",
-            str(page_number),
-            "-png",
-            "-singlefile",
-            str(pdf),
-            str(output_prefix),
-        ],
-        check=False,
-        capture_output=True,
-        shell=False,
-        timeout=getattr(settings, "DOCUMENT_CONVERSION_TIME_LIMIT", 180),
+    result = _run_converter(
+        [renderer, "-f", str(page_number), "-l", str(page_number), "-png", "-singlefile", str(pdf), str(output_prefix)]
     )
     output = output_prefix.with_suffix(".png")
-    if result.returncode != 0 or not output.is_file() or output.stat().st_size == 0:
+    max_bytes = int(getattr(settings, "DOCUMENT_PAGE_IMAGE_MAX_BYTES", 25 * 1024 * 1024))
+    if result.returncode != 0 or not _output_ok(output, max_bytes):
         raise DocumentPipelineError("Page rendering failed.")
     return output.read_bytes()
 
@@ -202,7 +216,7 @@ def _render_thumbnail(pdf: Path, page_number: int, workspace: Path) -> bytes:
     if not renderer:
         raise DocumentPipelineError("Thumbnail rendering capability is unavailable.")
     output_prefix = workspace / f"thumbnail-{page_number}"
-    result = subprocess.run(
+    result = _run_converter(
         [
             renderer,
             "-f",
@@ -217,14 +231,11 @@ def _render_thumbnail(pdf: Path, page_number: int, workspace: Path) -> bytes:
             "-singlefile",
             str(pdf),
             str(output_prefix),
-        ],
-        check=False,
-        capture_output=True,
-        shell=False,
-        timeout=getattr(settings, "DOCUMENT_CONVERSION_TIME_LIMIT", 180),
+        ]
     )
     output = output_prefix.with_suffix(".png")
-    if result.returncode != 0 or not output.is_file() or output.stat().st_size == 0:
+    max_bytes = int(getattr(settings, "DOCUMENT_PAGE_IMAGE_MAX_BYTES", 25 * 1024 * 1024))
+    if result.returncode != 0 or not _output_ok(output, max_bytes):
         raise DocumentPipelineError("Thumbnail rendering failed.")
     return output.read_bytes()
 

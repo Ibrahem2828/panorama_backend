@@ -2,13 +2,40 @@ import json
 import logging
 from typing import Any
 
+from django.core.cache import cache
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
 
 from apps.common.request_utils import get_client_ip
 
 from .models import AuditLog
 
 logger = logging.getLogger(__name__)
+
+AUDIT_FAILURE_KEY_PREFIX = "audit:failures:"
+_AUDIT_FAILURE_TTL_SECONDS = 3 * 24 * 3600
+
+
+def audit_failure_key(day=None) -> str:
+    return f"{AUDIT_FAILURE_KEY_PREFIX}{(day or timezone.now().date()).isoformat()}"
+
+
+def record_audit_failure() -> None:
+    """Count a failed audit write in the cache so a monitor can alert on it. Never raises."""
+    key = audit_failure_key()
+    try:
+        cache.add(key, 0, _AUDIT_FAILURE_TTL_SECONDS)
+        cache.incr(key)
+    except Exception:  # noqa: BLE001 - the counter must never turn a best-effort audit into a failure
+        logger.warning("audit_failure_counter_unavailable")
+
+
+def audit_failures_today() -> int:
+    try:
+        return int(cache.get(audit_failure_key()) or 0)
+    except Exception:  # noqa: BLE001
+        return 0
+
 
 SENSITIVE_KEYS = {
     "password",
@@ -50,7 +77,23 @@ def sanitize_value(value: Any):
 
 class AuditLogService:
     @staticmethod
-    def log(actor=None, action: str = "", target=None, old_value=None, new_value=None, request=None):
+    def log(
+        actor=None,
+        action: str = "",
+        target=None,
+        old_value=None,
+        new_value=None,
+        request=None,
+        *,
+        critical: bool = False,
+    ):
+        """Write an audit row.
+
+        Default is best-effort: a failure is logged at ERROR, counted (``audit:failures:<date>``) and swallowed so
+        the request still succeeds. ``critical=True`` re-raises after the same logging; use it only for
+        security-critical events that sit inside an atomic block which must roll back when the trail cannot be
+        written.
+        """
         try:
             target_type = target.__class__.__name__ if target is not None else ""
             target_id = str(getattr(target, "id", "")) if target is not None else ""
@@ -66,6 +109,21 @@ class AuditLogService:
                 ip_address=ip_address or None,
                 user_agent=user_agent,
             )
-        except Exception:
-            logger.exception("Failed to write audit log")
+        except Exception as exc:
+            record_audit_failure()
+            logger.error(
+                "audit_log_write_failed",
+                exc_info=True,
+                extra={
+                    "event": "audit_log_write_failed",
+                    "audit_action": str(action),
+                    "audit_target_type": target.__class__.__name__ if target is not None else "",
+                    "audit_target_id": str(getattr(target, "id", "")) if target is not None else "",
+                    "audit_actor_id": getattr(actor, "pk", None),
+                    "audit_critical": critical,
+                    "failure_class": type(exc).__name__,
+                },
+            )
+            if critical:
+                raise
             return None

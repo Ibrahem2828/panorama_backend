@@ -1,5 +1,7 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import APIRootView, DefaultRouter
+
+from apps.accounts.permissions import CanAccessDashboard
 
 from .views import (
     DashboardAcademicYearViewSet,
@@ -21,7 +23,18 @@ router.register("universities", PublicUniversityViewSet, basename="universities"
 router.register("academic-years", PublicAcademicYearViewSet, basename="academic-years")
 router.register("semesters", PublicSemesterViewSet, basename="semesters")
 
-dashboard_router = DefaultRouter()
+
+class DashboardAPIRootView(APIRootView):
+    """The /dashboard/ index lists admin endpoints, so only dashboard users may see it."""
+
+    permission_classes = [CanAccessDashboard]
+
+
+class DashboardRouter(DefaultRouter):
+    APIRootView = DashboardAPIRootView
+
+
+dashboard_router = DashboardRouter()
 dashboard_router.register("universities", DashboardUniversityViewSet, basename="dashboard-universities")
 dashboard_router.register("faculties", DashboardFacultyViewSet, basename="dashboard-faculties")
 dashboard_router.register("majors", DashboardMajorViewSet, basename="dashboard-majors")

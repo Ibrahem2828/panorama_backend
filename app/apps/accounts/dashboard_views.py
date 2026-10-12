@@ -231,6 +231,7 @@ class DashboardUserPermissionOverridesView(APIView):
             old_value=UserPermissionOverrideSerializer(old).data if old else None,
             new_value=UserPermissionOverrideSerializer(override).data,
             request=request,
+            critical=True,  # privilege change inside @transaction.atomic: roll back if untraceable
         )
         return success_response(
             data=UserPermissionOverrideSerializer(override).data,
@@ -257,6 +258,7 @@ class DashboardUserPermissionOverridesView(APIView):
             old_value=old,
             new_value={"removed": code},
             request=request,
+            critical=True,  # privilege change inside @transaction.atomic: roll back if untraceable
         )
         return success_response(
             message="Permission override removed",
