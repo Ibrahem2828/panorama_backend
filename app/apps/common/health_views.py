@@ -151,7 +151,7 @@ def _dependency_checks(*, request=None, check_migrations: bool, check_configurat
         _log_dependency_failure(request, "cache", exc)
         return None
 
-    checks = {"database": "healthy", "cache": "healthy"}
+    checks: dict[str, str | int] = {"database": "healthy", "cache": "healthy"}
     # Monitors can alert when this is non-zero (audit writes are best-effort and otherwise fail silently).
     audit_failures = audit_failures_today()
     checks["audit_failures_today"] = audit_failures

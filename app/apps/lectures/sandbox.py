@@ -23,17 +23,19 @@ import shutil
 import signal
 import subprocess
 import tempfile
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, cast
 
 from django.conf import settings
 
+resource: Any  # the POSIX-only module, or None on Windows (typed Any so it checks the same on every platform)
 try:  # pragma: no cover - platform dependent
     import resource
 except ImportError:  # Windows
-    resource = None  # type: ignore[assignment]
+    resource = None
 
 _POSIX = os.name == "posix"
 _SIGKILL = getattr(signal, "SIGKILL", signal.SIGTERM)
@@ -85,7 +87,7 @@ def scrubbed_environment(home: Path) -> dict[str, str]:
     }
 
 
-def _build_preexec(limits: ResourceLimits):
+def _build_preexec(limits: ResourceLimits) -> Callable[[], None] | None:
     """Return a ``preexec_fn`` applying POSIX rlimits, or ``None`` where unsupported (Windows)."""
     if not _POSIX or resource is None:
         return None
@@ -123,7 +125,7 @@ def conversion_job() -> Iterator[Path]:
 def _kill_group(process: subprocess.Popen) -> None:
     try:
         if _POSIX:
-            os.killpg(process.pid, _SIGKILL)
+            cast(Any, os).killpg(process.pid, _SIGKILL)  # POSIX-only; absent from the Windows stubs
         else:
             process.kill()
     except (ProcessLookupError, PermissionError, OSError):
@@ -152,22 +154,29 @@ def run_sandboxed(
     stdout_path = job_dir / ".stdout"
     stderr_path = job_dir / ".stderr"
 
-    kwargs: dict[str, object] = {
-        "shell": False,
-        "cwd": str(job_dir),
-        "env": scrubbed_environment(job_dir),
-        "stdin": subprocess.DEVNULL,
-    }
+    env: dict[str, str] = scrubbed_environment(job_dir)
+    start_new_session = False
+    preexec: Callable[[], object] | None = None
+    creationflags = 0
     if _POSIX:
-        kwargs["start_new_session"] = True  # own process group so the whole tree can be killed
+        start_new_session = True  # own process group so the whole tree can be killed
         preexec = _build_preexec(limits)
-        if preexec is not None:
-            kwargs["preexec_fn"] = preexec
     elif hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
-        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
 
     with stdout_path.open("wb") as out, stderr_path.open("wb") as err:
-        process = subprocess.Popen(list(command), stdout=out, stderr=err, **kwargs)  # noqa: S603
+        process = subprocess.Popen(  # noqa: S603
+            list(command),
+            shell=False,
+            cwd=str(job_dir),
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=out,
+            stderr=err,
+            start_new_session=start_new_session,
+            preexec_fn=preexec,
+            creationflags=creationflags,
+        )
         try:
             returncode = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired as exc:

@@ -45,6 +45,7 @@ def test_begin_no_longer_deletes_expired_rows_on_the_hot_path():
 @pytest.mark.django_db
 def test_expired_row_for_the_same_key_is_recycled_not_replayed():
     first = IdempotencyService.begin(fake_request(), endpoint="x")
+    assert first.record_id is not None
     IdempotencyService.complete(first, SimpleNamespace(status_code=201, data={"old": True}))
     IdempotencyRecord.objects.filter(pk=first.record_id).update(expires_at=timezone.now() - timedelta(minutes=1))
     again = IdempotencyService.begin(fake_request(data={"different": 2}), endpoint="x")
@@ -81,6 +82,7 @@ def test_purge_task_is_scheduled_daily():
 def test_anonymous_actor_key_uses_trusted_client_ip_not_remote_addr():
     meta = {"REMOTE_ADDR": "10.0.0.9", "HTTP_X_FORWARDED_FOR": "198.51.100.7"}
     decision = IdempotencyService.begin(fake_request(user=None, meta=meta), endpoint="x")
+    assert decision.record_id is not None
     assert IdempotencyRecord.objects.get(pk=decision.record_id).actor_key == "ip:198.51.100.7"
 
 
@@ -99,6 +101,7 @@ class _RaceyManager:
 @pytest.mark.django_db
 def test_in_progress_takeover_is_compare_and_set_and_loses_the_race():
     first = IdempotencyService.begin(fake_request(), endpoint="x")
+    assert first.record_id is not None
     IdempotencyRecord.objects.filter(pk=first.record_id).update(
         updated_at=timezone.now() - timedelta(seconds=IdempotencyService.IN_PROGRESS_TIMEOUT_SECONDS + 5)
     )
@@ -112,6 +115,7 @@ def test_in_progress_takeover_is_compare_and_set_and_loses_the_race():
 @pytest.mark.django_db
 def test_in_progress_takeover_still_succeeds_without_a_race():
     first = IdempotencyService.begin(fake_request(), endpoint="x")
+    assert first.record_id is not None
     IdempotencyRecord.objects.filter(pk=first.record_id).update(
         updated_at=timezone.now() - timedelta(seconds=IdempotencyService.IN_PROGRESS_TIMEOUT_SECONDS + 5)
     )

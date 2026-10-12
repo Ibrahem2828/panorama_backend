@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -137,10 +138,10 @@ def test_flushexpiredtokens_command_actually_runs():
 def test_default_throttles_are_configured_with_generous_rates():
     from django.conf import settings
 
-    classes = settings.REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"]
+    classes = cast("list[str]", settings.REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"])
     assert "apps.common.throttles.DefaultUserRateThrottle" in classes
     assert "apps.common.throttles.DefaultAnonRateThrottle" in classes
-    rates = settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
+    rates = cast("dict[str, str]", settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"])
     assert rates["user"] == "600/min" and rates["anon"] == "120/min"
 
 

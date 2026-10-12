@@ -27,6 +27,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import URLPattern, URLResolver, get_resolver
 from django.utils import timezone
 from rest_framework.test import APIClient
+from rest_framework.views import APIView
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.models import StudentProfile, User
@@ -268,7 +269,7 @@ _UUID_PARAMS = {"token", "installation_id"}
 class Route:
     template: str
     methods: set[str]
-    view_classes: list[type]
+    view_classes: list[type[APIView]]
 
     def url(self) -> str:
         def fill(match):
@@ -315,10 +316,15 @@ def discover_routes() -> dict[str, Route]:
     return routes
 
 
+def _permission_types(view: type[APIView]) -> list[type]:
+    """The view's permission classes as plain types (composed ``A | B`` operands are instances)."""
+    return [p if isinstance(p, type) else type(p) for p in view.permission_classes]
+
+
 def _derived_kind(route: Route) -> str:
     kinds = set()
     for cls in route.view_classes:
-        perms = [p if isinstance(p, type) else type(p) for p in cls.permission_classes]
+        perms = _permission_types(cls)
         if any(issubclass(p, CapabilityPermission) for p in perms):
             kinds.add(DASHBOARD)
         elif any(issubclass(p, (IsStudent, IsVerifiedStudent)) for p in perms):
@@ -333,8 +339,7 @@ def _derived_kind(route: Route) -> str:
 def _required_capabilities(route: Route) -> set[str]:
     caps: set[str] = set()
     for cls in route.view_classes:
-        for perm in cls.permission_classes:
-            perm = perm if isinstance(perm, type) else type(perm)
+        for perm in _permission_types(cls):
             if issubclass(perm, CapabilityPermission):
                 caps.add(perm.capability)
     return caps
@@ -460,10 +465,7 @@ def test_student_only_routes_reject_normal_users_and_unverified_students():
     for template, route in sorted(ROUTES.items()):
         if ROUTE_KINDS.get(template) != STUDENT:
             continue
-        needs_verified = any(
-            any((p if isinstance(p, type) else type(p)) is IsVerifiedStudent for p in cls.permission_classes)
-            for cls in route.view_classes
-        )
+        needs_verified = any(any(p is IsVerifiedStudent for p in _permission_types(cls)) for cls in route.view_classes)
         for method in sorted(route.methods):
             if _call(normal, method, route.url()).status_code != 403:
                 failures.append(f"normal user {method} {template} is not 403")
@@ -483,7 +485,7 @@ DASHBOARD_ROLES = [
 ]
 
 
-def _role_has(role: str, capabilities: set[str]) -> bool:
+def _role_has(role: UserRole, capabilities: set[str]) -> bool:
     granted = ROLE_CAPABILITIES.get(role, set())
     return "*" in granted or capabilities <= granted
 
@@ -526,6 +528,36 @@ PNG = (
 
 class World:
     """Student A owns every object; student B (same curriculum, verified) must not reach them."""
+
+    university: University
+    major: Major
+    other_major: Major
+    admin: User
+    normal: User
+    a: User
+    b: User
+    ticket: SupportTicket
+    ticket_message: SupportTicketMessage
+    support_token: SupportAttachmentAccessTicket
+    public_file: FileResource
+    admin_file: FileResource
+    group: Group
+    group_file: FileResource
+    group_file_token: FileAccessTicket
+    order: PrintOrder
+    item: PrintOrderItem
+    message: Message
+    notification: Notification
+    rating: AppFeedback
+    suggestion: AppFeedback
+    lecture: Lecture
+    note: LectureNote
+    verification: VerificationRequest
+    installation: DeviceInstallation
+    admins_only_announcement: Announcement
+    other_major_announcement: Announcement
+    inactive_announcement: Announcement
+    verified_announcement: Announcement
 
 
 @pytest.fixture

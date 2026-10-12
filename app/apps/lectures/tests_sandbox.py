@@ -4,6 +4,7 @@ import os
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -126,7 +127,7 @@ def test_timeout_kills_the_process_group_and_raises():
 def test_kill_group_uses_killpg_on_posix():
     process = SimpleNamespace(pid=123, kill=MagicMock())
     with patch.object(sandbox, "_POSIX", True), patch.object(sandbox.os, "killpg", create=True) as killpg:
-        sandbox._kill_group(process)
+        sandbox._kill_group(cast("subprocess.Popen[bytes]", process))
     killpg.assert_called_once_with(123, sandbox._SIGKILL)
 
 

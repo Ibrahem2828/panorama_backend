@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import time
 from contextlib import contextmanager
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -91,7 +92,7 @@ def test_malformed_frames_are_rejected_without_any_database_or_cache_work():
         ):
             communicator = await _open(student, group)
             baseline_auth = auth_check.await_count
-            frames = [
+            frames: list[dict[str, Any]] = [
                 {"bytes": b"\x00\x01"},
                 {"text": "x" * (17 * 1024)},
                 {"text": "{not json"},
