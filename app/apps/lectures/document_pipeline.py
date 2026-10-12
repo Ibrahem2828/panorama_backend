@@ -183,6 +183,9 @@ def convert_to_pdf(source: Path, extension: str, workspace: Path) -> Path:
                 ],
                 job_dir=job_dir,
                 timeout=getattr(settings, "DOCUMENT_CONVERSION_TIME_LIMIT", 180),
+                # LibreOffice reserves a large virtual address space, so RLIMIT_AS would kill a healthy conversion;
+                # real memory is bounded by the container's cgroup limit (conversion-worker: 2G in the compose file).
+                limit_memory=False,
             )
         except SandboxError as exc:
             raise DocumentPipelineError("Document conversion failed.") from exc
