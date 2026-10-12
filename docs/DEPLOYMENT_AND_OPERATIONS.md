@@ -117,3 +117,34 @@ python manage.py showmigrations
 
 An unavailable Docker daemon, missing LibreOffice/Poppler in conversion worker,
 failed readiness, failed release job, or untested backup restore blocks release.
+
+## Trusted client IP behind the web/dashboard BFF
+
+Topology: client -> Traefik -> Next.js BFF -> `https://api...` -> Traefik ->
+backend (`TRUSTED_PROXY_COUNT=1`). The second Traefik overwrites
+`X-Forwarded-For` with the BFF's address, so without help every web/dashboard
+user shares one address and one throttle bucket.
+
+Optional contract, enabled by setting `BFF_SHARED_SECRET` (env, empty = off):
+
+| Header (BFF -> API, server-to-server) | Value |
+| --- | --- |
+| `X-Panorama-BFF-Secret` | The exact `BFF_SHARED_SECRET` value. |
+| `X-Panorama-Client-IP` | The real end-user IP (IPv4/IPv6, nothing else). |
+
+`apps.common.request_utils.get_client_ip` honours `X-Panorama-Client-IP` only
+when the secret matches (constant-time compare) and the IP parses; otherwise it
+falls back to the `TRUSTED_PROXY_COUNT` logic unchanged. The BFF must set both
+headers itself and drop any client-supplied copies. The secret is never logged
+or returned, and the headers are intentionally absent from `CORS_ALLOW_HEADERS`
+(browsers must never send them). Production only logs a warning when the secret
+is unset. Global default throttles are `THROTTLE_USER` (600/min) and
+`THROTTLE_ANON` (120/min); health probes are exempt.
+
+## Monitoring audit-log failures
+
+Audit writes are best-effort: a failure is logged at ERROR
+(`audit_log_write_failed`, with action/target/actor fields) and counted in the
+cache key `audit:failures:<YYYY-MM-DD>`. `/health/ready/` and `/health/startup/`
+expose it as `audit_failures_today`; alert when it is non-zero. Security-critical
+events inside atomic blocks use `critical=True` and roll the operation back.

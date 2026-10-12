@@ -152,7 +152,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPageNumberPagination",
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
+    # Conservative global defaults; any view that declares throttle_classes overrides them.
+    "DEFAULT_THROTTLE_CLASSES": (
+        "apps.common.throttles.DefaultAnonRateThrottle",
+        "apps.common.throttles.DefaultUserRateThrottle",
+    ),
     "DEFAULT_THROTTLE_RATES": {
+        "user": config("THROTTLE_USER", default="600/min"),
+        "anon": config("THROTTLE_ANON", default="120/min"),
         "auth_login": config("THROTTLE_AUTH_LOGIN", default="8/min"),
         "auth_register": config("THROTTLE_AUTH_REGISTER", default="4/hour"),
         "otp_request": config("THROTTLE_OTP_REQUEST", default="3/10min"),
@@ -404,6 +411,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.common.tasks.purge_expired_sensitive_data",
         "schedule": crontab(hour=3, minute=15),
     },
+    # Expired idempotency rows are no longer deleted inside every keyed request.
+    "purge-expired-idempotency-records": {
+        "task": "apps.product.tasks.purge_expired_idempotency_records",
+        "schedule": crontab(hour=3, minute=45),
+    },
+    # SimpleJWT token_blacklist tables otherwise grow without bound.
+    "flush-expired-jwt-tokens": {
+        "task": "apps.common.tasks.flush_expired_jwt_tokens",
+        "schedule": crontab(hour=4, minute=5),
+    },
     # Lectures whose worker died mid-conversion would otherwise stay "processing" forever.
     "fail-stuck-lectures": {
         "task": "apps.lectures.tasks.fail_stuck_lectures",
@@ -422,6 +439,9 @@ CHANNEL_LAYERS = {
 RETURN_DEVELOPMENT_OTP = DEBUG and get_bool_env("RETURN_DEVELOPMENT_OTP", default=False)
 API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=DEBUG)
 TRUSTED_PROXY_COUNT = config("TRUSTED_PROXY_COUNT", default=1, cast=int)
+# Optional shared secret that lets our Next.js BFF (web + dashboard) assert the real end-user IP through
+# X-Panorama-Client-IP. Empty disables the feature. Never log or expose it; never add the headers to CORS.
+BFF_SHARED_SECRET = config("BFF_SHARED_SECRET", default="")
 ACCOUNT_DELETION_GRACE_DAYS = config("ACCOUNT_DELETION_GRACE_DAYS", default=30, cast=int)
 
 

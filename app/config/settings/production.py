@@ -1,3 +1,5 @@
+import logging
+
 from cryptography.fernet import Fernet
 from decouple import config
 from django.core.exceptions import ImproperlyConfigured
@@ -134,6 +136,13 @@ LOGGING = {
         },
     },
 }
+
+if not BFF_SHARED_SECRET:  # noqa: F405
+    # Warn only: the BFF contract is optional, but without it every web/dashboard user shares the BFF's
+    # address for throttling. The secret itself is never logged.
+    logging.getLogger("config.settings").warning(
+        "BFF_SHARED_SECRET is not set; web/dashboard clients will be throttled as one shared IP."
+    )
 
 # Error tracking (no-op without SENTRY_DSN).
 from config.observability import init_sentry  # noqa: E402

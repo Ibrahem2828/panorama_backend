@@ -4,7 +4,7 @@ import hashlib
 import re
 from collections.abc import Mapping
 
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
 
 from apps.common.request_utils import get_client_ip
 
@@ -15,6 +15,20 @@ def _request_ip(request) -> str:
 
 def _normalise_identifier(value: object) -> str:
     return str(value or "").strip().lower()[:254]
+
+
+class DefaultUserRateThrottle(UserRateThrottle):
+    """Global safety net for authenticated traffic (scope ``user``); views with their own throttles override it."""
+
+    def get_ident(self, request):
+        return _request_ip(request)
+
+
+class DefaultAnonRateThrottle(AnonRateThrottle):
+    """Global safety net for anonymous traffic (scope ``anon``), keyed by the trusted client IP."""
+
+    def get_ident(self, request):
+        return _request_ip(request)
 
 
 class IdentifierRateThrottle(SimpleRateThrottle):

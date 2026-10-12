@@ -14,6 +14,7 @@ from rest_framework.exceptions import APIException
 from apps.accounts.choices import UserRole
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.request_utils import get_client_ip
 
 from .anonymization import anonymize_user_data
 from .models import (
@@ -199,12 +200,12 @@ class IdempotencyService:
         if len(raw_key) > 255:
             raise ValueError("Idempotency-Key must not exceed 255 characters.")
         actor_id = getattr(getattr(request, "user", None), "pk", None)
-        actor_key = f"user:{actor_id}" if actor_id else f"ip:{request.META.get('REMOTE_ADDR', 'unknown')}"
+        actor_key = f"user:{actor_id}" if actor_id else f"ip:{get_client_ip(request) or 'unknown'}"
         key_hash = cls._digest(raw_key)
         payload_hash = cls._payload_hash(request.data)
         now = timezone.now()
         with transaction.atomic():
-            IdempotencyRecord.objects.filter(expires_at__lte=now).delete()
+            # Expired rows are purged out of band by ``purge_expired_idempotency_records``; never on this hot path.
             try:
                 # A nested savepoint keeps the outer transaction usable after a
                 # uniqueness race, including on SQLite-backed test environments.
@@ -220,15 +221,33 @@ class IdempotencyService:
                 record = IdempotencyRecord.objects.select_for_update().get(
                     actor_key=actor_key, endpoint=endpoint, key_hash=key_hash
                 )
+                seen_updated_at = record.updated_at
+                if record.expires_at <= now:
+                    # A stale row the purge task has not removed yet: recycle it for this request. The
+                    # compare-and-set means only one concurrent request can claim it.
+                    claimed = IdempotencyRecord.objects.filter(pk=record.pk, updated_at=seen_updated_at).update(
+                        payload_hash=payload_hash,
+                        response_status=None,
+                        response_body=None,
+                        expires_at=now + timedelta(hours=24),
+                        updated_at=now,
+                    )
+                    if claimed:
+                        return IdempotencyDecision(record_id=record.pk)
+                    raise RuntimeError("A request with this Idempotency-Key is already in progress.") from exc
                 if record.payload_hash != payload_hash:
                     raise ValueError("Idempotency-Key cannot be reused with a different request payload.") from exc
                 if record.response_status and record.response_body is not None:
                     return IdempotencyDecision(replay_status=record.response_status, replay_body=record.response_body)
-                if record.updated_at <= now - timedelta(seconds=cls.IN_PROGRESS_TIMEOUT_SECONDS):
+                if seen_updated_at <= now - timedelta(seconds=cls.IN_PROGRESS_TIMEOUT_SECONDS):
                     # The first attempt died or raised before storing a response; without this takeover the
-                    # key stayed "in progress" (409) until it expired a day later.
-                    IdempotencyRecord.objects.filter(pk=record.pk).update(updated_at=now)
-                    return IdempotencyDecision(record_id=record.pk)
+                    # key stayed "in progress" (409) until it expired a day later. Compare-and-set on the
+                    # ``updated_at`` we observed so two concurrent retries cannot both take the key over.
+                    taken = IdempotencyRecord.objects.filter(pk=record.pk, updated_at=seen_updated_at).update(
+                        updated_at=now
+                    )
+                    if taken:
+                        return IdempotencyDecision(record_id=record.pk)
                 raise RuntimeError("A request with this Idempotency-Key is already in progress.") from exc
         return IdempotencyDecision(record_id=record.pk)
 
@@ -333,6 +352,7 @@ class AccountDeletionService:
                     action=AuditAction.ACCOUNT_DELETION_COMPLETED,
                     target=deletion,
                     new_value={"anonymized": anonymization_counts},
+                    critical=True,  # inside the atomic block: an unrecorded erasure must roll back
                 )
                 completed += 1
         return completed

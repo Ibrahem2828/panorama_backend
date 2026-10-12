@@ -334,14 +334,14 @@ def test_pipeline_conversion_and_renderer_use_safe_subprocess_arguments():
         source.write_bytes(make_docx())
 
         def convert_run(command, **kwargs):
-            assert kwargs["shell"] is False
+            assert kwargs["job_dir"].is_dir()
             output_dir = Path(command[command.index("--outdir") + 1])
             output_dir.mkdir(exist_ok=True)
             (output_dir / "input.pdf").write_bytes(make_pdf())
             return SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
 
         with patch("apps.lectures.document_pipeline.shutil.which", return_value="soffice"):
-            with patch("apps.lectures.document_pipeline.subprocess.run", side_effect=convert_run):
+            with patch("apps.lectures.document_pipeline.run_sandboxed", side_effect=convert_run):
                 converted = convert_to_pdf(source, ".docx", workspace)
         assert converted.read_bytes().startswith(b"%PDF-")
 
@@ -349,12 +349,12 @@ def test_pipeline_conversion_and_renderer_use_safe_subprocess_arguments():
         pdf.write_bytes(make_pdf())
 
         def render_run(command, **kwargs):
-            assert kwargs["shell"] is False
+            assert kwargs["job_dir"].is_dir()
             Path(command[-1]).with_suffix(".png").write_bytes(b"png")
             return SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
 
         with patch("apps.lectures.document_pipeline.shutil.which", return_value="pdftoppm"):
-            with patch("apps.lectures.document_pipeline.subprocess.run", side_effect=render_run):
+            with patch("apps.lectures.document_pipeline.run_sandboxed", side_effect=render_run):
                 assert _render_page(pdf, 1, workspace) == b"png"
                 assert _render_thumbnail(pdf, 1, workspace) == b"png"
 
@@ -383,7 +383,7 @@ def test_scanner_and_capability_status_fail_closed_when_enabled(settings, tmp_pa
             _scan_if_enabled(source)
     with patch("apps.lectures.document_pipeline.shutil.which", return_value="clamscan"):
         with patch(
-            "apps.lectures.document_pipeline.subprocess.run",
+            "apps.lectures.document_pipeline.run_sandboxed",
             return_value=SimpleNamespace(returncode=1, stdout=b"", stderr=b""),
         ):
             with pytest.raises(QuarantinedDocumentError):

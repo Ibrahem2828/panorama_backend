@@ -56,3 +56,23 @@ Notes are personal records scoped to `(student, lecture)`. They support optional
 page anchors, sanitized selected text/content, bookmarks, favourites, an
 idempotency key for autosave, and optimistic version checking. A stale update
 returns HTTP 409. Staff do not read student notes by default.
+
+## Conversion sandbox and residual risk
+
+LibreOffice, `pdftoppm` and `clamscan` run through `apps/lectures/sandbox.py`:
+scrubbed environment (only `PATH`, `LANG`, and `HOME` pointing at a per-job
+temp dir, so no `SECRET_KEY`, database, Redis or encryption keys), a private
+per-job working dir and LibreOffice profile deleted afterwards, POSIX rlimits
+(`RLIMIT_CPU`, `RLIMIT_AS`, `RLIMIT_NOFILE`, `RLIMIT_FSIZE`; skipped on
+Windows), a hard wall-clock timeout that kills the whole process group, and
+capped captured/produced output. Tunables: `DOCUMENT_CONVERSION_TIME_LIMIT`,
+`DOCUMENT_CONVERSION_CPU_LIMIT`, `DOCUMENT_CONVERSION_MEMORY_LIMIT_MB`,
+`DOCUMENT_CONVERSION_MAX_OPEN_FILES`, `DOCUMENT_CONVERSION_MAX_OUTPUT_BYTES`.
+
+Residual risk: this is application-level hardening only. The converter still
+shares the container's network namespace (no network isolation) and can read any
+file the app user can read (for example the media volume). A compromised
+converter could therefore reach internal services or exfiltrate readable data.
+Full isolation requires container-level controls: run conversion in a dedicated
+worker/container with no network (or egress deny), a read-only root filesystem,
+a non-root user, no mounted secrets, and only the job's input/output mounted.

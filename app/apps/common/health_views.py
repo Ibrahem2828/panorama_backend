@@ -11,6 +11,7 @@ from redis.exceptions import RedisError
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
+from apps.audit.services import audit_failures_today
 from apps.common.responses import error_response, success_response
 
 health_logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ health_logger = logging.getLogger(__name__)
 class HealthCheckView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(
         auth=[],
@@ -39,6 +41,7 @@ class LivenessHealthCheckView(APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(auth=[], responses={200: OpenApiResponse(description="Process is alive")})
     def get(self, request):
@@ -53,6 +56,7 @@ class LivenessHealthCheckView(APIView):
 class DatabaseHealthCheckView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(
         auth=[],
@@ -83,6 +87,7 @@ class ReadinessHealthCheckView(APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(
         auth=[],
@@ -108,6 +113,7 @@ class StartupHealthCheckView(APIView):
 
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(
         auth=[],
@@ -146,6 +152,11 @@ def _dependency_checks(*, request=None, check_migrations: bool, check_configurat
         return None
 
     checks = {"database": "healthy", "cache": "healthy"}
+    # Monitors can alert when this is non-zero (audit writes are best-effort and otherwise fail silently).
+    audit_failures = audit_failures_today()
+    checks["audit_failures_today"] = audit_failures
+    if audit_failures:
+        health_logger.error("audit_failures_detected", extra={"audit_failures_today": audit_failures})
     if check_migrations:
         try:
             executor = MigrationExecutor(connection)
