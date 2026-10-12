@@ -15,6 +15,7 @@ from apps.accounts.models import User
 from apps.accounts.permissions import CanManageFeedback
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import FeedbackRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -57,10 +58,15 @@ class FeedbackPromptEventView(APIView):
 
     @extend_schema(tags=["Feedback"], request=FeedbackPromptEventSerializer)
     def post(self, request):
-        serializer = FeedbackPromptEventSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return success_response(message="Prompt event recorded", request=request, code="FEEDBACK_PROMPT_EVENT_RECORDED")
+        def write():
+            serializer = FeedbackPromptEventSerializer(data=request.data, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return success_response(
+                message="Prompt event recorded", request=request, code="FEEDBACK_PROMPT_EVENT_RECORDED"
+            )
+
+        return run_idempotent(request, "feedback-prompt-event", write)
 
 
 class FeedbackSubmitView(APIView):
@@ -70,16 +76,20 @@ class FeedbackSubmitView(APIView):
     @extend_schema(tags=["Feedback"], request=AppFeedbackSerializer, responses={201: AppFeedbackSerializer})
     def post(self, request):
         feature_enabled_or_raise("feedback_enabled", request=request)
-        serializer = AppFeedbackSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        feedback = serializer.save()
-        return success_response(
-            data=AppFeedbackSerializer(feedback, context={"request": request}).data,
-            message="Thank you. Your feedback was recorded.",
-            status_code=status.HTTP_201_CREATED,
-            request=request,
-            code="FEEDBACK_SUBMITTED",
-        )
+
+        def write():
+            serializer = AppFeedbackSerializer(data=request.data, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            feedback = serializer.save()
+            return success_response(
+                data=AppFeedbackSerializer(feedback, context={"request": request}).data,
+                message="Thank you. Your feedback was recorded.",
+                status_code=status.HTTP_201_CREATED,
+                request=request,
+                code="FEEDBACK_SUBMITTED",
+            )
+
+        return run_idempotent(request, "feedback-submit", write)
 
 
 class FeedbackPrivacyRequestView(APIView):
@@ -159,14 +169,18 @@ class PublicSuggestionViewSet(StandardReadOnlyModelViewSet):
 class FeedbackVoteView(APIView):
     @extend_schema(tags=["Feedback"], request=None, responses={200: OpenApiTypes.OBJECT})
     def post(self, request, pk: int):
-        feedback = get_object_or_404(AppFeedback, pk=pk, is_deleted=False)
-        voted, votes_count = FeedbackService.toggle_vote(request.user, feedback)
-        return success_response(
-            data={"voted": voted, "votes_count": votes_count},
-            message="Suggestion vote updated",
-            request=request,
-            code="FEEDBACK_VOTE_UPDATED",
-        )
+        # The vote is a TOGGLE: without a key a network retry would silently undo the first vote.
+        def write():
+            feedback = get_object_or_404(AppFeedback, pk=pk, is_deleted=False)
+            voted, votes_count = FeedbackService.toggle_vote(request.user, feedback)
+            return success_response(
+                data={"voted": voted, "votes_count": votes_count},
+                message="Suggestion vote updated",
+                request=request,
+                code="FEEDBACK_VOTE_UPDATED",
+            )
+
+        return run_idempotent(request, f"feedback-vote:{pk}", write)
 
 
 class DashboardFeedbackViewSet(StandardReadOnlyModelViewSet):

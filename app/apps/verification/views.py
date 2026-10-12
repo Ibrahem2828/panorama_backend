@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import CanReviewVerification, IsStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.viewsets import StandardReadOnlyModelViewSet
 
@@ -39,23 +40,26 @@ class SubmitVerificationView(APIView):
         responses={201: VerificationRequestStudentSerializer},
     )
     def post(self, request):
-        serializer = VerificationRequestSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        verification = serializer.save()
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.VERIFICATION_SUBMITTED,
-            target=verification,
-            new_value={"status": verification.status, "student_number": verification.student_number},
-            request=request,
-        )
-        return success_response(
-            data=VerificationRequestStudentSerializer(verification, context={"request": request}).data,
-            message="Verification request submitted successfully",
-            status_code=status.HTTP_201_CREATED,
-            request=request,
-            code="VERIFICATION_SUBMITTED",
-        )
+        def write():
+            serializer = VerificationRequestSerializer(data=request.data, context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            verification = serializer.save()
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.VERIFICATION_SUBMITTED,
+                target=verification,
+                new_value={"status": verification.status, "student_number": verification.student_number},
+                request=request,
+            )
+            return success_response(
+                data=VerificationRequestStudentSerializer(verification, context={"request": request}).data,
+                message="Verification request submitted successfully",
+                status_code=status.HTTP_201_CREATED,
+                request=request,
+                code="VERIFICATION_SUBMITTED",
+            )
+
+        return run_idempotent(request, "verification-submit", write)
 
 
 class MyVerificationView(APIView):

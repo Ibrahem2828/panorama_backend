@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import (
     ChatMessageRateThrottle,
@@ -89,16 +90,20 @@ class GroupMessageViewSet(StandardExplicitActionViewSet):
         self.throttle_classes = [ChatMessageRateThrottle]
         self.check_throttles(request)
         group = self.get_group()
-        serializer = MessageCreateSerializer(data=request.data, context={"request": request, "group": group})
-        serializer.is_valid(raise_exception=True)
-        message = serializer.save()
-        return success_response(
-            data=MessageSerializer(message, context={"request": request}).data,
-            message="Message sent successfully",
-            status_code=status.HTTP_201_CREATED,
-            request=request,
-            code="CHAT_MESSAGE_CREATED",
-        )
+
+        def write():
+            serializer = MessageCreateSerializer(data=request.data, context={"request": request, "group": group})
+            serializer.is_valid(raise_exception=True)
+            message = serializer.save()
+            return success_response(
+                data=MessageSerializer(message, context={"request": request}).data,
+                message="Message sent successfully",
+                status_code=status.HTTP_201_CREATED,
+                request=request,
+                code="CHAT_MESSAGE_CREATED",
+            )
+
+        return run_idempotent(request, f"chat-message-create:{group.pk}", write)
 
     def destroy(self, request, *args, **kwargs):
         group = self.get_group()
@@ -144,25 +149,29 @@ class GroupMessageReportView(APIView):
         group = get_object_or_404(Group, pk=group_id, is_deleted=False)
         ChatPermissionService.enforce_group_chat_access(request.user, group)
         message = get_object_or_404(Message, pk=message_id, group=group, is_deleted=False)
-        serializer = MessageReportSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        try:
-            report = MessageReport.objects.create(
-                message=message,
-                reported_by=request.user,
-                reason=serializer.validated_data["reason"],
-            )
-        except IntegrityError as exc:
-            from rest_framework.exceptions import ValidationError
 
-            raise ValidationError({"message": "You have already reported this message."}) from exc
-        return success_response(
-            data=MessageReportSerializer(report).data,
-            message="Message reported successfully",
-            status_code=status.HTTP_201_CREATED,
-            request=request,
-            code="CHAT_MESSAGE_REPORTED",
-        )
+        def write():
+            serializer = MessageReportSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            try:
+                report = MessageReport.objects.create(
+                    message=message,
+                    reported_by=request.user,
+                    reason=serializer.validated_data["reason"],
+                )
+            except IntegrityError as exc:
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError({"message": "You have already reported this message."}) from exc
+            return success_response(
+                data=MessageReportSerializer(report).data,
+                message="Message reported successfully",
+                status_code=status.HTTP_201_CREATED,
+                request=request,
+                code="CHAT_MESSAGE_REPORTED",
+            )
+
+        return run_idempotent(request, f"chat-message-report:{message.pk}", write)
 
 
 class MessageAttachmentAccessTicketView(APIView):

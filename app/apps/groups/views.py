@@ -14,6 +14,7 @@ from apps.accounts.models import User
 from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups, IsVerifiedStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import ExternalChannelRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -140,14 +141,17 @@ class GroupJoinView(APIView):
 
     @extend_schema(tags=["Groups"], responses={200: GroupMembershipSerializer})
     def post(self, request, pk: int):
-        group = get_object_or_404(Group, pk=pk, is_active=True, is_deleted=False)
-        membership = GroupMembershipService.join(request.user, group)
-        return success_response(
-            data=GroupMembershipSerializer(membership).data,
-            message="Group join request submitted",
-            request=request,
-            code="GROUP_JOIN_REQUESTED",
-        )
+        def write():
+            group = get_object_or_404(Group, pk=pk, is_active=True, is_deleted=False)
+            membership = GroupMembershipService.join(request.user, group)
+            return success_response(
+                data=GroupMembershipSerializer(membership).data,
+                message="Group join request submitted",
+                request=request,
+                code="GROUP_JOIN_REQUESTED",
+            )
+
+        return run_idempotent(request, f"group-join:{pk}", write)
 
 
 class GroupLeaveView(APIView):
@@ -156,9 +160,12 @@ class GroupLeaveView(APIView):
 
     @extend_schema(tags=["Groups"])
     def post(self, request, pk: int):
-        group = get_object_or_404(Group, pk=pk, is_deleted=False)
-        GroupMembershipService.leave(request.user, group)
-        return success_response(message="Left group successfully", request=request, code="GROUP_LEFT")
+        def write():
+            group = get_object_or_404(Group, pk=pk, is_deleted=False)
+            GroupMembershipService.leave(request.user, group)
+            return success_response(message="Left group successfully", request=request, code="GROUP_LEFT")
+
+        return run_idempotent(request, f"group-leave:{pk}", write)
 
 
 class DashboardGroupMembershipViewSet(StandardReadOnlyModelViewSet):
