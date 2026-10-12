@@ -23,16 +23,37 @@ AUTHENTICATION_CLOSE_CODE = 4401
 AUTHORIZATION_CLOSE_CODE = 4403
 
 
+#: Authorization (user active, session_version, group active, membership/ban) is cached per connection for this
+#: long. Typing frames use the cache only; a message SEND always re-checks (it is a write). So a revoked membership,
+#: ban, deactivation or session_version bump closes the socket on the first inbound frame after the cache expires:
+#: at most AUTHORIZATION_CACHE_TTL_SECONDS (plus the gap until the client's next frame) of stale typing access.
+AUTHORIZATION_CACHE_TTL_SECONDS = 20
+
+#: In-memory per-connection frame limiter (token bucket), applied before any DB or cache access. Frames beyond
+#: the budget are dropped silently (an ``RATE_LIMITED`` error is sent at most once per second).
+FRAME_BUCKET_CAPACITY = 30
+FRAME_BUCKET_REFILL_PER_SECOND = 15.0
+
+
+def _monotonic() -> float:
+    """Clock used for the authorization cache and frame bucket (patched in tests)."""
+    return time.monotonic()
+
+
 class GroupChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.group_id = self.scope["url_route"]["kwargs"]["group_id"]
         self.room_group_name = f"group_chat_{self.group_id}"
         self.user = self.scope.get("user", AnonymousUser())
         self.session_version = self.scope.get("ws_session_version")
+        self._auth_valid_until = 0.0
+        self._frame_tokens = float(FRAME_BUCKET_CAPACITY)
+        self._frame_refilled_at = _monotonic()
+        self._last_rate_error_at = 0.0
         if not getattr(self.user, "is_authenticated", False):
             await self.close(code=AUTHENTICATION_CLOSE_CODE)
             return
-        close_code = await self.access_close_code()
+        close_code = await self.refresh_authorization()
         if close_code is not None:
             await self.close(code=close_code)
             return
@@ -43,13 +64,39 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-    async def receive(self, text_data=None, bytes_data=None):
-        # Authorization is re-evaluated for every client action so security and
-        # membership changes terminate an already-open connection safely.
+    def _take_frame_token(self) -> bool:
+        now = _monotonic()
+        elapsed = max(0.0, now - self._frame_refilled_at)
+        self._frame_refilled_at = now
+        self._frame_tokens = min(
+            float(FRAME_BUCKET_CAPACITY), self._frame_tokens + elapsed * FRAME_BUCKET_REFILL_PER_SECOND
+        )
+        if self._frame_tokens < 1.0:
+            return False
+        self._frame_tokens -= 1.0
+        return True
+
+    async def refresh_authorization(self) -> int | None:
+        """Run the DB authorization check and cache a successful result for the TTL."""
         close_code = await self.access_close_code()
-        if close_code is not None:
-            await self.close(code=close_code)
+        self._auth_valid_until = _monotonic() + AUTHORIZATION_CACHE_TTL_SECONDS if close_code is None else 0.0
+        return close_code
+
+    async def cached_authorization(self) -> int | None:
+        """Return the close code for read-only frames, hitting the DB only when the cache expired."""
+        if _monotonic() < self._auth_valid_until:
+            return None
+        return await self.refresh_authorization()
+
+    async def receive(self, text_data=None, bytes_data=None):
+        # 1. Per-connection rate limit FIRST: a flood must cost no DB and no cache round trip.
+        if not self._take_frame_token():
+            now = _monotonic()
+            if now - self._last_rate_error_at >= 1.0:
+                self._last_rate_error_at = now
+                await self.send_error("RATE_LIMITED", "Too many messages. Please slow down.")
             return
+        # 2. Frame size/shape validation, still without touching the database.
         if bytes_data is not None:
             await self.send_error("UNSUPPORTED_PAYLOAD", "Binary WebSocket messages are not supported.")
             return
@@ -70,6 +117,11 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         if event_type == "typing":
             if not await self.consume_rate_limit("typing", 2, 1):
                 return
+            # Typing is read-only: it relies on the cached authorization (refreshed at most every TTL seconds).
+            close_code = await self.cached_authorization()
+            if close_code is not None:
+                await self.close(code=close_code)
+                return
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -89,6 +141,11 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         content = str(payload.get("content", "")).strip()
         if not content or len(content) > MAX_MESSAGE_LENGTH:
             await self.send_error("INVALID_CONTENT", "Message content must be between 1 and 4000 characters.")
+            return
+        # A send is a write: never trust the cache, always re-check (and re-prime the cache with the result).
+        close_code = await self.refresh_authorization()
+        if close_code is not None:
+            await self.close(code=close_code)
             return
         try:
             data = await self.create_message(content)

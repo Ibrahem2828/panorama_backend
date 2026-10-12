@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
@@ -22,6 +23,7 @@ from rest_framework.test import APIClient
 from apps.accounts.authentication import SessionVersionRefreshToken
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.models import StudentProfile, User
+from apps.chat.consumers import AUTHORIZATION_CACHE_TTL_SECONDS
 from apps.chat.routing import websocket_urlpatterns
 from apps.chat.services import ChatHandshakeTicketService
 from apps.common.throttles import ChatTicketRateThrottle
@@ -105,8 +107,11 @@ async def _connection_rejected_after_state_change(path: str, state_change: Calla
     await communicator.send_input({"type": "websocket.connect"})
     assert await communicator.receive_output(timeout=1) == {"type": "websocket.accept", "subprotocol": None}
     await database_sync_to_async(state_change)()
-    await communicator.send_input({"type": "websocket.receive", "text": '{"type":"typing","is_typing":true}'})
-    closed = await communicator.receive_output(timeout=1)
+    # Typing frames use the per-connection authorization cache (20s); let it expire before the next frame.
+    offset = AUTHORIZATION_CACHE_TTL_SECONDS + 1
+    with patch("apps.chat.consumers._monotonic", side_effect=lambda: time.monotonic() + offset):
+        await communicator.send_input({"type": "websocket.receive", "text": '{"type":"typing","is_typing":true}'})
+        closed = await communicator.receive_output(timeout=1)
     await communicator.wait(timeout=1)
     return closed
 
