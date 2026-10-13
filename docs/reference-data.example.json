@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+
+  "academic_years": [
+    { "name": "EXAMPLE YEAR 1", "order": 1, "is_active": true },
+    { "name": "EXAMPLE YEAR 2", "order": 2, "is_active": true }
+  ],
+
+  "semesters": [
+    { "name": "EXAMPLE SEMESTER 1", "order": 1, "is_active": true },
+    { "name": "EXAMPLE SEMESTER 2", "order": 2, "is_active": true }
+  ],
+
+  "universities": [
+    {
+      "code": "EXAMPLE",
+      "name": "EXAMPLE UNIVERSITY",
+      "description": "FAKE placeholder - replace with the real university",
+      "is_active": true,
+      "faculties": [
+        {
+          "code": "1",
+          "name": "EXAMPLE FACULTY ONE",
+          "is_active": true,
+          "majors": [
+            {
+              "code": "EX-MAJ-1",
+              "name": "EXAMPLE MAJOR ONE",
+              "is_active": true,
+              "subjects": [
+                {
+                  "code": "EX-101",
+                  "name": "EXAMPLE SUBJECT ONE",
+                  "academic_year": "EXAMPLE YEAR 1",
+                  "semester": "EXAMPLE SEMESTER 1",
+                  "description": "FAKE placeholder subject",
+                  "is_active": true
+                },
+                {
+                  "code": "EX-102",
+                  "name": "EXAMPLE SUBJECT TWO",
+                  "academic_year": "EXAMPLE YEAR 1",
+                  "semester": "EXAMPLE SEMESTER 2",
+                  "is_active": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "code": "2",
+          "name": "EXAMPLE FACULTY TWO",
+          "is_active": true,
+          "majors": [
+            {
+              "name": "EXAMPLE MAJOR TWO (no code)",
+              "is_active": true,
+              "subjects": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "print_pricing_rules": [
+    {
+      "name": "EXAMPLE BW A4 one-sided",
+      "color_mode": "black_white",
+      "paper_size": "A4",
+      "sides": "one_sided",
+      "price_per_sheet": "0.00",
+      "setup_fee": "0.00",
+      "currency": "SYP",
+      "is_active": true,
+      "effective_from": "2099-01-01T00:00:00Z",
+      "effective_to": null
+    },
+    {
+      "name": "EXAMPLE Color A4 double-sided",
+      "color_mode": "color",
+      "paper_size": "A4",
+      "sides": "double_sided",
+      "price_per_sheet": "0.00",
+      "setup_fee": "0.00",
+      "currency": "SYP",
+      "is_active": true,
+      "effective_from": "2099-01-01T00:00:00Z",
+      "effective_to": "2099-12-31T23:59:59Z"
+    }
+  ],
+
+  "binding_prices": [
+    { "binding": "none", "price_per_copy": "0.00", "currency": "SYP", "is_active": true },
+    { "binding": "staple", "price_per_copy": "0.00", "currency": "SYP", "is_active": true },
+    { "binding": "spiral", "price_per_copy": "0.00", "currency": "SYP", "is_active": true },
+    { "binding": "thermal", "price_per_copy": "0.00", "currency": "SYP", "is_active": true }
+  ],
+
+  "pickup_locations": [
+    {
+      "name": "EXAMPLE PICKUP POINT",
+      "address": "FAKE ADDRESS - replace",
+      "instructions": "FAKE instructions - replace",
+      "is_active": true,
+      "sort_order": 0
+    }
+  ],
+
+  "terms_versions": [
+    {
+      "version": "EXAMPLE-0.0",
+      "content_url": "https://example.com/EXAMPLE-terms",
+      "is_active": true,
+      "requires_reacceptance": false,
+      "published_at": "2099-01-01T00:00:00Z"
+    }
+  ],
+
+  "privacy_versions": [
+    {
+      "version": "EXAMPLE-0.0",
+      "content_url": "https://example.com/EXAMPLE-privacy",
+      "is_active": true,
+      "requires_reacceptance": false,
+      "published_at": "2099-01-01T00:00:00Z"
+    }
+  ]
+}
