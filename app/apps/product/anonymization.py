@@ -159,5 +159,5 @@ def anonymize_user_data(user, *, original_email: str, original_phone: str) -> di
     counts["notifications"] = Notification.objects.filter(user=user).delete()[0]
 
     # Audit trail rows stay; network identifiers go.
-    counts["audit_logs"] = AuditLog.objects.filter(actor=user).update(ip_address=None, user_agent="")
+    counts["audit_logs"] = AuditLog.objects.scrub_network_identifiers_for(user)
     return counts

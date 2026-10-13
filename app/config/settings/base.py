@@ -416,6 +416,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.product.tasks.purge_expired_idempotency_records",
         "schedule": crontab(hour=3, minute=45),
     },
+    # Audit rows older than AUDIT_LOG_RETENTION_DAYS (<= 0 keeps them forever), deleted in batches of 1000.
+    "purge-expired-audit-logs": {
+        "task": "apps.audit.tasks.purge_expired_audit_logs",
+        "schedule": crontab(hour=3, minute=55),
+    },
     # SimpleJWT token_blacklist tables otherwise grow without bound.
     "flush-expired-jwt-tokens": {
         "task": "apps.common.tasks.flush_expired_jwt_tokens",
