@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django.db import transaction
+from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.permissions import Capability, PermissionService
 
-from .models import Lecture, LecturePage, LectureViewerSession
+from .models import Lecture, LecturePage, LectureProcessingStatus, LectureViewerSession
 
 
 def user_can_manage_lectures(user) -> bool:
@@ -93,6 +96,26 @@ def get_authorized_page(user, lecture: Lecture, token: str, page_number: int) ->
     if not page or not page.rendered_file:
         raise NotFound("Lecture page is unavailable.")
     return page
+
+
+#: A lecture that has sat in one of these states without progress is considered stalled (worker or dispatch lost).
+STALLED_STATUSES = (
+    LectureProcessingStatus.UPLOADED,
+    LectureProcessingStatus.QUEUED,
+    LectureProcessingStatus.SCANNING,
+    LectureProcessingStatus.CONVERTING,
+    LectureProcessingStatus.EXTRACTING,
+    LectureProcessingStatus.RENDERING,
+)
+STALLED_AFTER = timedelta(minutes=30)  # same horizon as ``fail_stuck_lectures``
+
+
+def lecture_is_retryable(lecture: Lecture) -> bool:
+    """Failed lectures, and in-flight ones that made no progress for 30 minutes. Quarantined and ready ones never."""
+
+    if lecture.status == LectureProcessingStatus.FAILED:
+        return True
+    return lecture.status in STALLED_STATUSES and lecture.updated_at < timezone.now() - STALLED_AFTER
 
 
 def require_lecture_manager(user) -> None:

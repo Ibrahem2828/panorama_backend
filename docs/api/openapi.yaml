@@ -959,8 +959,11 @@ paths:
           - group_membership_blocked
           - group_membership_rejected
           - group_updated
+          - lecture_deleted
           - lecture_note_updated
+          - lecture_processing_retried
           - lecture_processing_updated
+          - lecture_updated
           - lecture_uploaded
           - lecture_viewed
           - maintenance_mode_updated
@@ -1030,6 +1033,9 @@ paths:
           * `lecture_processing_updated` - Lecture Processing Updated
           * `lecture_viewed` - Lecture Viewed
           * `lecture_note_updated` - Lecture Note Updated
+          * `lecture_updated` - Lecture Updated
+          * `lecture_deleted` - Lecture Deleted
+          * `lecture_processing_retried` - Lecture Processing Retried
           * `announcement_created` - Announcement Created
           * `announcement_updated` - Announcement Updated
           * `announcement_deleted` - Announcement Deleted
@@ -2611,6 +2617,10 @@ paths:
       operationId: v1_dashboard_lectures_list
       description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
+      - in: query
+        name: is_published
+        schema:
+          type: boolean
       - name: page
         required: false
         in: query
@@ -2621,6 +2631,34 @@ paths:
         required: false
         in: query
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - converting
+          - extracting
+          - failed
+          - quarantined
+          - queued
+          - ready
+          - rendering
+          - scanning
+          - uploaded
+        description: |-
+          * `uploaded` - Uploaded
+          * `queued` - Queued
+          * `scanning` - Scanning
+          * `converting` - Converting
+          * `extracting` - Extracting
+          * `rendering` - Rendering
+          * `ready` - Ready
+          * `failed` - Failed
+          * `quarantined` - Quarantined
+      - in: query
+        name: subject
         schema:
           type: integer
       tags:
@@ -2787,6 +2825,29 @@ paths:
       responses:
         '200':
           description: Original private document
+  /api/v1/dashboard/lectures/{id}/retry/:
+    post:
+      operationId: v1_dashboard_lectures_retry_create
+      description: Re-queue conversion of a failed (or stuck) lecture.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا lecture.
+        required: true
+      tags:
+      - Dashboard lectures
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardLecture'
+          description: ''
   /api/v1/dashboard/maintenance-modes/:
     get:
       operationId: v1_dashboard_maintenance_modes_list
@@ -9352,6 +9413,9 @@ components:
       - lecture_processing_updated
       - lecture_viewed
       - lecture_note_updated
+      - lecture_updated
+      - lecture_deleted
+      - lecture_processing_retried
       - announcement_created
       - announcement_updated
       - announcement_deleted
@@ -9420,6 +9484,9 @@ components:
         * `lecture_processing_updated` - Lecture Processing Updated
         * `lecture_viewed` - Lecture Viewed
         * `lecture_note_updated` - Lecture Note Updated
+        * `lecture_updated` - Lecture Updated
+        * `lecture_deleted` - Lecture Deleted
+        * `lecture_processing_retried` - Lecture Processing Retried
         * `announcement_created` - Announcement Created
         * `announcement_updated` - Announcement Updated
         * `announcement_deleted` - Announcement Deleted

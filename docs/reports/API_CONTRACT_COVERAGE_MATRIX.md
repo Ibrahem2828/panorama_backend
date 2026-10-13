@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 274
+**Operations:** 275
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -88,6 +88,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_dashboard_lectures_partial_update | PATCH | /api/v1/dashboard/lectures/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PatchedDashboardLectureRequest; application/x-www-form-urlencoded: #/components/schemas/PatchedDashboardLectureRequest; multipart/form-data: #/components/schemas/PatchedDashboardLectureRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_lectures_update | PUT | /api/v1/dashboard/lectures/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/DashboardLectureRequest; application/x-www-form-urlencoded: #/components/schemas/DashboardLectureRequest; multipart/form-data: #/components/schemas/DashboardLectureRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_lectures_original_retrieve | GET | /api/v1/dashboard/lectures/{id}/original/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
+| v1_dashboard_lectures_retry_create | POST | /api/v1/dashboard/lectures/{id}/retry/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 202 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_maintenance_modes_list | GET | /api/v1/dashboard/maintenance-modes/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_maintenance_modes_create | POST | /api/v1/dashboard/maintenance-modes/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/MaintenanceModeRequest; application/x-www-form-urlencoded: #/components/schemas/MaintenanceModeRequest; multipart/form-data: #/components/schemas/MaintenanceModeRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_maintenance_modes_destroy | DELETE | /api/v1/dashboard/maintenance-modes/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 204 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |

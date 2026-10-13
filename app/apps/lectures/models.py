@@ -54,7 +54,8 @@ class Lecture(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["subject", "original_sha256"],
-                condition=~models.Q(original_sha256=""),
+                # Soft-deleted lectures keep their row (and hash) but must not block re-uploading the same document.
+                condition=~models.Q(original_sha256="") & models.Q(is_deleted=False),
                 name="lectures_subject_original_hash_uniq",
             )
         ]

@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from django.utils import timezone
 from django.utils.html import strip_tags
 from rest_framework import serializers
 
@@ -103,6 +104,13 @@ class DashboardLectureSerializer(serializers.ModelSerializer):
             )
         attrs["_document_inspection"] = inspection
         return attrs
+
+    def update(self, instance, validated_data):
+        # Publishing a lecture that is already converted must stamp the publication time (the conversion task only
+        # does it for lectures that were published before they became ready).
+        if validated_data.get("is_published") and not instance.is_published and not instance.published_at:
+            validated_data["published_at"] = timezone.now()
+        return super().update(instance, validated_data)
 
     def create(self, validated_data):
         inspection = validated_data.pop("_document_inspection")

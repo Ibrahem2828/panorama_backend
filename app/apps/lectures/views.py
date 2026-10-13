@@ -11,12 +11,15 @@ from django.utils import timezone
 from django.utils.http import content_disposition_header
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import CanManageLectures
+from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import LectureNotesRateThrottle, LectureViewerRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -28,6 +31,7 @@ from .services import (
     accessible_lectures_for_user,
     get_authorized_page,
     issue_viewer_session,
+    lecture_is_retryable,
     user_can_manage_lectures,
 )
 from .tasks import process_lecture_document
@@ -49,6 +53,12 @@ def _dispatch_lecture_processing(lecture_id: int) -> None:
                 lecture.failure_message = "Processing dispatch failed. Retry from the dashboard."
                 lecture.save(update_fields=["status", "failure_code", "failure_message", "updated_at"])
         logger.exception("lecture_processing_dispatch_failed", extra={"lecture_id": lecture_id})
+
+
+class LectureNotRetryable(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "Only failed or stalled lectures can be retried."
+    default_code = "lecture_not_retryable"
 
 
 class NoteVersionConflict(APIException):
@@ -88,13 +98,58 @@ class LectureViewSet(StandardReadOnlyModelViewSet):
         return accessible_lectures_for_user(self.request.user)
 
 
-class DashboardLectureViewSet(StandardModelViewSet):
+class DashboardLectureViewSet(AuditedModelWriteMixin, StandardModelViewSet):
     permission_classes = [CanManageLectures]
     serializer_class = DashboardLectureSerializer
     ordering = ["-created_at"]
+    filterset_fields = ["subject", "status", "is_published"]
+    audit_update_action = AuditAction.LECTURE_UPDATED
+    audit_delete_action = AuditAction.LECTURE_DELETED
 
     def get_queryset(self):
         return Lecture.objects.filter(is_deleted=False).select_related("subject", "uploaded_by")
+
+    @extend_schema(tags=["Dashboard lectures"], request=None, responses={202: DashboardLectureSerializer})
+    @action(detail=True, methods=["post"], url_path="retry")
+    def retry(self, request, pk=None):
+        """Re-queue conversion of a failed (or stuck) lecture."""
+
+        def handler():
+            feature_enabled_or_raise("lecture_processing_enabled", request=request)
+            with transaction.atomic():
+                lecture = Lecture.objects.select_for_update().filter(pk=pk, is_deleted=False).first()
+                if lecture is None:
+                    raise NotFound("Lecture not found.")
+                if not lecture_is_retryable(lecture):
+                    raise LectureNotRetryable()
+                previous = {"status": lecture.status, "failure_code": lecture.failure_code}
+                lecture.status = LectureProcessingStatus.QUEUED
+                lecture.failure_code = ""
+                lecture.failure_message = ""
+                lecture.processing_task_id = ""
+                lecture.save(
+                    update_fields=["status", "failure_code", "failure_message", "processing_task_id", "updated_at"]
+                )
+                AuditLogService.log(
+                    actor=request.user,
+                    action=AuditAction.LECTURE_PROCESSING_RETRIED,
+                    target=lecture,
+                    old_value=previous,
+                    new_value={"status": lecture.status},
+                    request=request,
+                    critical=True,
+                )
+                lecture_id = lecture.id
+                transaction.on_commit(lambda: _dispatch_lecture_processing(lecture_id))
+            return success_response(
+                data=self.get_serializer(lecture).data,
+                message="Lecture processing re-queued.",
+                status_code=status.HTTP_202_ACCEPTED,
+                request=request,
+                code="LECTURE_PROCESSING_RETRIED",
+            )
+
+        return run_idempotent(request, f"dashboard-lecture-retry:{pk}", handler)
 
     def perform_create(self, serializer):
         feature_enabled_or_raise("lecture_upload_enabled", request=self.request)

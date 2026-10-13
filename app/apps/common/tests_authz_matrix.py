@@ -218,6 +218,7 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/lectures/": DASHBOARD,
     "dashboard/lectures/{pk}/": DASHBOARD,
     "dashboard/lectures/{pk}/original/": DASHBOARD,
+    "dashboard/lectures/{pk}/retry/": DASHBOARD,
     "dashboard/printing/orders/": DASHBOARD,
     "dashboard/printing/orders/{pk}/": DASHBOARD,
     "dashboard/printing/orders/{pk}/assign/": DASHBOARD,
