@@ -34,7 +34,12 @@ from .serializers import (
     GroupSerializer,
     WhatsAppChannelUpdateSerializer,
 )
-from .services import ExternalChannelService, GroupMembershipService, is_student_eligible_for_group
+from .services import (
+    ExternalChannelService,
+    GroupMembershipService,
+    eligible_groups_filter,
+    is_student_eligible_for_group,
+)
 
 
 def _group_queryset():
@@ -109,7 +114,22 @@ class GroupDetailViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Group.objects.none()
-        return _group_queryset().filter(is_active=True)
+        user = cast(User, self.request.user)
+        memberships = GroupMembership.objects.filter(user=user, is_deleted=False)
+        queryset = (
+            _group_queryset()
+            .filter(is_active=True)
+            .prefetch_related(Prefetch("memberships", queryset=memberships, to_attr="current_memberships"))
+        )
+        if self.action == "list":
+            # The collection only contains groups this student may see: their university's eligible groups plus
+            # groups they already belong to. retrieve keeps its explicit eligibility check in get_object().
+            member_group_ids = GroupMembership.objects.filter(
+                user=user, status=GroupMembershipStatus.APPROVED, is_deleted=False
+            ).values("group_id")
+            member_of = Q(pk__in=member_group_ids)
+            queryset = queryset.filter(eligible_groups_filter(user) | member_of)
+        return queryset.order_by("name", "id")
 
     def get_object(self):
         group = super().get_object()

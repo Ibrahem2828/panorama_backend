@@ -68,10 +68,18 @@ class GroupSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return None
+        membership = self._membership_for(obj, request)
+        return membership.status if membership else None
+
+    @staticmethod
+    def _membership_for(obj, request):
+        prefetched = getattr(obj, "current_memberships", None)
+        if prefetched is not None:  # list views prefetch the caller's memberships: no per-row query
+            return prefetched[0] if prefetched else None
         membership = getattr(obj, "_current_membership", None)
         if membership is None:
             membership = obj.memberships.filter(user=request.user, is_deleted=False).first()
-        return membership.status if membership else None
+        return membership
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_current_user_membership_status(self, obj):
@@ -82,13 +90,7 @@ class GroupSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return None
-        membership = (
-            getattr(obj, "_current_membership", None)
-            or obj.memberships.filter(
-                user=request.user,
-                is_deleted=False,
-            ).first()
-        )
+        membership = self._membership_for(obj, request)
         return membership.role if membership else None
 
     @extend_schema_field(serializers.IntegerField())

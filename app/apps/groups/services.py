@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -43,6 +44,28 @@ def is_student_eligible_for_group(user, group: Group) -> bool:
     if group.semester_id and profile.semester_id != group.semester_id:
         return False
     return True
+
+
+def eligible_groups_filter(user) -> Q:
+    """Database twin of ``is_student_eligible_for_group``: groups this student may see/join by hierarchy.
+
+    A group that pins a faculty/major/year/semester only matches students with that exact value; an unpinned level
+    matches everyone in the university. Non-students and unverified students match nothing.
+    """
+
+    profile = getattr(user, "student_profile", None)
+    if (
+        user.role != UserRole.STUDENT
+        or not profile
+        or profile.verification_status != StudentVerificationStatus.APPROVED
+        or not profile.university_id
+    ):
+        return Q(pk__in=[])
+    condition = Q(university_id=profile.university_id)
+    for field in ("faculty", "major", "academic_year", "semester"):
+        value = getattr(profile, f"{field}_id")
+        condition &= Q(**{f"{field}__isnull": True}) | (Q(**{f"{field}_id": value}) if value else Q(pk__in=[]))
+    return condition
 
 
 class GroupMembershipService:
