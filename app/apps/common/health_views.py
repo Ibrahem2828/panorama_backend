@@ -11,6 +11,7 @@ from redis.exceptions import RedisError
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import CanManageSystem
 from apps.audit.services import audit_failures_today
 from apps.common.responses import error_response, success_response
 
@@ -54,12 +55,11 @@ class LivenessHealthCheckView(APIView):
 
 
 class DatabaseHealthCheckView(APIView):
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    # Detailed diagnostics are operator-only (system.manage); liveness/readiness stay anonymous for probes.
+    permission_classes = [CanManageSystem]
     throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(
-        auth=[],
         responses={200: OpenApiResponse(description="Database health status")},
     )
     def get(self, request):
@@ -111,12 +111,11 @@ class ReadinessHealthCheckView(APIView):
 class StartupHealthCheckView(APIView):
     """Verify startup prerequisites, including migration state, before traffic is admitted."""
 
-    authentication_classes = []
-    permission_classes = [AllowAny]
+    # Detailed diagnostics are operator-only (system.manage); liveness/readiness stay anonymous for probes.
+    permission_classes = [CanManageSystem]
     throttle_classes = []  # probes must never be rate limited
 
     @extend_schema(
-        auth=[],
         responses={
             200: OpenApiResponse(description="Startup checks passed"),
             503: OpenApiResponse(description="Startup checks failed"),

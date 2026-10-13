@@ -71,9 +71,9 @@ ROUTE_KINDS: dict[str, str] = {
     # --- ops / public reference data -----------------------------------------------------------------------------
     "health/": PUBLIC,
     "health/live/": PUBLIC,
-    "health/db/": PUBLIC,
+    "health/db/": DASHBOARD,
     "health/ready/": PUBLIC,
-    "health/startup/": PUBLIC,
+    "health/startup/": DASHBOARD,
     "universities/": PUBLIC,
     "universities/{pk}/": PUBLIC,
     "academic-years/": PUBLIC,

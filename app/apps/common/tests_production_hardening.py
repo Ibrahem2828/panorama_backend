@@ -21,6 +21,19 @@ from apps.accounts.models import User
 from apps.common.logging import JSONFormatter, SensitiveDataFilter
 
 
+def _operator_client() -> APIClient:
+    user = User.objects.create_user(
+        full_name="Ops",
+        email="ops-startup@example.test",
+        phone_number="+963966000998",
+        password="StrongPass123!",
+        role=UserRole.IT_SUPPORT,
+    )
+    client = APIClient()
+    client.force_authenticate(user)
+    return client
+
+
 def _set_valid_production_environment(
     monkeypatch: pytest.MonkeyPatch, *, ticket_ttl: str = "45", legacy_query_auth: str = "False"
 ) -> None:
@@ -253,7 +266,7 @@ def test_startup_returns_503_when_migrations_are_pending():
         executor = executor_class.return_value
         executor.loader.graph.leaf_nodes.return_value = []
         executor.migration_plan.return_value = [object()]
-        response = APIClient().get("/api/v1/health/startup/")
+        response = _operator_client().get("/api/v1/health/startup/")
 
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
     assert response.data["code"] == "STARTUP_NOT_READY"
@@ -262,15 +275,15 @@ def test_startup_returns_503_when_migrations_are_pending():
 @pytest.mark.django_db
 def test_startup_returns_503_when_critical_storage_configuration_is_invalid():
     with patch("apps.common.health_views._critical_configuration_is_valid", return_value=False):
-        response = APIClient().get("/api/v1/health/startup/")
+        response = _operator_client().get("/api/v1/health/startup/")
 
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
     assert response.data["code"] == "STARTUP_NOT_READY"
 
 
 @pytest.mark.django_db
-def test_startup_endpoint_checks_migrations_and_configuration_without_authentication():
-    response = APIClient().get("/api/v1/health/startup/")
+def test_startup_endpoint_checks_migrations_and_configuration_for_operators():
+    response = _operator_client().get("/api/v1/health/startup/")
 
     assert response.status_code == status.HTTP_200_OK
     assert response.data["code"] == "STARTUP_READY"
@@ -316,3 +329,22 @@ def test_setup_admin_accounts_creates_required_users_idempotently(monkeypatch, c
     print_staff = User.objects.get(email="print-prod@example.com")
     assert print_staff.role == UserRole.PRINT_STAFF
     assert print_staff.is_superuser is False
+
+
+@pytest.mark.django_db
+def test_detailed_health_endpoints_require_the_system_capability_while_probes_stay_public():
+    anonymous = APIClient()
+    for path in ("/api/v1/health/db/", "/api/v1/health/startup/"):
+        assert anonymous.get(path).status_code == status.HTTP_401_UNAUTHORIZED
+    for path in ("/api/v1/health/", "/api/v1/health/live/", "/api/v1/health/ready/"):
+        assert anonymous.get(path).status_code == status.HTTP_200_OK
+    admin = User.objects.create_user(
+        full_name="Admin",
+        email="admin-health@example.test",
+        phone_number="+963966000997",
+        password="StrongPass123!",
+        role=UserRole.ADMIN,
+    )
+    client = APIClient()
+    client.force_authenticate(admin)
+    assert client.get("/api/v1/health/startup/").status_code == status.HTTP_403_FORBIDDEN

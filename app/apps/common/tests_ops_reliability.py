@@ -8,6 +8,19 @@ from django.db import OperationalError
 from rest_framework.test import APIClient
 
 
+def _operator():
+    from apps.accounts.choices import UserRole
+    from apps.accounts.models import User
+
+    return User.objects.create_user(
+        full_name="Ops",
+        email="ops-health@example.test",
+        phone_number="+963966000999",
+        password="StrongPass123!",
+        role=UserRole.IT_SUPPORT,
+    )
+
+
 def test_every_beat_entry_points_at_a_registered_task():
     from config.celery import app
 
@@ -29,7 +42,9 @@ def test_retention_purge_is_scheduled_and_runs_the_management_command():
 def test_db_health_reports_an_outage_as_a_controlled_503_with_a_request_id():
     with mock.patch("apps.common.health_views.connection") as connection:
         connection.cursor.side_effect = OperationalError("down")
-        response = APIClient().get("/api/v1/health/db/")
+        client = APIClient()
+        client.force_authenticate(_operator())
+        response = client.get("/api/v1/health/db/")
     assert response.status_code == 503
     assert response.data["code"] == "SERVICE_NOT_READY"
     assert response.data.get("request_id")
