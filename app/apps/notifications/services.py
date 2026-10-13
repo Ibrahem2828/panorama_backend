@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections import Counter
 from collections.abc import Iterable
 from functools import partial
 from urllib import request as urllib_request
@@ -15,6 +16,26 @@ from django.utils import timezone
 from .models import DeviceToken, Notification, NotificationPreference, NotificationType
 
 logger = logging.getLogger(__name__)
+
+#: Expo accepts at most 100 messages per request.
+EXPO_BATCH_SIZE = 100
+#: Ticket errors after which the token can never receive a push again; it is deactivated, never retried.
+PERMANENT_TOKEN_ERRORS = frozenset({"DeviceNotRegistered"})
+#: Ticket errors that are worth retrying later for that token only.
+TRANSIENT_TICKET_ERRORS = frozenset({"MessageRateExceeded"})
+
+
+class PushDeliveryTransientError(RuntimeError):
+    """Part of a push could not be delivered for a retryable reason (timeout, 5xx, 429, rate limit).
+
+    ``tokens`` are exactly the tokens that still need a retry, so a retry never re-sends to recipients that
+    already got the message.
+    """
+
+    def __init__(self, tokens: list[str], reason: str):
+        super().__init__(f"push delivery incomplete ({reason}) for {len(tokens)} token(s)")
+        self.tokens = tokens
+        self.reason = reason
 
 
 class NotificationService:
@@ -75,16 +96,21 @@ class NotificationService:
 
 
 class PushNotificationService:
-    """Small provider adapter for Expo push tokens; failures never break business transactions."""
+    """Small provider adapter for Expo push tokens; failures never break business transactions.
+
+    Device tokens live in two stores that are never merged in the database: ``notifications.DeviceToken`` (the
+    ``/notifications/device-tokens/`` endpoint) and ``product.DeviceInstallation.push_token`` (mobile device
+    registration). Sending always reads the union of both, de-duplicated; a dead token is deactivated in both.
+    """
 
     @staticmethod
-    def _send_expo(tokens: list[str], title: str, body: str, data: dict | None = None) -> int:
+    def _endpoint() -> str | None:
         endpoint = getattr(settings, "EXPO_PUSH_ENDPOINT", "https://exp.host/--/api/v2/push/send")
         try:
             parsed_endpoint = urlsplit(endpoint)
         except ValueError:
             logger.error("Push notification endpoint is malformed")
-            return 0
+            return None
         allowed_hosts = {str(host).strip().lower() for host in getattr(settings, "EXPO_PUSH_ALLOWED_HOSTS", ())}
         if (
             parsed_endpoint.scheme != "https"
@@ -94,87 +120,159 @@ class PushNotificationService:
             or parsed_endpoint.password
         ):
             logger.error("Push notification endpoint is not an allowlisted HTTPS Expo host")
-            return 0
+            return None
+        return endpoint
 
-        messages = [
-            {
-                "to": token,
-                "sound": "default",
-                "title": title[:200],
-                "body": body[:1000],
-                "data": data or {},
-            }
-            for token in tokens
-        ]
+    @staticmethod
+    def _post_batch(endpoint: str, messages: list[dict]) -> tuple[int, list | None]:
+        """POST one batch. Returns (http_status, tickets); tickets is None when the body is not a usable list."""
+
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         access_token = getattr(settings, "EXPO_ACCESS_TOKEN", "")
         if access_token:
             headers["Authorization"] = f"Bearer {access_token}"
         req = urllib_request.Request(
-            endpoint,
-            data=json.dumps(messages).encode("utf-8"),
-            headers=headers,
-            method="POST",
+            endpoint, data=json.dumps(messages).encode("utf-8"), headers=headers, method="POST"
         )
-        try:
-            # The endpoint is constrained to an HTTPS host allowlist above.
-            with urllib_request.urlopen(req, timeout=5) as response:  # nosec B310
-                if not 200 <= response.status < 300:
-                    return 0
-            return len(tokens)
-        except (HTTPError, URLError, TimeoutError, ValueError):
-            logger.exception("Push notification delivery failed")
+        # The endpoint is constrained to an HTTPS host allowlist by ``_endpoint``.
+        with urllib_request.urlopen(req, timeout=5) as response:  # nosec B310
+            status = response.status
+            if not 200 <= status < 300:
+                return status, None
+            try:
+                payload = json.loads(response.read())
+            except (AttributeError, TypeError, ValueError):
+                return status, None
+        tickets = payload.get("data") if isinstance(payload, dict) else None
+        return status, tickets if isinstance(tickets, list) else None
+
+    @staticmethod
+    def _send_expo(tokens: list[str], title: str, body: str, data: dict | None = None) -> int:
+        """Send to Expo in batches of 100 and return how many messages Expo accepted.
+
+        Each returned ticket is matched to its token: ``DeviceNotRegistered`` deactivates that token (soft), other
+        ticket errors are only counted and logged by code (never with the token). Timeouts, HTTP 429/5xx and
+        ``MessageRateExceeded`` raise ``PushDeliveryTransientError`` *after* the whole list was attempted, carrying
+        only the tokens that need a retry. Other HTTP errors (4xx) are permanent and logged.
+        """
+
+        endpoint = PushNotificationService._endpoint()
+        if endpoint is None:
             return 0
-
-    @staticmethod
-    def send_to_user(user, title: str, body: str, data: dict | None = None) -> bool:
-        tokens = list(
-            DeviceToken.objects.filter(user=user, is_active=True, is_deleted=False).values_list("token", flat=True)[
-                :100
+        accepted = 0
+        dead: list[str] = []
+        retry: list[str] = []
+        error_codes: Counter[str] = Counter()
+        for start in range(0, len(tokens), EXPO_BATCH_SIZE):
+            batch = tokens[start : start + EXPO_BATCH_SIZE]
+            messages = [
+                {"to": token, "sound": "default", "title": title[:200], "body": body[:1000], "data": data or {}}
+                for token in batch
             ]
-        )
-        from apps.product.models import DeviceInstallation
-
-        installation_tokens = (
-            DeviceInstallation.objects.filter(
-                user=user, notifications_enabled=True, revoked_at__isnull=True, is_deleted=False
+            try:
+                status, tickets = PushNotificationService._post_batch(endpoint, messages)
+            except HTTPError as exc:
+                if exc.code == 429 or exc.code >= 500:
+                    retry.extend(batch)
+                    error_codes[f"http_{exc.code}"] += len(batch)
+                else:
+                    logger.error("Push provider rejected the request", extra={"http_status": exc.code})
+                    error_codes[f"http_{exc.code}"] += len(batch)
+                continue
+            except (URLError, TimeoutError, OSError) as exc:
+                logger.warning("Push provider unreachable", extra={"failure_class": type(exc).__name__})
+                retry.extend(batch)
+                error_codes["unreachable"] += len(batch)
+                continue
+            if not 200 <= status < 300:
+                error_codes[f"http_{status}"] += len(batch)
+                continue
+            if tickets is None or len(tickets) != len(batch):
+                # Accepted by HTTP but receipts unusable: count as sent, change nothing about the tokens.
+                logger.warning("Push provider response had no usable tickets", extra={"batch_size": len(batch)})
+                accepted += len(batch)
+                continue
+            for token, ticket in zip(batch, tickets, strict=True):
+                if isinstance(ticket, dict) and ticket.get("status") == "ok":
+                    accepted += 1
+                    continue
+                details = ticket.get("details") if isinstance(ticket, dict) else None
+                code = str(details.get("error")) if isinstance(details, dict) and details.get("error") else "unknown"
+                error_codes[code] += 1
+                if code in PERMANENT_TOKEN_ERRORS:
+                    dead.append(token)
+                elif code in TRANSIENT_TICKET_ERRORS:
+                    retry.append(token)
+        if dead:
+            PushNotificationService.deactivate_tokens(dead)
+        if error_codes:
+            logger.warning(
+                "Push delivery finished with errors",
+                extra={
+                    "event": "push_delivery_errors",
+                    "accepted": accepted,
+                    "deactivated": len(dead),
+                    "retry": len(retry),
+                    "error_codes": dict(error_codes),
+                },
             )
-            .exclude(push_token__isnull=True)
-            .exclude(push_token="")
-            .values_list("push_token", flat=True)[:100]
-        )
-        tokens.extend(str(token) for token in installation_tokens if token)
-        tokens = list(dict.fromkeys(tokens))
-        if not tokens:
-            return False
-        sent = PushNotificationService._send_expo(tokens, title, body, data)
-        if sent:
-            DeviceToken.objects.filter(token__in=tokens).update(last_used_at=timezone.now())
-        return sent > 0
+        if retry:
+            raise PushDeliveryTransientError(retry, ",".join(sorted(error_codes)))
+        return accepted
 
     @staticmethod
-    def send_to_users(users, title: str, body: str, data: dict | None = None) -> int:
-        user_ids = [user.pk for user in users]
-        tokens = list(
-            DeviceToken.objects.filter(user_id__in=user_ids, is_active=True, is_deleted=False).values_list(
-                "token", flat=True
-            )[:1000]
-        )
+    def deactivate_tokens(tokens: list[str]) -> None:
+        """Soft-deactivate dead tokens in both stores. The installation row itself stays; the app registers a fresh
+        token on its next launch."""
+
         from apps.product.models import DeviceInstallation
 
+        now = timezone.now()
+        DeviceToken.objects.filter(token__in=tokens, is_active=True).update(is_active=False, updated_at=now)
+        DeviceInstallation.objects.filter(push_token__in=tokens).update(push_token=None, updated_at=now)
+
+    @staticmethod
+    def active_tokens(user_ids: list[int], *, limit: int, only: Iterable[str] | None = None) -> list[str]:
+        """De-duplicated union of the active tokens of both stores (``DeviceToken`` first), at most ``limit``."""
+
+        from apps.product.models import DeviceInstallation
+
+        device_tokens = DeviceToken.objects.filter(user_id__in=user_ids, is_active=True, is_deleted=False).values_list(
+            "token", flat=True
+        )[:limit]
         installation_tokens = (
             DeviceInstallation.objects.filter(
                 user_id__in=user_ids, notifications_enabled=True, revoked_at__isnull=True, is_deleted=False
             )
             .exclude(push_token__isnull=True)
             .exclude(push_token="")
-            .values_list("push_token", flat=True)[:1000]
+            .values_list("push_token", flat=True)[:limit]
         )
-        tokens.extend(str(token) for token in installation_tokens if token)
-        tokens = list(dict.fromkeys(tokens))
+        union = dict.fromkeys(str(token) for token in [*device_tokens, *installation_tokens] if token)
+        tokens = list(union)
+        if only is not None:
+            wanted = set(only)
+            tokens = [token for token in tokens if token in wanted]
+        return tokens[:limit]
+
+    @staticmethod
+    def send_to_user(
+        user, title: str, body: str, data: dict | None = None, *, only_tokens: Iterable[str] | None = None
+    ) -> bool:
+        tokens = PushNotificationService.active_tokens([user.pk], limit=100, only=only_tokens)
+        if not tokens:
+            return False
+        sent = PushNotificationService._send_expo(tokens, title, body, data)
+        if sent:
+            DeviceToken.objects.filter(token__in=tokens, is_active=True).update(last_used_at=timezone.now())
+        return sent > 0
+
+    @staticmethod
+    def send_to_users(users, title: str, body: str, data: dict | None = None) -> int:
+        tokens = PushNotificationService.active_tokens([user.pk for user in users], limit=1000)
         if not tokens:
             return 0
         sent = PushNotificationService._send_expo(tokens, title, body, data)
         if sent:
-            DeviceToken.objects.filter(token__in=tokens).update(last_used_at=timezone.now())
+            DeviceToken.objects.filter(token__in=tokens, is_active=True).update(last_used_at=timezone.now())
         return sent

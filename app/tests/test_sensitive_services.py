@@ -12,7 +12,7 @@ from apps.common.crypto import decrypt_text, encrypt_text
 from apps.common.file_validation import validate_document_upload
 from apps.files.document_inspection import compute_sha256, detect_pages_count
 from apps.notifications.models import DevicePlatform, DeviceToken, Notification
-from apps.notifications.services import NotificationService, PushNotificationService
+from apps.notifications.services import NotificationService, PushDeliveryTransientError, PushNotificationService
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -133,4 +133,7 @@ def test_push_provider_rejects_untrusted_endpoint_and_handles_provider_failures(
 
         error = HTTPError("https://exp.host/--/api/v2/push/send", 503, "unavailable", Message(), None)
         with patch("apps.notifications.services.urllib_request.urlopen", side_effect=error):
-            assert PushNotificationService._send_expo(["ExponentPushToken[test]"], "T", "B") == 0
+            # A provider 5xx is transient: it surfaces so the Celery task retries only these tokens.
+            with pytest.raises(PushDeliveryTransientError) as excinfo:
+                PushNotificationService._send_expo(["ExponentPushToken[test]"], "T", "B")
+        assert excinfo.value.tokens == ["ExponentPushToken[test]"]
