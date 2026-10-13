@@ -54,7 +54,8 @@ def permission_denied(request, exception, template_name="403.html"):
 
 
 def page_not_found(request, exception, template_name="404.html"):
-    if request.path.startswith("/api/"):
+    # /admin/ is unmounted in production (ADMIN_ENABLED=False); answer it like any unknown API path.
+    if request.path.startswith(("/api/", "/admin/")):
         return api_error_response(request, status_code=404)
     return defaults.page_not_found(request, exception, template_name=template_name)
 

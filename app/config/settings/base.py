@@ -438,6 +438,8 @@ CHANNEL_LAYERS = {
 
 RETURN_DEVELOPMENT_OTP = DEBUG and get_bool_env("RETURN_DEVELOPMENT_OTP", default=False)
 API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=DEBUG)
+# Django admin site: mounted only when explicitly enabled (dev/test/e2e default to DEBUG=True; production to False).
+ADMIN_ENABLED = get_bool_env("ADMIN_ENABLED", default=DEBUG)
 TRUSTED_PROXY_COUNT = config("TRUSTED_PROXY_COUNT", default=1, cast=int)
 # Optional shared secret that lets our Next.js BFF (web + dashboard) assert the real end-user IP through
 # X-Panorama-Client-IP. Empty disables the feature. Never log or expose it; never add the headers to CORS.

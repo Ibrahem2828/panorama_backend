@@ -64,3 +64,53 @@ def test_unexpected_login_error_never_leaks_as_html_or_a_traceback():
         "request_id": "login-500-regression",
     }
     assert b"internal detail" not in response.content
+
+
+@pytest.fixture
+def reload_urls():
+    import importlib
+
+    from django.urls import clear_url_caches
+
+    import config.urls
+
+    def _reload():
+        clear_url_caches()
+        importlib.reload(config.urls)
+
+    yield _reload
+    # Leave the URL conf as the active settings define it for the following tests.
+    _reload()
+
+
+@pytest.mark.django_db
+def test_admin_site_is_not_mounted_when_admin_is_disabled(settings, reload_urls):
+    settings.DEBUG = False
+    settings.ADMIN_ENABLED = False
+    reload_urls()
+
+    for path in ("/admin/", "/admin/login/", "/admin/accounts/user/"):
+        response = APIClient().get(path, HTTP_X_REQUEST_ID="admin-404")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response["Content-Type"].startswith("application/json")
+        assert response.json()["code"] == "NOT_FOUND"
+        assert response.json()["request_id"] == "admin-404"
+
+
+@pytest.mark.django_db
+def test_admin_site_is_mounted_when_admin_is_enabled(settings, reload_urls):
+    settings.ADMIN_ENABLED = True
+    reload_urls()
+
+    response = APIClient().get("/admin/")
+    assert response.status_code == status.HTTP_302_FOUND
+    assert response["Location"].startswith("/admin/login/")
+
+
+def test_production_defaults_keep_admin_disabled():
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[2] / "config" / "settings" / "production.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'ADMIN_ENABLED = get_bool_env("ADMIN_ENABLED", default=False)' in source

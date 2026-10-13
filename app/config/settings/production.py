@@ -14,6 +14,7 @@ if len(SECRET_KEY) < 50:
 DEBUG = get_bool_env("DEBUG", "DJANGO_DEBUG", default=False)
 RETURN_DEVELOPMENT_OTP = False
 API_DOCS_ENABLED = get_bool_env("API_DOCS_ENABLED", default=False)
+ADMIN_ENABLED = get_bool_env("ADMIN_ENABLED", default=False)
 ALLOWED_HOSTS = get_csv_env(
     "ALLOWED_HOSTS",
     "DJANGO_ALLOWED_HOSTS",
