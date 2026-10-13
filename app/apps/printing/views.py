@@ -233,7 +233,7 @@ class DashboardPrintNoteView(APIView):
 
 
 class AuditedPrintConfigurationViewSet(AuditedModelWriteMixin, StandardModelViewSet):
-    """Audit every pricing/configuration mutation (same transaction) because it affects charged totals."""
+    """Audit every pricing/configuration mutation because it affects charged totals."""
 
     audit_create_action = AuditAction.PRINT_PRICING_CHANGED
     audit_update_action = AuditAction.PRINT_PRICING_CHANGED

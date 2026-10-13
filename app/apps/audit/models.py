@@ -93,7 +93,7 @@ class AuditLogQuerySet(models.QuerySet):
     def bulk_update(self, objs, fields, batch_size=None):
         raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
 
-    def update_or_create(self, defaults=None, **kwargs):
+    def update_or_create(self, defaults=None, create_defaults=None, **kwargs):
         raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
 
 

@@ -34,14 +34,12 @@ def audit_snapshot(instance) -> dict[str, Any]:
     return snapshot
 
 
+# Audit create/update/delete of a ``StandardModelViewSet`` in the same transaction as the business change.
+# A failed audit write raises (``critical=True``), which rolls the change back: a configuration change that cannot
+# be recorded must not happen. Exactly one audit row is written per request. Set the three ``audit_*_action``
+# attributes; override ``resolve_update_action`` when the action depends on what changed.
+# (A comment, not a docstring: drf-spectacular would publish a docstring as the operation description.)
 class AuditedModelWriteMixin:
-    """Audit create/update/delete of a ``StandardModelViewSet`` in the same transaction as the business change.
-
-    A failed audit write raises (``critical=True``), which rolls the change back: a configuration change that cannot
-    be recorded must not happen. Exactly one audit row is written per request. Set the three ``audit_*_action``
-    attributes; override ``resolve_update_action`` when the action depends on what changed.
-    """
-
     audit_create_action: str = ""
     audit_update_action: str = ""
     audit_delete_action: str = ""

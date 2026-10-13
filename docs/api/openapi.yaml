@@ -929,6 +929,9 @@ paths:
         schema:
           type: string
           enum:
+          - academic_entity_created
+          - academic_entity_deleted
+          - academic_entity_updated
           - account_deletion_cancelled
           - account_deletion_completed
           - account_deletion_requested
@@ -966,6 +969,9 @@ paths:
           - otp_sent
           - otp_verified
           - policy_accepted
+          - policy_version_published
+          - policy_version_unpublished
+          - policy_version_updated
           - print_order_assigned
           - print_order_created
           - print_order_note_updated
@@ -1042,6 +1048,12 @@ paths:
           * `account_deletion_cancelled` - Account Deletion Cancelled
           * `account_deletion_completed` - Account Deletion Completed
           * `notification_campaign_created` - Notification Campaign Created
+          * `academic_entity_created` - Academic Entity Created
+          * `academic_entity_updated` - Academic Entity Updated
+          * `academic_entity_deleted` - Academic Entity Deleted
+          * `policy_version_published` - Policy Version Published
+          * `policy_version_updated` - Policy Version Updated
+          * `policy_version_unpublished` - Policy Version Unpublished
       - in: query
         name: actor
         schema:
@@ -7830,6 +7842,27 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/policies/status/:
+    get:
+      operationId: v1_policies_status_retrieve
+      description: |-
+        What the signed-in user still has to accept.
+
+        ``must_accept`` is true when the active version was published with ``requires_reacceptance`` and this user has
+        not accepted that exact version. Clients should block on ``must_accept_any`` and then POST ``policies/accept/``.
+      tags:
+      - Policies
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/printing/items/{id}/access-ticket/:
     post:
       operationId: v1_printing_items_access_ticket_create
@@ -9297,6 +9330,12 @@ components:
       - account_deletion_cancelled
       - account_deletion_completed
       - notification_campaign_created
+      - academic_entity_created
+      - academic_entity_updated
+      - academic_entity_deleted
+      - policy_version_published
+      - policy_version_updated
+      - policy_version_unpublished
       type: string
       description: |-
         * `user_registered` - User Registered
@@ -9355,6 +9394,12 @@ components:
         * `account_deletion_cancelled` - Account Deletion Cancelled
         * `account_deletion_completed` - Account Deletion Completed
         * `notification_campaign_created` - Notification Campaign Created
+        * `academic_entity_created` - Academic Entity Created
+        * `academic_entity_updated` - Academic Entity Updated
+        * `academic_entity_deleted` - Academic Entity Deleted
+        * `policy_version_published` - Policy Version Published
+        * `policy_version_updated` - Policy Version Updated
+        * `policy_version_unpublished` - Policy Version Unpublished
     BindingEnum:
       enum:
       - none

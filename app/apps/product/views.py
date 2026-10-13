@@ -245,7 +245,7 @@ class PolicyStatusView(APIView):
 
     @extend_schema(tags=["Policies"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
-        sections = {}
+        sections: dict[str, dict[str, object] | None] = {}
         for key, model, kind in (
             ("terms", TermsVersion, "terms"),
             ("privacy", PrivacyPolicyVersion, "privacy"),
@@ -373,12 +373,12 @@ class AccountDeletionStatusView(APIView):
 
 
 class DashboardProductViewSet(AuditedModelWriteMixin, StandardModelViewSet):
-    """Product configuration: every create/update/delete is audited in the same transaction."""
+    # Product configuration: every create/update/delete is audited in the same transaction.
 
     permission_classes = [CanManageProduct]
 
     def audit_save_kwargs(self, *, creating: bool):
-        model = self.get_serializer_class().Meta.model
+        model = self.get_queryset().model
         return {"updated_by": self.request.user} if "updated_by" in {f.name for f in model._meta.fields} else {}
 
 
@@ -407,7 +407,7 @@ class DashboardFeatureFlagViewSet(DashboardProductViewSet):
 
 
 class _PolicyVersionViewSet(DashboardProductViewSet):
-    """Terms/privacy versions: publish (create), update, unpublish (deactivate or delete)."""
+    # Terms/privacy versions: publish (create), update, unpublish (deactivate or delete).
 
     audit_create_action = AuditAction.POLICY_VERSION_PUBLISHED
     audit_update_action = AuditAction.POLICY_VERSION_UPDATED
