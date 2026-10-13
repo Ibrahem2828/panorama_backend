@@ -25,6 +25,7 @@ from .dashboard_serializers import (
     PermissionOverrideUpsertSerializer,
     UserPermissionOverrideSerializer,
 )
+from .lockout import LoginLockoutService
 from .models import User, UserPermissionOverride
 from .permissions import CanManageUsers, actor_outranks, can_delegate_capability
 
@@ -134,6 +135,26 @@ class DashboardUserViewSet(StandardExplicitActionViewSet):
         )
         IdempotencyService.complete(decision, response)
         return response
+
+    @action(detail=True, methods=["post"], url_path="unlock-login")
+    @extend_schema(tags=["Dashboard"], request=None, responses={200: DashboardUserSerializer})
+    def unlock_login(self, request, pk=None):
+        """Clear the failed-login lockout of an account (idempotent; does not touch the password or sessions)."""
+        user = get_object_or_404(User, pk=pk, is_deleted=False)
+        self._assert_can_manage(request.user, user)
+        LoginLockoutService.clear_for_user(user)
+        AuditLogService.log(
+            actor=request.user,
+            action=AuditAction.ACCOUNT_LOGIN_UNLOCKED,
+            target=user,
+            request=request,
+        )
+        return success_response(
+            data=DashboardUserSerializer(user, context={"request": request}).data,
+            message="Login lockout cleared",
+            request=request,
+            code="DASHBOARD_USER_LOGIN_UNLOCKED",
+        )
 
     @action(detail=True, methods=["post"])
     @extend_schema(

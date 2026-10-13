@@ -284,7 +284,13 @@ class AccountDeletionService:
                     "deleted_at": None,
                 },
             )
-        AuditLogService.log(actor=user, action=AuditAction.ACCOUNT_DELETION_REQUESTED, target=deletion, request=request)
+            AuditLogService.log(
+                actor=user,
+                action=AuditAction.ACCOUNT_DELETION_REQUESTED,
+                target=deletion,
+                request=request,
+                critical=True,
+            )
         return deletion
 
     @staticmethod
@@ -296,7 +302,13 @@ class AccountDeletionService:
             deletion.status = AccountDeletionStatus.CANCELLED
             deletion.cancelled_at = timezone.now()
             deletion.save(update_fields=["status", "cancelled_at", "updated_at"])
-        AuditLogService.log(actor=user, action=AuditAction.ACCOUNT_DELETION_CANCELLED, target=deletion, request=request)
+            AuditLogService.log(
+                actor=user,
+                action=AuditAction.ACCOUNT_DELETION_CANCELLED,
+                target=deletion,
+                request=request,
+                critical=True,
+            )
         return deletion
 
     @staticmethod

@@ -1,6 +1,7 @@
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
@@ -20,6 +21,7 @@ from apps.common.throttles import (
 from apps.product.services import feature_enabled_or_raise
 
 from .authentication import SessionVersionTokenRefreshSerializer
+from .lockout import LoginLockoutService
 from .serializers import (
     ChangePasswordSerializer,
     ConfirmPasswordResetSerializer,
@@ -42,7 +44,7 @@ class NormalUserRegisterView(APIView):
     @extend_schema(auth=[], request=NormalUserRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
         feature_enabled_or_raise("registrations_enabled", request=request)
-        serializer = NormalUserRegisterSerializer(data=request.data)
+        serializer = NormalUserRegisterSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user, raw_code, channel = serializer.save()
         data = {"user": UserSerializer(user).data, "otp_channel": channel}
@@ -66,7 +68,7 @@ class StudentRegisterView(APIView):
     @extend_schema(auth=[], request=StudentRegisterSerializer, responses={201: UserSerializer})
     def post(self, request):
         feature_enabled_or_raise("registrations_enabled", request=request)
-        serializer = StudentRegisterSerializer(data=request.data)
+        serializer = StudentRegisterSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user, raw_code, channel = serializer.save()
         data = {"user": UserSerializer(user).data, "otp_channel": channel}
@@ -89,9 +91,19 @@ class LoginView(APIView):
     @extend_schema(auth=[], request=LoginSerializer, responses={200: OpenApiResponse(description="JWT login response")})
     def post(self, request):
         feature_enabled_or_raise("otp_email_enabled", request=request)
+        raw_identifier = request.data.get("identifier") if hasattr(request.data, "get") else None
+        has_identifier = isinstance(raw_identifier, str) and bool(raw_identifier.strip())
+        if has_identifier:
+            LoginLockoutService.ensure_not_locked(raw_identifier)
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except ValidationError:
+            if has_identifier and serializer.credentials_failed:
+                LoginLockoutService.record_failure(raw_identifier, user=serializer.matched_user, request=request)
+            raise
         user = serializer.validated_data["user"]
+        LoginLockoutService.record_success(user)
         return success_response(
             data={
                 "access": serializer.validated_data["access"],
@@ -240,7 +252,7 @@ class ConfirmPasswordResetView(APIView):
 
     @extend_schema(auth=[], request=ConfirmPasswordResetSerializer)
     def post(self, request):
-        serializer = ConfirmPasswordResetSerializer(data=request.data)
+        serializer = ConfirmPasswordResetSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return success_response(

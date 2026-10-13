@@ -184,7 +184,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=15, cast=int)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=config("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=14, cast=int)),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -348,6 +348,12 @@ EMAIL_USE_SSL = get_bool_env("EMAIL_USE_SSL", default=False)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default=SUPPORT_EMAIL)
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)
+
+# Per-account login protection: this many consecutive failures for one identifier (any source IP) inside the window
+# lock that identifier for LOGIN_LOCKOUT_MINUTES. Applies to unknown identifiers too, so it never reveals accounts.
+LOGIN_LOCKOUT_THRESHOLD = config("LOGIN_LOCKOUT_THRESHOLD", default=10, cast=int)
+LOGIN_LOCKOUT_WINDOW_MINUTES = config("LOGIN_LOCKOUT_WINDOW_MINUTES", default=15, cast=int)
+LOGIN_LOCKOUT_MINUTES = config("LOGIN_LOCKOUT_MINUTES", default=15, cast=int)
 
 OTP_DEFAULT_CHANNEL = config("OTP_DEFAULT_CHANNEL", default="email")
 OTP_EXPIRY_MINUTES = config("OTP_EXPIRY_MINUTES", default=10, cast=int)

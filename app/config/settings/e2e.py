@@ -30,3 +30,6 @@ RETURN_DEVELOPMENT_OTP = True
 # Journeys register and log in many times from one address; keep the limits but make them roomy.
 _rates: dict[str, str] = REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]  # type: ignore[assignment]
 REST_FRAMEWORK = {**REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {name: "100000/hour" for name in _rates}}
+
+# Journeys deliberately submit wrong passwords; keep lockout effectively off unless the run opts in via env.
+LOGIN_LOCKOUT_THRESHOLD = int(os.environ.get("LOGIN_LOCKOUT_THRESHOLD", "100000"))

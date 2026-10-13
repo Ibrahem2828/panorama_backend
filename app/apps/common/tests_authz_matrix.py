@@ -184,6 +184,7 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/users/{pk}/": DASHBOARD,
     "dashboard/users/{pk}/activate/": DASHBOARD,
     "dashboard/users/{pk}/deactivate/": DASHBOARD,
+    "dashboard/users/{pk}/unlock-login/": DASHBOARD,
     "dashboard/users/{user_id}/permission-overrides/": DASHBOARD,
     "dashboard/universities/": DASHBOARD,
     "dashboard/universities/{pk}/": DASHBOARD,

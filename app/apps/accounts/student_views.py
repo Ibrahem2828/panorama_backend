@@ -29,7 +29,9 @@ class CurrentStudentProfileView(APIView):
     )
     def patch(self, request):
         profile = self._get_profile(request)
-        serializer = StudentAcademicProfileSerializer(profile, data=request.data, partial=True)
+        serializer = StudentAcademicProfileSerializer(
+            profile, data=request.data, partial=True, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return success_response(data=serializer.data, message="Student profile updated successfully")
