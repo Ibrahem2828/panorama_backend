@@ -1,6 +1,6 @@
 from typing import cast
 
-from django.db import models
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiTypes, extend_schema
@@ -123,19 +123,26 @@ class DashboardNotificationCampaignView(APIView):
         users = list(
             User.objects.filter(id__in=serializer.validated_data["user_ids"], is_active=True, is_deleted=False)
         )
-        created = NotificationService.create_bulk_notifications(
-            users,
-            serializer.validated_data["title"],
-            serializer.validated_data["body"],
-            serializer.validated_data["type"],
-            {"deep_link": serializer.validated_data.get("deep_link", "")},
-        )
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.NOTIFICATION_CAMPAIGN_CREATED,
-            new_value={"recipient_count": len(users), "created_count": len(created)},
-            request=request,
-        )
+        with transaction.atomic():
+            created = NotificationService.create_bulk_notifications(
+                users,
+                serializer.validated_data["title"],
+                serializer.validated_data["body"],
+                serializer.validated_data["type"],
+                {"deep_link": serializer.validated_data.get("deep_link", "")},
+            )
+            # Critical: a campaign that cannot be recorded is rolled back (push tasks only fire on commit).
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.NOTIFICATION_CAMPAIGN_CREATED,
+                new_value={
+                    "type": serializer.validated_data["type"],
+                    "recipient_count": len(users),
+                    "created_count": len(created),
+                },
+                request=request,
+                critical=True,
+            )
         return success_response(
             data={"created_count": len(created)}, status_code=status.HTTP_201_CREATED, request=request
         )

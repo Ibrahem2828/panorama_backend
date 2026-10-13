@@ -5,6 +5,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import filters, permissions
 
 from apps.accounts.permissions import CanManageAcademic
+from apps.audit.mixins import AuditedModelWriteMixin
+from apps.audit.models import AuditAction
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import AcademicYear, Faculty, Major, Semester, Subject, University
@@ -108,8 +110,11 @@ class PublicSubjectByMajorViewSet(AcademicQuerysetMixin, StandardReadOnlyModelVi
         ).select_related("major", "academic_year", "semester")
 
 
-class DashboardAcademicMixin(AcademicQuerysetMixin, StandardModelViewSet):
+class DashboardAcademicMixin(AuditedModelWriteMixin, AcademicQuerysetMixin, StandardModelViewSet):
     permission_classes = [CanManageAcademic]
+    audit_create_action = AuditAction.ACADEMIC_ENTITY_CREATED
+    audit_update_action = AuditAction.ACADEMIC_ENTITY_UPDATED
+    audit_delete_action = AuditAction.ACADEMIC_ENTITY_DELETED
     filterset_fields = ["is_active"]
 
 

@@ -2,6 +2,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
 from apps.accounts.permissions import CanManageAnnouncements
+from apps.audit.mixins import AuditedModelWriteMixin
+from apps.audit.models import AuditAction
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import Announcement
@@ -37,8 +39,11 @@ class AnnouncementViewSet(StandardReadOnlyModelViewSet):
         )
 
 
-class DashboardAnnouncementViewSet(StandardModelViewSet):
+class DashboardAnnouncementViewSet(AuditedModelWriteMixin, StandardModelViewSet):
     permission_classes = [CanManageAnnouncements]
+    audit_create_action = AuditAction.ANNOUNCEMENT_CREATED
+    audit_update_action = AuditAction.ANNOUNCEMENT_UPDATED
+    audit_delete_action = AuditAction.ANNOUNCEMENT_DELETED
     serializer_class = AnnouncementSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = AnnouncementViewSet.filterset_fields + ["is_active"]
@@ -56,5 +61,5 @@ class DashboardAnnouncementViewSet(StandardModelViewSet):
             "target_semester",
         )
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+    def audit_save_kwargs(self, *, creating: bool):
+        return {"created_by": self.request.user} if creating else {}

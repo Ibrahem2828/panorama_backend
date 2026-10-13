@@ -83,16 +83,20 @@ class DashboardUserViewSet(StandardExplicitActionViewSet):
             serializer.save()
             if old["role"] != user.role:
                 user.invalidate_sessions()
-        new = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
-        audit_action = AuditAction.USER_ROLE_CHANGED if old["role"] != new["role"] else AuditAction.USER_STATUS_CHANGED
-        AuditLogService.log(
-            actor=request.user,
-            action=audit_action,
-            target=user,
-            old_value=old,
-            new_value=new,
-            request=request,
-        )
+            new = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
+            audit_action = (
+                AuditAction.USER_ROLE_CHANGED if old["role"] != new["role"] else AuditAction.USER_STATUS_CHANGED
+            )
+            # Critical and inside the atomic block: the change and its audit row commit or roll back together.
+            AuditLogService.log(
+                actor=request.user,
+                action=audit_action,
+                target=user,
+                old_value=old,
+                new_value=new,
+                request=request,
+                critical=True,
+            )
         return success_response(
             data=DashboardUserSerializer(user, context={"request": request}).data,
             message="User updated",
