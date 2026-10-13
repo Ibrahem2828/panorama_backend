@@ -173,6 +173,7 @@ ROUTE_KINDS: dict[str, str] = {
     "mobile/devices/{installation_id}/": AUTH,
     "mobile/devices/{installation_id}/revoke/": AUTH,
     "policies/accept/": AUTH,
+    "policies/status/": AUTH,
     "account/deletion/request/": AUTH,
     "account/deletion/cancel/": AUTH,
     "account/deletion/status/": AUTH,

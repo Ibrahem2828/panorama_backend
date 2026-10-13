@@ -17,6 +17,7 @@ from .views import (
     MobileBootstrapView,
     MobileUpdatePolicyView,
     PolicyAcceptanceView,
+    PolicyStatusView,
 )
 
 router = DefaultRouter()
@@ -41,6 +42,7 @@ urlpatterns = [
     path("mobile/devices/<uuid:installation_id>/", DeviceDetailView.as_view(), name="mobile-device-detail"),
     path("mobile/devices/<uuid:installation_id>/revoke/", DeviceRevokeView.as_view(), name="mobile-device-revoke"),
     path("policies/current/", CurrentPoliciesView.as_view(), name="policies-current"),
+    path("policies/status/", PolicyStatusView.as_view(), name="policies-status"),
     path("policies/accept/", PolicyAcceptanceView.as_view(), name="policies-accept"),
     path("account/deletion/request/", AccountDeletionRequestView.as_view(), name="account-deletion-request"),
     path("account/deletion/cancel/", AccountDeletionCancelView.as_view(), name="account-deletion-cancel"),

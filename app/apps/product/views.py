@@ -236,6 +236,46 @@ class CurrentPoliciesView(APIView):
         )
 
 
+class PolicyStatusView(APIView):
+    """What the signed-in user still has to accept.
+
+    ``must_accept`` is true when the active version was published with ``requires_reacceptance`` and this user has
+    not accepted that exact version. Clients should block on ``must_accept_any`` and then POST ``policies/accept/``.
+    """
+
+    @extend_schema(tags=["Policies"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        sections = {}
+        for key, model, kind in (
+            ("terms", TermsVersion, "terms"),
+            ("privacy", PrivacyPolicyVersion, "privacy"),
+        ):
+            active = model.objects.filter(is_active=True, is_deleted=False).order_by("-published_at").first()
+            consents = UserConsent.objects.filter(user=request.user, kind=kind)
+            if active is None:
+                sections[key] = None
+                continue
+            accepted = consents.filter(version=active.version).exists()
+            latest = consents.order_by("-accepted_at").first()
+            sections[key] = {
+                "version": active.version,
+                "content_url": active.content_url,
+                "requires_reacceptance": active.requires_reacceptance,
+                "published_at": active.published_at,
+                "accepted": accepted,
+                "accepted_version": latest.version if latest else None,
+                "must_accept": bool(active.requires_reacceptance and not accepted),
+            }
+        return success_response(
+            data={
+                **sections,
+                "must_accept_any": any(section and section["must_accept"] for section in sections.values()),
+            },
+            request=request,
+            code="POLICY_STATUS",
+        )
+
+
 class PolicyAcceptanceView(APIView):
     serializer_class = PolicyAcceptanceSerializer
 

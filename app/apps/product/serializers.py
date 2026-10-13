@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from apps.accounts.choices import UserRole
+
 from .models import (
     AccountDeletionRequest,
     DeviceInstallation,
@@ -66,6 +68,12 @@ class MaintenanceModeSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "updated_at", "is_currently_active"]
+
+    def validate_allowed_roles(self, value):
+        valid = set(UserRole.values)
+        if not isinstance(value, list) or any(not isinstance(role, str) or role not in valid for role in value):
+            raise serializers.ValidationError(f"Must be a list of roles from: {', '.join(sorted(valid))}.")
+        return sorted(set(value))
 
     def validate(self, attrs):
         starts_at = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
