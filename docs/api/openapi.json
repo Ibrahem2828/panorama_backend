@@ -11149,6 +11149,14 @@
                 "tags": [
                     "v1"
                 ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Database health status"
@@ -11193,6 +11201,14 @@
                 "description": "Verify startup prerequisites, including migration state, before traffic is admitted.",
                 "tags": [
                     "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
                 ],
                 "responses": {
                     "200": {

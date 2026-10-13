@@ -6980,6 +6980,9 @@ paths:
       operationId: v1_health_db_retrieve
       tags:
       - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           description: Database health status
@@ -7010,6 +7013,9 @@ paths:
         traffic is admitted.
       tags:
       - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           description: Startup checks passed

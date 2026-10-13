@@ -10,7 +10,6 @@ handler404 = "apps.common.error_views.page_not_found"
 handler500 = "apps.common.error_views.server_error"
 
 urlpatterns: list[URLPattern | URLResolver] = [
-    path("admin/", admin.site.urls),
     path("api/v1/auth/", include("apps.accounts.urls")),
     path("api/v1/", include("apps.accounts.dashboard_urls")),
     path("api/v1/", include("apps.common.urls")),
@@ -29,6 +28,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/", include("apps.feedback.urls")),
     path("api/v1/", include("apps.product.urls")),
 ]
+
+if settings.ADMIN_ENABLED:
+    urlpatterns.insert(0, path("admin/", admin.site.urls))
 
 if settings.DEBUG or settings.API_DOCS_ENABLED:
     urlpatterns += [

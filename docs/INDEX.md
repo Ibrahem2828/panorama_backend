@@ -12,6 +12,7 @@ safe release evidence on their own.
 | --- | --- |
 | [Architecture](ARCHITECTURE.md) | Components, boundaries, data flows, PostgreSQL, Redis, Celery, ASGI, and storage. |
 | [Deployment and operations](DEPLOYMENT_AND_OPERATIONS.md) | Docker/Coolify deployment, health, services, configuration, rollback, and troubleshooting. |
+| [Reference data import (Arabic)](REFERENCE_DATA_IMPORT_AR.md) | Operator guide for `import_reference_data` with `reference-data.example.json`; never run `seed_initial_data` in production. |
 | [API security and authentication](API_SECURITY_AND_AUTH.md) | API contract rules, JWT/OTP, RBAC, protected assets, and error handling. |
 | [Lecture viewer and document pipeline](LECTURE_VIEWER_AND_DOCUMENT_PIPELINE.md) | Private source documents, conversion queue, viewer sessions, page delivery, and notes. |
 | [Mobile product integration](MOBILE_PRODUCT_INTEGRATION.md) | Bootstrap, versions, maintenance, devices, policies, account deletion, and mobile contract. |

@@ -209,6 +209,10 @@ class CanManageProduct(CapabilityPermission):
     capability = Capability.PRODUCT_MANAGE
 
 
+class CanManageSystem(CapabilityPermission):
+    capability = Capability.SYSTEM_MANAGE
+
+
 class IsVerifiedStudent(BasePermission):
     def has_permission(self, request, view) -> bool:
         if not request.user or not request.user.is_authenticated:

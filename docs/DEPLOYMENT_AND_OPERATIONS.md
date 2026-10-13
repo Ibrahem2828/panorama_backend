@@ -106,6 +106,20 @@ destructive/data migration during an incident; restore an isolated database if
 needed. Validate health, auth, protected files, Celery, WebSocket, and lecture
 viewer after rollback.
 
+## Django admin exposure (`ADMIN_ENABLED`)
+
+The Django admin site is mounted at `/admin/` only when `ADMIN_ENABLED=True`.
+Production defaults to `False`: `/admin/` then returns the standard JSON 404
+envelope like any unknown path. Development, e2e and test settings default to
+`DEBUG` (True). Nothing in `docker/`, `scripts/deploy/` or the compose files
+uses the admin site (accounts are created with `setup_admin_accounts`), so do
+not set `ADMIN_ENABLED` in production unless an operator explicitly needs it
+and the path is additionally restricted at the proxy.
+
+`/api/v1/health/db/` and `/api/v1/health/startup/` require an authenticated
+user holding `system.manage` (IT Support); `/health/`, `/health/live/` and
+`/health/ready/` stay anonymous for Docker/Coolify probes.
+
 ## Operational checks
 
 ```sh
