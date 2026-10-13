@@ -218,7 +218,8 @@ def test_verification_submit_duplicate_and_approval_flow(api_client, student_use
     )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert duplicate.status_code == status.HTTP_400_BAD_REQUEST
+    assert duplicate.status_code == status.HTTP_409_CONFLICT
+    assert duplicate.data["code"] == "VERIFICATION_ALREADY_PENDING"
 
     verification = VerificationRequest.objects.get(user=student_user)
     authenticate(api_client, admin_user)

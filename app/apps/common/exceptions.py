@@ -105,6 +105,8 @@ def _error_code(exc: Exception, status_code: int) -> str:
         status.HTTP_429_TOO_MANY_REQUESTS: "RATE_LIMITED",
         status.HTTP_503_SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
     }
+    if getattr(exc, "api_code", None):
+        return str(exc.api_code)  # type: ignore[attr-defined]  # stable machine code chosen by the exception
     if isinstance(exc, exceptions.AuthenticationFailed):
         return "AUTHENTICATION_FAILED"
     if getattr(exc, "default_code", "") == "feature_disabled":

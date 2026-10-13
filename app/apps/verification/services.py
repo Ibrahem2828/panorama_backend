@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus
 from apps.audit.models import AuditAction
@@ -11,6 +11,47 @@ from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
 from .models import VerificationRequest, VerificationStatus
+
+
+class VerificationStateConflict(APIException):
+    """The student's current verification state does not allow a new submission (HTTP 409, stable ``api_code``)."""
+
+    status_code = 409
+    default_detail = "The verification request cannot be submitted in the current state."
+    default_code = "verification_state_conflict"
+
+    def __init__(self, detail=None, *, api_code: str = "VERIFICATION_STATE_CONFLICT"):
+        super().__init__(detail)
+        self.api_code = api_code
+
+
+# Only these profile states may open a new request. ``approved`` needs staff to reopen it first (the dashboard's
+# "needs update" decision accepts an approved request), ``pending`` already has one in review.
+SUBMITTABLE_STATES = frozenset(
+    {
+        StudentVerificationStatus.INCOMPLETE,
+        StudentVerificationStatus.REJECTED,
+        StudentVerificationStatus.NEEDS_UPDATE,
+    }
+)
+
+
+def assert_can_submit_verification(profile) -> None:
+    status = profile.verification_status
+    if status in SUBMITTABLE_STATES:
+        return
+    if status == StudentVerificationStatus.PENDING:
+        raise VerificationStateConflict(
+            "You already have a pending verification request.", api_code="VERIFICATION_ALREADY_PENDING"
+        )
+    if status == StudentVerificationStatus.APPROVED:
+        raise VerificationStateConflict(
+            "Your account is already verified. Contact support if the details must change.",
+            api_code="VERIFICATION_ALREADY_APPROVED",
+        )
+    raise VerificationStateConflict(
+        "A new verification request cannot be submitted right now.", api_code="VERIFICATION_NOT_RESUBMITTABLE"
+    )
 
 
 class VerificationService:
@@ -29,7 +70,12 @@ class VerificationService:
             .select_related("student_profile", "user")
             .get(pk=verification.pk, is_deleted=False)
         )
-        if verification.status != VerificationStatus.PENDING:
+        # A decision applies to a pending request. The one exception is "needs update", which also reopens an
+        # approved request so the student may resubmit (otherwise an approved student can never be sent back).
+        reviewable = {VerificationStatus.PENDING}
+        if status == VerificationStatus.NEEDS_UPDATE:
+            reviewable.add(VerificationStatus.APPROVED)
+        if verification.status not in reviewable:
             raise ValidationError("Only pending verification requests can be reviewed.")
         if verification.user_id == reviewer.id:
             raise ValidationError("You cannot review your own verification request.")
