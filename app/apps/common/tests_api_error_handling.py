@@ -70,9 +70,8 @@ def test_unexpected_login_error_never_leaks_as_html_or_a_traceback():
 def reload_urls():
     import importlib
 
-    from django.urls import clear_url_caches
-
     import config.urls
+    from django.urls import clear_url_caches
 
     def _reload():
         clear_url_caches()
@@ -110,7 +109,5 @@ def test_admin_site_is_mounted_when_admin_is_enabled(settings, reload_urls):
 def test_production_defaults_keep_admin_disabled():
     from pathlib import Path
 
-    source = (Path(__file__).resolve().parents[2] / "config" / "settings" / "production.py").read_text(
-        encoding="utf-8"
-    )
+    source = (Path(__file__).resolve().parents[2] / "config" / "settings" / "production.py").read_text(encoding="utf-8")
     assert 'ADMIN_ENABLED = get_bool_env("ADMIN_ENABLED", default=False)' in source
