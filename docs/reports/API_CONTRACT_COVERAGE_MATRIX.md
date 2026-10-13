@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 275
+**Operations:** 277
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -40,6 +40,8 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_dashboard_audit_logs_list | GET | /api/v1/dashboard/audit-logs/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_audit_logs_retrieve | GET | /api/v1/dashboard/audit-logs/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_capabilities_retrieve | GET | /api/v1/dashboard/capabilities/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
+| v1_dashboard_chat_reports_list | GET | /api/v1/dashboard/chat/reports/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
+| v1_dashboard_chat_reports_resolve_create | POST | /api/v1/dashboard/chat/reports/{id}/resolve/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/ResolveMessageReportRequest; application/x-www-form-urlencoded: #/components/schemas/ResolveMessageReportRequest; multipart/form-data: #/components/schemas/ResolveMessageReportRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_faculties_list | GET | /api/v1/dashboard/faculties/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_faculties_create | POST | /api/v1/dashboard/faculties/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/FacultyRequest; application/x-www-form-urlencoded: #/components/schemas/FacultyRequest; multipart/form-data: #/components/schemas/FacultyRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_faculties_destroy | DELETE | /api/v1/dashboard/faculties/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 204 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |

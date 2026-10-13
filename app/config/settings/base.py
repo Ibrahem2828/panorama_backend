@@ -214,6 +214,12 @@ SPECTACULAR_SETTINGS = {
             ("moderator", "Moderator"),
             ("group_admin", "Group Admin"),
         ],
+        "MessageReportStatusEnum": [
+            ("open", "Open"),
+            ("reviewed", "Reviewed"),
+            ("dismissed", "Dismissed"),
+            ("message_deleted", "Message deleted"),
+        ],
         "GroupSendMessagesPermissionEnum": [
             ("all_members", "All Members"),
             ("admins_only", "Admins Only"),
@@ -282,10 +288,6 @@ SPECTACULAR_SETTINGS = {
             ("normal", "Normal"),
             ("high", "High"),
             ("critical", "Critical"),
-        ],
-        "MessageReportStatusEnum": [
-            ("open", "Open"),
-            ("reviewed", "Reviewed"),
         ],
         "OtpChannelEnum": [
             ("email", "Email"),
