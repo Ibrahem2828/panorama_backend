@@ -12,8 +12,6 @@ from rest_framework import filters, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
-from apps.audit.models import AuditAction
-from apps.audit.services import AuditLogService
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import (
@@ -32,7 +30,7 @@ from .serializers import (
     MessageReportSerializer,
     MessageSerializer,
 )
-from .services import ChatHandshakeTicketService, ChatPermissionService
+from .services import ChatHandshakeTicketService, ChatMessageService, ChatPermissionService
 
 
 class GroupChatHandshakeTicketView(APIView):
@@ -115,8 +113,7 @@ class GroupMessageViewSet(StandardExplicitActionViewSet):
             from rest_framework.exceptions import PermissionDenied
 
             raise PermissionDenied("You cannot delete this message.")
-        message.soft_delete(request.user)
-        AuditLogService.log(actor=request.user, action=AuditAction.MESSAGE_DELETED, target=message, request=request)
+        ChatMessageService.delete_message(message, actor=request.user, request=request)
         return success_response(message="Message deleted successfully", request=request, code="CHAT_MESSAGE_DELETED")
 
 
@@ -135,8 +132,7 @@ class GroupMessageDeleteView(APIView):
             from rest_framework.exceptions import PermissionDenied
 
             raise PermissionDenied("You cannot delete this message.")
-        message.soft_delete(request.user)
-        AuditLogService.log(actor=request.user, action=AuditAction.MESSAGE_DELETED, target=message, request=request)
+        ChatMessageService.delete_message(message, actor=request.user, request=request)
         return success_response(message="Message deleted successfully", request=request, code="CHAT_MESSAGE_DELETED")
 
 

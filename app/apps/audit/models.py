@@ -57,6 +57,7 @@ class AuditAction(models.TextChoices):
     SUPPORT_TICKET_ASSIGNED = "support_ticket_assigned", "Support Ticket Assigned"
     SUPPORT_TICKET_PRIORITY_CHANGED = "support_ticket_priority_changed", "Support Ticket Priority Changed"
     MESSAGE_DELETED = "message_deleted", "Message Deleted"
+    MESSAGE_REPORT_RESOLVED = "message_report_resolved", "Message Report Resolved"
     FEEDBACK_SUBMITTED = "feedback_submitted", "Feedback Submitted"
     FEEDBACK_WORKFLOW_UPDATED = "feedback_workflow_updated", "Feedback Workflow Updated"
     FEEDBACK_PRIVACY_REQUESTED = "feedback_privacy_requested", "Feedback Privacy Requested"

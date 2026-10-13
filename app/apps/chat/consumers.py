@@ -164,8 +164,23 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
     async def send_error(self, code: str, message: str):
         await self.send(text_data=json.dumps({"type": "error", "code": code, "message": message}))
 
+    async def _deliverable(self) -> bool:
+        """Gate for frames pushed from the channel layer: cached authorization only (re-read at most every TTL)."""
+        close_code = await self.cached_authorization()
+        if close_code is not None:
+            await self.close(code=close_code)
+            return False
+        return True
+
     async def message_event(self, event):
-        await self.send(text_data=json.dumps({"type": "message", "data": event["data"]}))
+        # Fan-out of a message created by any socket or by the REST API.
+        if await self._deliverable():
+            await self.send(text_data=json.dumps({"type": "message", "data": event["data"]}))
+
+    async def message_deleted(self, event):
+        # ``group_send({"type": "message.deleted"})`` is dispatched to this method (dots become underscores).
+        if await self._deliverable():
+            await self.send(text_data=json.dumps({"type": "message.deleted", "data": event["data"]}))
 
     async def typing_event(self, event):
         if event["user_id"] == self.user.id:

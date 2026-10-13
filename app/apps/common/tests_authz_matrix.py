@@ -209,6 +209,8 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/groups/{group_pk}/memberships/": DASHBOARD,
     "dashboard/groups/{group_pk}/join-requests/": DASHBOARD,
     "dashboard/groups/{pk}/whatsapp-channel/": DASHBOARD,
+    "dashboard/chat/reports/": DASHBOARD,
+    "dashboard/chat/reports/{pk}/resolve/": DASHBOARD,
     "dashboard/group-memberships/{pk}/approve/": DASHBOARD,
     "dashboard/group-memberships/{pk}/reject/": DASHBOARD,
     "dashboard/group-memberships/{pk}/block/": DASHBOARD,
