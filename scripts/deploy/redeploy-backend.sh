@@ -37,7 +37,7 @@ rollback() {
   echo "ROLLING BACK to $PREVIOUS"
   rm -rf "$APP/src"; mv "$APP/src.old" "$APP/src"
   setenv IMAGE_TAG "$PREVIOUS"
-  $P up -d web worker beat </dev/null
+  $P up -d web worker beat conversion-worker </dev/null
 }
 
 setenv IMAGE_TAG "$SHA"
@@ -45,7 +45,7 @@ setenv BUILD_DATE "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # 3. Build and release. A failure here has not touched the running containers yet.
 # </dev/null: the script itself arrives on stdin and `docker compose run` would swallow the rest of it.
-if ! { $P build web </dev/null && $P --profile release run --rm release </dev/null; }; then
+if ! { $P build web conversion-worker </dev/null && $P --profile release run --rm release </dev/null; }; then
   echo "build or release job failed; the running containers were not touched"
   rm -rf "$APP/src"; mv "$APP/src.old" "$APP/src"
   setenv IMAGE_TAG "$PREVIOUS"
@@ -53,7 +53,7 @@ if ! { $P build web </dev/null && $P --profile release run --rm release </dev/nu
 fi
 
 # 4. Swap traffic (compose recreates only containers whose image changed).
-$P up -d web worker beat </dev/null
+$P up -d web worker beat conversion-worker </dev/null
 
 # 5. Readiness: three consecutive 200s.
 ok=0
