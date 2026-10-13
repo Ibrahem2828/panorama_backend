@@ -16,8 +16,10 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import CanReviewVerification, IsStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.file_validation import IMAGE_POLICY, detect_content_type
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
+from apps.common.throttles import FileTicketRateThrottle
 from apps.common.viewsets import StandardReadOnlyModelViewSet
 
 from .models import VerificationCardAccessTicket, VerificationRequest, VerificationStatus
@@ -79,6 +81,49 @@ class MyVerificationView(APIView):
             else {}
         )
         return success_response(data=data, request=request)
+
+
+class MyVerificationCardView(APIView):
+    """Let a user view the card image they uploaded (and nobody else's).
+
+    Streamed directly to the authenticated owner (the dashboard reviewers use a ticket because their UI embeds the
+    image by URL; the owner's clients call this with their session/JWT like every other owner-scoped endpoint).
+    The content type is detected from the stored bytes and the download name is fixed, never the stored filename.
+    """
+
+    throttle_classes = [FileTicketRateThrottle]
+
+    @extend_schema(tags=["Verification"], responses={200: OpenApiResponse(description="The user's own card image")})
+    def get(self, request):
+        verification = (
+            VerificationRequest.objects.filter(user=request.user, is_deleted=False)
+            .exclude(card_image="")
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        if verification is None:
+            raise Http404("No verification card was uploaded.")
+        stored = verification.card_image
+        try:
+            handle = stored.open("rb")
+        except (FileNotFoundError, OSError):
+            raise Http404("Verification card is unavailable.") from None
+        head = handle.read(4096)
+        handle.seek(0)
+        content_type = detect_content_type(head, "")
+        if content_type not in IMAGE_POLICY.allowed_mime_types:
+            handle.close()
+            raise Http404("Verification card is unavailable.")
+        response = FileResponse(handle, content_type=content_type)
+        extension = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}[content_type]
+        disposition = content_disposition_header(False, f"verification-card.{extension}")
+        if disposition:
+            response["Content-Disposition"] = disposition
+        response["Cache-Control"] = "private, no-store, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Content-Security-Policy"] = "default-src 'none'; img-src 'self' data:; sandbox"
+        return response
 
 
 class DashboardVerificationViewSet(StandardReadOnlyModelViewSet):

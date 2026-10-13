@@ -95,6 +95,7 @@ ROUTE_KINDS: dict[str, str] = {
     "verification/submit/": STUDENT,
     "verification/resubmit/": STUDENT,
     "verification/me/": STUDENT,
+    "verification/me/card/": AUTH,
     "verification-card-access/{token}/": DASHBOARD,
     # --- groups / chat ----------------------------------------------------------------------------------------------
     "groups/available/": STUDENT,

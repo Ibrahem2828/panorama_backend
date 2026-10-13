@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 278
+**Operations:** 279
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -282,5 +282,6 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_universities_faculties_list | GET | /api/v1/universities/{university_pk}/faculties/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_verification_card_access_retrieve | GET | /api/v1/verification-card-access/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_verification_me_retrieve | GET | /api/v1/verification/me/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_verification_me_card_retrieve | GET | /api/v1/verification/me/card/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_verification_resubmit_create | POST | /api/v1/verification/resubmit/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/VerificationRequestRequest; multipart/form-data: #/components/schemas/VerificationRequestRequest; application/x-www-form-urlencoded: #/components/schemas/VerificationRequestRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_verification_submit_create | POST | /api/v1/verification/submit/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/VerificationRequestRequest; multipart/form-data: #/components/schemas/VerificationRequestRequest; application/x-www-form-urlencoded: #/components/schemas/VerificationRequestRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |

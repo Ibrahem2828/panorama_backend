@@ -14333,6 +14333,28 @@
                 }
             }
         },
+        "/api/v1/verification/me/card/": {
+            "get": {
+                "operationId": "v1_verification_me_card_retrieve",
+                "description": "Let a user view the card image they uploaded (and nobody else's).\n\nStreamed directly to the authenticated owner (the dashboard reviewers use a ticket because their UI embeds the\nimage by URL; the owner's clients call this with their session/JWT like every other owner-scoped endpoint).\nThe content type is detected from the stored bytes and the download name is fixed, never the stored filename.",
+                "tags": [
+                    "Verification"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The user's own card image"
+                    }
+                }
+            }
+        },
         "/api/v1/verification/resubmit/": {
             "post": {
                 "operationId": "v1_verification_resubmit_create",

@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ApproveVerificationView,
     DashboardVerificationViewSet,
+    MyVerificationCardView,
     MyVerificationView,
     NeedsUpdateVerificationView,
     RejectVerificationView,
@@ -19,6 +20,7 @@ urlpatterns = [
     path("verification/submit/", SubmitVerificationView.as_view(), name="verification-submit"),
     path("verification/resubmit/", SubmitVerificationView.as_view(), name="verification-resubmit"),
     path("verification/me/", MyVerificationView.as_view(), name="verification-me"),
+    path("verification/me/card/", MyVerificationCardView.as_view(), name="verification-me-card"),
     *dashboard_router.urls,
     path("dashboard/verifications/<int:pk>/approve/", ApproveVerificationView.as_view(), name="verification-approve"),
     path("dashboard/verifications/<int:pk>/reject/", RejectVerificationView.as_view(), name="verification-reject"),
