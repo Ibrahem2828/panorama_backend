@@ -935,6 +935,8 @@ paths:
           - account_deletion_cancelled
           - account_deletion_completed
           - account_deletion_requested
+          - account_locked
+          - account_login_unlocked
           - announcement_created
           - announcement_deleted
           - announcement_updated
@@ -968,6 +970,8 @@ paths:
           - otp_failed
           - otp_sent
           - otp_verified
+          - password_changed
+          - password_reset_completed
           - policy_accepted
           - policy_version_published
           - policy_version_unpublished
@@ -997,6 +1001,10 @@ paths:
           * `user_status_changed` - User Status Changed
           * `user_permission_override_changed` - User Permission Override Changed
           * `student_profile_updated` - Student Profile Updated
+          * `account_locked` - Account Locked After Failed Logins
+          * `account_login_unlocked` - Account Login Unlocked
+          * `password_changed` - Password Changed
+          * `password_reset_completed` - Password Reset Completed
           * `otp_sent` - OTP Sent
           * `otp_verified` - OTP Verified
           * `otp_failed` - OTP Failed
@@ -5434,6 +5442,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardUser'
           description: ''
+  /api/v1/dashboard/users/{id}/unlock-login/:
+    post:
+      operationId: v1_dashboard_users_unlock_login_create
+      description: Clear the failed-login lockout of an account (idempotent; does
+        not touch the password or sessions).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا user.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardUserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardUser'
+          description: ''
   /api/v1/dashboard/users/{user_id}/permission-overrides/:
     get:
       operationId: v1_dashboard_users_permission_overrides_retrieve
@@ -9279,6 +9323,10 @@ components:
       - user_status_changed
       - user_permission_override_changed
       - student_profile_updated
+      - account_locked
+      - account_login_unlocked
+      - password_changed
+      - password_reset_completed
       - otp_sent
       - otp_verified
       - otp_failed
@@ -9343,6 +9391,10 @@ components:
         * `user_status_changed` - User Status Changed
         * `user_permission_override_changed` - User Permission Override Changed
         * `student_profile_updated` - Student Profile Updated
+        * `account_locked` - Account Locked After Failed Logins
+        * `account_login_unlocked` - Account Login Unlocked
+        * `password_changed` - Password Changed
+        * `password_reset_completed` - Password Reset Completed
         * `otp_sent` - OTP Sent
         * `otp_verified` - OTP Verified
         * `otp_failed` - OTP Failed

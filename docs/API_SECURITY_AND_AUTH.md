@@ -19,7 +19,11 @@ return production tracebacks or secret values.
 JWT access/refresh uses refresh rotation and blacklist support. Logout and a
 password change blacklist outstanding refresh tokens. Inactive users are not
 authorized. Tokens, Authorization headers, cookies, passwords, and OTP values
-must not be logged.
+must not be logged. Access tokens default to 15 minutes
+(`JWT_ACCESS_TOKEN_LIFETIME_MINUTES`) and stay valid for at most that long after
+logout; a password change, role change or deactivation revokes them immediately
+through `session_version`. Login is also locked per account (not just per IP) after
+`LOGIN_LOCKOUT_THRESHOLD` consecutive failures; see the Arabic incident runbook.
 
 OTP values are generated with `secrets`, stored as password hashes, expire,
 become single-use, track failed attempts, lock after the configured limit, and
