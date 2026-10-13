@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from django.db import models
+from django.utils import timezone
 
 from apps.common.models import BaseModel
 
@@ -9,6 +12,10 @@ class AuditAction(models.TextChoices):
     USER_STATUS_CHANGED = "user_status_changed", "User Status Changed"
     USER_PERMISSION_OVERRIDE_CHANGED = "user_permission_override_changed", "User Permission Override Changed"
     STUDENT_PROFILE_UPDATED = "student_profile_updated", "Student Profile Updated"
+    ACCOUNT_LOCKED = "account_locked", "Account Locked After Failed Logins"
+    ACCOUNT_LOGIN_UNLOCKED = "account_login_unlocked", "Account Login Unlocked"
+    PASSWORD_CHANGED = "password_changed", "Password Changed"
+    PASSWORD_RESET_COMPLETED = "password_reset_completed", "Password Reset Completed"
     OTP_SENT = "otp_sent", "OTP Sent"
     OTP_VERIFIED = "otp_verified", "OTP Verified"
     OTP_FAILED = "otp_failed", "OTP Failed"
@@ -60,6 +67,56 @@ class AuditAction(models.TextChoices):
     ACCOUNT_DELETION_CANCELLED = "account_deletion_cancelled", "Account Deletion Cancelled"
     ACCOUNT_DELETION_COMPLETED = "account_deletion_completed", "Account Deletion Completed"
     NOTIFICATION_CAMPAIGN_CREATED = "notification_campaign_created", "Notification Campaign Created"
+    ACADEMIC_ENTITY_CREATED = "academic_entity_created", "Academic Entity Created"
+    ACADEMIC_ENTITY_UPDATED = "academic_entity_updated", "Academic Entity Updated"
+    ACADEMIC_ENTITY_DELETED = "academic_entity_deleted", "Academic Entity Deleted"
+    POLICY_VERSION_PUBLISHED = "policy_version_published", "Policy Version Published"
+    POLICY_VERSION_UPDATED = "policy_version_updated", "Policy Version Updated"
+    POLICY_VERSION_UNPUBLISHED = "policy_version_unpublished", "Policy Version Unpublished"
+
+
+class AuditLogImmutableError(RuntimeError):
+    """Raised when code tries to modify or delete an audit row outside the explicit retention/anonymization paths."""
+
+
+_IMMUTABLE_MESSAGE = (
+    "Audit log rows are append-only. Use AuditLog.objects.purge_older_than() (retention) or "
+    "AuditLog.objects.scrub_network_identifiers_for() (account erasure) for the two sanctioned mutations."
+)
+
+
+class AuditLogQuerySet(models.QuerySet):
+    """Blocks bulk mutation; the sanctioned paths call the base ``QuerySet`` methods explicitly."""
+
+    def update(self, **kwargs):
+        raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
+
+    def delete(self):
+        raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
+
+    def update_or_create(self, defaults=None, create_defaults=None, **kwargs):
+        raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
+
+
+class AuditLogManager(models.Manager.from_queryset(AuditLogQuerySet)):  # type: ignore[misc]
+    def purge_older_than(self, cutoff: datetime, *, limit: int = 1000) -> int:
+        """Hard-delete at most ``limit`` rows created before ``cutoff``. The only delete path (retention task)."""
+
+        if cutoff > timezone.now():
+            raise ValueError("The audit retention cutoff must not be in the future.")
+        ids = list(self.filter(created_at__lt=cutoff).order_by("pk").values_list("pk", flat=True)[:limit])
+        if not ids:
+            return 0
+        deleted, _ = models.QuerySet.delete(self.filter(pk__in=ids))
+        return deleted
+
+    def scrub_network_identifiers_for(self, actor) -> int:
+        """Erase ip/user-agent of one actor's rows (account erasure). The only update path; touches nothing else."""
+
+        return models.QuerySet.update(self.filter(actor=actor), ip_address=None, user_agent="")
 
 
 class AuditLog(BaseModel):
@@ -74,6 +131,8 @@ class AuditLog(BaseModel):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
 
+    objects = AuditLogManager()
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -81,6 +140,14 @@ class AuditLog(BaseModel):
             models.Index(fields=["actor", "created_at"]),
             models.Index(fields=["target_type", "target_id"]),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise AuditLogImmutableError(_IMMUTABLE_MESSAGE)
 
     def __str__(self) -> str:
         return f"{self.action} {self.target_type}:{self.target_id}"

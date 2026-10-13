@@ -2,10 +2,13 @@ from functools import cache
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import serializers
 
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
     AcademicYearSerializer,
@@ -17,10 +20,17 @@ from apps.universities.serializers import (
 
 from .authentication import SessionVersionRefreshToken
 from .choices import OTPDeliveryChannel, OTPPurpose, StudentVerificationStatus, UserRole
+from .lockout import LoginLockoutService
 from .models import StudentProfile, User
 from .permissions import Capability, PermissionService
 from .services import OTPService
-from .student_number import FACULTY_CODE_LABELS, StudentNumberParser, apply_student_number_parse
+from .student_number import (
+    FACULTY_CODE_LABELS,
+    STUDENT_NUMBER_UNAVAILABLE_MESSAGE,
+    StudentNumberParser,
+    apply_student_number_parse,
+    student_number_in_use,
+)
 
 
 @cache
@@ -124,13 +134,33 @@ class StudentAcademicProfileSerializer(StudentProfileSerializer):
             faculty = attrs.get("faculty") or getattr(instance, "faculty", None)
             if faculty and faculty.code in FACULTY_CODE_LABELS and faculty.code != parsed["faculty_code"]:
                 raise serializers.ValidationError({"student_number": "Student number does not match selected faculty."})
+            if student_number_in_use(student_number, exclude_profile_id=getattr(instance, "pk", None)):
+                raise serializers.ValidationError(
+                    {"student_number": STUDENT_NUMBER_UNAVAILABLE_MESSAGE}, code="student_number_unavailable"
+                )
         return attrs
 
     def update(self, instance, validated_data):
-        instance = super().update(instance, validated_data)
-        if "student_number" in validated_data and instance.student_number:
-            apply_student_number_parse(instance, instance.student_number, auto_link_faculty=True)
-            instance.save()
+        request = self.context.get("request")
+        try:
+            with transaction.atomic():
+                instance = super().update(instance, validated_data)
+                if "student_number" in validated_data and instance.student_number:
+                    apply_student_number_parse(instance, instance.student_number, auto_link_faculty=True)
+                    instance.save()
+                AuditLogService.log(
+                    actor=request.user if request is not None else None,
+                    action=AuditAction.STUDENT_PROFILE_UPDATED,
+                    target=instance,
+                    # Field names only: the values (student number, ...) are personal data.
+                    new_value={"changed_fields": sorted(validated_data)},
+                    request=request,
+                    critical=True,
+                )
+        except IntegrityError as exc:  # lost a race against the unique student-number constraint
+            raise serializers.ValidationError(
+                {"student_number": STUDENT_NUMBER_UNAVAILABLE_MESSAGE}, code="student_number_unavailable"
+            ) from exc
         return instance
 
 
@@ -225,12 +255,24 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
         purpose = OTPPurpose.VERIFY_EMAIL if channel == OTPDeliveryChannel.EMAIL else OTPPurpose.VERIFY_PHONE
         return OTPService.send_otp(identifier, purpose, user=user, channel=channel)
 
+    def _audit_registration(self, user: User, channel: str) -> None:
+        # Ids and the OTP channel only: no email, phone or name. Runs inside the registration transaction.
+        AuditLogService.log(
+            actor=user,
+            action=AuditAction.USER_REGISTERED,
+            target=user,
+            new_value={"role": user.role, "otp_channel": channel},
+            request=self.context.get("request"),
+            critical=True,
+        )
+
 
 class NormalUserRegisterSerializer(BaseRegisterSerializer):
     @transaction.atomic
     def create(self, validated_data):
         user, channel = self._create_user(validated_data, UserRole.NORMAL_USER)
         otp, raw_code = self._send_identity_otp(user, channel)
+        self._audit_registration(user, channel)
         return user, raw_code, channel
 
 
@@ -247,6 +289,8 @@ class StudentRegisterSerializer(BaseRegisterSerializer):
                 StudentNumberParser.validate(value)
             except Exception as exc:
                 raise serializers.ValidationError(getattr(exc, "message", str(exc))) from exc
+            if student_number_in_use(value):
+                raise serializers.ValidationError(STUDENT_NUMBER_UNAVAILABLE_MESSAGE, code="student_number_unavailable")
         return value
 
     @transaction.atomic
@@ -255,16 +299,23 @@ class StudentRegisterSerializer(BaseRegisterSerializer):
         user, channel = self._create_user(validated_data, UserRole.STUDENT)
         # Registration never creates a pending verification state. Only an actual
         # VerificationRequest may move the profile to PENDING.
-        StudentProfile.objects.create(
-            user=user,
-            student_number=student_number,
-            verification_status=StudentVerificationStatus.INCOMPLETE,
-        )
+        try:
+            with transaction.atomic():
+                StudentProfile.objects.create(
+                    user=user,
+                    student_number=student_number,
+                    verification_status=StudentVerificationStatus.INCOMPLETE,
+                )
+        except IntegrityError as exc:  # lost a race against the unique student-number constraint
+            raise serializers.ValidationError(
+                {"student_number": STUDENT_NUMBER_UNAVAILABLE_MESSAGE}, code="student_number_unavailable"
+            ) from exc
         if student_number:
             profile = user.student_profile
             apply_student_number_parse(profile, student_number, auto_link_faculty=True)
             profile.save()
         otp, raw_code = self._send_identity_otp(user, channel)
+        self._audit_registration(user, channel)
         return user, raw_code, channel
 
 
@@ -272,16 +323,22 @@ class LoginSerializer(serializers.Serializer):
     identifier = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
+    # Set during validation so the view can feed the per-account lockout without re-checking credentials.
+    credentials_failed = False
+    matched_user: User | None = None
+
     def validate(self, attrs):
         identifier = attrs["identifier"].strip()
         password = attrs["password"]
 
         user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=identifier)).first()
+        self.matched_user = user
         if user is None:
             # Spend the same hashing time as a real check so response timing does not reveal accounts.
             check_password(password, _dummy_password_hash())
         # Use one generic failure response to prevent account enumeration.
         if user is None or not user.check_password(password) or not user.is_active:
+            self.credentials_failed = True
             raise serializers.ValidationError({"identifier": "Invalid credentials."})
         if not (user.is_email_verified or user.is_phone_verified):
             raise serializers.ValidationError({"identifier": "Account verification is required before login."})
@@ -310,13 +367,21 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
     def save(self, **kwargs):
-        from django.utils import timezone
-
-        user = self.context["request"].user
-        user.set_password(self.validated_data["new_password"])
-        user.last_password_change_at = timezone.now()
-        user.save(update_fields=["password", "last_password_change_at", "updated_at"])
-        user.invalidate_sessions()
+        request = self.context["request"]
+        user = request.user
+        with transaction.atomic():
+            user.set_password(self.validated_data["new_password"])
+            user.last_password_change_at = timezone.now()
+            user.save(update_fields=["password", "last_password_change_at", "updated_at"])
+            user.invalidate_sessions()
+            AuditLogService.log(
+                actor=user,
+                action=AuditAction.PASSWORD_CHANGED,
+                target=user,
+                new_value={"sessions_revoked": True},
+                request=request,
+                critical=True,
+            )
         return user
 
 
@@ -434,8 +499,6 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
         return attrs
 
     def save(self, **kwargs):
-        from django.utils import timezone
-
         identifier = self.validated_data["identifier"]
         channel = self.validated_data["channel"]
         # Verified outside any transaction of ours so a wrong guess keeps its attempt count.
@@ -453,4 +516,14 @@ class ConfirmPasswordResetSerializer(OTPInputSerializer):
             user.last_password_change_at = timezone.now()
             user.save(update_fields=["password", "last_password_change_at", "updated_at"])
             user.invalidate_sessions()
+            AuditLogService.log(
+                actor=user,
+                action=AuditAction.PASSWORD_RESET_COMPLETED,
+                target=user,
+                new_value={"sessions_revoked": True, "channel": channel},
+                request=self.context.get("request"),
+                critical=True,
+            )
+        # The owner proved control of the mailbox/phone, so a brute-force lockout on this account ends here.
+        LoginLockoutService.clear_for_user(user)
         return user

@@ -100,3 +100,26 @@ def apply_student_number_parse(profile, student_number: str, *, auto_link_facult
             if len(majors) == 1 and not profile.major_id:
                 profile.major = majors[0]
     return parsed
+
+
+STUDENT_NUMBER_UNAVAILABLE_MESSAGE = (
+    "This student number cannot be used. If you believe this is a mistake, contact support."
+)
+
+
+def student_number_in_use(student_number: str, *, exclude_profile_id: int | None = None) -> bool:
+    """Whether another live student account already carries this number.
+
+    Soft-deleted profiles never block reuse, and account erasure blanks the number, so anonymized users do not
+    either. This mirrors the database constraint exactly. The answer is a plain boolean so callers
+    can reject without revealing which account owns the number.
+    """
+    from apps.accounts.models import StudentProfile
+
+    value = (student_number or "").strip()
+    if not value:
+        return False
+    queryset = StudentProfile.objects.filter(student_number=value, is_deleted=False)
+    if exclude_profile_id is not None:
+        queryset = queryset.exclude(pk=exclude_profile_id)
+    return queryset.exists()

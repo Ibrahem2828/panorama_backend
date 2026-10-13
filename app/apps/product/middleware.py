@@ -2,12 +2,21 @@ from __future__ import annotations
 
 import logging
 
+from django.core.cache import cache
 from django.db import DatabaseError
 from django.http import JsonResponse
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import AccessToken
+
+from apps.accounts.authentication import SESSION_VERSION_CLAIM
+from apps.accounts.models import User
 
 from .services import ProductConfigurationService
 
 lifecycle_logger = logging.getLogger("panorama.product.lifecycle")
+
+_ROLE_CACHE_SECONDS = 30
 
 
 class ProductLifecycleMiddleware:
@@ -49,6 +58,8 @@ class ProductLifecycleMiddleware:
             return self.get_response(request)
 
         maintenance = self._lifecycle_lookup(request, "maintenance", ProductConfigurationService.active_maintenance)
+        if maintenance and self._bypasses_maintenance(request, maintenance):
+            maintenance = None  # allowed role: serve normally (the release gate below still applies)
         if maintenance:
             response = self._error(
                 request,
@@ -90,6 +101,64 @@ class ProductLifecycleMiddleware:
                 },
             )
         return self.get_response(request)
+
+    @classmethod
+    def _bypasses_maintenance(cls, request, maintenance) -> bool:
+        """Whether the caller's role may use the API while ``maintenance`` is active.
+
+        Allowed when the role is listed in ``allowed_roles``, or when ``bypass_staff`` is set and the role is a staff
+        role (any role that holds dashboard capabilities, i.e. everything except student and normal_user). The role
+        comes from the verified access token's user id; anonymous, expired, malformed or revoked tokens never bypass.
+        """
+
+        from apps.accounts.permissions import ROLE_CAPABILITIES
+
+        allowed_roles = {str(role) for role in (maintenance.allowed_roles or [])}
+        staff_roles = {role for role, capabilities in ROLE_CAPABILITIES.items() if capabilities}
+        if not allowed_roles and not maintenance.bypass_staff:
+            return False  # nobody can bypass: skip token work entirely
+        role = cls._token_role(request)
+        if role is None:
+            return False
+        return role in allowed_roles or (bool(maintenance.bypass_staff) and role in staff_roles)
+
+    @classmethod
+    def _token_role(cls, request) -> str | None:
+        """Role of the bearer-token user, or None. Cached ``_ROLE_CACHE_SECONDS`` per user so only the first call in
+        a window touches the database, and only while maintenance is active. A DB error means "no bypass"."""
+
+        header = request.headers.get("Authorization", "")
+        scheme, _, raw_token = header.partition(" ")
+        if scheme.lower() != "bearer" or not raw_token.strip():
+            return None
+        try:
+            token = AccessToken(raw_token.strip())  # verifies signature, expiry and token type
+            user_id = token[api_settings.USER_ID_CLAIM]
+            token_version = int(token.get(SESSION_VERSION_CLAIM, 1))
+        except (TokenError, KeyError, TypeError, ValueError):
+            return None
+        cache_key = f"panorama:product:maintenance-role:v1:{user_id}"
+        try:
+            state = cache.get(cache_key)
+        except Exception:  # noqa: BLE001 - a cache outage must not break the request
+            state = None
+        if state is None:
+            try:
+                row = (
+                    User.objects.filter(pk=user_id, is_active=True, is_deleted=False)
+                    .values("role", "session_version")
+                    .first()
+                )
+            except DatabaseError:
+                return None
+            state = {"role": row["role"], "sv": row["session_version"]} if row else {}
+            try:
+                cache.set(cache_key, state, _ROLE_CACHE_SECONDS)
+            except Exception:  # noqa: BLE001
+                pass
+        if not state or state["sv"] != token_version:
+            return None  # unknown/inactive user or a token revoked by a role/status/password change
+        return str(state["role"])
 
     @staticmethod
     def _lifecycle_lookup(request, lookup: str, resolver, *args):

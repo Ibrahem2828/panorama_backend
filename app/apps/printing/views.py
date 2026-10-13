@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import cast
 
 from django.db import transaction
-from django.forms.models import model_to_dict
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils.http import content_disposition_header
@@ -17,6 +16,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.accounts.permissions import CanManagePrinting, Capability, PermissionService
+from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
@@ -232,47 +232,12 @@ class DashboardPrintNoteView(APIView):
         )
 
 
-class AuditedPrintConfigurationViewSet(StandardModelViewSet):
+class AuditedPrintConfigurationViewSet(AuditedModelWriteMixin, StandardModelViewSet):
     """Audit every pricing/configuration mutation because it affects charged totals."""
 
-    def perform_create(self, serializer):
-        instance = serializer.save()
-        AuditLogService.log(
-            actor=self.request.user,
-            action=AuditAction.PRINT_PRICING_CHANGED,
-            target=instance,
-            new_value=model_to_dict(instance),
-            request=self.request,
-        )
-
-    def perform_update(self, serializer):
-        old_value = model_to_dict(serializer.instance)
-        instance = serializer.save()
-        AuditLogService.log(
-            actor=self.request.user,
-            action=AuditAction.PRINT_PRICING_CHANGED,
-            target=instance,
-            old_value=old_value,
-            new_value=model_to_dict(instance),
-            request=self.request,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        old_value = model_to_dict(instance)
-        instance.is_deleted = True
-        if hasattr(instance, "is_active"):
-            instance.is_active = False
-        instance.save()
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.PRINT_PRICING_CHANGED,
-            target=instance,
-            old_value=old_value,
-            new_value={"is_deleted": True, "is_active": getattr(instance, "is_active", None)},
-            request=request,
-        )
-        return success_response(message=self.delete_success_message, request=request)
+    audit_create_action = AuditAction.PRINT_PRICING_CHANGED
+    audit_update_action = AuditAction.PRINT_PRICING_CHANGED
+    audit_delete_action = AuditAction.PRINT_PRICING_CHANGED
 
 
 class DashboardPrintPricingRuleViewSet(AuditedPrintConfigurationViewSet):

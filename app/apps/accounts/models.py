@@ -131,6 +131,15 @@ class StudentProfile(BaseModel):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            # A student number identifies one live student. Empty numbers (not yet entered) and soft-deleted
+            # profiles (anonymization clears the number too) never conflict.
+            models.UniqueConstraint(
+                fields=["student_number"],
+                condition=models.Q(is_deleted=False) & ~models.Q(student_number=""),
+                name="unique_active_student_number",
+            )
+        ]
         indexes = [
             models.Index(fields=["student_number"]),
             models.Index(fields=["faculty_code_from_student_number", "enrollment_year_code"]),

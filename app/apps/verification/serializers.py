@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
-from apps.accounts.student_number import FACULTY_CODE_LABELS, StudentNumberParser, apply_student_number_parse
+from apps.accounts.student_number import (
+    FACULTY_CODE_LABELS,
+    STUDENT_NUMBER_UNAVAILABLE_MESSAGE,
+    StudentNumberParser,
+    apply_student_number_parse,
+    student_number_in_use,
+)
 from apps.common.file_validation import validate_image_upload
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
@@ -17,6 +23,7 @@ from apps.universities.serializers import (
 )
 
 from .models import VerificationRequest, VerificationStatus
+from .services import VerificationStateConflict, assert_can_submit_verification
 
 
 class VerificationRequestSerializer(serializers.ModelSerializer):
@@ -120,12 +127,19 @@ class VerificationRequestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Only students can submit verification requests.")
         if not (user.is_email_verified or user.is_phone_verified):
             raise serializers.ValidationError("Email or phone must be verified before student verification.")
-        if VerificationRequest.objects.filter(user=user, status=VerificationStatus.PENDING, is_deleted=False).exists():
-            raise serializers.ValidationError("You already have a pending verification request.")
         if not hasattr(user, "student_profile"):
             raise serializers.ValidationError("Student profile does not exist.")
+        assert_can_submit_verification(user.student_profile)
+        if VerificationRequest.objects.filter(user=user, status=VerificationStatus.PENDING, is_deleted=False).exists():
+            raise VerificationStateConflict(
+                "You already have a pending verification request.", api_code="VERIFICATION_ALREADY_PENDING"
+            )
         try:
             parsed = StudentNumberParser.parse(attrs.get("student_number", ""))
+            if student_number_in_use(attrs.get("student_number", ""), exclude_profile_id=user.student_profile.pk):
+                raise serializers.ValidationError(
+                    {"student_number": STUDENT_NUMBER_UNAVAILABLE_MESSAGE}, code="student_number_unavailable"
+                )
             faculty = attrs.get("faculty")
             if faculty and faculty.code in FACULTY_CODE_LABELS and faculty.code != parsed["faculty_code"]:
                 raise serializers.ValidationError({"student_number": "Student number does not match selected faculty."})
@@ -147,7 +161,8 @@ class VerificationRequestSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         profile = user.student_profile
         # Lock the profile so two concurrent submissions cannot create two pending states.
-        profile.__class__.objects.select_for_update().get(pk=profile.pk)
+        locked = profile.__class__.objects.select_for_update().get(pk=profile.pk)
+        assert_can_submit_verification(locked)  # re-check under the lock: a concurrent submit/approval may have won
         verification = VerificationRequest.objects.create(user=user, student_profile=profile, **validated_data)
         profile.verification_status = StudentVerificationStatus.PENDING
         profile.university = verification.university
@@ -157,7 +172,13 @@ class VerificationRequestSerializer(serializers.ModelSerializer):
         profile.semester = verification.semester
         profile.student_number = verification.student_number
         apply_student_number_parse(profile, verification.student_number, auto_link_faculty=False)
-        profile.save()
+        try:
+            with transaction.atomic():
+                profile.save()
+        except IntegrityError as exc:  # lost a race against the unique student-number constraint
+            raise serializers.ValidationError(
+                {"student_number": STUDENT_NUMBER_UNAVAILABLE_MESSAGE}, code="student_number_unavailable"
+            ) from exc
         return verification
 
 

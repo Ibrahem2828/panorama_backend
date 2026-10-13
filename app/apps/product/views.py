@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import CanManageProduct
+from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
@@ -235,6 +236,46 @@ class CurrentPoliciesView(APIView):
         )
 
 
+class PolicyStatusView(APIView):
+    """What the signed-in user still has to accept.
+
+    ``must_accept`` is true when the active version was published with ``requires_reacceptance`` and this user has
+    not accepted that exact version. Clients should block on ``must_accept_any`` and then POST ``policies/accept/``.
+    """
+
+    @extend_schema(tags=["Policies"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        sections: dict[str, dict[str, object] | None] = {}
+        for key, model, kind in (
+            ("terms", TermsVersion, "terms"),
+            ("privacy", PrivacyPolicyVersion, "privacy"),
+        ):
+            active = model.objects.filter(is_active=True, is_deleted=False).order_by("-published_at").first()
+            consents = UserConsent.objects.filter(user=request.user, kind=kind)
+            if active is None:
+                sections[key] = None
+                continue
+            accepted = consents.filter(version=active.version).exists()
+            latest = consents.order_by("-accepted_at").first()
+            sections[key] = {
+                "version": active.version,
+                "content_url": active.content_url,
+                "requires_reacceptance": active.requires_reacceptance,
+                "published_at": active.published_at,
+                "accepted": accepted,
+                "accepted_version": latest.version if latest else None,
+                "must_accept": bool(active.requires_reacceptance and not accepted),
+            }
+        return success_response(
+            data={
+                **sections,
+                "must_accept_any": any(section and section["must_accept"] for section in sections.values()),
+            },
+            request=request,
+            code="POLICY_STATUS",
+        )
+
+
 class PolicyAcceptanceView(APIView):
     serializer_class = PolicyAcceptanceSerializer
 
@@ -331,25 +372,19 @@ class AccountDeletionStatusView(APIView):
         )
 
 
-class DashboardProductViewSet(StandardModelViewSet):
+class DashboardProductViewSet(AuditedModelWriteMixin, StandardModelViewSet):
+    # Product configuration: every create/update/delete is audited in the same transaction.
+
     permission_classes = [CanManageProduct]
 
-    audit_action = ""
-
-    def perform_create(self, serializer):
-        model_fields = {field.name for field in serializer.Meta.model._meta.fields}
-        instance = serializer.save(**({"updated_by": self.request.user} if "updated_by" in model_fields else {}))
-        AuditLogService.log(actor=self.request.user, action=self.audit_action, target=instance, request=self.request)
-
-    def perform_update(self, serializer):
-        model_fields = {field.name for field in serializer.Meta.model._meta.fields}
-        instance = serializer.save(**({"updated_by": self.request.user} if "updated_by" in model_fields else {}))
-        AuditLogService.log(actor=self.request.user, action=self.audit_action, target=instance, request=self.request)
+    def audit_save_kwargs(self, *, creating: bool):
+        model = self.get_queryset().model
+        return {"updated_by": self.request.user} if "updated_by" in {f.name for f in model._meta.fields} else {}
 
 
 class DashboardMobileReleasePolicyViewSet(DashboardProductViewSet):
     serializer_class = MobileAppReleasePolicySerializer
-    audit_action = AuditAction.MOBILE_RELEASE_POLICY_UPDATED
+    audit_create_action = audit_update_action = audit_delete_action = AuditAction.MOBILE_RELEASE_POLICY_UPDATED
 
     def get_queryset(self):
         return MobileAppReleasePolicy.objects.filter(is_deleted=False)
@@ -357,7 +392,7 @@ class DashboardMobileReleasePolicyViewSet(DashboardProductViewSet):
 
 class DashboardMaintenanceModeViewSet(DashboardProductViewSet):
     serializer_class = MaintenanceModeSerializer
-    audit_action = AuditAction.MAINTENANCE_MODE_UPDATED
+    audit_create_action = audit_update_action = audit_delete_action = AuditAction.MAINTENANCE_MODE_UPDATED
 
     def get_queryset(self):
         return MaintenanceMode.objects.filter(is_deleted=False)
@@ -365,23 +400,36 @@ class DashboardMaintenanceModeViewSet(DashboardProductViewSet):
 
 class DashboardFeatureFlagViewSet(DashboardProductViewSet):
     serializer_class = FeatureFlagSerializer
-    audit_action = AuditAction.FEATURE_FLAG_UPDATED
+    audit_create_action = audit_update_action = audit_delete_action = AuditAction.FEATURE_FLAG_UPDATED
 
     def get_queryset(self):
         return FeatureFlag.objects.filter(is_deleted=False)
 
 
-class DashboardTermsVersionViewSet(DashboardProductViewSet):
+class _PolicyVersionViewSet(DashboardProductViewSet):
+    # Terms/privacy versions: publish (create), update, unpublish (deactivate or delete).
+
+    audit_create_action = AuditAction.POLICY_VERSION_PUBLISHED
+    audit_update_action = AuditAction.POLICY_VERSION_UPDATED
+    audit_delete_action = AuditAction.POLICY_VERSION_UNPUBLISHED
+
+    def resolve_update_action(self, old, new):
+        if old.get("is_active") and not new.get("is_active"):
+            return AuditAction.POLICY_VERSION_UNPUBLISHED
+        if not old.get("is_active") and new.get("is_active"):
+            return AuditAction.POLICY_VERSION_PUBLISHED
+        return AuditAction.POLICY_VERSION_UPDATED
+
+
+class DashboardTermsVersionViewSet(_PolicyVersionViewSet):
     serializer_class = TermsVersionSerializer
-    audit_action = AuditAction.POLICY_ACCEPTED
 
     def get_queryset(self):
         return TermsVersion.objects.filter(is_deleted=False)
 
 
-class DashboardPrivacyPolicyVersionViewSet(DashboardProductViewSet):
+class DashboardPrivacyPolicyVersionViewSet(_PolicyVersionViewSet):
     serializer_class = PrivacyPolicyVersionSerializer
-    audit_action = AuditAction.POLICY_ACCEPTED
 
     def get_queryset(self):
         return PrivacyPolicyVersion.objects.filter(is_deleted=False)

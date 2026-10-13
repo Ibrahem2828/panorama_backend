@@ -1,6 +1,6 @@
 from typing import cast
 
-from django.db import models
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiTypes, extend_schema
@@ -30,6 +30,14 @@ def _current_user(request) -> User:
     return cast(User, request.user)
 
 
+def _visible_notifications(user: User):
+    """Notifications a user can see: not deleted and not expired. Shared by the list and the unread count."""
+
+    return Notification.objects.filter(user=user, is_deleted=False).filter(
+        models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now())
+    )
+
+
 class NotificationViewSet(StandardReadOnlyModelViewSet):
     serializer_class = NotificationSerializer
     filter_backends = [filters.OrderingFilter]
@@ -39,9 +47,7 @@ class NotificationViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Notification.objects.none()
-        return Notification.objects.filter(user=_current_user(self.request), is_deleted=False).filter(
-            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now())
-        )
+        return _visible_notifications(_current_user(self.request))
 
 
 class UnreadNotificationCountView(APIView):
@@ -49,7 +55,8 @@ class UnreadNotificationCountView(APIView):
 
     @extend_schema(tags=["Notifications"])
     def get(self, request):
-        count = Notification.objects.filter(user=_current_user(request), is_read=False, is_deleted=False).count()
+        # Same predicate as the list: an expired notification is neither listed nor counted.
+        count = _visible_notifications(_current_user(request)).filter(is_read=False).count()
         return success_response(data={"count": count})
 
 
@@ -123,19 +130,26 @@ class DashboardNotificationCampaignView(APIView):
         users = list(
             User.objects.filter(id__in=serializer.validated_data["user_ids"], is_active=True, is_deleted=False)
         )
-        created = NotificationService.create_bulk_notifications(
-            users,
-            serializer.validated_data["title"],
-            serializer.validated_data["body"],
-            serializer.validated_data["type"],
-            {"deep_link": serializer.validated_data.get("deep_link", "")},
-        )
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.NOTIFICATION_CAMPAIGN_CREATED,
-            new_value={"recipient_count": len(users), "created_count": len(created)},
-            request=request,
-        )
+        with transaction.atomic():
+            created = NotificationService.create_bulk_notifications(
+                users,
+                serializer.validated_data["title"],
+                serializer.validated_data["body"],
+                serializer.validated_data["type"],
+                {"deep_link": serializer.validated_data.get("deep_link", "")},
+            )
+            # Critical: a campaign that cannot be recorded is rolled back (push tasks only fire on commit).
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.NOTIFICATION_CAMPAIGN_CREATED,
+                new_value={
+                    "type": serializer.validated_data["type"],
+                    "recipient_count": len(users),
+                    "created_count": len(created),
+                },
+                request=request,
+                critical=True,
+            )
         return success_response(
             data={"created_count": len(created)}, status_code=status.HTTP_201_CREATED, request=request
         )
