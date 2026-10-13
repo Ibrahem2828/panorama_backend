@@ -8346,6 +8346,42 @@ paths:
       responses:
         '200':
           description: Inline protected print item
+  /api/v1/search/:
+    get:
+      operationId: v1_search_retrieve
+      description: Search subjects, lectures, groups, files and announcements the
+        caller may already see.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Results per type, default 5, max 20.
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: 2 to 50 characters, case-insensitive.
+        required: true
+      - in: query
+        name: types
+        schema:
+          type: string
+        description: Comma separated subset of subjects,lectures,groups,files,announcements
+          (default all).
+      tags:
+      - Search
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/semesters/:
     get:
       operationId: v1_semesters_list

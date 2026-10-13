@@ -114,6 +114,7 @@ ROUTE_KINDS: dict[str, str] = {
     "groups/{group_id}/messages/{message_id}/attachment-ticket/": AUTH,
     "protected-chat-attachments/{token}/": AUTH,
     # --- files --------------------------------------------------------------------------------------------------------
+    "search/": AUTH,
     "files/": AUTH,
     "files/{pk}/": AUTH,
     "groups/{group_pk}/files/": AUTH,

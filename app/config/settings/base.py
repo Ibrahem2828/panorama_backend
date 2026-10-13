@@ -179,6 +179,7 @@ REST_FRAMEWORK = {
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
         "lecture_viewer": config("THROTTLE_LECTURE_VIEWER", default="240/min"),
         "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
+        "search": config("THROTTLE_SEARCH", default="60/min"),
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
     },
 }
