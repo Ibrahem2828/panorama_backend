@@ -18591,6 +18591,16 @@
                         ],
                         "writeOnly": true,
                         "default": "email"
+                    },
+                    "accept_terms_version": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 64
+                    },
+                    "accept_privacy_version": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 64
                     }
                 },
                 "required": [
@@ -21856,6 +21866,16 @@
                         ],
                         "writeOnly": true,
                         "default": "email"
+                    },
+                    "accept_terms_version": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 64
+                    },
+                    "accept_privacy_version": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "maxLength": 64
                     },
                     "student_number": {
                         "type": "string",

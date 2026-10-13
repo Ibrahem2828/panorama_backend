@@ -12318,6 +12318,14 @@ components:
           - $ref: '#/components/schemas/OtpChannelEnum'
           writeOnly: true
           default: email
+        accept_terms_version:
+          type: string
+          writeOnly: true
+          maxLength: 64
+        accept_privacy_version:
+          type: string
+          writeOnly: true
+          maxLength: 64
       required:
       - email
       - full_name
@@ -14709,6 +14717,14 @@ components:
           - $ref: '#/components/schemas/OtpChannelEnum'
           writeOnly: true
           default: email
+        accept_terms_version:
+          type: string
+          writeOnly: true
+          maxLength: 64
+        accept_privacy_version:
+          type: string
+          writeOnly: true
+          maxLength: 64
         student_number:
           type: string
           maxLength: 64
