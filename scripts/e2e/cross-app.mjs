@@ -161,9 +161,11 @@ await step("student opens a support ticket; admin answers it from the dashboard;
 // ---------------------------------------------------------------- verification: student -> admin
 const email = `flow+${stamp}@e2e.test`;
 const phone = `+9639${String(stamp).slice(-8)}`;
+// Student numbers are unique per live account, and the first digit is the faculty code (1-7): derive a fresh one per run.
+const studentNumber = `1${String(stamp).slice(-6)}`;
 const fresh = new Client(WEB, "fresh-student");
 await step("a new student registers and verifies the e-mail code", async () => {
-  const reg = await fresh.call(`${API}/auth/register/student/`, { method: "POST", body: { full_name: "Flow Student", email, phone_number: phone, password: PASSWORD, password_confirm: PASSWORD, student_number: "1234567", otp_channel: "email" } });
+  const reg = await fresh.call(`${API}/auth/register/student/`, { method: "POST", body: { full_name: "Flow Student", email, phone_number: phone, password: PASSWORD, password_confirm: PASSWORD, student_number: studentNumber, otp_channel: "email" } });
   ok(reg);
   ok(await fresh.call(`${API}/auth/otp/verify/`, { method: "POST", body: { identifier: email, channel: "email", purpose: "verify_email", code: reg.data.development_otp } }));
   ok(await fresh.login(email));
@@ -179,7 +181,7 @@ await step("the student completes the academic profile and submits the universit
   ok(patch);
   const form = new FormData();
   form.append("card_image", new Blob([PNG], { type: "image/png" }), "card.png");
-  for (const [k, v] of Object.entries({ university: uni.id, faculty: fac.id, major: maj.id, academic_year: year.id, semester: sem.id, student_number: "1234567" })) form.append(k, String(v));
+  for (const [k, v] of Object.entries({ university: uni.id, faculty: fac.id, major: maj.id, academic_year: year.id, semester: sem.id, student_number: studentNumber })) form.append(k, String(v));
   const submit = await fresh.call(`${API}/verification/submit/`, { method: "POST", headers: { "Idempotency-Key": key() }, form });
   assert.ok([200, 201, 400].includes(submit.status), submit.text.slice(0, 400));
   console.log(`      submit -> ${submit.status} ${submit.text.slice(0, 200)}`);
@@ -190,7 +192,7 @@ let verificationId;
 await step("admin sees the pending verification and approves it", async () => {
   const list = await admin.call(`${API}/dashboard/verifications/`);
   ok(list);
-  const pending = list.rows.find((v) => (v.user?.email ?? v.user_email ?? "").includes(String(stamp)) || v.student_number === "1234567");
+  const pending = list.rows.find((v) => (v.user?.email ?? v.user_email ?? "").includes(String(stamp)) || v.student_number === studentNumber);
   assert.ok(pending, `no pending verification for the new student (${list.rows.length} rows)`);
   verificationId = pending.id;
   ok(await admin.call(`${API}/dashboard/verifications/${verificationId}/approve/`, { method: "POST", headers: { "Idempotency-Key": key() }, body: {} }));
