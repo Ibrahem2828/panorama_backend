@@ -8,6 +8,7 @@ from .health_views import (
     ReadinessHealthCheckView,
     StartupHealthCheckView,
 )
+from .search_views import UnifiedSearchView
 
 urlpatterns = [
     path("health/", HealthCheckView.as_view(), name="health"),
@@ -15,5 +16,6 @@ urlpatterns = [
     path("health/db/", DatabaseHealthCheckView.as_view(), name="health-db"),
     path("health/ready/", ReadinessHealthCheckView.as_view(), name="health-ready"),
     path("health/startup/", StartupHealthCheckView.as_view(), name="health-startup"),
+    path("search/", UnifiedSearchView.as_view(), name="unified-search"),
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard-stats"),
 ]

@@ -68,6 +68,21 @@ def eligible_groups_filter(user) -> Q:
     return condition
 
 
+def visible_groups_for_student(user):
+    """Active groups a verified student may see: eligible by hierarchy plus those they already belong to.
+
+    Same rule as the ``/groups/`` collection (``GroupDetailViewSet`` list); non-students and unverified students get
+    nothing because ``eligible_groups_filter`` matches nothing for them and they hold no approved membership.
+    """
+
+    member_group_ids = GroupMembership.objects.filter(
+        user=user, status=GroupMembershipStatus.APPROVED, is_deleted=False
+    ).values("group_id")
+    return Group.objects.filter(is_deleted=False, is_active=True).filter(
+        eligible_groups_filter(user) | Q(pk__in=member_group_ids)
+    )
+
+
 class GroupMembershipService:
     @staticmethod
     @transaction.atomic

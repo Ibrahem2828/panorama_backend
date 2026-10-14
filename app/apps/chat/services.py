@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from secrets import token_urlsafe
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 from django.utils import timezone
 from redis.exceptions import RedisError
 from rest_framework import status
@@ -14,9 +18,13 @@ from rest_framework.exceptions import APIException, PermissionDenied, Validation
 from apps.accounts.choices import StudentVerificationStatus
 from apps.accounts.models import User
 from apps.accounts.permissions import Capability, PermissionService
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
 from apps.groups.models import Group, GroupMembershipRole, GroupMembershipStatus
 
 from .models import Message, MessageType
+
+logger = logging.getLogger(__name__)
 
 
 class ChatPermissionService:
@@ -174,7 +182,65 @@ class ChatHandshakeTicketService:
         return user if ChatPermissionService.can_access_group_chat(user, group) else None
 
 
+def chat_group_name(group_id: int) -> str:
+    return f"group_chat_{group_id}"
+
+
+class ChatBroadcastService:
+    """Push REST-side chat changes to the sockets connected through ``GroupChatConsumer``.
+
+    Always called through ``transaction.on_commit`` so a rolled-back change is never announced. A channel-layer
+    outage must not fail the request (clients still converge on the next REST refresh), so errors are logged only.
+    """
+
+    @staticmethod
+    def _group_send(group_id: int, event: dict) -> None:
+        try:
+            layer = get_channel_layer()
+            if layer is not None:
+                async_to_sync(layer.group_send)(chat_group_name(group_id), event)
+        except Exception:
+            logger.exception("chat_broadcast_failed", extra={"group_id": group_id, "event_type": event.get("type")})
+
+    @classmethod
+    def message_created(cls, message_id: int) -> None:
+        from .serializers import MessageSerializer
+
+        message = Message.objects.select_related("sender").filter(pk=message_id, is_deleted=False).first()
+        if message is not None:
+            cls._group_send(message.group_id, {"type": "message_event", "data": MessageSerializer(message).data})
+
+    @classmethod
+    def message_deleted(cls, group_id: int, message_id: int) -> None:
+        cls._group_send(group_id, {"type": "message.deleted", "data": {"id": message_id, "group_id": group_id}})
+
+    @classmethod
+    def after_commit_created(cls, message: Message) -> None:
+        transaction.on_commit(lambda: cls.message_created(message.pk))
+
+    @classmethod
+    def after_commit_deleted(cls, message: Message) -> None:
+        group_id, message_id = message.group_id, message.pk
+        transaction.on_commit(lambda: cls.message_deleted(group_id, message_id))
+
+
 class ChatMessageService:
+    @staticmethod
+    def delete_message(message: Message, *, actor, request=None, extra_audit: dict | None = None) -> None:
+        """Soft-delete, audit and (after commit) announce a deletion; the single path used by every caller."""
+
+        with transaction.atomic():
+            message.soft_delete(actor)
+            AuditLogService.log(
+                actor=actor,
+                action=AuditAction.MESSAGE_DELETED,
+                target=message,
+                new_value=extra_audit,
+                request=request,
+                critical=True,
+            )
+            ChatBroadcastService.after_commit_deleted(message)
+
     @staticmethod
     def create_message(
         group,
@@ -205,3 +271,12 @@ class ChatMessageService:
             attachment=attachment,
             reply_to=reply_to,
         )
+
+    @staticmethod
+    def create_and_announce(**kwargs) -> Message:
+        """REST path: create the message and broadcast it once the transaction commits."""
+
+        with transaction.atomic():
+            message = ChatMessageService.create_message(**kwargs)
+            ChatBroadcastService.after_commit_created(message)
+        return message

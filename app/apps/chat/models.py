@@ -87,7 +87,12 @@ class MessageAttachmentAccessTicket(BaseModel):
 
 class MessageReportStatus(models.TextChoices):
     OPEN = "open", "Open"
-    REVIEWED = "reviewed", "Reviewed"
+    REVIEWED = "reviewed", "Reviewed"  # legacy value, still treated as unresolved
+    DISMISSED = "dismissed", "Dismissed"
+    MESSAGE_DELETED = "message_deleted", "Message deleted"
+
+
+UNRESOLVED_REPORT_STATUSES = (MessageReportStatus.OPEN, MessageReportStatus.REVIEWED)
 
 
 class MessageReport(BaseModel):
@@ -95,10 +100,18 @@ class MessageReport(BaseModel):
     reported_by = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="message_reports")
     reason = models.TextField()
     status = models.CharField(max_length=32, choices=MessageReportStatus.choices, default=MessageReportStatus.OPEN)
+    resolved_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, related_name="resolved_message_reports", null=True, blank=True
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_note = models.CharField(max_length=500, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(fields=["message", "reported_by"], name="unique_message_report_per_user")
         ]
-        indexes = [models.Index(fields=["message", "reported_by"])]
+        indexes = [
+            models.Index(fields=["message", "reported_by"]),
+            models.Index(fields=["status", "created_at"], name="chat_report_status_idx"),
+        ]

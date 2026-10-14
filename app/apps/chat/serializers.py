@@ -88,7 +88,7 @@ class MessageCreateSerializer(serializers.Serializer):
         return attrs
 
     def save(self, **kwargs):
-        return ChatMessageService.create_message(
+        return ChatMessageService.create_and_announce(
             group=self.context["group"],
             sender=self.context["request"].user,
             content=self.validated_data.get("content", ""),

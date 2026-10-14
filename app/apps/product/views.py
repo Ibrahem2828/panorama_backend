@@ -43,6 +43,7 @@ from .services import (
     AccountDeletionService,
     FeatureFlagService,
     IdempotencyService,
+    PolicyConsentService,
     ProductConfigurationService,
 )
 
@@ -290,19 +291,13 @@ class PolicyAcceptanceView(APIView):
         serializer.is_valid(raise_exception=True)
         accepted = []
         locale = serializer.validated_data["locale"]
-        for field, model, kind in (
-            ("terms_version", TermsVersion, "terms"),
-            ("privacy_version", PrivacyPolicyVersion, "privacy"),
-        ):
+        for field, kind in (("terms_version", "terms"), ("privacy_version", "privacy")):
             version = serializer.validated_data.get(field)
             if not version:
                 continue
-            if not model.objects.filter(version=version, is_active=True, is_deleted=False).exists():
+            if not PolicyConsentService.is_active_version(kind, version):
                 raise ValidationError({field: "This policy version is not active."})
-            consent, _ = UserConsent.objects.get_or_create(
-                user=request.user, kind=kind, version=version, defaults={"locale": locale}
-            )
-            accepted.append(consent)
+            accepted.append(PolicyConsentService.record(request.user, kind=kind, version=version, locale=locale))
         AuditLogService.log(
             actor=request.user,
             action=AuditAction.POLICY_ACCEPTED,

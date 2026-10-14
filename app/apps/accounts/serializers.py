@@ -9,6 +9,8 @@ from rest_framework import serializers
 
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.product.models import ConsentKind
+from apps.product.services import PolicyConsentService
 from apps.universities.models import validate_academic_hierarchy
 from apps.universities.serializers import (
     AcademicYearSerializer,
@@ -221,10 +223,34 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
         default=OTPDeliveryChannel.EMAIL,
         write_only=True,
     )
+    # Optional consent record. Absent (or blank) fields change nothing; when sent they must name the active version.
+    accept_terms_version = serializers.CharField(required=False, allow_blank=True, max_length=64, write_only=True)
+    accept_privacy_version = serializers.CharField(required=False, allow_blank=True, max_length=64, write_only=True)
 
     class Meta:
         model = User
-        fields = ["full_name", "email", "phone_number", "password", "password_confirm", "otp_channel"]
+        fields = [
+            "full_name",
+            "email",
+            "phone_number",
+            "password",
+            "password_confirm",
+            "otp_channel",
+            "accept_terms_version",
+            "accept_privacy_version",
+        ]
+
+    def _validate_policy_version(self, kind: str, value: str) -> str:
+        value = value.strip()
+        if value and not PolicyConsentService.is_active_version(kind, value):
+            raise serializers.ValidationError("This policy version is not active.")
+        return value
+
+    def validate_accept_terms_version(self, value: str) -> str:
+        return self._validate_policy_version(ConsentKind.TERMS, value)
+
+    def validate_accept_privacy_version(self, value: str) -> str:
+        return self._validate_policy_version(ConsentKind.PRIVACY, value)
 
     def validate_email(self, value: str) -> str:
         email = value.strip().lower()
@@ -247,8 +273,29 @@ class BaseRegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password_confirm")
         channel = validated_data.pop("otp_channel", OTPDeliveryChannel.EMAIL)
         password = validated_data.pop("password")
+        consents = {
+            ConsentKind.TERMS: validated_data.pop("accept_terms_version", ""),
+            ConsentKind.PRIVACY: validated_data.pop("accept_privacy_version", ""),
+        }
         user = User.objects.create_user(password=password, role=role, **validated_data)
+        self._record_consents(user, consents)
         return user, channel
+
+    def _record_consents(self, user: User, consents: dict[ConsentKind, str]) -> None:
+        """Store the acceptances sent with the registration, in the registration transaction."""
+        accepted = [
+            PolicyConsentService.record(user, kind=kind, version=version).kind
+            for kind, version in consents.items()
+            if version
+        ]
+        if accepted:
+            AuditLogService.log(
+                actor=user,
+                action=AuditAction.POLICY_ACCEPTED,
+                new_value={"kinds": accepted, "source": "registration"},
+                request=self.context.get("request"),
+                critical=True,
+            )
 
     def _send_identity_otp(self, user: User, channel: str):
         identifier = user.email if channel == OTPDeliveryChannel.EMAIL else user.phone_number
@@ -280,7 +327,7 @@ class StudentRegisterSerializer(BaseRegisterSerializer):
     student_number = serializers.CharField(required=False, allow_blank=True, max_length=64)
 
     class Meta(BaseRegisterSerializer.Meta):
-        fields = BaseRegisterSerializer.Meta.fields + ["student_number"]
+        fields = [*BaseRegisterSerializer.Meta.fields, "student_number"]
 
     def validate_student_number(self, value: str) -> str:
         value = value.strip()

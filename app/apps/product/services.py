@@ -20,10 +20,14 @@ from .anonymization import anonymize_user_data
 from .models import (
     AccountDeletionRequest,
     AccountDeletionStatus,
+    ConsentKind,
     FeatureFlag,
     IdempotencyRecord,
     MaintenanceMode,
     MobileAppReleasePolicy,
+    PrivacyPolicyVersion,
+    TermsVersion,
+    UserConsent,
 )
 
 FEATURE_DEFAULTS = {
@@ -160,6 +164,26 @@ class ProductConfigurationService:
             cache.delete("panorama:product:maintenance:v1")
         except Exception:
             pass
+
+
+class PolicyConsentService:
+    """Single place that knows how a policy version is checked and a user's acceptance of it is stored."""
+
+    @staticmethod
+    def _model(kind: str):
+        return TermsVersion if kind == ConsentKind.TERMS else PrivacyPolicyVersion
+
+    @classmethod
+    def is_active_version(cls, kind: str, version: str) -> bool:
+        return cls._model(kind).objects.filter(version=version, is_active=True, is_deleted=False).exists()
+
+    @classmethod
+    def record(cls, user, *, kind: str, version: str, locale: str = "") -> UserConsent:
+        """Idempotent: accepting the same (kind, version) twice keeps the first acceptance."""
+        consent, _ = UserConsent.objects.get_or_create(
+            user=user, kind=kind, version=version, defaults={"locale": locale}
+        )
+        return consent
 
 
 def feature_enabled_or_raise(key: str, *, request=None, platform: str = "") -> None:

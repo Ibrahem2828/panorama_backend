@@ -95,6 +95,7 @@ ROUTE_KINDS: dict[str, str] = {
     "verification/submit/": STUDENT,
     "verification/resubmit/": STUDENT,
     "verification/me/": STUDENT,
+    "verification/me/card/": AUTH,
     "verification-card-access/{token}/": DASHBOARD,
     # --- groups / chat ----------------------------------------------------------------------------------------------
     "groups/available/": STUDENT,
@@ -114,6 +115,7 @@ ROUTE_KINDS: dict[str, str] = {
     "groups/{group_id}/messages/{message_id}/attachment-ticket/": AUTH,
     "protected-chat-attachments/{token}/": AUTH,
     # --- files --------------------------------------------------------------------------------------------------------
+    "search/": AUTH,
     "files/": AUTH,
     "files/{pk}/": AUTH,
     "groups/{group_pk}/files/": AUTH,
@@ -209,6 +211,8 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/groups/{group_pk}/memberships/": DASHBOARD,
     "dashboard/groups/{group_pk}/join-requests/": DASHBOARD,
     "dashboard/groups/{pk}/whatsapp-channel/": DASHBOARD,
+    "dashboard/chat/reports/": DASHBOARD,
+    "dashboard/chat/reports/{pk}/resolve/": DASHBOARD,
     "dashboard/group-memberships/{pk}/approve/": DASHBOARD,
     "dashboard/group-memberships/{pk}/reject/": DASHBOARD,
     "dashboard/group-memberships/{pk}/block/": DASHBOARD,
@@ -218,6 +222,7 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/lectures/": DASHBOARD,
     "dashboard/lectures/{pk}/": DASHBOARD,
     "dashboard/lectures/{pk}/original/": DASHBOARD,
+    "dashboard/lectures/{pk}/retry/": DASHBOARD,
     "dashboard/printing/orders/": DASHBOARD,
     "dashboard/printing/orders/{pk}/": DASHBOARD,
     "dashboard/printing/orders/{pk}/assign/": DASHBOARD,

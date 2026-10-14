@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .dashboard_views import DashboardMessageReportResolveView, DashboardMessageReportViewSet
 from .views import (
     GroupChatHandshakeTicketView,
     GroupMessageDeleteView,
@@ -9,10 +10,18 @@ from .views import (
     ProtectedMessageAttachmentStreamView,
 )
 
+report_list = DashboardMessageReportViewSet.as_view({"get": "list"})
+
 message_list = GroupMessageViewSet.as_view({"get": "list", "post": "create"})
 message_detail = GroupMessageViewSet.as_view({"get": "retrieve", "delete": "destroy"})
 
 urlpatterns = [
+    path("dashboard/chat/reports/", report_list, name="dashboard-chat-reports"),
+    path(
+        "dashboard/chat/reports/<int:pk>/resolve/",
+        DashboardMessageReportResolveView.as_view(),
+        name="dashboard-chat-report-resolve",
+    ),
     path(
         "groups/<int:group_id>/chat-ticket/",
         GroupChatHandshakeTicketView.as_view(),
