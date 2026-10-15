@@ -3,7 +3,15 @@ from __future__ import annotations
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import DeviceToken, Notification, NotificationPreference
+from .models import DeviceToken, Notification, NotificationPreference, WebPushSubscription
+from .webpush_security import (
+    AUTH_RAW_LENGTH,
+    ENDPOINT_MAX_LENGTH,
+    P256DH_RAW_LENGTH,
+    InvalidWebPushInput,
+    validate_endpoint,
+    validate_key,
+)
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -89,3 +97,69 @@ class NotificationCampaignSerializer(serializers.Serializer):
         if value and not value.startswith("/"):
             raise serializers.ValidationError("deep_link must be a relative application path.")
         return value
+
+
+def _checked(validator, *args, **kwargs):
+    try:
+        return validator(*args, **kwargs)
+    except InvalidWebPushInput as exc:
+        raise serializers.ValidationError(str(exc)) from exc
+
+
+class WebPushKeysSerializer(serializers.Serializer):
+    p256dh = serializers.CharField(max_length=255)
+    auth = serializers.CharField(max_length=255)
+
+    def validate_p256dh(self, value: str) -> str:
+        return _checked(validate_key, value, raw_length=P256DH_RAW_LENGTH, field="p256dh")
+
+    def validate_auth(self, value: str) -> str:
+        return _checked(validate_key, value, raw_length=AUTH_RAW_LENGTH, field="auth")
+
+
+class WebPushSubscriptionSerializer(serializers.ModelSerializer):
+    """Body of ``PushSubscription.toJSON()`` (``endpoint`` + ``keys``) plus an optional ``user_agent``.
+
+    The endpoint and keys are write-only: the endpoint is a capability URL and is never echoed back.
+    """
+
+    endpoint = serializers.CharField(max_length=ENDPOINT_MAX_LENGTH, write_only=True, validators=[])
+    keys = WebPushKeysSerializer(write_only=True)
+    user_agent = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+    class Meta:
+        model = WebPushSubscription
+        fields = ["id", "endpoint", "keys", "user_agent", "is_active", "last_used_at", "created_at", "updated_at"]
+        read_only_fields = ["id", "is_active", "last_used_at", "created_at", "updated_at"]
+
+    def validate_endpoint(self, value: str) -> str:
+        return _checked(validate_endpoint, value)
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        keys = validated_data["keys"]
+        user_agent = validated_data.get("user_agent") or request.headers.get("User-Agent", "")
+        subscription, _ = WebPushSubscription.objects.update_or_create(
+            endpoint=validated_data["endpoint"],
+            defaults={
+                "user": request.user,
+                "p256dh": keys["p256dh"],
+                "auth": keys["auth"],
+                "user_agent": user_agent[:255],
+                "is_active": True,
+                "failure_count": 0,
+                "last_used_at": timezone.now(),
+                "is_deleted": False,
+                "deleted_at": None,
+            },
+        )
+        return subscription
+
+
+class WebPushUnsubscribeSerializer(serializers.Serializer):
+    endpoint = serializers.CharField(max_length=ENDPOINT_MAX_LENGTH)
+
+
+class WebPushPublicKeySerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    public_key = serializers.CharField(allow_null=True)

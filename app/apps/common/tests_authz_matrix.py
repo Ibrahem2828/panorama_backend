@@ -152,6 +152,8 @@ ROUTE_KINDS: dict[str, str] = {
     "notifications/read-all/": AUTH,
     "notifications/preferences/": AUTH,
     "notifications/device-tokens/": AUTH,
+    "notifications/web-push/public-key/": AUTH,
+    "notifications/web-push/subscriptions/": AUTH,
     "notifications/device-tokens/{pk}/": AUTH,
     # --- support ------------------------------------------------------------------------------------------------------
     "support/tickets/": AUTH,

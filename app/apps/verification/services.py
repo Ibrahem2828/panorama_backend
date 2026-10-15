@@ -111,16 +111,25 @@ class VerificationService:
             profile.student_number = verification.student_number
             title = "تم توثيق حسابك"
             body = "أصبح بإمكانك الآن استخدام ميزات الطلاب الموثقين في بانوراما."
+            title_en = "Your account is verified"
+            body_en = "You can now use the verified-student features in Panorama."
+            deep_link = "/home"
         elif status == VerificationStatus.NEEDS_UPDATE:
             profile.verification_status = StudentVerificationStatus.NEEDS_UPDATE
             profile.verified_at = None
             title = "طلب التوثيق يحتاج إلى تحديث"
             body = rejection_reason.strip()
+            title_en = "Your verification request needs an update"
+            body_en = body
+            deep_link = "/setup/verification/status"
         else:
             profile.verification_status = StudentVerificationStatus.REJECTED
             profile.verified_at = None
             title = "تم رفض طلب التوثيق"
             body = rejection_reason.strip()
+            title_en = "Your verification request was rejected"
+            body_en = body
+            deep_link = "/setup/verification/status"
 
         profile.save()
         NotificationService.create_notification(
@@ -129,6 +138,11 @@ class VerificationService:
             body=body,
             type=NotificationType.VERIFICATION,
             data={"verification_request_id": verification.id, "status": status},
+            title_ar=title,
+            title_en=title_en,
+            body_ar=body,
+            body_en=body_en,
+            deep_link=deep_link,
         )
         action = {
             VerificationStatus.APPROVED: AuditAction.VERIFICATION_APPROVED,

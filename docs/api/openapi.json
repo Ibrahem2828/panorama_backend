@@ -12790,6 +12790,112 @@
                 }
             }
         },
+        "/api/v1/notifications/web-push/public-key/": {
+            "get": {
+                "operationId": "v1_notifications_web_push_public_key_retrieve",
+                "description": "The VAPID application server key the browser needs for ``pushManager.subscribe``.",
+                "tags": [
+                    "Notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WebPushPublicKey"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/web-push/subscriptions/": {
+            "post": {
+                "operationId": "v1_notifications_web_push_subscriptions_create",
+                "description": "Register (upsert by endpoint) or remove the calling user's browser push subscription.",
+                "tags": [
+                    "Notifications"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WebPushSubscriptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WebPushSubscriptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WebPushSubscriptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WebPushSubscription"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_notifications_web_push_subscriptions_destroy",
+                "description": "Register (upsert by endpoint) or remove the calling user's browser push subscription.",
+                "tags": [
+                    "Notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/policies/accept/": {
             "post": {
                 "operationId": "v1_policies_accept_create",
@@ -22967,6 +23073,127 @@
                 ],
                 "type": "string",
                 "description": "* `public` - Public\n* `students_only` - Students Only\n* `verified_students_only` - Verified Students Only\n* `major_only` - Major Only\n* `group_only` - Group Only\n* `admin_only` - Admin Only"
+            },
+            "WebPushKeys": {
+                "type": "object",
+                "properties": {
+                    "p256dh": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "auth": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "auth",
+                    "p256dh"
+                ]
+            },
+            "WebPushKeysRequest": {
+                "type": "object",
+                "properties": {
+                    "p256dh": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "auth": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "auth",
+                    "p256dh"
+                ]
+            },
+            "WebPushPublicKey": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "public_key": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "enabled",
+                    "public_key"
+                ]
+            },
+            "WebPushSubscription": {
+                "type": "object",
+                "description": "Body of ``PushSubscription.toJSON()`` (``endpoint`` + ``keys``) plus an optional ``user_agent``.\n\nThe endpoint and keys are write-only: the endpoint is a capability URL and is never echoed back.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_agent": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "last_used_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "is_active",
+                    "last_used_at",
+                    "updated_at"
+                ]
+            },
+            "WebPushSubscriptionRequest": {
+                "type": "object",
+                "description": "Body of ``PushSubscription.toJSON()`` (``endpoint`` + ``keys``) plus an optional ``user_agent``.\n\nThe endpoint and keys are write-only: the endpoint is a capability URL and is never echoed back.",
+                "properties": {
+                    "endpoint": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 1,
+                        "maxLength": 1024
+                    },
+                    "keys": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/WebPushKeysRequest"
+                            }
+                        ],
+                        "writeOnly": true
+                    },
+                    "user_agent": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "endpoint",
+                    "keys"
+                ]
             },
             "WhatsAppChannelUpdate": {
                 "type": "object",
