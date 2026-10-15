@@ -17,6 +17,7 @@ safe release evidence on their own.
 | [Lecture viewer and document pipeline](LECTURE_VIEWER_AND_DOCUMENT_PIPELINE.md) | Private source documents, conversion queue, viewer sessions, page delivery, and notes. |
 | [Mobile product integration](MOBILE_PRODUCT_INTEGRATION.md) | Bootstrap, versions, maintenance, devices, policies, account deletion, and mobile contract. |
 | [Dashboard integration](DASHBOARD_INTEGRATION.md) | Dashboard capabilities, product controls, administrative operations, and contract. |
+| [Browser Web Push](WEB_PUSH.md) | VAPID configuration, subscription API, payload contract, and delivery rules for the student PWA. |
 | [Storage, backup, and recovery](STORAGE_BACKUP_AND_RECOVERY.md) | Local named volume, backup/restore, and future generic S3 migration. |
 | [Quality, testing, and release](QUALITY_TESTING_AND_RELEASE.md) | Baseline, checks, test policy, and release gates. |
 | [Release closure report](reports/BACKEND_FINAL_CLOSURE_REPORT_AR.md) | Evidence-based decision for the current closure branch. |
