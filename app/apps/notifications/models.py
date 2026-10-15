@@ -91,3 +91,28 @@ class NotificationPreference(BaseModel):
 
     def allows(self, notification_type: str) -> bool:
         return self.in_app_enabled and notification_type not in set(self.disabled_types)
+
+
+class WebPushSubscription(BaseModel):
+    """A browser (PWA) Web Push subscription. Deliberately separate from ``DeviceToken`` (Expo/mobile).
+
+    ``endpoint`` identifies the subscription and is unique across users: a browser profile that signs in as
+    another account simply re-assigns the row. ``p256dh``/``auth`` are the subscription's public encryption
+    material and are never logged or returned by the API.
+    """
+
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="web_push_subscriptions")
+    endpoint = models.URLField(max_length=1024, unique=True)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    user_agent = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    failure_count = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [models.Index(fields=["user", "is_active"], name="webpush_user_active_idx")]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} - web push"

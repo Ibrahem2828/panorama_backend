@@ -33,3 +33,7 @@ REST_FRAMEWORK = {**REST_FRAMEWORK, "DEFAULT_THROTTLE_RATES": {name: "100000/hou
 
 # Journeys deliberately submit wrong passwords; keep lockout effectively off unless the run opts in via env.
 LOGIN_LOCKOUT_THRESHOLD = int(os.environ.get("LOGIN_LOCKOUT_THRESHOLD", "100000"))
+
+# Browser Web Push is exercised only when a throwaway VAPID pair is provided through the environment
+# (WEB_PUSH_VAPID_PUBLIC_KEY / WEB_PUSH_VAPID_PRIVATE_KEY / WEB_PUSH_VAPID_SUBJECT, read in base.py; see
+# docs/WEB_PUSH.md). No key is generated or stored here; without them the feature stays disabled.

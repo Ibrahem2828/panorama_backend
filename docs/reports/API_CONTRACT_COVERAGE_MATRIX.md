@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 279
+**Operations:** 283
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -216,6 +216,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_groups_retrieve | GET | /api/v1/groups/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_join_create | POST | /api/v1/groups/{id}/join/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_leave_create | POST | /api/v1/groups/{id}/leave/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_groups_whatsapp_launch_create | POST | /api/v1/groups/{id}/whatsapp-launch/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_whatsapp_ticket_create | POST | /api/v1/groups/{id}/whatsapp-ticket/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_health_retrieve | GET | /api/v1/health/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_health_db_retrieve | GET | /api/v1/health/db/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |
@@ -248,6 +249,9 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_notifications_preferences_partial_update | PATCH | /api/v1/notifications/preferences/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PatchedNotificationPreferenceRequest; application/x-www-form-urlencoded: #/components/schemas/PatchedNotificationPreferenceRequest; multipart/form-data: #/components/schemas/PatchedNotificationPreferenceRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_notifications_read_all_create | POST | /api/v1/notifications/read-all/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_notifications_unread_count_retrieve | GET | /api/v1/notifications/unread-count/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_notifications_web_push_public_key_retrieve | GET | /api/v1/notifications/web-push/public-key/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_notifications_web_push_subscriptions_destroy | DELETE | /api/v1/notifications/web-push/subscriptions/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_notifications_web_push_subscriptions_create | POST | /api/v1/notifications/web-push/subscriptions/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/WebPushSubscriptionRequest; application/x-www-form-urlencoded: #/components/schemas/WebPushSubscriptionRequest; multipart/form-data: #/components/schemas/WebPushSubscriptionRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_notifications_retrieve | GET | /api/v1/notifications/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_notifications_read_create | POST | /api/v1/notifications/{id}/read/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_policies_accept_create | POST | /api/v1/policies/accept/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PolicyAcceptanceRequest; application/x-www-form-urlencoded: #/components/schemas/PolicyAcceptanceRequest; multipart/form-data: #/components/schemas/PolicyAcceptanceRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |

@@ -9,6 +9,8 @@ from .views import (
     NotificationPreferenceView,
     NotificationViewSet,
     UnreadNotificationCountView,
+    WebPushPublicKeyView,
+    WebPushSubscriptionView,
 )
 
 router = DefaultRouter()
@@ -19,6 +21,8 @@ urlpatterns = [
     path("notifications/unread-count/", UnreadNotificationCountView.as_view(), name="notifications-unread-count"),
     path("notifications/<int:pk>/read/", MarkNotificationReadView.as_view(), name="notification-read"),
     path("notifications/read-all/", MarkAllNotificationsReadView.as_view(), name="notifications-read-all"),
+    path("notifications/web-push/public-key/", WebPushPublicKeyView.as_view(), name="web-push-public-key"),
+    path("notifications/web-push/subscriptions/", WebPushSubscriptionView.as_view(), name="web-push-subscriptions"),
     path("notifications/preferences/", NotificationPreferenceView.as_view(), name="notification-preferences"),
     path(
         "dashboard/notifications/campaign/",

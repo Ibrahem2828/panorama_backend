@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from urllib.parse import urlparse
+import re
+from urllib.parse import parse_qs, urlparse
 
 from django.db import transaction
 from django.db.models import Q
@@ -161,6 +162,41 @@ class GroupMembershipService:
 
 
 class ExternalChannelService:
+    @staticmethod
+    def whatsapp_app_link(url: str) -> str | None:
+        """The ``whatsapp://`` deep link for a stored https WhatsApp link, or None when it cannot be derived safely.
+
+        Group invites (``chat.whatsapp.com/<code>``) open the invite inside the app; chat links (``wa.me/<digits>`` and
+        ``api.whatsapp.com/send?phone=<digits>``) open that conversation. The https link itself is never sent to a client.
+        """
+        parsed = urlparse(str(url or "").strip())
+        host = parsed.hostname or ""
+        if host == "chat.whatsapp.com":
+            code = parsed.path.strip("/").split("/")[0]
+            return f"whatsapp://chat?code={code}" if re.fullmatch(r"[A-Za-z0-9]{10,40}", code) else None
+        digits = ""
+        if host in {"wa.me", "www.wa.me"}:
+            digits = parsed.path.strip("/").split("/")[0]
+        elif host in {"api.whatsapp.com", "www.whatsapp.com"}:
+            digits = (parse_qs(parsed.query).get("phone") or [""])[0]
+        digits = digits.lstrip("+")
+        return f"whatsapp://send?phone={digits}" if re.fullmatch(r"\d{6,15}", digits) else None
+
+    @classmethod
+    def issue_app_link(cls, group: Group, user) -> str:
+        """Authorise ``user`` for the group's WhatsApp channel and return the app deep link (not the https link)."""
+        channel = GroupExternalChannel.objects.filter(
+            group=group, channel_type=ExternalChannelType.WHATSAPP, is_active=True, is_deleted=False
+        ).first()
+        if not channel:
+            raise ValidationError("WhatsApp channel is not available for this group.")
+        if not cls.user_can_open(user, channel):
+            raise PermissionDenied("You are not allowed to access this external channel.")
+        link = cls.whatsapp_app_link(decrypt_text(channel.encrypted_url))
+        if not link:
+            raise ValidationError("WhatsApp channel is not available for this group.")
+        return link
+
     @staticmethod
     def validate_whatsapp_url(value: str) -> str:
         value = str(value or "").strip()

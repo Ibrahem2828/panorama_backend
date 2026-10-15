@@ -28,6 +28,7 @@ from .models import (
 )
 from .serializers import (
     DashboardGroupSerializer,
+    ExternalChannelAppLinkSerializer,
     ExternalChannelTicketSerializer,
     GroupMembershipRoleUpdateSerializer,
     GroupMembershipSerializer,
@@ -322,6 +323,38 @@ class GroupWhatsAppTicketView(APIView):
             request=request,
             code="EXTERNAL_CHANNEL_TICKET_ISSUED",
         )
+
+
+class GroupWhatsAppLaunchView(APIView):
+    """Web clients: returns the ``whatsapp://`` deep link so the app opens straight into the group/chat.
+
+    The https invite link is never returned, shown or put in a URL: the client navigates to the app scheme, so no link ever
+    appears in the address bar, history or search. Each call is authorised, throttled and audited.
+    """
+
+    permission_classes = [IsVerifiedStudent]
+    throttle_classes = [ExternalChannelRateThrottle]
+    serializer_class = ExternalChannelAppLinkSerializer
+
+    @extend_schema(tags=["Groups"], request=None, responses={200: ExternalChannelAppLinkSerializer})
+    def post(self, request, pk: int):
+        group = get_object_or_404(Group, pk=pk, is_active=True, is_deleted=False)
+        app_url = ExternalChannelService.issue_app_link(group, request.user)
+        AuditLogService.log(
+            actor=request.user,
+            action=AuditAction.GROUP_EXTERNAL_CHANNEL_OPENED,
+            target=group,
+            new_value={"channel_type": "whatsapp", "mode": "app"},
+            request=request,
+        )
+        response = success_response(
+            data={"app_url": app_url},
+            message="WhatsApp app link issued",
+            request=request,
+            code="EXTERNAL_CHANNEL_APP_LINK_ISSUED",
+        )
+        response["Cache-Control"] = "no-store, max-age=0"
+        return response
 
 
 class ExternalChannelRedirectView(APIView):

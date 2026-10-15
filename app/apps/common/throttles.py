@@ -228,3 +228,13 @@ class DeviceRegistrationRateThrottle(SimpleRateThrottle):
     def get_cache_key(self, request, view):
         ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
         return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class WebPushRateThrottle(SimpleRateThrottle):
+    """Browser Web Push (un)subscribe calls, per user (scope ``web_push``)."""
+
+    scope = "web_push"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}

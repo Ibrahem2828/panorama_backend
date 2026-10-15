@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DeviceToken, Notification
+from .models import DeviceToken, Notification, WebPushSubscription
 
 
 @admin.register(Notification)
@@ -19,3 +19,14 @@ class DeviceTokenAdmin(admin.ModelAdmin):
     search_fields = ("user__email", "token")
     autocomplete_fields = ("user",)
     readonly_fields = ("created_at", "updated_at", "last_used_at")
+
+
+@admin.register(WebPushSubscription)
+class WebPushSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "is_active", "failure_count", "last_used_at", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = ("user__email",)
+    autocomplete_fields = ("user",)
+    # The endpoint and keys are bearer-like secrets for that browser: never shown or edited in the admin.
+    exclude = ("endpoint", "p256dh", "auth")
+    readonly_fields = ("created_at", "updated_at", "last_used_at", "user_agent", "failure_count")

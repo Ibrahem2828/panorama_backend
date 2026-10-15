@@ -1,5 +1,6 @@
 from typing import cast
 
+from django.conf import settings
 from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -11,17 +12,21 @@ from apps.accounts.models import User
 from apps.accounts.permissions import CanManageProduct
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
-from apps.common.responses import success_response
+from apps.common.responses import error_response, success_response
+from apps.common.throttles import WebPushRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
-from .models import DeviceToken, Notification, NotificationPreference
+from .models import DeviceToken, Notification, NotificationPreference, WebPushSubscription
 from .serializers import (
     DeviceTokenSerializer,
     NotificationCampaignSerializer,
     NotificationPreferenceSerializer,
     NotificationSerializer,
+    WebPushPublicKeySerializer,
+    WebPushSubscriptionSerializer,
+    WebPushUnsubscribeSerializer,
 )
-from .services import NotificationService
+from .services import NotificationService, web_push_configured
 
 
 def _current_user(request) -> User:
@@ -92,6 +97,66 @@ class DeviceTokenViewSet(StandardModelViewSet):
         if getattr(self, "swagger_fake_view", False):
             return DeviceToken.objects.none()
         return DeviceToken.objects.filter(user=_current_user(self.request), is_deleted=False)
+
+
+class WebPushPublicKeyView(APIView):
+    """The VAPID application server key the browser needs for ``pushManager.subscribe``."""
+
+    serializer_class = WebPushPublicKeySerializer
+
+    @extend_schema(tags=["Notifications"], responses={200: WebPushPublicKeySerializer})
+    def get(self, request):
+        enabled = web_push_configured()
+        return success_response(
+            data={"enabled": enabled, "public_key": settings.WEB_PUSH_VAPID_PUBLIC_KEY if enabled else None},
+            request=request,
+        )
+
+
+class WebPushSubscriptionView(APIView):
+    """Register (upsert by endpoint) or remove the calling user's browser push subscription."""
+
+    serializer_class = WebPushSubscriptionSerializer
+    throttle_classes = [WebPushRateThrottle]
+
+    @extend_schema(
+        tags=["Notifications"], request=WebPushSubscriptionSerializer, responses={201: WebPushSubscriptionSerializer}
+    )
+    def post(self, request):
+        if not web_push_configured():
+            return error_response(
+                "Browser push notifications are not available.",
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                code="WEB_PUSH_NOT_CONFIGURED",
+                request=request,
+            )
+        serializer = WebPushSubscriptionSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        subscription = serializer.save()
+        return success_response(
+            data=WebPushSubscriptionSerializer(subscription, context={"request": request}).data,
+            message="Browser push subscription saved",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="WEB_PUSH_SUBSCRIBED",
+        )
+
+    @extend_schema(tags=["Notifications"], request=WebPushUnsubscribeSerializer, responses={200: OpenApiTypes.OBJECT})
+    def delete(self, request):
+        serializer = WebPushUnsubscribeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        subscription = get_object_or_404(
+            WebPushSubscription,
+            endpoint=serializer.validated_data["endpoint"].strip(),
+            user=_current_user(request),
+            is_deleted=False,
+        )
+        subscription.is_deleted = True
+        subscription.is_active = False
+        subscription.save(update_fields=["is_deleted", "is_active", "updated_at"])
+        return success_response(
+            message="Browser push subscription removed", request=request, code="WEB_PUSH_UNSUBSCRIBED"
+        )
 
 
 class NotificationPreferenceView(APIView):

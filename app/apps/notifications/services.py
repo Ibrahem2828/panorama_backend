@@ -5,15 +5,20 @@ import logging
 from collections import Counter
 from collections.abc import Iterable
 from functools import partial
+from typing import Any
 from urllib import request as urllib_request
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 
+import requests
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
+from pywebpush import WebPushException, webpush
 
-from .models import DeviceToken, Notification, NotificationPreference, NotificationType
+from .models import DeviceToken, Notification, NotificationPreference, NotificationType, WebPushSubscription
+from .webpush_security import InvalidWebPushInput, validate_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +28,50 @@ EXPO_BATCH_SIZE = 100
 PERMANENT_TOKEN_ERRORS = frozenset({"DeviceNotRegistered"})
 #: Ticket errors that are worth retrying later for that token only.
 TRANSIENT_TICKET_ERRORS = frozenset({"MessageRateExceeded"})
+
+
+#: Web Push answers meaning the subscription is gone for good: it is deactivated, never retried.
+WEB_PUSH_GONE_STATUSES = frozenset({404, 410})
+#: Web subscriptions one user can receive on (newest first); bounds the work of one delivery.
+WEB_PUSH_MAX_SUBSCRIPTIONS_PER_USER = 20
+#: How long a push service may hold the message for an offline browser.
+WEB_PUSH_TTL_SECONDS = 24 * 60 * 60
+
+#: Delivery channels a queued push targets. ``None`` (messages queued before channels existed) means every channel.
+CHANNEL_EXPO = "expo"
+CHANNEL_WEB = "web"
+
+
+def web_push_configured() -> bool:
+    return bool(getattr(settings, "WEB_PUSH_ENABLED", False))
+
+
+def push_channels() -> list[str]:
+    """Channels switched on by configuration. Expo keeps its ``PUSH_NOTIFICATIONS_ENABLED`` switch; browser push is
+    on whenever the VAPID settings are complete, independent of Expo."""
+
+    channels = []
+    if getattr(settings, "PUSH_NOTIFICATIONS_ENABLED", False):
+        channels.append(CHANNEL_EXPO)
+    if web_push_configured():
+        channels.append(CHANNEL_WEB)
+    return channels
+
+
+def _push_data(notification: Notification, data: dict | None) -> dict:
+    """Data sent with a push: the caller's data plus what a client needs to route the tap."""
+
+    merged: dict[str, Any] = dict(data or {})
+    merged.setdefault("notification_id", notification.pk)
+    merged.setdefault("type", notification.type)
+    if notification.deep_link:
+        merged.setdefault("deep_link", notification.deep_link)
+    # Arabic stays in the push ``title``/``body``; the localized variants let a client pick the user's language.
+    for field in ("title_ar", "title_en", "body_ar", "body_en"):
+        value = getattr(notification, field, "")
+        if value:
+            merged.setdefault(field, value)
+    return merged
 
 
 class PushDeliveryTransientError(RuntimeError):
@@ -54,11 +103,13 @@ class NotificationService:
             data=data or {},
             **kwargs,
         )
-        if getattr(settings, "PUSH_NOTIFICATIONS_ENABLED", False) and preference.push_enabled:
+        channels = push_channels()
+        if channels and preference.push_enabled:
             from .tasks import deliver_push_notification
 
+            push_data = _push_data(notification, data)
             transaction.on_commit(
-                lambda: deliver_push_notification.delay(user.id, title, body, data or {}),
+                lambda: deliver_push_notification.delay(user.id, title, body, push_data, channels=channels),
                 robust=True,
             )
         return notification
@@ -79,10 +130,12 @@ class NotificationService:
             if preferences.get(user.id, None) is None or preferences[user.id].allows(type)
         ]
         created = Notification.objects.bulk_create(notifications)
-        if getattr(settings, "PUSH_NOTIFICATIONS_ENABLED", False):
+        channels = push_channels()
+        if channels:
             from .tasks import deliver_push_notification
 
-            created_user_ids = {notification.user_id for notification in created}
+            created_by_user = {notification.user_id: notification for notification in created}
+            created_user_ids = set(created_by_user)
             for user in users:
                 if user.id not in created_user_ids:
                     continue
@@ -90,7 +143,15 @@ class NotificationService:
                 if preference is not None and not preference.push_enabled:
                     continue  # the single-user path honours this; campaigns must too
                 transaction.on_commit(
-                    partial(deliver_push_notification.delay, user.id, title, body, data or {}), robust=True
+                    partial(
+                        deliver_push_notification.delay,
+                        user.id,
+                        title,
+                        body,
+                        _push_data(created_by_user[user.id], data),
+                        channels=channels,
+                    ),
+                    robust=True,
                 )
         return created
 
@@ -257,15 +318,47 @@ class PushNotificationService:
 
     @staticmethod
     def send_to_user(
-        user, title: str, body: str, data: dict | None = None, *, only_tokens: Iterable[str] | None = None
+        user,
+        title: str,
+        body: str,
+        data: dict | None = None,
+        *,
+        only_tokens: Iterable[str] | None = None,
+        channels: Iterable[str] | None = None,
     ) -> bool:
-        tokens = PushNotificationService.active_tokens([user.pk], limit=100, only=only_tokens)
-        if not tokens:
-            return False
-        sent = PushNotificationService._send_expo(tokens, title, body, data)
-        if sent:
-            DeviceToken.objects.filter(token__in=tokens, is_active=True).update(last_used_at=timezone.now())
-        return sent > 0
+        """Deliver to the user's Expo tokens and browser subscriptions.
+
+        ``only_tokens`` restricts a retry to exactly the recipients (Expo tokens or web endpoints) that still need
+        it. A transient failure in either channel is raised only after both were attempted, carrying the combined
+        list, so a recipient that already got the message is never retried.
+        """
+
+        wanted = None if channels is None else set(channels)
+        only = None if only_tokens is None else list(only_tokens)
+        delivered = False
+        retry: list[str] = []
+        reasons: list[str] = []
+        if wanted is None or CHANNEL_EXPO in wanted:
+            tokens = PushNotificationService.active_tokens([user.pk], limit=100, only=only)
+            if tokens:
+                try:
+                    sent = PushNotificationService._send_expo(tokens, title, body, data)
+                except PushDeliveryTransientError as exc:
+                    retry.extend(exc.tokens)
+                    reasons.append(exc.reason)
+                else:
+                    if sent:
+                        DeviceToken.objects.filter(token__in=tokens, is_active=True).update(last_used_at=timezone.now())
+                    delivered = sent > 0
+        if (wanted is None or CHANNEL_WEB in wanted) and web_push_configured():
+            try:
+                delivered = WebPushService.send_to_user(user, title, body, data, only=only) > 0 or delivered
+            except PushDeliveryTransientError as exc:
+                retry.extend(exc.tokens)
+                reasons.append(exc.reason)
+        if retry:
+            raise PushDeliveryTransientError(retry, ",".join(sorted(set(reasons))))
+        return delivered
 
     @staticmethod
     def send_to_users(users, title: str, body: str, data: dict | None = None) -> int:
@@ -276,3 +369,143 @@ class PushNotificationService:
         if sent:
             DeviceToken.objects.filter(token__in=tokens, is_active=True).update(last_used_at=timezone.now())
         return sent
+
+
+class WebPushService:
+    """Browser Web Push (VAPID) delivery through ``pywebpush``; one HTTP request per subscription.
+
+    Outcomes per subscription: 2xx delivered (failure counter reset); 404/410 the subscription is gone, so it is
+    deactivated; 429, 5xx, timeouts and connection errors are transient (the subscription's endpoint is returned in
+    ``PushDeliveryTransientError.tokens`` so only it is retried); any other 4xx counts a consecutive failure and
+    deactivates the subscription after ``WEB_PUSH_MAX_CONSECUTIVE_FAILURES``. Endpoints and keys are never logged.
+    """
+
+    @staticmethod
+    def build_payload(title: str, body: str, data: dict | None = None) -> str:
+        data = dict(data or {})
+        url = str(data.get("url") or data.get("deep_link") or "/notifications")
+        if not url.startswith("/") or url.startswith("//"):
+            url = "/notifications"  # the service worker only opens same-origin paths
+        notification_id = data.get("notification_id")
+        kind = str(data.get("type") or "") or "notification"
+        tag = f"panorama-{kind}-{notification_id}" if notification_id else f"panorama-{kind}"
+        payload = {
+            "title": title[:200],
+            "body": body[:1000],
+            "data": {**data, "url": url, "notification_id": notification_id, "type": data.get("type", "")},
+            "tag": tag[:100],
+        }
+        return json.dumps(payload, ensure_ascii=False, default=str)
+
+    @staticmethod
+    def active_subscriptions(user_id: int, *, only: Iterable[str] | None = None) -> list[WebPushSubscription]:
+        queryset = WebPushSubscription.objects.filter(user_id=user_id, is_active=True, is_deleted=False)
+        if only is not None:
+            queryset = queryset.filter(endpoint__in=list(only))
+        return list(queryset.order_by("-updated_at")[:WEB_PUSH_MAX_SUBSCRIPTIONS_PER_USER])
+
+    @staticmethod
+    def _session() -> requests.Session:
+        session = requests.Session()
+        session.max_redirects = 0  # a push service must never bounce us to another host (SSRF)
+        session.trust_env = False
+        return session
+
+    @staticmethod
+    def _post(subscription: WebPushSubscription, payload: str, session: requests.Session) -> None:
+        webpush(
+            subscription_info={
+                "endpoint": subscription.endpoint,
+                "keys": {"p256dh": subscription.p256dh, "auth": subscription.auth},
+            },
+            data=payload,
+            vapid_private_key=settings.WEB_PUSH_VAPID_PRIVATE_KEY,
+            vapid_claims={"sub": settings.WEB_PUSH_VAPID_SUBJECT},  # fresh dict: pywebpush mutates it
+            ttl=WEB_PUSH_TTL_SECONDS,
+            timeout=getattr(settings, "WEB_PUSH_TIMEOUT_SECONDS", 5),
+            requests_session=session,
+        )
+
+    @staticmethod
+    def send_to_user(
+        user, title: str, body: str, data: dict | None = None, *, only: Iterable[str] | None = None
+    ) -> int:
+        """Send to the user's active subscriptions; returns how many accepted the message."""
+
+        subscriptions = WebPushService.active_subscriptions(user.pk, only=only)
+        if not subscriptions:
+            return 0
+        payload = WebPushService.build_payload(title, body, data)
+        session = WebPushService._session()
+        retry: list[str] = []
+        gone: list[int] = []
+        succeeded: list[int] = []
+        failed: list[int] = []
+        codes: Counter[str] = Counter()
+        try:
+            for subscription in subscriptions:
+                try:
+                    validate_endpoint(subscription.endpoint)  # re-check: the allowlist setting may have changed
+                except InvalidWebPushInput:
+                    gone.append(subscription.pk)
+                    codes["endpoint_rejected"] += 1
+                    continue
+                try:
+                    WebPushService._post(subscription, payload, session)
+                except WebPushException as exc:
+                    status = exc.status_code
+                    if status in WEB_PUSH_GONE_STATUSES:
+                        gone.append(subscription.pk)
+                    elif status is not None and (status == 429 or status >= 500):
+                        retry.append(subscription.endpoint)
+                    else:
+                        failed.append(subscription.pk)
+                    codes[f"http_{status}" if status is not None else "rejected"] += 1
+                except requests.exceptions.TooManyRedirects:
+                    failed.append(subscription.pk)
+                    codes["redirect"] += 1
+                except (requests.exceptions.RequestException, TimeoutError, OSError) as exc:
+                    retry.append(subscription.endpoint)
+                    codes["unreachable"] += 1
+                    logger.warning("Web push service unreachable", extra={"failure_class": type(exc).__name__})
+                except (ValueError, TypeError) as exc:  # malformed key material
+                    failed.append(subscription.pk)
+                    codes["invalid_subscription"] += 1
+                    logger.warning("Web push subscription unusable", extra={"failure_class": type(exc).__name__})
+                else:
+                    succeeded.append(subscription.pk)
+        finally:
+            session.close()
+        WebPushService._record_outcomes(succeeded=succeeded, gone=gone, failed=failed)
+        if codes:
+            logger.warning(
+                "Web push delivery finished with errors",
+                extra={
+                    "event": "web_push_delivery_errors",
+                    "accepted": len(succeeded),
+                    "deactivated": len(gone),
+                    "retry": len(retry),
+                    "error_codes": dict(codes),
+                },
+            )
+        if retry:
+            raise PushDeliveryTransientError(retry, ",".join(sorted(codes)))
+        return len(succeeded)
+
+    @staticmethod
+    def _record_outcomes(*, succeeded: list[int], gone: list[int], failed: list[int]) -> None:
+        now = timezone.now()
+        if succeeded:
+            WebPushSubscription.objects.filter(pk__in=succeeded).update(
+                last_used_at=now, failure_count=0, updated_at=now
+            )
+        if gone:
+            WebPushSubscription.objects.filter(pk__in=gone).update(is_active=False, updated_at=now)
+        if failed:
+            WebPushSubscription.objects.filter(pk__in=failed).update(
+                failure_count=F("failure_count") + 1, updated_at=now
+            )
+            limit = max(1, int(getattr(settings, "WEB_PUSH_MAX_CONSECUTIVE_FAILURES", 5)))
+            WebPushSubscription.objects.filter(pk__in=failed, failure_count__gte=limit).update(
+                is_active=False, updated_at=now
+            )
