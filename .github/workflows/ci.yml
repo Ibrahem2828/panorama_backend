@@ -90,7 +90,10 @@ jobs:
             coverage.xml
             htmlcov/
       - name: Dependency audit
-        run: pip-audit -r requirements.lock
+        # GHSA-8pqf-f4m5-798g (CVE-2026-106454): ReDoS in twisted.mail.imap4 (the IMAP server). Panorama only uses Twisted
+        # through daphne (HTTP/WebSocket) and never imports twisted.mail; no fixed release exists. Remove the ignore once
+        # Twisted ships a fix.
+        run: pip-audit -r requirements.lock --ignore-vuln GHSA-8pqf-f4m5-798g
       - name: Build production image
         run: |
           docker build --pull \
