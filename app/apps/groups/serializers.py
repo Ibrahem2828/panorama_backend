@@ -185,6 +185,10 @@ class WhatsAppChannelUpdateSerializer(serializers.Serializer):
         return ExternalChannelService.validate_whatsapp_url(value)
 
 
+class ExternalChannelAppLinkSerializer(serializers.Serializer):
+    app_url = serializers.CharField(read_only=True)
+
+
 class ExternalChannelTicketSerializer(serializers.Serializer):
     open_url = serializers.URLField(read_only=True)
     expires_at = serializers.DateTimeField(read_only=True)

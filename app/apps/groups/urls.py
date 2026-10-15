@@ -12,6 +12,7 @@ from .views import (
     GroupDetailViewSet,
     GroupJoinView,
     GroupLeaveView,
+    GroupWhatsAppLaunchView,
     GroupWhatsAppTicketView,
     MembershipRoleUpdateView,
     MyGroupViewSet,
@@ -31,6 +32,7 @@ urlpatterns = [
     path("groups/<int:pk>/join/", GroupJoinView.as_view(), name="group-join"),
     path("groups/<int:pk>/leave/", GroupLeaveView.as_view(), name="group-leave"),
     path("groups/<int:pk>/whatsapp-ticket/", GroupWhatsAppTicketView.as_view(), name="group-whatsapp-ticket"),
+    path("groups/<int:pk>/whatsapp-launch/", GroupWhatsAppLaunchView.as_view(), name="group-whatsapp-launch"),
     path("external-channels/open/<uuid:token>/", ExternalChannelRedirectView.as_view(), name="external-channel-open"),
     *dashboard_router.urls,
     path(

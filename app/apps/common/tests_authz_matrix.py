@@ -107,6 +107,7 @@ ROUTE_KINDS: dict[str, str] = {
     "groups/{pk}/join/": STUDENT,
     "groups/{pk}/leave/": STUDENT,
     "groups/{pk}/whatsapp-ticket/": STUDENT,
+    "groups/{pk}/whatsapp-launch/": STUDENT,
     "groups/{group_id}/chat-ticket/": AUTH,
     "groups/{group_id}/messages/": AUTH,
     "groups/{group_id}/messages/{pk}/": AUTH,

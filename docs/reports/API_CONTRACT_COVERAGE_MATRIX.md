@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 282
+**Operations:** 283
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -216,6 +216,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_groups_retrieve | GET | /api/v1/groups/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_join_create | POST | /api/v1/groups/{id}/join/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_leave_create | POST | /api/v1/groups/{id}/leave/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_groups_whatsapp_launch_create | POST | /api/v1/groups/{id}/whatsapp-launch/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_whatsapp_ticket_create | POST | /api/v1/groups/{id}/whatsapp-ticket/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_health_retrieve | GET | /api/v1/health/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_health_db_retrieve | GET | /api/v1/health/db/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |

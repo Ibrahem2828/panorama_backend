@@ -11126,6 +11126,45 @@
                 }
             }
         },
+        "/api/v1/groups/{id}/whatsapp-launch/": {
+            "post": {
+                "operationId": "v1_groups_whatsapp_launch_create",
+                "description": "Web clients: returns the ``whatsapp://`` deep link so the app opens straight into the group/chat.\n\nThe https invite link is never returned, shown or put in a URL: the client navigates to the app scheme, so no link ever\nappears in the address bar, history or search. Each call is authorised, throttled and audited.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExternalChannelAppLink"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/groups/{id}/whatsapp-ticket/": {
             "post": {
                 "operationId": "v1_groups_whatsapp_ticket_create",
@@ -16883,6 +16922,18 @@
                 ],
                 "type": "string",
                 "description": "* `shown` - shown\n* `dismissed` - dismissed"
+            },
+            "ExternalChannelAppLink": {
+                "type": "object",
+                "properties": {
+                    "app_url": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "app_url"
+                ]
             },
             "ExternalChannelTicket": {
                 "type": "object",
