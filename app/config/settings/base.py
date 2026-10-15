@@ -181,6 +181,7 @@ REST_FRAMEWORK = {
         "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
         "search": config("THROTTLE_SEARCH", default="60/min"),
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
+        "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
     },
 }
 
@@ -469,3 +470,23 @@ EXPO_PUSH_ALLOWED_HOSTS = frozenset(
     for host in config("EXPO_PUSH_ALLOWED_HOSTS", default="exp.host,api.expo.dev").split(",")
     if host.strip()
 )
+
+# Browser Web Push (VAPID) for the student PWA. The feature is configured only when all three values are set.
+# Generate a pair with docs/WEB_PUSH.md; never commit or log the private key.
+WEB_PUSH_VAPID_PUBLIC_KEY = config("WEB_PUSH_VAPID_PUBLIC_KEY", default="").strip()
+WEB_PUSH_VAPID_PRIVATE_KEY = config("WEB_PUSH_VAPID_PRIVATE_KEY", default="").strip()
+WEB_PUSH_VAPID_SUBJECT = config("WEB_PUSH_VAPID_SUBJECT", default="").strip()  # mailto: or https: contact URI
+WEB_PUSH_ENABLED = bool(WEB_PUSH_VAPID_PUBLIC_KEY and WEB_PUSH_VAPID_PRIVATE_KEY and WEB_PUSH_VAPID_SUBJECT)
+# Push-service host suffixes a subscription endpoint may point at (exact host or any subdomain). Add a new browser
+# vendor here instead of changing code.
+WEB_PUSH_ALLOWED_HOST_SUFFIXES = tuple(
+    host.strip().lower().lstrip(".")
+    for host in config(
+        "WEB_PUSH_ALLOWED_HOST_SUFFIXES",
+        default="fcm.googleapis.com,updates.push.services.mozilla.com,push.apple.com,notify.windows.com",
+    ).split(",")
+    if host.strip()
+)
+WEB_PUSH_TIMEOUT_SECONDS = config("WEB_PUSH_TIMEOUT_SECONDS", default=5, cast=int)
+# Consecutive non-retryable 4xx answers (other than 404/410) after which a subscription is deactivated.
+WEB_PUSH_MAX_CONSECUTIVE_FAILURES = config("WEB_PUSH_MAX_CONSECUTIVE_FAILURES", default=5, cast=int)

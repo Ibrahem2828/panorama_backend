@@ -28,6 +28,23 @@ S3_REQUIRED = (
     "S3_REGION",
     "S3_SIGNATURE_VERSION",
 )
+WEB_PUSH_VARS = ("WEB_PUSH_VAPID_PUBLIC_KEY", "WEB_PUSH_VAPID_PRIVATE_KEY", "WEB_PUSH_VAPID_SUBJECT")
+
+
+def web_push_warnings() -> list[str]:
+    """Advisory only: browser push is optional, so a missing or partial configuration never fails the release."""
+
+    present = [name for name in WEB_PUSH_VARS if os.environ.get(name, "").strip()]
+    if not present:
+        return ["Browser Web Push is disabled (WEB_PUSH_VAPID_* not set)."]
+    warnings = []
+    if len(present) != len(WEB_PUSH_VARS):
+        missing = sorted(set(WEB_PUSH_VARS) - set(present))
+        warnings.append("Browser Web Push is disabled: incomplete configuration, missing " + ", ".join(missing) + ".")
+    subject = os.environ.get("WEB_PUSH_VAPID_SUBJECT", "").strip()
+    if subject and not subject.startswith(("mailto:", "https://")):
+        warnings.append("WEB_PUSH_VAPID_SUBJECT should be a mailto: or https:// contact URI.")
+    return warnings
 
 
 class Command(BaseCommand):
@@ -42,6 +59,8 @@ class Command(BaseCommand):
             missing.append("STORAGE_BACKEND(valid value local or s3)")
         if missing:
             raise CommandError("Missing or invalid production configuration: " + ", ".join(sorted(set(missing))))
+        for warning in web_push_warnings():
+            self.stdout.write(self.style.WARNING(f"warning: {warning}"))
         self.stdout.write(
             self.style.SUCCESS(
                 f"Production environment validation passed (storage_backend={storage_backend}; values redacted)."
