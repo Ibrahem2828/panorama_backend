@@ -3,7 +3,8 @@
 Visibility is never decided here. Every type is searched inside the queryset the matching per-resource endpoint
 already serves to the same user, so a search can only ever return what the user could already list:
 
-* subjects      -> active subjects of the student's own major (what ``/majors/{id}/subjects/`` returns for it)
+* subjects      -> active subjects of the student's faculty: faculty-level ones plus those tagged with the
+                   student's own major (what ``/faculties/{id}/subjects/?major=<own major>`` returns for it)
 * lectures      -> ``accessible_lectures_for_user`` (``/lectures/``)
 * groups        -> ``visible_groups_for_student`` (``/groups/``)
 * files         -> ``accessible_files_for_user`` (``/files/``)
@@ -54,11 +55,15 @@ def _match(query: str, *fields: str) -> Q:
 
 def _subjects(user) -> QuerySet:
     profile = getattr(user, "student_profile", None)
-    if user.role != UserRole.STUDENT or not profile or not profile.major_id:
+    if user.role != UserRole.STUDENT or not profile or not profile.faculty_id:
         return Subject.objects.none()
+    major_scope = Q(major__isnull=True)
+    if profile.major_id:
+        major_scope |= Q(major_id=profile.major_id, major__is_active=True)
     return Subject.objects.filter(
-        major_id=profile.major_id,
-        major__is_active=True,
+        major_scope,
+        faculty_id=profile.faculty_id,
+        faculty__is_active=True,
         academic_year__is_active=True,
         semester__is_active=True,
         is_active=True,

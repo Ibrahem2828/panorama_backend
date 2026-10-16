@@ -47,8 +47,8 @@ class SemesterAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "code", "major", "academic_year", "semester", "is_active")
-    list_filter = ("major__faculty__university", "major", "academic_year", "semester", "is_active")
-    search_fields = ("name", "code", "major__name")
-    autocomplete_fields = ("major", "academic_year", "semester")
+    list_display = ("id", "name", "code", "faculty", "major", "academic_year", "semester", "is_active")
+    list_filter = ("faculty__university", "faculty", "major", "academic_year", "semester", "is_active")
+    search_fields = ("name", "code", "faculty__name", "major__name")
+    autocomplete_fields = ("faculty", "major", "academic_year", "semester")
     readonly_fields = ("created_at", "updated_at")

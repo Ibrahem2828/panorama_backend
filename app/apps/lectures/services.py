@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, PermissionDenied
 
@@ -30,15 +31,16 @@ def user_can_view_lecture(user, lecture: Lecture) -> bool:
     return bool(
         profile
         and profile.verification_status == StudentVerificationStatus.APPROVED
-        and profile.major_id == subject.major_id
-        and profile.academic_year_id == subject.academic_year_id
-        and profile.semester_id == subject.semester_id
+        and profile.faculty_id is not None
+        and profile.faculty_id == subject.faculty_id
+        and (subject.major_id is None or subject.major_id == profile.major_id)
     )
 
 
 def accessible_lectures_for_user(user):
     queryset = Lecture.objects.filter(is_deleted=False).select_related(
         "subject",
+        "subject__faculty",
         "subject__major",
         "subject__academic_year",
         "subject__semester",
@@ -51,10 +53,16 @@ def accessible_lectures_for_user(user):
     profile = getattr(user, "student_profile", None)
     if not profile or profile.verification_status != StudentVerificationStatus.APPROVED:
         return queryset.none()
+    if not profile.faculty_id:
+        return queryset.none()
+    # Subjects belong to the faculty; the major is an optional tag. Any year/semester of the faculty is open to
+    # an approved student (a year-2 student may retake a year-1 subject).
+    subject_scope = Q(subject__major__isnull=True)
+    if profile.major_id:
+        subject_scope |= Q(subject__major_id=profile.major_id)
     return queryset.filter(
-        subject__major_id=profile.major_id,
-        subject__academic_year_id=profile.academic_year_id,
-        subject__semester_id=profile.semester_id,
+        subject_scope,
+        subject__faculty_id=profile.faculty_id,
         is_published=True,
         status="ready",
     )

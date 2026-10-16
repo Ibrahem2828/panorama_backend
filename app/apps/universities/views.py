@@ -1,8 +1,12 @@
 from typing import Any
 
+import django_filters
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import filters, permissions
+from rest_framework.exceptions import ValidationError
 
 from apps.accounts.permissions import CanManageAcademic
 from apps.audit.mixins import AuditedModelWriteMixin
@@ -91,7 +95,58 @@ class PublicSemesterViewSet(AcademicQuerysetMixin, StandardReadOnlyModelViewSet)
         return Semester.objects.filter(is_active=True, is_deleted=False)
 
 
+def _public_subjects():
+    return Subject.objects.filter(
+        faculty__is_active=True,
+        academic_year__is_active=True,
+        semester__is_active=True,
+        is_active=True,
+        is_deleted=False,
+    ).select_related("faculty", "faculty__university", "major", "major__faculty", "academic_year", "semester")
+
+
+def _tagged_or_faculty_level(queryset, major_id):
+    """Subjects of that active major plus the faculty-level ones (no specialization)."""
+
+    return queryset.filter(Q(major__isnull=True) | Q(major_id=major_id, major__is_active=True))
+
+
+class PublicSubjectByFacultyViewSet(AcademicQuerysetMixin, StandardReadOnlyModelViewSet):
+    """Subjects of a faculty. ``?major=<id>`` narrows to that major's subjects plus the faculty-level ones."""
+
+    serializer_class = SubjectSerializer
+    permission_classes = [permissions.AllowAny]
+    filterset_fields = ["academic_year", "semester"]
+    search_fields = ["name", "code", "description"]
+
+    @extend_schema(
+        tags=["Universities"],
+        parameters=[
+            OpenApiParameter("major", OpenApiTypes.INT, description="Only faculty-level subjects and this major's."),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Subject.objects.none()
+        queryset = _public_subjects().filter(faculty_id=self.kwargs["faculty_pk"])
+        major = self.request.query_params.get("major")
+        if major:
+            try:
+                major_id = int(major)
+            except ValueError:
+                raise ValidationError({"major": "A valid integer is required."}) from None
+            queryset = _tagged_or_faculty_level(queryset, major_id)
+        else:
+            queryset = queryset.filter(Q(major__isnull=True) | Q(major__is_active=True))
+        return queryset
+
+
 class PublicSubjectByMajorViewSet(AcademicQuerysetMixin, StandardReadOnlyModelViewSet):
+    """Backward-compatible: the major's subjects plus the faculty-level subjects of the same faculty."""
+
     serializer_class = SubjectSerializer
     permission_classes = [permissions.AllowAny]
     filterset_fields = ["academic_year", "semester"]
@@ -100,14 +155,10 @@ class PublicSubjectByMajorViewSet(AcademicQuerysetMixin, StandardReadOnlyModelVi
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Subject.objects.none()
-        return Subject.objects.filter(
-            major_id=self.kwargs["major_pk"],
-            major__is_active=True,
-            academic_year__is_active=True,
-            semester__is_active=True,
-            is_active=True,
-            is_deleted=False,
-        ).select_related("major", "academic_year", "semester")
+        major = Major.objects.filter(pk=self.kwargs["major_pk"], is_active=True, is_deleted=False).first()
+        if major is None:
+            return Subject.objects.none()
+        return _tagged_or_faculty_level(_public_subjects().filter(faculty_id=major.faculty_id), major.pk)
 
 
 class DashboardAcademicMixin(AuditedModelWriteMixin, AcademicQuerysetMixin, StandardModelViewSet):
@@ -155,8 +206,18 @@ class DashboardSemesterViewSet(DashboardAcademicMixin):
     search_fields = ["name"]
 
 
+class DashboardSubjectFilter(django_filters.FilterSet):
+    has_major = django_filters.BooleanFilter(field_name="major", lookup_expr="isnull", exclude=True)
+
+    class Meta:
+        model = Subject
+        fields = ["faculty", "major", "has_major", "academic_year", "semester", "is_active"]
+
+
 class DashboardSubjectViewSet(DashboardAcademicMixin):
-    queryset = Subject.objects.filter(is_deleted=False).select_related("major", "academic_year", "semester")
+    queryset = Subject.objects.filter(is_deleted=False).select_related(
+        "faculty", "faculty__university", "major", "major__faculty", "academic_year", "semester"
+    )
     serializer_class = SubjectSerializer
-    filterset_fields = ["major", "academic_year", "semester", "is_active"]
+    filterset_class = DashboardSubjectFilter
     search_fields = ["name", "code", "description"]

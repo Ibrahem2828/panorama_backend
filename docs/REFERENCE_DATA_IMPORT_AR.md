@@ -16,11 +16,14 @@
 | `universities` | `code` (يُحوَّل لأحرف كبيرة) | `name` فريد |
 | `universities[].faculties` | `code` ضمن الجامعة | **الرمز يجب أن يطابق أول رقم من الرقم الجامعي (1 إلى 7)**: 1 طب بشري، 2 طب أسنان، 3 صيدلة، 4 هندسة معلوماتية، 5 هندسة بترول، 6 إدارة أعمال، 7 هندسة تكنولوجيا البناء والتشييد. هذا ما يربط الطالب بكليته تلقائيًا |
 | `...faculties[].majors` | `code` أو `name` إن لم يوجد رمز | |
-| `...majors[].subjects` | `(major, academic_year, semester, name)` | `academic_year` و`semester` يُكتبان **بالاسم** ويجب أن يكونا في الملف أو موجودين مسبقًا في القاعدة |
+| `...faculties[].subjects` | `(faculty, major, academic_year, semester, name)` | **المواد تتبع الكلية**، والاختصاص وسم اختياري: التخصص يبدأ من السنة الثالثة ولا ترتبط به كل المواد. الحقول: `code`, `name`, `academic_year`, `semester`, `description`, `is_active`، و`major` اختياري (رمز اختصاص أو اسمه ضمن **نفس الكلية**؛ إن حُذف تكون المادة عامة لكل طلاب الكلية). يستطيع الطالب في أي سنة دراسة مواد أي سنة/فصل من كليته، والمادة المرتبطة باختصاص تظهر لطلاب ذلك الاختصاص فقط |
+| `...majors[].subjects` | `(faculty, major, academic_year, semester, name)` | الشكل القديم ما زال مدعومًا ويعادل مادة في `faculties[].subjects` بوسم `major` هو الاختصاص الحاوي. `academic_year` و`semester` يُكتبان **بالاسم** ويجب أن يكونا في الملف أو موجودين مسبقًا في القاعدة |
 | `print_pricing_rules` | `name` | `price_per_sheet` و`setup_fee` ≥ 0 بخانتين عشريتين كحد أقصى؛ `effective_from` إلزامي و`effective_to` بعده؛ لا يُسمح بقاعدتين فعّالتين متداخلتين لنفس (color_mode, paper_size, sides) |
 | `binding_prices` | `binding` (`none/staple/spiral/thermal`) | `price_per_copy` ≥ 0 |
 | `pickup_locations` | `name` | |
 | `terms_versions` / `privacy_versions` | `version` | حقول: `content_url` (رابط https إلزامي)، `published_at`، `is_active`، `requires_reacceptance` (true يُجبر المستخدمين على إعادة القبول). النموذج يحفظ رابط المحتوى فقط ولا يحفظ نصًا. "الحالية" = أحدث `published_at` بين النسخ الفعّالة |
+
+ملاحظة: رمز المادة (`code`) فريد **ضمن الكلية** (في كل المواد العامة وذات الاختصاص معًا)، ومفتاح الاسم فريد ضمن (الكلية، الاختصاص أو بدونه، السنة، الفصل). الاختصاصات في `majors` تُنشأ قبل المواد، لذا يمكن لمادة عامة أن تشير إلى اختصاص مذكور في نفس الملف.
 
 التواريخ بصيغة ISO 8601 مثل `2026-09-01T00:00:00Z` أو `2026-09-01`.
 

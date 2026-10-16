@@ -101,7 +101,13 @@ class Semester(BaseModel):
 
 
 class Subject(BaseModel):
-    major = models.ForeignKey(Major, on_delete=models.CASCADE, related_name="subjects")
+    """A subject belongs to a faculty; ``major`` is an optional specialization tag.
+
+    Specializations only start in year 3 and only some subjects belong to one, so ``major`` may be empty.
+    """
+
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name="subjects")
+    major = models.ForeignKey(Major, on_delete=models.CASCADE, related_name="subjects", null=True, blank=True)
     academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, related_name="subjects")
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name="subjects")
     name = models.CharField(max_length=255)
@@ -110,22 +116,34 @@ class Subject(BaseModel):
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ["major__name", "academic_year__order", "semester__order", "name"]
+        ordering = ["faculty__name", "academic_year__order", "semester__order", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["major", "academic_year", "semester", "name"],
+                fields=["faculty", "major", "academic_year", "semester", "name"],
+                condition=models.Q(major__isnull=False),
                 name="unique_subject_name_per_major_year_semester",
             ),
             models.UniqueConstraint(
-                fields=["major", "code"],
+                fields=["faculty", "academic_year", "semester", "name"],
+                condition=models.Q(major__isnull=True),
+                name="unique_subject_name_per_faculty_year_semester_no_major",
+            ),
+            models.UniqueConstraint(
+                fields=["faculty", "code"],
                 condition=~models.Q(code=""),
-                name="unique_subject_code_per_major",
+                name="unique_subject_code_per_faculty",
             ),
         ]
         indexes = [
-            models.Index(fields=["major", "academic_year", "semester", "is_active"]),
+            models.Index(fields=["faculty", "academic_year", "semester", "is_active"]),
+            models.Index(fields=["faculty", "major", "is_active"]),
             models.Index(fields=["code"]),
         ]
+
+    def clean(self):
+        super().clean()
+        if self.major is not None and self.faculty_id and self.major.faculty_id != self.faculty_id:
+            raise ValidationError({"major": "Major does not belong to the subject's faculty."})
 
     def save(self, *args, **kwargs):
         self.code = self.code.upper().strip()
@@ -152,7 +170,10 @@ def validate_academic_hierarchy(
     if major and university and major.faculty.university_id != university.id:
         errors["major"] = "Major does not belong to the selected university."
     if subject:
-        if major and subject.major_id != major.id:
+        # A group/file may pin only some of the hierarchy: compare only what is pinned.
+        if faculty and subject.faculty_id != faculty.id:
+            errors["subject"] = "Subject does not belong to the selected faculty."
+        if major and subject.major_id is not None and subject.major_id != major.id:
             errors["subject"] = "Subject does not belong to the selected major."
         if academic_year and subject.academic_year_id != academic_year.id:
             errors["subject"] = "Subject does not belong to the selected academic year."

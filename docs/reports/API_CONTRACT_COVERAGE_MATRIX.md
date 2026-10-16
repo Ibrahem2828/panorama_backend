@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 283
+**Operations:** 284
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -187,6 +187,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_dashboard_verifications_reject_create | POST | /api/v1/dashboard/verifications/{id}/reject/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/VerificationReviewRequest; application/x-www-form-urlencoded: #/components/schemas/VerificationReviewRequest; multipart/form-data: #/components/schemas/VerificationReviewRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_external_channels_open_retrieve | GET | /api/v1/external-channels/open/{token}/ | Public | Object/endpoint policy — REVIEW | — | — | 302 | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_faculties_majors_list | GET | /api/v1/faculties/{faculty_pk}/majors/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_faculties_subjects_list | GET | /api/v1/faculties/{faculty_pk}/subjects/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_feedback_create | POST | /api/v1/feedback/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/AppFeedbackRequest; application/x-www-form-urlencoded: #/components/schemas/AppFeedbackRequest; multipart/form-data: #/components/schemas/AppFeedbackRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_feedback_mine_list | GET | /api/v1/feedback/mine/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_feedback_mine_retrieve | GET | /api/v1/feedback/mine/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
