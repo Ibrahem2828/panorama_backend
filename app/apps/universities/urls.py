@@ -14,6 +14,7 @@ from .views import (
     PublicFacultyByUniversityViewSet,
     PublicMajorByFacultyViewSet,
     PublicSemesterViewSet,
+    PublicSubjectByFacultyViewSet,
     PublicSubjectByMajorViewSet,
     PublicUniversityViewSet,
 )
@@ -53,6 +54,11 @@ urlpatterns = [
         "faculties/<int:faculty_pk>/majors/",
         PublicMajorByFacultyViewSet.as_view({"get": "list"}),
         name="faculty-majors",
+    ),
+    path(
+        "faculties/<int:faculty_pk>/subjects/",
+        PublicSubjectByFacultyViewSet.as_view({"get": "list"}),
+        name="faculty-subjects",
     ),
     path(
         "majors/<int:major_pk>/subjects/",

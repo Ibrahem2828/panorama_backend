@@ -82,6 +82,7 @@ ROUTE_KINDS: dict[str, str] = {
     "semesters/{pk}/": PUBLIC,
     "universities/{university_pk}/faculties/": PUBLIC,
     "faculties/{faculty_pk}/majors/": PUBLIC,
+    "faculties/{faculty_pk}/subjects/": PUBLIC,
     "majors/{major_pk}/subjects/": PUBLIC,
     "mobile/bootstrap/": PUBLIC,
     "mobile/update-policy/": PUBLIC,
@@ -579,7 +580,9 @@ def world(db) -> World:
     other_major = Major.objects.create(faculty=faculty, name="Networks", code="NET")
     year = AcademicYear.objects.create(name="Year 1", order=1)
     semester = Semester.objects.create(name="Semester 1", order=1)
-    subject = Subject.objects.create(major=major, academic_year=year, semester=semester, name="Algo", code="ALG")
+    subject = Subject.objects.create(
+        faculty=faculty, major=major, academic_year=year, semester=semester, name="Algo", code="ALG"
+    )
     w.university, w.major, w.other_major = university, major, other_major
 
     w.admin = _user(UserRole.ADMIN, 50)
