@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -79,6 +79,11 @@ SUBJECT_FIELDS = {
     "semester": Spec("str", True, max_length=100),  # reference by Semester.name
     "description": Spec("str", default="", max_length=5000),
     "is_active": Spec("bool", default=True),
+}
+FACULTY_SUBJECT_FIELDS = {
+    **SUBJECT_FIELDS,
+    # Optional specialization tag: code or name of a major of the same faculty. Omitted/null = no specialization.
+    "major": Spec("str", default=None, max_length=255, nullable=True),
 }
 RULE_FIELDS = {
     "name": Spec("str", True, max_length=150),
@@ -355,6 +360,23 @@ def validate_document(document: Any) -> ParsedData:
 SEMESTER_FIELDS = YEAR_FIELDS
 
 
+def _unique_subject_codes(faculty: dict[str, Any], fpath: str, errors: list[str]) -> None:
+    """A subject code is unique per faculty, across the faculty-level and the nested per-major subjects."""
+
+    seen: dict[str, str] = {}
+    located = [(f"{fpath}.subjects[{i}]", r) for i, r in enumerate(faculty["subjects"])]
+    for mi, major in enumerate(faculty["majors"]):
+        located += [(f"{fpath}.majors[{mi}].subjects[{i}]", r) for i, r in enumerate(major["subjects"])]
+    for where, record in located:
+        code = (record.get("code") or "").upper()
+        if not code:
+            continue
+        if code in seen:
+            errors.append(f"{where}: duplicate subject code {code!r} (first used at {seen[code]})")
+        else:
+            seen[code] = where
+
+
 def _parse_universities(document: dict[str, Any], data: ParsedData, errors: list[str]) -> None:
     for ui, raw_u in enumerate(_list(document.get("universities"), "universities", errors)):
         upath = f"universities[{ui}]"
@@ -364,8 +386,9 @@ def _parse_universities(document: dict[str, Any], data: ParsedData, errors: list
             _list(raw_u.get("faculties") if isinstance(raw_u, dict) else None, f"{upath}.faculties", errors)
         ):
             fpath = f"{upath}.faculties[{fi}]"
-            faculty = _record(raw_f, FACULTY_FIELDS, fpath, errors, frozenset({"majors"}))
+            faculty = _record(raw_f, FACULTY_FIELDS, fpath, errors, frozenset({"majors", "subjects"}))
             faculty["majors"] = []
+            faculty["subjects"] = []
             raw_majors = raw_f.get("majors") if isinstance(raw_f, dict) else None
             for mi, raw_m in enumerate(_list(raw_majors, f"{fpath}.majors", errors)):
                 mpath = f"{fpath}.majors[{mi}]"
@@ -383,14 +406,18 @@ def _parse_universities(document: dict[str, Any], data: ParsedData, errors: list
                     f"{mpath}.subjects",
                     errors,
                 )
-                _unique(
-                    major["subjects"],
-                    lambda r: (r["code"] or "").upper() or None,
-                    "subject code",
-                    f"{mpath}.subjects",
-                    errors,
-                )
                 faculty["majors"].append(major)
+            raw_faculty_subjects = raw_f.get("subjects") if isinstance(raw_f, dict) else None
+            for si, raw_s in enumerate(_list(raw_faculty_subjects, f"{fpath}.subjects", errors)):
+                faculty["subjects"].append(_record(raw_s, FACULTY_SUBJECT_FIELDS, f"{fpath}.subjects[{si}]", errors))
+            _unique(
+                faculty["subjects"],
+                lambda r: ((r["major"] or "").casefold(), r["academic_year"], r["semester"], r["name"]),
+                "subject (major, year, semester, name)",
+                f"{fpath}.subjects",
+                errors,
+            )
+            _unique_subject_codes(faculty, fpath, errors)
             _unique(faculty["majors"], lambda r: r["name"], "major name", f"{fpath}.majors", errors)
             _unique(
                 faculty["majors"], lambda r: (r["code"] or "").upper() or None, "major code", f"{fpath}.majors", errors
@@ -550,6 +577,46 @@ class _Applier:
             return cache[name]
         return model._default_manager.filter(name=name, is_deleted=False).first()
 
+    def _faculty_subjects(
+        self,
+        faculty: Faculty,
+        raw: dict[str, Any],
+        path: str,
+        years: dict[str, AcademicYear],
+        semesters: dict[str, Semester],
+    ) -> None:
+        """Faculty-level subjects (``faculties[].subjects[]``); ``major`` optionally tags one of the faculty's majors."""
+
+        for si, s in enumerate(raw["subjects"]):
+            spath = f"{path}[{si}]"
+            major = None
+            if s["major"]:
+                major = self._resolve_major(faculty, s["major"], f"{spath}.major")
+                if major is None:
+                    continue
+            year = self._lookup_ref(years, AcademicYear, s["academic_year"])
+            semester = self._lookup_ref(semesters, Semester, s["semester"])
+            if year is None:
+                self.errors.append(f"{spath}.academic_year: unknown academic year {s['academic_year']!r}")
+            if semester is None:
+                self.errors.append(f"{spath}.semester: unknown semester {s['semester']!r}")
+            if year is None or semester is None:
+                continue
+            self.upsert(
+                "subjects",
+                Subject,
+                {"faculty": faculty, "major": major, "academic_year": year, "semester": semester, "name": s["name"]},
+                {"code": (s["code"] or "").upper(), "description": s["description"], "is_active": s["is_active"]},
+                spath,
+            )
+
+    def _resolve_major(self, faculty: Faculty, ref: str, path: str) -> Major | None:
+        candidates = Major.objects.filter(faculty=faculty, is_deleted=False)
+        major = candidates.filter(code=ref.upper()).first() or candidates.filter(name=ref).first()
+        if major is None:
+            self.errors.append(f"{path}: {ref!r} is not a major (code or name) of this faculty")
+        return major
+
     def _universities(self, years: dict[str, AcademicYear], semesters: dict[str, Semester]) -> None:
         for ui, u in enumerate(self.data.universities):
             upath = f"universities[{ui}]"
@@ -600,7 +667,13 @@ class _Applier:
                         self.upsert(
                             "subjects",
                             Subject,
-                            {"major": major, "academic_year": year, "semester": semester, "name": s["name"]},
+                            {
+                                "faculty": faculty,
+                                "major": major,
+                                "academic_year": year,
+                                "semester": semester,
+                                "name": s["name"],
+                            },
                             {
                                 "code": (s["code"] or "").upper(),
                                 "description": s["description"],
@@ -608,6 +681,8 @@ class _Applier:
                             },
                             spath,
                         )
+                # After the majors so a faculty-level subject can tag a major created by this same file.
+                self._faculty_subjects(cast(Faculty, faculty), f, f"{fpath}.subjects", years, semesters)
 
 
 def import_reference_data(document: Any, *, dry_run: bool = False) -> ImportReport:

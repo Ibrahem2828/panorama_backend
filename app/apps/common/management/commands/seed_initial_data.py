@@ -84,13 +84,31 @@ class Command(BaseCommand):
         for code, names in samples.items():
             for idx, subject_name in enumerate(names, start=1):
                 subject, _ = Subject.objects.update_or_create(
-                    major=majors[code],
-                    academic_year=years[1],
-                    semester=semesters[1],
+                    faculty=majors[code].faculty,
                     code=f"{code}{idx}",
-                    defaults={"name": subject_name, "description": "Demo subject", "is_active": True},
+                    defaults={
+                        "major": majors[code],
+                        "academic_year": years[1],
+                        "semester": semesters[1],
+                        "name": subject_name,
+                        "description": "Demo subject",
+                        "is_active": True,
+                    },
                 )
                 subjects[(code, idx)] = subject
+            # A faculty-level subject: tied to the faculty only, with no specialization (open to every major).
+            Subject.objects.update_or_create(
+                faculty=majors[code].faculty,
+                code=f"{code}G1",
+                defaults={
+                    "major": None,
+                    "academic_year": years[1],
+                    "semester": semesters[1],
+                    "name": "لغة إنكليزية 1",
+                    "description": "Demo faculty-level subject",
+                    "is_active": True,
+                },
+            )
 
         password = secrets.token_urlsafe(32)
         users = {

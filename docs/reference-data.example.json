@@ -45,6 +45,24 @@
                 }
               ]
             }
+          ],
+          "subjects": [
+            {
+              "code": "EX-G01",
+              "name": "EXAMPLE FACULTY-LEVEL SUBJECT (no specialization)",
+              "academic_year": "EXAMPLE YEAR 1",
+              "semester": "EXAMPLE SEMESTER 1",
+              "description": "FAKE placeholder - open to every student of the faculty",
+              "is_active": true
+            },
+            {
+              "code": "EX-G02",
+              "name": "EXAMPLE SPECIALIZATION SUBJECT",
+              "academic_year": "EXAMPLE YEAR 2",
+              "semester": "EXAMPLE SEMESTER 1",
+              "major": "EX-MAJ-1",
+              "is_active": true
+            }
           ]
         },
         {
