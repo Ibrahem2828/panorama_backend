@@ -4588,6 +4588,14 @@ paths:
         schema:
           type: integer
       - in: query
+        name: faculty
+        schema:
+          type: integer
+      - in: query
+        name: has_major
+        schema:
+          type: boolean
+      - in: query
         name: is_active
         schema:
           type: boolean
@@ -5979,6 +5987,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedMajorList'
+          description: ''
+  /api/v1/faculties/{faculty_pk}/subjects/:
+    get:
+      operationId: v1_faculties_subjects_list
+      description: Subjects of a faculty. ``?major=<id>`` narrows to that major's
+        subjects plus the faculty-level ones.
+      parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: integer
+      - in: path
+        name: faculty_pk
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: major
+        schema:
+          type: integer
+        description: Only faculty-level subjects and this major's.
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      - in: query
+        name: semester
+        schema:
+          type: integer
+      tags:
+      - Universities
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubjectList'
           description: ''
   /api/v1/feedback/:
     post:
@@ -7584,11 +7653,8 @@ paths:
   /api/v1/majors/{major_pk}/subjects/:
     get:
       operationId: v1_majors_subjects_list
-      description: |-
-        List/retrieve only.
-
-        DRF routers discover actions by attribute. Write methods must never be added
-        to this class, otherwise a nominally read-only resource becomes writable.
+      description: 'Backward-compatible: the major''s subjects plus the faculty-level
+        subjects of the same faculty.'
       parameters:
       - in: query
         name: academic_year
@@ -13895,9 +13961,16 @@ components:
           maxLength: 64
     PatchedSubjectRequest:
       type: object
+      description: |-
+        A subject belongs to a faculty; ``major`` is an optional specialization tag.
+
+        On write, ``faculty`` is required unless ``major`` is given (the faculty is then derived from the major).
       properties:
+        faculty:
+          type: integer
         major:
           type: integer
+          nullable: true
         academic_year:
           type: integer
         semester:
@@ -14848,15 +14921,35 @@ components:
         * `suspended` - Suspended
     Subject:
       type: object
+      description: |-
+        A subject belongs to a faculty; ``major`` is an optional specialization tag.
+
+        On write, ``faculty`` is required unless ``major`` is given (the faculty is then derived from the major).
       properties:
         id:
           type: integer
           readOnly: true
-        major:
+        faculty:
           type: integer
-        major_name:
+        faculty_name:
           type: string
           readOnly: true
+        faculty_detail:
+          allOf:
+          - $ref: '#/components/schemas/SubjectFaculty'
+          readOnly: true
+        major:
+          type: integer
+          nullable: true
+        major_name:
+          type: string
+          nullable: true
+          readOnly: true
+        major_detail:
+          allOf:
+          - $ref: '#/components/schemas/Major'
+          readOnly: true
+          nullable: true
         academic_year:
           type: integer
         academic_year_name:
@@ -14888,20 +14981,50 @@ components:
       required:
       - academic_year
       - academic_year_name
-      - code
       - created_at
+      - faculty_detail
+      - faculty_name
       - id
-      - major
+      - major_detail
       - major_name
       - name
       - semester
       - semester_name
       - updated_at
+    SubjectFaculty:
+      type: object
+      description: Compact faculty summary embedded in a subject.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        university:
+          allOf:
+          - $ref: '#/components/schemas/University'
+          readOnly: true
+      required:
+      - code
+      - id
+      - name
+      - university
     SubjectRequest:
       type: object
+      description: |-
+        A subject belongs to a faculty; ``major`` is an optional specialization tag.
+
+        On write, ``faculty`` is required unless ``major`` is given (the faculty is then derived from the major).
       properties:
+        faculty:
+          type: integer
         major:
           type: integer
+          nullable: true
         academic_year:
           type: integer
         semester:
@@ -14919,8 +15042,6 @@ components:
           type: boolean
       required:
       - academic_year
-      - code
-      - major
       - name
       - semester
     SupportTicketAddMessage:
@@ -15330,6 +15451,7 @@ components:
           readOnly: true
         major:
           type: integer
+          nullable: true
         major_detail:
           allOf:
           - $ref: '#/components/schemas/Major'
@@ -15413,7 +15535,6 @@ components:
       - faculty_detail
       - has_card_image
       - id
-      - major
       - major_detail
       - rejection_reason
       - reviewed_at
@@ -15436,6 +15557,7 @@ components:
           type: integer
         major:
           type: integer
+          nullable: true
         academic_year:
           type: integer
         semester:
@@ -15453,7 +15575,6 @@ components:
       - academic_year
       - card_image
       - faculty
-      - major
       - student_number
       - university
     VerificationRequestStatusEnum:
@@ -15500,6 +15621,7 @@ components:
           readOnly: true
         major:
           type: integer
+          nullable: true
         major_detail:
           allOf:
           - $ref: '#/components/schemas/Major'
@@ -15575,7 +15697,6 @@ components:
       - faculty_detail
       - has_card_image
       - id
-      - major
       - major_detail
       - rejection_reason
       - reviewed_at
