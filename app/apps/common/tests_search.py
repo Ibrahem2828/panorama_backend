@@ -88,20 +88,30 @@ def world(db):
     w.admin = _user("search-admin@example.test", UserRole.ADMIN, 1)
 
     w.subject = Subject.objects.create(
-        major=w.major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} mechanics", code="QM1"
+        faculty=w.fac, major=w.major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} mechanics", code="QM1"
     )
     w.subject_hidden = {
         "inactive": Subject.objects.create(
-            major=w.major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} inactive", is_active=False
+            faculty=w.fac,
+            major=w.major,
+            academic_year=w.year,
+            semester=w.sem,
+            name=f"{KEYWORD} inactive",
+            is_active=False,
         ),
         "deleted": Subject.objects.create(
-            major=w.major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} deleted", is_deleted=True
+            faculty=w.fac,
+            major=w.major,
+            academic_year=w.year,
+            semester=w.sem,
+            name=f"{KEYWORD} deleted",
+            is_deleted=True,
         ),
         "other_major": Subject.objects.create(
-            major=w.other_major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} chemistry"
+            faculty=w.fac, major=w.other_major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} chemistry"
         ),
         "foreign": Subject.objects.create(
-            major=w.foreign_major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} foreign"
+            faculty=w.other_fac, major=w.foreign_major, academic_year=w.year, semester=w.sem, name=f"{KEYWORD} foreign"
         ),
     }
 

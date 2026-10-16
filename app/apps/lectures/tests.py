@@ -62,7 +62,9 @@ def academic_structure(db):
     other_major = Major.objects.create(faculty=faculty, name="Networks", code="NET")
     year = AcademicYear.objects.create(name="Year 1", order=11)
     semester = Semester.objects.create(name="Semester 1", order=11)
-    subject = Subject.objects.create(major=major, academic_year=year, semester=semester, name="Algorithms", code="ALG")
+    subject = Subject.objects.create(
+        faculty=faculty, major=major, academic_year=year, semester=semester, name="Algorithms", code="ALG"
+    )
     return {
         "university": university,
         "faculty": faculty,

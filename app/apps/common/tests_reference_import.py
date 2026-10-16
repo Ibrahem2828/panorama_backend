@@ -64,7 +64,9 @@ def test_example_file_is_valid_and_creates_everything():
     assert University.objects.get(code="EXAMPLE").name == "EXAMPLE UNIVERSITY"
     assert sorted(Faculty.objects.values_list("code", flat=True)) == ["1", "2"]
     assert Major.objects.count() == 2
-    assert Subject.objects.count() == 2
+    assert Subject.objects.count() == 4
+    assert Subject.objects.filter(major__isnull=True).count() == 1
+    assert Subject.objects.filter(code="EX-G02", major__code="EX-MAJ-1").exists()
     subject = Subject.objects.get(code="EX-102")
     assert subject.academic_year.name == "EXAMPLE YEAR 1"
     assert subject.semester.name == "EXAMPLE SEMESTER 2"
