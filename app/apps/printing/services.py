@@ -51,6 +51,16 @@ class PrintBindingUnavailable(APIException):
     api_code = "PRINT_BINDING_UNAVAILABLE"
 
 
+PRINT_CURRENCIES = ("SYP", "USD")
+
+
+def default_currency() -> str:
+    """The currency used when a client does not choose one: the NEW Syrian pound unless configured otherwise."""
+
+    configured = getattr(settings, "PRINT_CURRENCY", "SYP")
+    return configured if configured in PRINT_CURRENCIES else "SYP"
+
+
 VALID_TRANSITIONS = {
     PrintOrderStatus.SUBMITTED: {PrintOrderStatus.UNDER_REVIEW, PrintOrderStatus.CANCELLED, PrintOrderStatus.REJECTED},
     PrintOrderStatus.UNDER_REVIEW: {PrintOrderStatus.ACCEPTED, PrintOrderStatus.CANCELLED, PrintOrderStatus.REJECTED},
@@ -60,7 +70,7 @@ VALID_TRANSITIONS = {
 }
 
 
-def _request_fingerprint(items_data: list[dict], user_notes: str, pickup_location) -> str:
+def _request_fingerprint(items_data: list[dict], user_notes: str, pickup_location, currency: str = "") -> str:
     """Stable digest of what the user asked for, so a reused Idempotency-Key with a different body is detectable."""
 
     def source(item: dict):
@@ -117,10 +127,11 @@ class PrintPricingService:
         return hashlib.sha256(encoded).hexdigest()
 
     @staticmethod
-    def _active_rule(item_data: dict) -> PrintPricingRule:
+    def _active_rule(item_data: dict, currency: str) -> PrintPricingRule:
         now = timezone.now()
         rule = (
             PrintPricingRule.objects.filter(
+                currency=currency,
                 color_mode=item_data["color_mode"],
                 paper_size=item_data["paper_size"],
                 sides=item_data["sides"],
@@ -142,13 +153,12 @@ class PrintPricingService:
             return None
         binding = PrintBindingPrice.objects.filter(
             binding=item_data["binding"],
+            currency=currency,
             is_active=True,
             is_deleted=False,
         ).first()
         if not binding:
             raise PrintBindingUnavailable()
-        if binding.currency != currency:
-            raise ValidationError({"items": "Pricing configuration uses inconsistent currencies."})
         return binding
 
     @staticmethod
@@ -168,13 +178,13 @@ class PrintPricingService:
         raise ValidationError({"items": "A source file or uploaded file is required."})
 
     @classmethod
-    def price_item(cls, item_data: dict) -> PricedItem:
+    def price_item(cls, item_data: dict, currency: str) -> PricedItem:
         pages_count = cls._pages_count(item_data)
         copies = int(item_data["copies"])
         if not 1 <= copies <= 99:
             raise ValidationError({"copies": "Copies must be between 1 and 99."})
-        rule = cls._active_rule(item_data)
-        binding_rule = cls._binding(item_data, rule.currency)
+        rule = cls._active_rule(item_data, currency)
+        binding_rule = cls._binding(item_data, currency)
         sheets_per_copy = ceil(pages_count / 2) if item_data["sides"] == PrintSides.DOUBLE_SIDED else pages_count
         sheets_count = sheets_per_copy * copies
         print_cost = (Decimal(sheets_count) * rule.price_per_sheet) + rule.setup_fee
@@ -211,7 +221,8 @@ class PrintPricingService:
         )
 
     @classmethod
-    def quote(cls, user, items_data: list[dict]) -> dict:
+    def quote(cls, user, items_data: list[dict], currency: str | None = None) -> dict:
+        currency = currency or default_currency()
         if not items_data:
             raise ValidationError({"items": "At least one print item is required."})
         priced_items: list[PricedItem] = []
@@ -222,12 +233,8 @@ class PrintPricingService:
                     raise ValidationError({"source_file": "You do not have access to this file."})
                 if not source_file.is_printable:
                     raise ValidationError({"source_file": "This file is not printable."})
-            priced_items.append(cls.price_item(item_data))
-        currencies = {item.currency for item in priced_items}
-        if len(currencies) != 1:
-            raise ValidationError({"items": "All quoted items must use the same currency."})
+            priced_items.append(cls.price_item(item_data, currency))
         total = sum((item.subtotal for item in priced_items), Decimal("0"))
-        currency = currencies.pop() if currencies else getattr(settings, "PRINT_CURRENCY", "SYP")
         return {
             "total_price": total,
             "currency": currency,
@@ -247,10 +254,12 @@ class PrintOrderService:
         pickup_location=None,
         request=None,
         idempotency_key: str = "",
+        currency: str | None = None,
     ) -> PrintOrder:
         user = user.__class__.objects.select_for_update().get(pk=user.pk)
         key_hash = hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest() if idempotency_key else ""
-        fingerprint = _request_fingerprint(items_data, user_notes, pickup_location)
+        currency = currency or default_currency()
+        fingerprint = _request_fingerprint(items_data, user_notes, pickup_location, currency)
         if key_hash:
             existing = (
                 PrintOrder.objects.select_for_update()
@@ -267,7 +276,7 @@ class PrintOrderService:
                 if stored and stored != fingerprint:
                     raise IdempotencyKeyReused()
                 return existing
-        quote = PrintPricingService.quote(user, items_data)
+        quote = PrintPricingService.quote(user, items_data, currency)
         order = PrintOrder.objects.create(
             user=user,
             idempotency_key_hash=key_hash,

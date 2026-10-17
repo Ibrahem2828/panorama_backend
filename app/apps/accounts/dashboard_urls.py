@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .dashboard_views import (
     DashboardCapabilitiesView,
+    DashboardUserPermissionOverrideDetailView,
     DashboardUserPermissionOverridesView,
     DashboardUserViewSet,
 )
@@ -17,5 +18,10 @@ urlpatterns = [
         "dashboard/users/<int:user_id>/permission-overrides/",
         DashboardUserPermissionOverridesView.as_view(),
         name="dashboard-user-permission-overrides",
+    ),
+    path(
+        "dashboard/users/<int:user_id>/permission-overrides/<str:permission_code>/",
+        DashboardUserPermissionOverrideDetailView.as_view(),
+        name="dashboard-user-permission-override-detail",
     ),
 ]

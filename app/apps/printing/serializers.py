@@ -14,6 +14,7 @@ from apps.accounts.models import User
 from apps.common.file_validation import validate_document_upload
 from apps.files.models import FileResource
 from apps.files.services import accessible_files_for_user
+from apps.finance.models import FinanceCurrency
 
 from .models import (
     PrintBindingPrice,
@@ -251,6 +252,11 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
 
 class BasePrintRequestSerializer(serializers.Serializer):
     items = PrintOrderItemInputSerializer(many=True)
+    currency = serializers.ChoiceField(
+        choices=FinanceCurrency.choices,
+        required=False,
+        help_text="Price the order in this currency (default: the shop default, new Syrian pound).",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -282,7 +288,9 @@ class BasePrintRequestSerializer(serializers.Serializer):
 
 class PrintQuoteSerializer(BasePrintRequestSerializer):
     def create(self, validated_data):
-        return PrintPricingService.quote(self.context["request"].user, validated_data["items"])
+        return PrintPricingService.quote(
+            self.context["request"].user, validated_data["items"], validated_data.get("currency")
+        )
 
 
 class PrintOrderCreateSerializer(BasePrintRequestSerializer):
@@ -301,6 +309,7 @@ class PrintOrderCreateSerializer(BasePrintRequestSerializer):
             pickup_location=validated_data.get("pickup_location"),
             request=self.context["request"],
             idempotency_key=self._idempotency_key(),
+            currency=validated_data.get("currency"),
         )
 
     def _idempotency_key(self) -> str:
