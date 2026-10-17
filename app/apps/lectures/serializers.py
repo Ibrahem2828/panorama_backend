@@ -14,8 +14,15 @@ from .document_pipeline import DocumentPipelineError, inspect_lecture_document
 from .models import Lecture, LectureNote, LectureProcessingStatus
 
 
-def _subject_name(lecture: Lecture):
-    return lecture.subject.name if lecture.subject_id else None
+def _subject_name(lecture: Lecture) -> str | None:
+    subject = lecture.subject
+    return subject.name if subject else None
+
+
+def _faculty_name(lecture: Lecture) -> str | None:
+    subject = lecture.subject
+    faculty = subject.faculty if subject else lecture.faculty
+    return faculty.name if faculty else None
 
 
 class LectureSerializer(serializers.ModelSerializer):
@@ -49,8 +56,7 @@ class LectureSerializer(serializers.ModelSerializer):
         return _subject_name(lecture)
 
     def get_faculty_name(self, lecture: Lecture) -> str | None:
-        faculty = lecture.subject.faculty if lecture.subject_id else lecture.faculty
-        return faculty.name if faculty else None
+        return _faculty_name(lecture)
 
     def get_can_view(self, lecture: Lecture) -> bool:
         return lecture.is_ready_for_students
@@ -114,8 +120,7 @@ class DashboardLectureSerializer(serializers.ModelSerializer):
         return _subject_name(lecture)
 
     def get_faculty_name(self, lecture: Lecture) -> str | None:
-        faculty = lecture.subject.faculty if lecture.subject_id else lecture.faculty
-        return faculty.name if faculty else None
+        return _faculty_name(lecture)
 
     def validate(self, attrs):
         subject = attrs.get("subject", self.instance.subject if self.instance else None)

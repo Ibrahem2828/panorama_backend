@@ -41,14 +41,14 @@ def user_can_view_lecture(user, lecture: Lecture) -> bool:
     if user.role != UserRole.STUDENT or not lecture.is_ready_for_students:
         return False
     profile = getattr(user, "student_profile", None)
-    if lecture.subject_id is None:
+    subject = lecture.subject
+    if subject is None:
         # General lecture: every approved student, or only the students of one faculty when it is narrowed.
         return bool(
             profile
             and profile.verification_status == StudentVerificationStatus.APPROVED
             and (lecture.faculty_id is None or lecture.faculty_id == profile.faculty_id)
         )
-    subject = lecture.subject
     return bool(
         profile
         and profile.verification_status == StudentVerificationStatus.APPROVED
