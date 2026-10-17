@@ -45,10 +45,10 @@ class LectureSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_subject_name(self, lecture: Lecture):
+    def get_subject_name(self, lecture: Lecture) -> str | None:
         return _subject_name(lecture)
 
-    def get_faculty_name(self, lecture: Lecture):
+    def get_faculty_name(self, lecture: Lecture) -> str | None:
         faculty = lecture.subject.faculty if lecture.subject_id else lecture.faculty
         return faculty.name if faculty else None
 
@@ -110,10 +110,10 @@ class DashboardLectureSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_subject_name(self, lecture: Lecture):
+    def get_subject_name(self, lecture: Lecture) -> str | None:
         return _subject_name(lecture)
 
-    def get_faculty_name(self, lecture: Lecture):
+    def get_faculty_name(self, lecture: Lecture) -> str | None:
         faculty = lecture.subject.faculty if lecture.subject_id else lecture.faculty
         return faculty.name if faculty else None
 
