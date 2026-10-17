@@ -245,3 +245,37 @@ class PrintItemAccessTicket(BaseModel):
             expires_at=timezone.now() + timedelta(seconds=settings.FILE_ACCESS_TICKET_TTL_SECONDS),
             max_uses=settings.FILE_ACCESS_TICKET_MAX_USES,
         )
+
+
+class PrintConversionStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    READY = "ready", "Ready"
+    FAILED = "failed", "Failed"
+
+
+class PrintConversion(BaseModel):
+    """A Word/PowerPoint upload converted to PDF on the conversion worker so it can be priced and printed.
+
+    The web runtime has no office suite (deliberately); it stores the upload, queues the task and clients reference
+    the finished PDF by ``token`` as ``converted_upload`` on a print item. Rows and files are purged after ``expires_at``.
+    """
+
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="print_conversions")
+    original_name = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=16, choices=PrintConversionStatus.choices, default=PrintConversionStatus.PENDING
+    )
+    input_file = models.FileField(upload_to="print_conversions/in/", null=True, blank=True)
+    pdf_file = models.FileField(upload_to="print_conversions/out/", null=True, blank=True)
+    pages_count = models.PositiveIntegerField(null=True, blank=True)
+    failure_message = models.CharField(max_length=255, blank=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "created_at"], name="printing_conv_user_idx")]
+
+    @property
+    def pdf_name(self) -> str:
+        return f"{Path(self.original_name).stem or 'document'}.pdf"

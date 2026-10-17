@@ -136,6 +136,8 @@ ROUTE_KINDS: dict[str, str] = {
     "lectures/{lecture_id}/notes/{note_id}/": AUTH,
     # --- printing -----------------------------------------------------------------------------------------------------
     "printing/quote/": AUTH,
+    "printing/convert/": AUTH,
+    "printing/convert/{token}/": AUTH,
     "printing/orders/": AUTH,
     "printing/orders/my/": AUTH,
     "printing/orders/my/{pk}/": AUTH,
