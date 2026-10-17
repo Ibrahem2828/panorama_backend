@@ -11301,16 +11301,10 @@
                         "bearerAuth": []
                     }
                 ],
+                "deprecated": true,
                 "responses": {
-                    "201": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ExternalChannelTicket"
-                                }
-                            }
-                        },
-                        "description": ""
+                    "410": {
+                        "description": "Retired"
                     }
                 }
             }
@@ -17130,25 +17124,6 @@
                 },
                 "required": [
                     "app_url"
-                ]
-            },
-            "ExternalChannelTicket": {
-                "type": "object",
-                "properties": {
-                    "open_url": {
-                        "type": "string",
-                        "format": "uri",
-                        "readOnly": true
-                    },
-                    "expires_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "readOnly": true
-                    }
-                },
-                "required": [
-                    "expires_at",
-                    "open_url"
                 ]
             },
             "Faculty": {

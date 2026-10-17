@@ -92,3 +92,61 @@ def test_group_without_channel_or_disabled_channel_is_a_validation_error(setup):
     group, member, _ = setup
     group.external_channels.update(is_active=False)
     assert _post(member, group).status_code == 400
+
+
+# --- the invite must be unreadable by every client, not only absent from the launch response ---------------------------------------
+
+
+def _anywhere_in(response) -> bool:
+    text = response.content.decode("utf8", "ignore") + "".join(f"{k}:{v}" for k, v in response.items())
+    return "whatsapp.com" in text or "AbCdEfGhIjKlMnOp12" in text or "encrypted_url" in text
+
+
+def test_no_member_facing_group_endpoint_reveals_the_invite(setup):
+    group, member, outsider = setup
+    for user in (member, outsider):
+        client = APIClient()
+        client.force_authenticate(user)
+        for path in ("/api/v1/groups/my/", "/api/v1/groups/available/", f"/api/v1/groups/{group.id}/"):
+            response = client.get(path)
+            assert not _anywhere_in(response), (user.email, path)
+
+
+def test_staff_endpoints_never_reveal_the_invite_either(setup):
+    group, _, _ = setup
+    admin = User.objects.get(email="adm@example.test")
+    client = APIClient()
+    client.force_authenticate(admin)
+    for path in ("/api/v1/dashboard/groups/", f"/api/v1/dashboard/groups/{group.id}/"):
+        assert not _anywhere_in(client.get(path)), path
+    assert client.get(f"/api/v1/dashboard/groups/{group.id}/whatsapp-channel/").status_code == 405  # write-only
+    update = client.put(
+        f"/api/v1/dashboard/groups/{group.id}/whatsapp-channel/",
+        {"url": "https://chat.whatsapp.com/ZyXwVuTsRqPoNmLk98", "is_active": True},
+        format="json",
+    )
+    assert update.status_code == 200
+    assert "ZyXwVuTsRqPoNmLk98" not in update.content.decode()
+
+
+def test_retired_ticket_flow_cannot_be_used_to_read_the_invite(setup):
+    """The old flow answered 302 with the https invite in Location. It must now refuse and leak nothing."""
+    group, member, _ = setup
+    client = APIClient()
+    client.force_authenticate(member)
+    issued = client.post(f"/api/v1/groups/{group.id}/whatsapp-ticket/")
+    assert issued.status_code == 410
+    assert not _anywhere_in(issued)
+    redirect = APIClient().get("/api/v1/external-channels/open/00000000-0000-0000-0000-000000000000/")
+    assert redirect.status_code == 410
+    assert "Location" not in redirect
+    assert not _anywhere_in(redirect)
+
+
+def test_launch_response_is_not_cacheable_and_audited_without_the_code(setup):
+    group, member, _ = setup
+    response = _post(member, group)
+    assert response["Cache-Control"].startswith("no-store")
+    assert response["Referrer-Policy"] == "no-referrer"
+    entry = AuditLog.objects.filter(action=AuditAction.GROUP_EXTERNAL_CHANNEL_OPENED, actor=member).latest("id")
+    assert "AbCdEfGhIjKlMnOp12" not in str(entry.new_value) and "AbCdEfGhIjKlMnOp12" not in str(entry.old_value)

@@ -17,7 +17,6 @@ from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
 from .models import (
-    ExternalChannelAccessTicket,
     ExternalChannelType,
     Group,
     GroupExternalChannel,
@@ -233,29 +232,3 @@ class ExternalChannelService:
             status=GroupMembershipStatus.APPROVED,
             is_deleted=False,
         ).exists()
-
-    @classmethod
-    def issue_ticket(cls, group: Group, user) -> ExternalChannelAccessTicket:
-        channel = GroupExternalChannel.objects.filter(
-            group=group,
-            channel_type=ExternalChannelType.WHATSAPP,
-            is_active=True,
-            is_deleted=False,
-        ).first()
-        if not channel:
-            raise ValidationError("WhatsApp channel is not available for this group.")
-        if not cls.user_can_open(user, channel):
-            raise PermissionDenied("You are not allowed to access this external channel.")
-        return ExternalChannelAccessTicket.issue(channel, user)
-
-    @staticmethod
-    @transaction.atomic
-    def consume_ticket(ticket: ExternalChannelAccessTicket) -> str:
-        ticket = (
-            ExternalChannelAccessTicket.objects.select_for_update().select_related("channel__group").get(pk=ticket.pk)
-        )
-        if not ticket.is_valid:
-            raise ValidationError("The external channel link is invalid or expired.")
-        ticket.used_at = timezone.now()
-        ticket.save(update_fields=["used_at", "updated_at"])
-        return decrypt_text(ticket.channel.encrypted_url)
