@@ -1156,6 +1156,257 @@
                 }
             }
         },
+        "/api/v1/dashboard/account-deletions/": {
+            "get": {
+                "operationId": "v1_dashboard_account_deletions_list",
+                "description": "Review and act on account deletion requests (list/detail read-only; cancel and execute are explicit actions).",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "requested_after",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "requested_before",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "requested | cancelled | completed"
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDashboardAccountDeletionList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/account-deletions/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_account_deletions_retrieve",
+                "description": "Review and act on account deletion requests (list/detail read-only; cancel and execute are explicit actions).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا account deletion request.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardAccountDeletionDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/account-deletions/{id}/cancel/": {
+            "post": {
+                "operationId": "v1_dashboard_account_deletions_cancel_create",
+                "description": "Stop a pending deletion (the account stays as it is). A written reason is required and audited.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا account deletion request.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ReasonRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ReasonRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ReasonRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardAccountDeletionDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/account-deletions/{id}/execute/": {
+            "post": {
+                "operationId": "v1_dashboard_account_deletions_execute_create",
+                "description": "Anonymize the account NOW instead of waiting for the grace period. Irreversible: admins only, reason and the\naccount e-mail must be typed again.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا account deletion request.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ExecuteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ExecuteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ExecuteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardAccountDeletionDetail"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/announcements/": {
             "get": {
                 "operationId": "v1_dashboard_announcements_list",
@@ -1867,6 +2118,202 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/DashboardMessageReport"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/devices/": {
+            "get": {
+                "operationId": "v1_dashboard_devices_list",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDashboardDeviceList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/devices/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_devices_retrieve",
+                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا device installation.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardDevice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/devices/{id}/revoke/": {
+            "post": {
+                "operationId": "v1_dashboard_devices_revoke_create",
+                "description": "Sign a device out of push notifications for good (the installation can register again).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا device installation.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ReasonRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ReasonRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/_ReasonRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardDevice"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/devices/stats/": {
+            "get": {
+                "operationId": "v1_dashboard_devices_stats_retrieve",
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
@@ -15661,6 +16108,231 @@
                 "type": "string",
                 "description": "* `app` - Whole App\n* `onboarding` - Onboarding\n* `registration` - Registration\n* `login` - Login\n* `verification` - Student Verification\n* `home` - Home\n* `subject` - Subject\n* `group` - Group\n* `chat` - Chat\n* `file` - File Viewer\n* `printing` - Printing\n* `notification` - Notifications\n* `support` - Support\n* `profile` - Profile\n* `search` - Search\n* `announcement` - Announcement\n* `settings` - Settings\n* `external_channel` - External Channel\n* `other` - Other"
             },
+            "DashboardAccountDeletion": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccountDeletionStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "scheduled_for": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "days_remaining": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "cancelled_at",
+                    "completed_at",
+                    "days_remaining",
+                    "id",
+                    "reason",
+                    "requested_at",
+                    "scheduled_for",
+                    "status",
+                    "user"
+                ]
+            },
+            "DashboardAccountDeletionDetail": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/AccountDeletionStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "requested_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "scheduled_for": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "cancelled_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "days_remaining": {
+                        "type": "integer",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "timeline": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "cancelled_at",
+                    "completed_at",
+                    "days_remaining",
+                    "id",
+                    "reason",
+                    "requested_at",
+                    "scheduled_for",
+                    "status",
+                    "timeline",
+                    "user"
+                ]
+            },
+            "DashboardDevice": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "installation_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "user": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "platform": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/MobilePlatformEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "build_number": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "device_model": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "locale": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "timezone_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "notifications_enabled": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "last_seen_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "revoked_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "is_revoked": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "app_version",
+                    "build_number",
+                    "created_at",
+                    "device_model",
+                    "id",
+                    "installation_id",
+                    "is_revoked",
+                    "last_seen_at",
+                    "locale",
+                    "notifications_enabled",
+                    "platform",
+                    "revoked_at",
+                    "timezone_name",
+                    "user"
+                ]
+            },
             "DashboardFeedback": {
                 "type": "object",
                 "properties": {
@@ -19228,6 +19900,68 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/AuditLog"
+                        }
+                    }
+                }
+            },
+            "PaginatedDashboardAccountDeletionList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DashboardAccountDeletion"
+                        }
+                    }
+                }
+            },
+            "PaginatedDashboardDeviceList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DashboardDevice"
                         }
                     }
                 }
@@ -23544,6 +24278,38 @@
                 },
                 "required": [
                     "url"
+                ]
+            },
+            "_ExecuteRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 500
+                    },
+                    "confirm_email": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "The e-mail of the account, typed again to confirm an irreversible action."
+                    }
+                },
+                "required": [
+                    "confirm_email",
+                    "reason"
+                ]
+            },
+            "_ReasonRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "reason"
                 ]
             }
         },

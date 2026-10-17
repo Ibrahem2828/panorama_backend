@@ -1,6 +1,11 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .dashboard_governance import (
+    DashboardAccountDeletionViewSet,
+    DashboardDeviceStatsView,
+    DashboardDeviceViewSet,
+)
 from .views import (
     AccountDeletionCancelView,
     AccountDeletionRequestView,
@@ -28,6 +33,8 @@ router.register(
 )
 router.register("dashboard/maintenance-modes", DashboardMaintenanceModeViewSet, basename="dashboard-maintenance-modes")
 router.register("dashboard/feature-flags", DashboardFeatureFlagViewSet, basename="dashboard-feature-flags")
+router.register("dashboard/account-deletions", DashboardAccountDeletionViewSet, basename="dashboard-account-deletions")
+router.register("dashboard/devices", DashboardDeviceViewSet, basename="dashboard-devices")
 router.register("dashboard/terms-versions", DashboardTermsVersionViewSet, basename="dashboard-terms-versions")
 router.register(
     "dashboard/privacy-policy-versions",
@@ -36,6 +43,7 @@ router.register(
 )
 
 urlpatterns = [
+    path("dashboard/devices/stats/", DashboardDeviceStatsView.as_view(), name="dashboard-device-stats"),
     path("mobile/bootstrap/", MobileBootstrapView.as_view(), name="mobile-bootstrap"),
     path("mobile/update-policy/", MobileUpdatePolicyView.as_view(), name="mobile-update-policy"),
     path("mobile/devices/register/", DeviceRegistrationView.as_view(), name="mobile-device-register"),
