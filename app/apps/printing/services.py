@@ -10,7 +10,8 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework import status
+from rest_framework.exceptions import APIException, ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.audit.models import AuditAction
@@ -32,6 +33,23 @@ from .models import (
     PrintPricingRule,
     PrintSides,
 )
+
+
+class PrintPricingUnavailable(APIException):
+    """No active price for the chosen options: a configuration gap, not a mistake by the user."""
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Printing prices are not available for the selected options yet."
+    default_code = "print_pricing_unavailable"
+    api_code = "PRINT_PRICING_UNAVAILABLE"
+
+
+class PrintBindingUnavailable(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "The selected binding service is currently unavailable."
+    default_code = "print_binding_unavailable"
+    api_code = "PRINT_BINDING_UNAVAILABLE"
+
 
 VALID_TRANSITIONS = {
     PrintOrderStatus.SUBMITTED: {PrintOrderStatus.UNDER_REVIEW, PrintOrderStatus.CANCELLED, PrintOrderStatus.REJECTED},
@@ -115,7 +133,7 @@ class PrintPricingService:
             .first()
         )
         if not rule:
-            raise ValidationError({"items": "No active pricing rule matches the selected print options."})
+            raise PrintPricingUnavailable()
         return rule
 
     @staticmethod
@@ -128,7 +146,7 @@ class PrintPricingService:
             is_deleted=False,
         ).first()
         if not binding:
-            raise ValidationError({"items": "The selected binding service is currently unavailable."})
+            raise PrintBindingUnavailable()
         if binding.currency != currency:
             raise ValidationError({"items": "Pricing configuration uses inconsistent currencies."})
         return binding

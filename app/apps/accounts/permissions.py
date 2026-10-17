@@ -80,6 +80,29 @@ class PermissionService:
         defaults = ROLE_CAPABILITIES.get(user.role, set())
         return "*" in defaults or permission_code in defaults
 
+    @staticmethod
+    def granted_among(user, codes) -> set[str]:
+        """Which of ``codes`` the user holds, with ONE query for every override instead of one per code."""
+
+        codes = list(codes)
+        if not user or not user.is_authenticated or not user.is_active or not codes:
+            return set()
+        latest: dict[str, str] = {}
+        overrides = (
+            UserPermissionOverride.objects.filter(user=user, permission_code__in=codes, is_deleted=False)
+            .filter(models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now()))
+            .order_by("updated_at", "id")
+            .values_list("permission_code", "effect")
+        )
+        for code, effect in overrides:  # ascending, so the most recently updated override wins
+            latest[code] = effect
+        defaults = ROLE_CAPABILITIES.get(user.role, set())
+        return {
+            code
+            for code in codes
+            if (latest[code] == PermissionEffect.ALLOW if code in latest else ("*" in defaults or code in defaults))
+        }
+
 
 # Who may act on whom. Everyone below the two management roles shares one rank.
 ROLE_RANK: dict[str, int] = {UserRole.IT_SUPPORT: 100, UserRole.ADMIN: 50}
