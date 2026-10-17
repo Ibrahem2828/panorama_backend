@@ -16,6 +16,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.models import StudentProfile, User
+from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 from apps.lectures.document_pipeline import (
     DocumentPipelineError,
     QuarantinedDocumentError,
@@ -76,6 +77,20 @@ def academic_structure(db):
     }
 
 
+def join_subject_group(user, academic_structure, status=GroupMembershipStatus.APPROVED):
+    """Approved membership in the subject's study group (the key to its lectures)."""
+
+    subject = academic_structure["subject"]
+    group = Group.objects.filter(subject=subject).first() or Group.objects.create(
+        name="Algorithms group",
+        university=academic_structure["university"],
+        faculty=academic_structure["faculty"],
+        subject=subject,
+        created_by=user,
+    )
+    return GroupMembership.objects.create(group=group, user=user, status=status)
+
+
 @pytest.fixture
 def manager(db):
     return User.objects.create_user(
@@ -105,6 +120,7 @@ def student(db, academic_structure):
         semester=academic_structure["semester"],
         verification_status=StudentVerificationStatus.APPROVED,
     )
+    join_subject_group(user, academic_structure)
     return user
 
 
@@ -126,6 +142,7 @@ def other_student(db, academic_structure):
         semester=academic_structure["semester"],
         verification_status=StudentVerificationStatus.APPROVED,
     )
+    join_subject_group(user, academic_structure)
     return user
 
 
@@ -446,3 +463,37 @@ def test_stuck_lectures_are_failed_but_fresh_ones_are_left_alone(ready_lecture):
     assert ready_lecture.status == LectureProcessingStatus.FAILED
     assert ready_lecture.failure_code == "processing_timeout"
     assert fresh.status == LectureProcessingStatus.RENDERING
+
+
+@pytest.mark.django_db
+def test_lectures_require_approved_membership_in_the_subject_group(api_client, ready_lecture, academic_structure):
+    """A verified student of the faculty still needs to belong to the subject's group."""
+
+    outsider = User.objects.create_user(
+        full_name="No Group",
+        email="lecture-nogroup@example.com",
+        phone_number="+963955000009",
+        password="StrongPass123!",
+        role=UserRole.STUDENT,
+    )
+    StudentProfile.objects.create(
+        user=outsider,
+        university=academic_structure["university"],
+        faculty=academic_structure["faculty"],
+        major=academic_structure["major"],
+        academic_year=academic_structure["year"],
+        semester=academic_structure["semester"],
+        verification_status=StudentVerificationStatus.APPROVED,
+    )
+
+    from apps.lectures.services import accessible_lectures_for_user, user_can_view_lecture
+
+    assert not user_can_view_lecture(outsider, ready_lecture)
+    assert not accessible_lectures_for_user(outsider).filter(pk=ready_lecture.pk).exists()
+
+    pending = join_subject_group(outsider, academic_structure, status=GroupMembershipStatus.PENDING)
+    assert not user_can_view_lecture(outsider, ready_lecture)
+
+    pending.approve(reviewer=outsider)
+    assert user_can_view_lecture(outsider, ready_lecture)
+    assert accessible_lectures_for_user(outsider).filter(pk=ready_lecture.pk).exists()

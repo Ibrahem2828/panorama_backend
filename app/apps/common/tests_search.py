@@ -125,6 +125,14 @@ def world(db):
 
     # lectures
     w.lecture = _lecture(w.subject, w.admin, f"{KEYWORD} lecture one", 1)
+    # lectures open only to approved members of the subject's study group (named without the keyword)
+    GroupMembership.objects.create(
+        group=Group.objects.create(
+            name="subject study circle", university=w.uni, faculty=w.fac, subject=w.subject, created_by=w.admin
+        ),
+        user=w.student,
+        status=GroupMembershipStatus.APPROVED,
+    )
     w.lecture_hidden = {
         "unpublished": _lecture(w.subject, w.admin, f"{KEYWORD} draft", 2, is_published=False),
         "processing": _lecture(
