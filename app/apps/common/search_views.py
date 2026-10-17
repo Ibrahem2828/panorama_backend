@@ -89,7 +89,7 @@ def _serialize_lecture(lecture) -> dict[str, Any]:
         "type": "lecture",
         "title": lecture.title,
         "subject_id": lecture.subject_id,
-        "subject_name": lecture.subject.name,
+        "subject_name": lecture.subject.name if lecture.subject_id else None,
         "page_count": lecture.page_count,
     }
 

@@ -102,12 +102,20 @@ class DashboardLectureViewSet(AuditedModelWriteMixin, StandardModelViewSet):
     permission_classes = [CanManageLectures]
     serializer_class = DashboardLectureSerializer
     ordering = ["-created_at"]
-    filterset_fields = ["subject", "status", "is_published"]
+    filterset_fields = ["subject", "faculty", "status", "is_published"]
     audit_update_action = AuditAction.LECTURE_UPDATED
     audit_delete_action = AuditAction.LECTURE_DELETED
 
     def get_queryset(self):
-        return Lecture.objects.filter(is_deleted=False).select_related("subject", "uploaded_by")
+        queryset = Lecture.objects.filter(is_deleted=False).select_related(
+            "subject", "subject__faculty", "faculty", "uploaded_by"
+        )
+        scope = self.request.query_params.get("scope")  # general = not linked to a subject, subject = linked
+        if scope == "general":
+            queryset = queryset.filter(subject__isnull=True)
+        elif scope == "subject":
+            queryset = queryset.filter(subject__isnull=False)
+        return queryset
 
     @extend_schema(tags=["Dashboard lectures"], request=None, responses={202: DashboardLectureSerializer})
     @action(detail=True, methods=["post"], url_path="retry")

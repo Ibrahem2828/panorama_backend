@@ -238,7 +238,7 @@ def test_migration_is_reversible_and_guards_the_reverse_path(ready_lecture):
     executor = MigrationExecutor(connection)
     executor.migrate([("lectures", "0001_initial")])  # reversible when the rows are unique
     executor = MigrationExecutor(connection)
-    executor.migrate([("lectures", "0002_lecture_unique_hash_live_only")])
+    executor.migrate([("lectures", "0003_general_lectures")])  # latest schema (faculty column) before creating rows
 
     Lecture.objects.filter(pk=ready_lecture.pk).update(is_deleted=True)
     Lecture.objects.create(

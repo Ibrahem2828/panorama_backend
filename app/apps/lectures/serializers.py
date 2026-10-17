@@ -8,12 +8,27 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from rest_framework import serializers
 
+from apps.universities.models import Faculty, Subject
+
 from .document_pipeline import DocumentPipelineError, inspect_lecture_document
 from .models import Lecture, LectureNote, LectureProcessingStatus
 
 
+def _subject_name(lecture: Lecture) -> str | None:
+    subject = lecture.subject
+    return subject.name if subject else None
+
+
+def _faculty_name(lecture: Lecture) -> str | None:
+    subject = lecture.subject
+    faculty = subject.faculty if subject else lecture.faculty
+    return faculty.name if faculty else None
+
+
 class LectureSerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    subject_name = serializers.SerializerMethodField()
+    faculty_name = serializers.SerializerMethodField()
+    is_general = serializers.BooleanField(read_only=True)
     can_view = serializers.SerializerMethodField()
 
     class Meta:
@@ -22,6 +37,9 @@ class LectureSerializer(serializers.ModelSerializer):
             "id",
             "subject",
             "subject_name",
+            "faculty",
+            "faculty_name",
+            "is_general",
             "title",
             "description",
             "status",
@@ -34,13 +52,27 @@ class LectureSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def get_subject_name(self, lecture: Lecture) -> str | None:
+        return _subject_name(lecture)
+
+    def get_faculty_name(self, lecture: Lecture) -> str | None:
+        return _faculty_name(lecture)
+
     def get_can_view(self, lecture: Lecture) -> bool:
         return lecture.is_ready_for_students
 
 
 class DashboardLectureSerializer(serializers.ModelSerializer):
     original_file = serializers.FileField(write_only=True, required=False)
-    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    subject = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.filter(is_deleted=False), required=False, allow_null=True
+    )
+    faculty = serializers.PrimaryKeyRelatedField(
+        queryset=Faculty.objects.filter(is_deleted=False), required=False, allow_null=True
+    )
+    subject_name = serializers.SerializerMethodField()
+    faculty_name = serializers.SerializerMethodField()
+    is_general = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Lecture
@@ -48,6 +80,9 @@ class DashboardLectureSerializer(serializers.ModelSerializer):
             "id",
             "subject",
             "subject_name",
+            "faculty",
+            "faculty_name",
+            "is_general",
             "title",
             "description",
             "original_file",
@@ -81,7 +116,19 @@ class DashboardLectureSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def get_subject_name(self, lecture: Lecture) -> str | None:
+        return _subject_name(lecture)
+
+    def get_faculty_name(self, lecture: Lecture) -> str | None:
+        return _faculty_name(lecture)
+
     def validate(self, attrs):
+        subject = attrs.get("subject", self.instance.subject if self.instance else None)
+        faculty = attrs.get("faculty", self.instance.faculty if self.instance else None)
+        if subject and faculty:
+            raise serializers.ValidationError(
+                {"faculty": "A lecture linked to a subject takes its faculty from the subject; leave it empty."}
+            )
         if not self.instance and "original_file" not in attrs:
             raise serializers.ValidationError({"original_file": "An original document is required."})
         if self.instance and "original_file" in attrs:
@@ -94,13 +141,13 @@ class DashboardLectureSerializer(serializers.ModelSerializer):
             inspection = inspect_lecture_document(attrs["original_file"])
         except DocumentPipelineError as exc:
             raise serializers.ValidationError({"original_file": str(exc)}) from exc
-        subject = attrs.get("subject")
-        if (
-            subject
-            and Lecture.objects.filter(subject=subject, original_sha256=inspection.sha256, is_deleted=False).exists()
-        ):
+        duplicates = Lecture.objects.filter(original_sha256=inspection.sha256, is_deleted=False)
+        duplicates = duplicates.filter(subject=subject) if subject else duplicates.filter(subject__isnull=True)
+        if duplicates.exists():
             raise serializers.ValidationError(
                 {"original_file": "This source document is already registered for the subject."}
+                if subject
+                else {"original_file": "This source document is already registered as a general lecture."}
             )
         attrs["_document_inspection"] = inspection
         return attrs
