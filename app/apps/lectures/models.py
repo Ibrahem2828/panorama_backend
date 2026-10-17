@@ -23,7 +23,15 @@ class LectureProcessingStatus(models.TextChoices):
 
 
 class Lecture(BaseModel):
-    subject = models.ForeignKey("universities.Subject", on_delete=models.PROTECT, related_name="lectures")
+    """A lecture is EITHER linked to a subject (then only approved members of the subject's study group may read it) OR general:
+    no subject, visible to every approved student, narrowed to one faculty when ``faculty`` is set."""
+
+    subject = models.ForeignKey(
+        "universities.Subject", on_delete=models.PROTECT, related_name="lectures", null=True, blank=True
+    )
+    faculty = models.ForeignKey(
+        "universities.Faculty", on_delete=models.PROTECT, related_name="general_lectures", null=True, blank=True
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     original_file = models.FileField(upload_to="lectures/originals/")
@@ -57,8 +65,23 @@ class Lecture(BaseModel):
                 # Soft-deleted lectures keep their row (and hash) but must not block re-uploading the same document.
                 condition=~models.Q(original_sha256="") & models.Q(is_deleted=False),
                 name="lectures_subject_original_hash_uniq",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["original_sha256"],
+                condition=~models.Q(original_sha256="") & models.Q(is_deleted=False) & models.Q(subject__isnull=True),
+                name="lectures_general_original_hash_uniq",
+            ),
         ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.subject_id and self.faculty_id:
+            raise ValidationError("A lecture linked to a subject takes its faculty from the subject.")
+
+    @property
+    def is_general(self) -> bool:
+        return self.subject_id is None
 
     @property
     def is_ready_for_students(self) -> bool:

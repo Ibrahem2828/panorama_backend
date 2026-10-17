@@ -41,6 +41,13 @@ def user_can_view_lecture(user, lecture: Lecture) -> bool:
     if user.role != UserRole.STUDENT or not lecture.is_ready_for_students:
         return False
     profile = getattr(user, "student_profile", None)
+    if lecture.subject_id is None:
+        # General lecture: every approved student, or only the students of one faculty when it is narrowed.
+        return bool(
+            profile
+            and profile.verification_status == StudentVerificationStatus.APPROVED
+            and (lecture.faculty_id is None or lecture.faculty_id == profile.faculty_id)
+        )
     subject = lecture.subject
     return bool(
         profile
@@ -55,6 +62,7 @@ def user_can_view_lecture(user, lecture: Lecture) -> bool:
 
 def accessible_lectures_for_user(user):
     queryset = Lecture.objects.filter(is_deleted=False).select_related(
+        "faculty",
         "subject",
         "subject__faculty",
         "subject__major",
@@ -69,20 +77,22 @@ def accessible_lectures_for_user(user):
     profile = getattr(user, "student_profile", None)
     if not profile or profile.verification_status != StudentVerificationStatus.APPROVED:
         return queryset.none()
-    if not profile.faculty_id:
-        return queryset.none()
-    # Subjects belong to the faculty; the major is an optional tag. Any year/semester of the faculty is open to
-    # an approved student (a year-2 student may retake a year-1 subject).
-    subject_scope = Q(subject__major__isnull=True)
-    if profile.major_id:
-        subject_scope |= Q(subject__major_id=profile.major_id)
-    return queryset.filter(
-        subject_scope,
-        subject__faculty_id=profile.faculty_id,
-        subject_id__in=_subject_group_member_subjects(user),
-        is_published=True,
-        status="ready",
+    # General lectures (no subject) need no faculty on the profile unless they are narrowed to a faculty.
+    general = Q(subject__isnull=True) & (
+        Q(faculty__isnull=True) | (Q(faculty_id=profile.faculty_id) if profile.faculty_id else Q(pk__in=[]))
     )
+    subject_lectures = Q(pk__in=[])
+    if profile.faculty_id:
+        # Subjects belong to the faculty; the major is an optional tag. Any year/semester of the faculty is open to
+        # an approved student (a year-2 student may retake a year-1 subject), but only through the subject's group.
+        subject_scope = Q(subject__major__isnull=True)
+        if profile.major_id:
+            subject_scope |= Q(subject__major_id=profile.major_id)
+        subject_lectures = subject_scope & Q(
+            subject__faculty_id=profile.faculty_id,
+            subject_id__in=_subject_group_member_subjects(user),
+        )
+    return queryset.filter(general | subject_lectures, is_published=True, status="ready")
 
 
 def issue_viewer_session(user, lecture: Lecture) -> LectureViewerSession:
