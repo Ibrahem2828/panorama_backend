@@ -24,6 +24,7 @@ class Capability:
     AUDIT_VIEW = "audit.view"
     FEEDBACK_MANAGE = "feedback.manage"
     PRODUCT_MANAGE = "product.manage"
+    FINANCE_MANAGE = "finance.manage"
 
 
 ROLE_CAPABILITIES = {
@@ -43,6 +44,7 @@ ROLE_CAPABILITIES = {
         Capability.AUDIT_VIEW,
         Capability.FEEDBACK_MANAGE,
         Capability.PRODUCT_MANAGE,
+        Capability.FINANCE_MANAGE,
     },
     UserRole.PRINT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.PRINTING_MANAGE},
     UserRole.SUPPORT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.SUPPORT_MANAGE, Capability.FEEDBACK_MANAGE},
@@ -226,6 +228,10 @@ class CanViewAudit(CapabilityPermission):
 
 class CanManageFeedback(CapabilityPermission):
     capability = Capability.FEEDBACK_MANAGE
+
+
+class CanManageFinance(CapabilityPermission):
+    capability = Capability.FINANCE_MANAGE
 
 
 class CanManageProduct(CapabilityPermission):

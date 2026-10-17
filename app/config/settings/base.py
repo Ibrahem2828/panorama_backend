@@ -28,6 +28,7 @@ LOCAL_APPS = [
     "apps.files",
     "apps.lectures",
     "apps.printing",
+    "apps.finance",
     "apps.announcements",
     "apps.notifications",
     "apps.chat",
@@ -204,6 +205,12 @@ SPECTACULAR_SETTINGS = {
     "SECURITY": [{"bearerAuth": []}],
     "ENUM_NAME_OVERRIDES": {
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",
+        "CategoryEnum": "apps.support.models.SupportTicketCategory",
+        "FinanceCurrencyEnum": "apps.finance.models.FinanceCurrency",
+        "InventoryCategoryEnum": "apps.finance.models.InventoryCategory",
+        "ExpenseCategoryEnum": "apps.finance.models.ExpenseCategory",
+        "StockMovementTypeEnum": "apps.finance.models.StockMovementType",
+        "PaymentMethodEnum": "apps.finance.models.PaymentMethod",
         "UserRoleEnum": [
             ("it_support", "IT Support"),
             ("admin", "Admin"),

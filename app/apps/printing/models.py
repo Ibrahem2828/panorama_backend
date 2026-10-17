@@ -95,10 +95,15 @@ class PrintPricingRule(BaseModel):
 
 
 class PrintBindingPrice(BaseModel):
-    binding = models.CharField(max_length=32, choices=PrintBinding.choices, unique=True)
+    binding = models.CharField(max_length=32, choices=PrintBinding.choices)
     price_per_copy = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=8, default="SYP")
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["binding", "currency"], name="printing_binding_currency_uniq"),
+        ]
 
     def clean(self):
         if self.price_per_copy < 0:

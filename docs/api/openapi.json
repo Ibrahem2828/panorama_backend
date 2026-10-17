@@ -1796,6 +1796,8 @@
                                 "file_deleted",
                                 "file_updated",
                                 "file_uploaded",
+                                "finance_expense_changed",
+                                "finance_rate_changed",
                                 "group_created",
                                 "group_deleted",
                                 "group_external_channel_opened",
@@ -1805,6 +1807,7 @@
                                 "group_membership_blocked",
                                 "group_membership_rejected",
                                 "group_updated",
+                                "inventory_item_changed",
                                 "lecture_deleted",
                                 "lecture_note_updated",
                                 "lecture_processing_retried",
@@ -1822,6 +1825,8 @@
                                 "otp_verified",
                                 "password_changed",
                                 "password_reset_completed",
+                                "payment_recorded",
+                                "payment_voided",
                                 "policy_accepted",
                                 "policy_version_published",
                                 "policy_version_unpublished",
@@ -1831,6 +1836,7 @@
                                 "print_order_note_updated",
                                 "print_order_status_changed",
                                 "print_pricing_changed",
+                                "stock_movement_recorded",
                                 "student_profile_updated",
                                 "support_ticket_assigned",
                                 "support_ticket_created",
@@ -1847,7 +1853,7 @@
                                 "verification_submitted"
                             ]
                         },
-                        "description": "* `user_registered` - User Registered\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
+                        "description": "* `user_registered` - User Registered\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
                     },
                     {
                         "in": "query",
@@ -3861,6 +3867,1002 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/exchange-rates/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_exchange_rates_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedExchangeRateList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_finance_exchange_rates_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExchangeRateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExchangeRateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExchangeRateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExchangeRate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/exchange-rates/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_exchange_rates_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا exchange rate.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExchangeRate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_finance_exchange_rates_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا exchange rate.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExchangeRateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExchangeRateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExchangeRateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExchangeRate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_finance_exchange_rates_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا exchange rate.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedExchangeRateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedExchangeRateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedExchangeRateRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExchangeRate"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_finance_exchange_rates_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا exchange rate.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/expenses/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_expenses_list",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedExpenseList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_finance_expenses_create",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExpenseRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExpenseRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExpenseRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Expense"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/expenses/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_expenses_retrieve",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا expense.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Expense"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_finance_expenses_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا expense.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExpenseRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExpenseRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExpenseRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Expense"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_finance_expenses_partial_update",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا expense.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedExpenseRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedExpenseRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedExpenseRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Expense"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_finance_expenses_destroy",
+                "description": "Standard envelopes for the two methods safe for read-only resources.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا expense.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/inventory-items/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_inventory_items_list",
+                "description": "Items (paper, ink, pens, printers...) are defined and priced by finance managers.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedInventoryItemList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_finance_inventory_items_create",
+                "description": "Items (paper, ink, pens, printers...) are defined and priced by finance managers.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItemRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItemRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItemRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InventoryItem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/inventory-items/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_inventory_items_retrieve",
+                "description": "Items (paper, ink, pens, printers...) are defined and priced by finance managers.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InventoryItem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_finance_inventory_items_update",
+                "description": "Items (paper, ink, pens, printers...) are defined and priced by finance managers.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItemRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItemRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InventoryItemRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InventoryItem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_finance_inventory_items_partial_update",
+                "description": "Items (paper, ink, pens, printers...) are defined and priced by finance managers.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedInventoryItemRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedInventoryItemRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedInventoryItemRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InventoryItem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_finance_inventory_items_destroy",
+                "description": "Items (paper, ink, pens, printers...) are defined and priced by finance managers.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/payments/{id}/void/": {
+            "post": {
+                "operationId": "v1_dashboard_finance_payments_void_create",
+                "description": "Cancel a mistaken payment (soft delete) with a written reason; finance managers only.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard finance"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentVoidRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentVoidRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentVoidRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderPayment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/finance/summary/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_summary_retrieve",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "currency",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Reporting currency: SYP (default) or USD"
+                    },
+                    {
+                        "in": "query",
+                        "name": "from",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "to",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard finance"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -6239,6 +7241,125 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/jobs/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_jobs_list",
+                "description": "Finished (delivered) print orders with what each cost, what was collected and the period totals.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "currency",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "from",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "search",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "to",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard finance"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPrintJobList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/jobs/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_jobs_retrieve",
+                "description": "Finished (delivered) print orders with what each cost, what was collected and the period totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print order.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/orders/": {
             "get": {
                 "operationId": "v1_dashboard_printing_orders_list",
@@ -6562,6 +7683,151 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/DashboardPrintOrder"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/payments/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_payments_list",
+                "description": "Collected money. Payments are never edited: a mistaken one is voided (soft-deleted) with a reason.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedOrderPaymentList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_payments_create",
+                "description": "Collected money. Payments are never edited: a mistaken one is voided (soft-deleted) with a reason.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrderPaymentRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrderPaymentRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OrderPaymentRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderPayment"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/payments/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_payments_retrieve",
+                "description": "Collected money. Payments are never edited: a mistaken one is voided (soft-deleted) with a reason.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا order payment.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderPayment"
                                 }
                             }
                         },
@@ -7173,6 +8439,347 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/stock/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_stock_list",
+                "description": "Cashier view of the stock: see what is on the shelf and record usage, purchases, waste or counts.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedInventoryItemList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/stock-movements/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_stock_movements_list",
+                "description": "Read-only ledger of every stock movement.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStockMovementList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/stock-movements/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_stock_movements_retrieve",
+                "description": "Read-only ledger of every stock movement.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا stock movement.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StockMovement"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/stock/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_stock_retrieve",
+                "description": "Cashier view of the stock: see what is on the shelf and record usage, purchases, waste or counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InventoryItem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/stock/{id}/movement-history/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_stock_movement_history_list",
+                "description": "Cashier view of the stock: see what is on the shelf and record usage, purchases, waste or counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard finance"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStockMovementList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/stock/{id}/movements/": {
+            "post": {
+                "operationId": "v1_dashboard_printing_stock_movements_create",
+                "description": "Record a purchase, usage, waste or count adjustment; the stock quantity changes only through this.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard finance"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockMovementCreateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockMovementCreateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockMovementCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StockMovement"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -9602,8 +11209,58 @@
                 }
             },
             "delete": {
-                "operationId": "v1_dashboard_users_permission_overrides_destroy",
+                "operationId": "v1_dashboard_users_permission_overrides_remove_legacy",
+                "description": "Deprecated: DELETE with a body is not portable. Use DELETE .../permission-overrides/{permission_code}/.",
                 "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/users/{user_id}/permission-overrides/{permission_code}/": {
+            "delete": {
+                "operationId": "v1_dashboard_users_permission_overrides_remove",
+                "description": "DELETE one override addressed by the capability code in the path (no request body).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "permission_code",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    },
                     {
                         "in": "path",
                         "name": "user_id",
@@ -15900,6 +17557,12 @@
                     "print_order_assigned",
                     "print_order_note_updated",
                     "print_pricing_changed",
+                    "finance_rate_changed",
+                    "finance_expense_changed",
+                    "inventory_item_changed",
+                    "stock_movement_recorded",
+                    "payment_recorded",
+                    "payment_voided",
                     "support_ticket_created",
                     "support_ticket_status_changed",
                     "support_ticket_assigned",
@@ -15927,7 +17590,7 @@
                     "policy_version_unpublished"
                 ],
                 "type": "string",
-                "description": "* `user_registered` - User Registered\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
+                "description": "* `user_registered` - User Registered\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
             },
             "BindingEnum": {
                 "enum": [
@@ -17813,6 +19476,147 @@
                 "type": "string",
                 "description": "* `shown` - shown\n* `dismissed` - dismissed"
             },
+            "ExchangeRate": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "effective_from": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "syp_per_usd": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,4})?$"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "syp_per_usd"
+                ]
+            },
+            "ExchangeRateRequest": {
+                "type": "object",
+                "properties": {
+                    "effective_from": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "syp_per_usd": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,4})?$"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "syp_per_usd"
+                ]
+            },
+            "Expense": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "spent_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/ExpenseCategoryEnum"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount",
+                    "created_at",
+                    "description",
+                    "id",
+                    "updated_at"
+                ]
+            },
+            "ExpenseCategoryEnum": {
+                "enum": [
+                    "supplies",
+                    "equipment",
+                    "maintenance",
+                    "salaries",
+                    "rent",
+                    "utilities",
+                    "transport",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `supplies` - Supplies (paper, ink, pens)\n* `equipment` - Equipment and printers\n* `maintenance` - Maintenance and repairs\n* `salaries` - Salaries and wages\n* `rent` - Rent\n* `utilities` - Electricity, internet and utilities\n* `transport` - Transport\n* `other` - Other"
+            },
+            "ExpenseRequest": {
+                "type": "object",
+                "properties": {
+                    "spent_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/ExpenseCategoryEnum"
+                    },
+                    "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    }
+                },
+                "required": [
+                    "amount",
+                    "description"
+                ]
+            },
             "ExternalChannelAppLink": {
                 "type": "object",
                 "properties": {
@@ -18343,6 +20147,14 @@
                     "title"
                 ]
             },
+            "FinanceCurrencyEnum": {
+                "enum": [
+                    "SYP",
+                    "USD"
+                ],
+                "type": "string",
+                "description": "* `SYP` - Syrian Pound (new)\n* `USD` - US Dollar"
+            },
             "Group": {
                 "type": "object",
                 "properties": {
@@ -18549,6 +20361,153 @@
                 ],
                 "type": "string",
                 "description": "* `all_members` - All Members\n* `admins_only` - Admins Only"
+            },
+            "InventoryCategoryEnum": {
+                "enum": [
+                    "paper",
+                    "ink",
+                    "pens",
+                    "printer",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `paper` - Paper\n* `ink` - Ink and toner\n* `pens` - Pens and stationery\n* `printer` - Printers and machines\n* `other` - Other supplies"
+            },
+            "InventoryItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/InventoryCategoryEnum"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "sku": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "reorder_level": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit_cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    },
+                    "stock_value": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,14}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "is_low": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "is_low",
+                    "name",
+                    "quantity",
+                    "stock_value",
+                    "updated_at"
+                ]
+            },
+            "InventoryItemRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/InventoryCategoryEnum"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "sku": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "opening_quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "writeOnly": true
+                    },
+                    "reorder_level": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit_cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "name"
+                ]
             },
             "Lecture": {
                 "type": "object",
@@ -19818,6 +21777,86 @@
                     "updated_at"
                 ]
             },
+            "OrderPayment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "order": {
+                        "type": "integer"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "method": {
+                        "$ref": "#/components/schemas/PaymentMethodEnum"
+                    },
+                    "received_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "received_by_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "amount",
+                    "created_at",
+                    "currency",
+                    "id",
+                    "order",
+                    "received_at",
+                    "received_by_name"
+                ]
+            },
+            "OrderPaymentRequest": {
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "type": "integer"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "method": {
+                        "$ref": "#/components/schemas/PaymentMethodEnum"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "amount",
+                    "order"
+                ]
+            },
             "OtpChannelEnum": {
                 "enum": [
                     "email",
@@ -20229,6 +22268,68 @@
                     }
                 }
             },
+            "PaginatedExchangeRateList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ExchangeRate"
+                        }
+                    }
+                }
+            },
+            "PaginatedExpenseList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Expense"
+                        }
+                    }
+                }
+            },
             "PaginatedFacultyList": {
                 "type": "object",
                 "required": [
@@ -20380,6 +22481,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/GroupMembership"
+                        }
+                    }
+                }
+            },
+            "PaginatedInventoryItemList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/InventoryItem"
                         }
                     }
                 }
@@ -20632,6 +22764,68 @@
                     }
                 }
             },
+            "PaginatedOrderPaymentList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderPayment"
+                        }
+                    }
+                }
+            },
+            "PaginatedPrintJobList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PrintJob"
+                        }
+                    }
+                }
+            },
             "PaginatedPrintPricingRuleList": {
                 "type": "object",
                 "required": [
@@ -20752,6 +22946,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/Semester"
+                        }
+                    }
+                }
+            },
+            "PaginatedStockMovementList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StockMovement"
                         }
                     }
                 }
@@ -21201,6 +23426,49 @@
                     }
                 }
             },
+            "PatchedExchangeRateRequest": {
+                "type": "object",
+                "properties": {
+                    "effective_from": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "syp_per_usd": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,4})?$"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                }
+            },
+            "PatchedExpenseRequest": {
+                "type": "object",
+                "properties": {
+                    "spent_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/ExpenseCategoryEnum"
+                    },
+                    "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    }
+                }
+            },
             "PatchedFacultyRequest": {
                 "type": "object",
                 "properties": {
@@ -21339,6 +23607,57 @@
                 "properties": {
                     "role": {
                         "$ref": "#/components/schemas/GroupMembershipRoleEnum"
+                    }
+                }
+            },
+            "PatchedInventoryItemRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "category": {
+                        "$ref": "#/components/schemas/InventoryCategoryEnum"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "sku": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "opening_quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "writeOnly": true
+                    },
+                    "reorder_level": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit_cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    },
+                    "location": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -21538,6 +23857,7 @@
                     "currency": {
                         "type": "string",
                         "minLength": 1,
+                        "default": "SYP",
                         "maxLength": 8
                     },
                     "is_active": {
@@ -21844,6 +24164,29 @@
                     }
                 }
             },
+            "PaymentMethodEnum": {
+                "enum": [
+                    "cash",
+                    "bank_transfer",
+                    "mobile_wallet",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `cash` - Cash\n* `bank_transfer` - Bank transfer\n* `mobile_wallet` - Mobile wallet\n* `other` - Other"
+            },
+            "PaymentVoidRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
             "PermissionOverrideUpsertRequest": {
                 "type": "object",
                 "properties": {
@@ -21930,6 +24273,7 @@
                     },
                     "currency": {
                         "type": "string",
+                        "default": "SYP",
                         "maxLength": 8
                     },
                     "is_active": {
@@ -21959,6 +24303,7 @@
                     "currency": {
                         "type": "string",
                         "minLength": 1,
+                        "default": "SYP",
                         "maxLength": 8
                     },
                     "is_active": {
@@ -21982,6 +24327,65 @@
                     "file"
                 ]
             },
+            "PrintJob": {
+                "type": "object",
+                "description": "One finished print order as the cashier sees it.",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "customer": {
+                        "type": "string"
+                    },
+                    "completed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "files_count": {
+                        "type": "integer"
+                    },
+                    "pages_count": {
+                        "type": "integer"
+                    },
+                    "sheets_count": {
+                        "type": "integer"
+                    },
+                    "total_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "paid": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "due": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "is_paid": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "completed_at",
+                    "currency",
+                    "customer",
+                    "due",
+                    "files_count",
+                    "id",
+                    "is_paid",
+                    "pages_count",
+                    "paid",
+                    "sheets_count",
+                    "total_price"
+                ]
+            },
             "PrintOrderCreateRequest": {
                 "type": "object",
                 "properties": {
@@ -21990,6 +24394,14 @@
                         "items": {
                             "$ref": "#/components/schemas/PrintOrderItemInputRequest"
                         }
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "description": "Price the order in this currency (default: the shop default, new Syrian pound).\n\n* `SYP` - Syrian Pound (new)\n* `USD` - US Dollar"
                     },
                     "user_notes": {
                         "type": "string",
@@ -22450,6 +24862,14 @@
                         "items": {
                             "$ref": "#/components/schemas/PrintOrderItemInput"
                         }
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "description": "Price the order in this currency (default: the shop default, new Syrian pound).\n\n* `SYP` - Syrian Pound (new)\n* `USD` - US Dollar"
                     }
                 },
                 "required": [
@@ -22464,6 +24884,14 @@
                         "items": {
                             "$ref": "#/components/schemas/PrintOrderItemInputRequest"
                         }
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "description": "Price the order in this currency (default: the shop default, new Syrian pound).\n\n* `SYP` - Syrian Pound (new)\n* `USD` - US Dollar"
                     }
                 },
                 "required": [
@@ -22831,6 +25259,130 @@
                 ],
                 "type": "string",
                 "description": "* `one_sided` - One Sided\n* `double_sided` - Double Sided"
+            },
+            "StockMovement": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "item": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "item_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "movement_type": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/StockMovementTypeEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "description": "Signed change applied to the item's quantity."
+                    },
+                    "quantity_after": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "unit_cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_by_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "created_by_name",
+                    "currency",
+                    "id",
+                    "item",
+                    "item_name",
+                    "movement_type",
+                    "note",
+                    "quantity",
+                    "quantity_after",
+                    "unit_cost"
+                ]
+            },
+            "StockMovementCreateRequest": {
+                "type": "object",
+                "properties": {
+                    "movement_type": {
+                        "$ref": "#/components/schemas/StockMovementTypeEnum"
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "unit_cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "record_expense": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "For a purchase: also book quantity x unit cost as a supplies expense."
+                    }
+                },
+                "required": [
+                    "movement_type",
+                    "quantity"
+                ]
+            },
+            "StockMovementTypeEnum": {
+                "enum": [
+                    "purchase",
+                    "usage",
+                    "waste",
+                    "adjustment"
+                ],
+                "type": "string",
+                "description": "* `purchase` - Purchase (adds stock)\n* `usage` - Usage (consumes stock)\n* `waste` - Waste or damage (removes stock)\n* `adjustment` - Count adjustment (signed)"
             },
             "StudentAcademicProfile": {
                 "type": "object",

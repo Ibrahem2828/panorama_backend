@@ -22,6 +22,7 @@ from .dashboard_serializers import (
     DashboardDeactivateUserSerializer,
     DashboardUserSerializer,
     DashboardUserUpdateSerializer,
+    PermissionOverrideRemoveSerializer,
     PermissionOverrideUpsertSerializer,
     UserPermissionOverrideSerializer,
 )
@@ -265,28 +266,55 @@ class DashboardUserPermissionOverridesView(APIView):
             code="PERMISSION_OVERRIDE_SAVED",
         )
 
-    @transaction.atomic
-    @extend_schema(tags=["Dashboard"], request=OpenApiTypes.OBJECT, responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        tags=["Dashboard"],
+        operation_id="v1_dashboard_users_permission_overrides_remove_legacy",
+        request=PermissionOverrideRemoveSerializer,
+        responses={200: OpenApiTypes.OBJECT},
+        deprecated=True,
+        description="Deprecated: DELETE with a body is not portable. Use DELETE .../permission-overrides/{permission_code}/.",
+    )
     def delete(self, request, user_id: int):
-        user = get_object_or_404(User, pk=user_id, is_deleted=False)
-        self._assert_can_change_overrides(request.user, user)
-        code = request.data.get("permission_code", "")
-        if not can_delegate_capability(request.user, code):
-            raise PermissionDenied("You cannot grant or revoke a capability you do not hold.")
-        override = get_object_or_404(UserPermissionOverride, user=user, permission_code=code, is_deleted=False)
-        old = UserPermissionOverrideSerializer(override).data
-        override.delete()
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.USER_PERMISSION_OVERRIDE_CHANGED,
-            target=user,
-            old_value=old,
-            new_value={"removed": code},
-            request=request,
-            critical=True,  # privilege change inside @transaction.atomic: roll back if untraceable
-        )
-        return success_response(
-            message="Permission override removed",
-            request=request,
-            code="PERMISSION_OVERRIDE_REMOVED",
-        )
+        serializer = PermissionOverrideRemoveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return remove_permission_override(request, user_id, serializer.validated_data["permission_code"])
+
+
+class DashboardUserPermissionOverrideDetailView(APIView):
+    """DELETE one override addressed by the capability code in the path (no request body)."""
+
+    permission_classes = [CanManageUsers]
+
+    @extend_schema(
+        tags=["Dashboard"],
+        operation_id="v1_dashboard_users_permission_overrides_remove",
+        request=None,
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def delete(self, request, user_id: int, permission_code: str):
+        return remove_permission_override(request, user_id, permission_code)
+
+
+@transaction.atomic
+def remove_permission_override(request, user_id: int, code: str):
+    user = get_object_or_404(User, pk=user_id, is_deleted=False)
+    DashboardUserPermissionOverridesView._assert_can_change_overrides(request.user, user)
+    if not can_delegate_capability(request.user, code):
+        raise PermissionDenied("You cannot grant or revoke a capability you do not hold.")
+    override = get_object_or_404(UserPermissionOverride, user=user, permission_code=code, is_deleted=False)
+    old = UserPermissionOverrideSerializer(override).data
+    override.delete()
+    AuditLogService.log(
+        actor=request.user,
+        action=AuditAction.USER_PERMISSION_OVERRIDE_CHANGED,
+        target=user,
+        old_value=old,
+        new_value={"removed": code},
+        request=request,
+        critical=True,  # privilege change inside @transaction.atomic: roll back if untraceable
+    )
+    return success_response(
+        message="Permission override removed",
+        request=request,
+        code="PERMISSION_OVERRIDE_REMOVED",
+    )

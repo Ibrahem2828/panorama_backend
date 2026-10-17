@@ -121,6 +121,10 @@ class UserPermissionOverrideSerializer(serializers.ModelSerializer):
         return value
 
 
+class PermissionOverrideRemoveSerializer(serializers.Serializer):
+    permission_code = serializers.CharField(max_length=100)
+
+
 class PermissionOverrideUpsertSerializer(UserPermissionOverrideSerializer):
     class Meta(UserPermissionOverrideSerializer.Meta):
         read_only_fields = ["id", "granted_by", "created_at", "updated_at"]
