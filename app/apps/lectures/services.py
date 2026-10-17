@@ -9,12 +9,26 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.permissions import Capability, PermissionService
+from apps.groups.models import GroupMembership, GroupMembershipStatus
 
 from .models import Lecture, LecturePage, LectureProcessingStatus, LectureViewerSession
 
 
 def user_can_manage_lectures(user) -> bool:
     return PermissionService.has(user, Capability.LECTURES_MANAGE)
+
+
+def _subject_group_member_subjects(user):
+    """Subject ids of the active groups where ``user`` is an approved member."""
+
+    return GroupMembership.objects.filter(
+        user=user,
+        status=GroupMembershipStatus.APPROVED,
+        is_deleted=False,
+        group__is_deleted=False,
+        group__is_active=True,
+        group__subject__isnull=False,
+    ).values("group__subject_id")
 
 
 def user_can_view_lecture(user, lecture: Lecture) -> bool:
@@ -34,6 +48,8 @@ def user_can_view_lecture(user, lecture: Lecture) -> bool:
         and profile.faculty_id is not None
         and profile.faculty_id == subject.faculty_id
         and (subject.major_id is None or subject.major_id == profile.major_id)
+        # Lectures belong to the subject's study group: only approved members of that group may read them.
+        and _subject_group_member_subjects(user).filter(group__subject_id=subject.id).exists()
     )
 
 
@@ -63,6 +79,7 @@ def accessible_lectures_for_user(user):
     return queryset.filter(
         subject_scope,
         subject__faculty_id=profile.faculty_id,
+        subject_id__in=_subject_group_member_subjects(user),
         is_published=True,
         status="ready",
     )

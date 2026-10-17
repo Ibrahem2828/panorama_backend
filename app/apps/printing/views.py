@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import mimetypes
+import time
+from datetime import timedelta
 from pathlib import Path
 from typing import cast
 
+from django.conf import settings
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
-from rest_framework import filters, permissions, status
+from rest_framework import filters, permissions, serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
@@ -20,11 +24,14 @@ from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
-from apps.common.throttles import FileTicketRateThrottle
+from apps.common.throttles import FileTicketRateThrottle, PrintConvertRateThrottle
 from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
+from apps.lectures.document_pipeline import DocumentPipelineError, inspect_lecture_document
 
 from .models import (
     PrintBindingPrice,
+    PrintConversion,
+    PrintConversionStatus,
     PrintItemAccessTicket,
     PrintOrder,
     PrintOrderItem,
@@ -36,6 +43,7 @@ from .serializers import (
     DashboardPrintOrderSerializer,
     MobilePrintOrderSerializer,
     PrintBindingPriceSerializer,
+    PrintConvertUploadSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
     PrintOrderNoteSerializer,
@@ -77,6 +85,83 @@ class PrintQuoteView(APIView):
         return success_response(
             data=data, message="Print quote calculated by the backend", request=request, code="PRINT_QUOTE_CALCULATED"
         )
+
+
+CONVERTIBLE_EXTENSIONS = {".doc", ".docx", ".ppt", ".pptx"}
+
+
+def _conversion_payload(conversion: PrintConversion) -> dict:
+    return {
+        "id": str(conversion.token),
+        "status": conversion.status,
+        "filename": conversion.pdf_name,
+        "pages_count": conversion.pages_count,
+        "expires_at": conversion.expires_at,
+        "failure_message": conversion.failure_message,
+    }
+
+
+class PrintConvertView(APIView):
+    """Accept a Word/PowerPoint file, convert it to PDF on the conversion worker and return a reference.
+
+    The reference is then sent as ``converted_upload`` on a print item (quote/order). If the worker is slow the
+    response is 202 with status ``pending`` and clients poll the detail endpoint.
+    """
+
+    parser_classes = [MultiPartParser, FormParser]
+    throttle_classes = [PrintConvertRateThrottle]
+    serializer_class = PrintConvertUploadSerializer
+
+    @extend_schema(tags=["Printing"], request=PrintConvertUploadSerializer, responses={201: OpenApiTypes.OBJECT})
+    def post(self, request):
+        from .tasks import convert_print_document
+
+        upload = request.FILES.get("file")
+        if not upload:
+            raise serializers.ValidationError({"file": "A file is required."})
+        if Path(upload.name).suffix.lower() not in CONVERTIBLE_EXTENSIONS:
+            raise serializers.ValidationError(
+                {"file": "Only Word (doc, docx) and PowerPoint (ppt, pptx) files can be converted."}
+            )
+        if upload.size > settings.MAX_DOCUMENT_UPLOAD_SIZE:
+            raise serializers.ValidationError({"file": "The file is too large."})
+        try:
+            inspect_lecture_document(upload)
+        except DocumentPipelineError as exc:
+            raise serializers.ValidationError({"file": str(exc)}) from exc
+        upload.seek(0)
+        conversion = PrintConversion.objects.create(
+            user=request.user,
+            original_name=Path(upload.name).name[:255],
+            expires_at=timezone.now() + timedelta(seconds=settings.PRINT_CONVERSION_TTL_SECONDS),
+        )
+        conversion.input_file.save(f"{conversion.token}{Path(upload.name).suffix.lower()}", upload, save=True)
+        transaction.on_commit(lambda: convert_print_document.delay(conversion.pk))
+        deadline = time.monotonic() + settings.PRINT_CONVERSION_WAIT_SECONDS
+        while conversion.status == PrintConversionStatus.PENDING and time.monotonic() < deadline:
+            time.sleep(1)
+            conversion.refresh_from_db()
+        if conversion.status == PrintConversionStatus.FAILED:
+            raise serializers.ValidationError({"file": conversion.failure_message or "Document conversion failed."})
+        ready = conversion.status == PrintConversionStatus.READY
+        return success_response(
+            data=_conversion_payload(conversion),
+            message="Document converted" if ready else "Document conversion in progress",
+            status_code=status.HTTP_201_CREATED if ready else status.HTTP_202_ACCEPTED,
+            request=request,
+            code="PRINT_CONVERSION_READY" if ready else "PRINT_CONVERSION_PENDING",
+        )
+
+
+class PrintConvertDetailView(APIView):
+    @extend_schema(tags=["Printing"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request, token):
+        conversion = get_object_or_404(
+            PrintConversion, token=token, user=request.user, is_deleted=False, expires_at__gt=timezone.now()
+        )
+        if conversion.status == PrintConversionStatus.FAILED:
+            raise serializers.ValidationError({"file": conversion.failure_message or "Document conversion failed."})
+        return success_response(data=_conversion_payload(conversion), request=request, code="PRINT_CONVERSION")
 
 
 class PrintOrderCreateView(APIView):

@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 284
+**Operations:** 286
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -258,6 +258,8 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_policies_accept_create | POST | /api/v1/policies/accept/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PolicyAcceptanceRequest; application/x-www-form-urlencoded: #/components/schemas/PolicyAcceptanceRequest; multipart/form-data: #/components/schemas/PolicyAcceptanceRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_policies_current_retrieve | GET | /api/v1/policies/current/ | Public | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_policies_status_retrieve | GET | /api/v1/policies/status/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_printing_convert_create | POST | /api/v1/printing/convert/ | Bearer JWT | Object/endpoint policy — REVIEW | multipart/form-data: #/components/schemas/PrintConvertUploadRequest; application/x-www-form-urlencoded: #/components/schemas/PrintConvertUploadRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_printing_convert_retrieve | GET | /api/v1/printing/convert/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_printing_items_access_ticket_create | POST | /api/v1/printing/items/{id}/access-ticket/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_printing_orders_create | POST | /api/v1/printing/orders/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PrintOrderCreateRequest; multipart/form-data: #/components/schemas/PrintOrderCreateRequest; application/x-www-form-urlencoded: #/components/schemas/PrintOrderCreateRequest | 201 | Envelope/global handling — REVIEW | Required | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_printing_orders_my_list | GET | /api/v1/printing/orders/my/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |

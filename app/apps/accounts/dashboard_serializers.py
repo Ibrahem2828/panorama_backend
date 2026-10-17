@@ -50,7 +50,8 @@ class DashboardUserSerializer(serializers.ModelSerializer):
         ]
 
     def get_effective_capabilities(self, obj) -> list[str]:
-        return [code for code in ALL_CAPABILITIES if PermissionService.has(obj, code)]
+        granted = PermissionService.granted_among(obj, ALL_CAPABILITIES)
+        return [code for code in ALL_CAPABILITIES if code in granted]
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_overrides(self, obj) -> list[dict[str, object]]:

@@ -182,6 +182,7 @@ REST_FRAMEWORK = {
         "search": config("THROTTLE_SEARCH", default="60/min"),
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
         "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
+        "print_convert": config("THROTTLE_PRINT_CONVERT", default="20/hour"),
     },
 }
 
@@ -388,6 +389,9 @@ MAX_DOCUMENT_UPLOAD_SIZE = config("MAX_DOCUMENT_UPLOAD_SIZE", default=25 * 1024 
 MAX_IMAGE_UPLOAD_SIZE = config("MAX_IMAGE_UPLOAD_SIZE", default=8 * 1024 * 1024, cast=int)
 LECTURE_MAX_UPLOAD_SIZE = config("LECTURE_MAX_UPLOAD_SIZE", default=50 * 1024 * 1024, cast=int)
 LECTURE_MAX_PAGES = config("LECTURE_MAX_PAGES", default=500, cast=int)
+PRINT_CONVERSION_MAX_PAGES = config("PRINT_CONVERSION_MAX_PAGES", default=300, cast=int)
+PRINT_CONVERSION_TTL_SECONDS = config("PRINT_CONVERSION_TTL_SECONDS", default=7200, cast=int)
+PRINT_CONVERSION_WAIT_SECONDS = config("PRINT_CONVERSION_WAIT_SECONDS", default=60, cast=int)
 LECTURE_VIEWER_SESSION_TTL_SECONDS = config("LECTURE_VIEWER_SESSION_TTL_SECONDS", default=900, cast=int)
 LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS = config("LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS", default=1200, cast=int)
 DOCUMENT_CONVERSION_TIME_LIMIT = config("DOCUMENT_CONVERSION_TIME_LIMIT", default=180, cast=int)
@@ -406,7 +410,10 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, cast=int)
-CELERY_TASK_ROUTES = {"apps.lectures.tasks.*": {"queue": "conversion"}}
+CELERY_TASK_ROUTES = {
+    "apps.lectures.tasks.*": {"queue": "conversion"},
+    "apps.printing.tasks.convert_print_document": {"queue": "conversion"},
+}
 # Redelivery window for unacknowledged tasks; must exceed the longest task (lecture conversion).
 CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 7200}
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
@@ -435,6 +442,10 @@ CELERY_BEAT_SCHEDULE = {
     "flush-expired-jwt-tokens": {
         "task": "apps.common.tasks.flush_expired_jwt_tokens",
         "schedule": crontab(hour=4, minute=5),
+    },
+    "purge-expired-print-conversions": {
+        "task": "apps.printing.tasks.purge_expired_print_conversions",
+        "schedule": 1800.0,
     },
     # Lectures whose worker died mid-conversion would otherwise stay "processing" forever.
     "fail-stuck-lectures": {

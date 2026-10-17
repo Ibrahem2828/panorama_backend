@@ -150,6 +150,10 @@ class FileTicketRateThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": ident}
 
 
+class PrintConvertRateThrottle(FileTicketRateThrottle):
+    scope = "print_convert"
+
+
 class ExternalChannelRateThrottle(SimpleRateThrottle):
     scope = "external_channel"
 

@@ -10,6 +10,8 @@ from .views import (
     DashboardPrintPricingRuleViewSet,
     DashboardPrintStatusView,
     MyPrintOrderViewSet,
+    PrintConvertDetailView,
+    PrintConvertView,
     PrintItemAccessTicketView,
     PrintOrderCancelView,
     PrintOrderCreateView,
@@ -32,6 +34,8 @@ router.register(
 
 urlpatterns = [
     path("printing/quote/", PrintQuoteView.as_view(), name="print-quote"),
+    path("printing/convert/", PrintConvertView.as_view(), name="print-convert"),
+    path("printing/convert/<uuid:token>/", PrintConvertDetailView.as_view(), name="print-convert-detail"),
     path("printing/orders/", PrintOrderCreateView.as_view(), name="print-order-create"),
     *router.urls,
     path("printing/orders/<int:pk>/cancel/", PrintOrderCancelView.as_view(), name="print-order-cancel"),

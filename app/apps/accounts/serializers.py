@@ -202,11 +202,8 @@ class UserSerializer(serializers.ModelSerializer):
         return profile.verification_status if profile else None
 
     def get_effective_capabilities(self, obj: User) -> list[str]:
-        return sorted(
-            value
-            for name, value in vars(Capability).items()
-            if name.isupper() and isinstance(value, str) and PermissionService.has(obj, value)
-        )
+        codes = [value for name, value in vars(Capability).items() if name.isupper() and isinstance(value, str)]
+        return sorted(PermissionService.granted_among(obj, codes))
 
     def validate_username(self, value: str | None) -> str | None:
         if value == "":

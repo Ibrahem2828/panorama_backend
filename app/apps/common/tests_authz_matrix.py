@@ -136,6 +136,8 @@ ROUTE_KINDS: dict[str, str] = {
     "lectures/{lecture_id}/notes/{note_id}/": AUTH,
     # --- printing -----------------------------------------------------------------------------------------------------
     "printing/quote/": AUTH,
+    "printing/convert/": AUTH,
+    "printing/convert/{token}/": AUTH,
     "printing/orders/": AUTH,
     "printing/orders/my/": AUTH,
     "printing/orders/my/{pk}/": AUTH,
@@ -678,6 +680,14 @@ def world(db) -> World:
         uploaded_by=w.admin,
     )
     w.note = LectureNote.objects.create(student=w.a, lecture=w.lecture, content="A's private note")
+    # lectures open only to approved members of the subject's study group
+    subject_group = Group.objects.create(
+        name="Algo study group", university=university, faculty=faculty, subject=subject, created_by=w.admin
+    )
+    for member in (w.a, w.b):
+        GroupMembership.objects.get_or_create(
+            group=subject_group, user=member, defaults={"status": GroupMembershipStatus.APPROVED}
+        )
 
     # verification, device, announcements
     w.verification = VerificationRequest.objects.create(

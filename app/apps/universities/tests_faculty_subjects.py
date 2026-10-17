@@ -20,7 +20,7 @@ from rest_framework.test import APIClient
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.models import StudentProfile, User
 from apps.common.reference_import import ReferenceDataError, import_reference_data
-from apps.groups.models import Group
+from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 from apps.groups.services import is_student_eligible_for_group
 from apps.lectures.models import Lecture, LectureProcessingStatus
 from apps.lectures.services import accessible_lectures_for_user, user_can_view_lecture
@@ -305,7 +305,20 @@ def test_lecture_access_is_faculty_based_without_year_or_semester(w):
     outsider = _student(w, "c@subj.test", 4, faculty="other_fac")
     pending = _student(w, "d@subj.test", 5, status_=StudentVerificationStatus.PENDING)
     no_faculty = _student(w, "e@subj.test", 6, faculty=None)
+    no_group = _student(w, "f@subj.test", 7)
 
+    # Lectures also require an approved membership in the subject's study group; everyone below belongs to all of
+    # them (except `no_group`), so what is asserted is the faculty/major rule on top of membership.
+    for subject in (w.general, w.se_subject, w.ai_subject, w.foreign_subject):
+        group = Group.objects.filter(subject=subject).first() or Group.objects.create(
+            name=f"Group {subject.id}", university=w.uni, faculty=subject.faculty, subject=subject, created_by=w.admin
+        )
+        for member in (year3_no_major, se_student, outsider, pending, no_faculty):
+            GroupMembership.objects.get_or_create(
+                group=group, user=member, defaults={"status": GroupMembershipStatus.APPROVED}
+            )
+
+    assert not user_can_view_lecture(no_group, general)  # right faculty, but not in the subject's group
     assert user_can_view_lecture(year3_no_major, general)  # retaking a year-1 subject
     assert not user_can_view_lecture(year3_no_major, se_lecture)  # tagged with a major the student lacks
     assert user_can_view_lecture(se_student, general) and user_can_view_lecture(se_student, se_lecture)

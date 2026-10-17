@@ -5,6 +5,8 @@ import json
 from collections.abc import Sequence
 from typing import Any, cast
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.choices import UserRole
@@ -15,6 +17,8 @@ from apps.files.services import accessible_files_for_user
 
 from .models import (
     PrintBindingPrice,
+    PrintConversion,
+    PrintConversionStatus,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
@@ -25,11 +29,16 @@ from .models import (
 from .services import PrintOrderService, PrintPricingService, PrintStatusService
 
 
+class PrintConvertUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text="A Word (doc, docx) or PowerPoint (ppt, pptx) file to convert to PDF.")
+
+
 class PrintOrderItemInputSerializer(serializers.Serializer):
     source_file = serializers.PrimaryKeyRelatedField(
         queryset=FileResource.objects.none(), required=False, allow_null=True
     )
     uploaded_file = serializers.FileField(required=False, allow_null=True, write_only=True)
+    converted_upload = serializers.UUIDField(required=False, allow_null=True, write_only=True)
     copies = serializers.IntegerField(min_value=1, max_value=99, default=1)
     color_mode = serializers.ChoiceField(
         choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("color_mode").choices)
@@ -50,9 +59,29 @@ class PrintOrderItemInputSerializer(serializers.Serializer):
     def validate_uploaded_file(self, value):
         return validate_document_upload(value, "uploaded_file") if value else value
 
+    def _resolve_conversion(self, token):
+        request = self.context.get("request")
+        conversion = PrintConversion.objects.filter(
+            token=token,
+            user=getattr(request, "user", None),
+            status=PrintConversionStatus.READY,
+            is_deleted=False,
+            expires_at__gt=timezone.now(),
+        ).first()
+        if not conversion or not conversion.pdf_file:
+            raise serializers.ValidationError({"converted_upload": "The converted document is not available."})
+        with conversion.pdf_file.open("rb") as handle:
+            content = handle.read()
+        return SimpleUploadedFile(conversion.pdf_name, content, content_type="application/pdf")
+
     def validate(self, attrs):
+        token = attrs.pop("converted_upload", None)
+        if token:
+            if attrs.get("uploaded_file"):
+                raise serializers.ValidationError("Send either uploaded_file or converted_upload, not both.")
+            attrs["uploaded_file"] = self._resolve_conversion(token)
         if bool(attrs.get("source_file")) == bool(attrs.get("uploaded_file")):
-            raise serializers.ValidationError("Exactly one source_file or uploaded_file is required.")
+            raise serializers.ValidationError("Exactly one source_file, uploaded_file or converted_upload is required.")
         return attrs
 
 
