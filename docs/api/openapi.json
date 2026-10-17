@@ -2129,7 +2129,7 @@
         "/api/v1/dashboard/devices/": {
             "get": {
                 "operationId": "v1_dashboard_devices_list",
-                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "name": "ordering",
@@ -2196,7 +2196,7 @@
         "/api/v1/dashboard/devices/{id}/": {
             "get": {
                 "operationId": "v1_dashboard_devices_retrieve",
-                "description": "List/retrieve only.\n\nDRF routers discover actions by attribute. Write methods must never be added\nto this class, otherwise a nominally read-only resource becomes writable.",
+                "description": "Base for a deliberately small set of custom, documented write actions.",
                 "parameters": [
                     {
                         "in": "path",

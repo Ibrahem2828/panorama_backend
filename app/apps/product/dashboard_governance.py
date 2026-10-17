@@ -22,7 +22,7 @@ from apps.accounts.permissions import CanManageProduct, CanManageUsers, actor_ou
 from apps.audit.models import AuditAction, AuditLog
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
-from apps.common.viewsets import StandardReadOnlyModelViewSet
+from apps.common.viewsets import StandardExplicitActionViewSet
 
 from .models import AccountDeletionRequest, AccountDeletionStatus, DeviceInstallation
 from .services import AccountDeletionService
@@ -101,7 +101,7 @@ class DashboardAccountDeletionDetailSerializer(DashboardAccountDeletionSerialize
         ]
 
 
-class DashboardAccountDeletionViewSet(StandardReadOnlyModelViewSet):
+class DashboardAccountDeletionViewSet(StandardExplicitActionViewSet):
     """Review and act on account deletion requests (list/detail read-only; cancel and execute are explicit actions)."""
 
     permission_classes = [CanManageUsers]
@@ -235,7 +235,7 @@ class DashboardDeviceSerializer(serializers.ModelSerializer):
         return DashboardUserBriefSerializer(obj.user).data if obj.user_id else None
 
 
-class DashboardDeviceViewSet(StandardReadOnlyModelViewSet):
+class DashboardDeviceViewSet(StandardExplicitActionViewSet):
     permission_classes = [CanManageProduct]
     serializer_class = DashboardDeviceSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
