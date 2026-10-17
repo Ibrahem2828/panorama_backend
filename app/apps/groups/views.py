@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import cast
 
 from django.db.models import Count, Prefetch, Q
-from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import filters, permissions, status
+from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
@@ -20,7 +20,6 @@ from apps.common.throttles import ExternalChannelRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import (
-    ExternalChannelAccessTicket,
     Group,
     GroupExternalChannel,
     GroupMembership,
@@ -299,30 +298,26 @@ class DashboardWhatsAppChannelView(APIView):
         )
 
 
+class ExternalChannelLinkRetired(APIException):
+    """The ticket + redirect flow ended in an HTTP 302 whose Location header WAS the https invite link: anyone holding a ticket could
+    read it with a plain HTTP client. It is permanently retired; clients use ``whatsapp-launch`` (app deep link, members only)."""
+
+    status_code = status.HTTP_410_GONE
+    default_detail = "This endpoint was retired. Open the group from the app."
+    default_code = "external_channel_link_retired"
+    api_code = "EXTERNAL_CHANNEL_LINK_RETIRED"
+
+
 class GroupWhatsAppTicketView(APIView):
     permission_classes = [IsVerifiedStudent]
     throttle_classes = [ExternalChannelRateThrottle]
     serializer_class = ExternalChannelTicketSerializer
 
-    @extend_schema(tags=["Groups"], responses={201: ExternalChannelTicketSerializer})
+    @extend_schema(
+        tags=["Groups"], request=None, responses={410: OpenApiResponse(description="Retired")}, deprecated=True
+    )
     def post(self, request, pk: int):
-        group = get_object_or_404(Group, pk=pk, is_active=True, is_deleted=False)
-        ticket = ExternalChannelService.issue_ticket(group, request.user)
-        open_url = request.build_absolute_uri(f"/api/v1/external-channels/open/{ticket.token}/")
-        AuditLogService.log(
-            actor=request.user,
-            action=AuditAction.GROUP_EXTERNAL_CHANNEL_TICKET_ISSUED,
-            target=group,
-            new_value={"ticket_id": ticket.id, "expires_at": ticket.expires_at.isoformat()},
-            request=request,
-        )
-        return success_response(
-            data={"open_url": open_url, "expires_at": ticket.expires_at},
-            message="Temporary external channel link issued",
-            status_code=status.HTTP_201_CREATED,
-            request=request,
-            code="EXTERNAL_CHANNEL_TICKET_ISSUED",
-        )
+        raise ExternalChannelLinkRetired()
 
 
 class GroupWhatsAppLaunchView(APIView):
@@ -354,6 +349,8 @@ class GroupWhatsAppLaunchView(APIView):
             code="EXTERNAL_CHANNEL_APP_LINK_ISSUED",
         )
         response["Cache-Control"] = "no-store, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Referrer-Policy"] = "no-referrer"
         return response
 
 
@@ -365,22 +362,5 @@ class ExternalChannelRedirectView(APIView):
         auth=[], tags=["Protected Assets"], responses={302: OpenApiResponse(description="One-time redirect")}
     )
     def get(self, request, token):
-        ticket = (
-            ExternalChannelAccessTicket.objects.select_related("channel__group", "user")
-            .filter(token=token, is_deleted=False)
-            .first()
-        )
-        if not ticket or not ticket.is_valid:
-            raise Http404("The external channel link is invalid or expired.")
-        destination = ExternalChannelService.consume_ticket(ticket)
-        AuditLogService.log(
-            actor=ticket.user,
-            action=AuditAction.GROUP_EXTERNAL_CHANNEL_OPENED,
-            target=ticket.channel.group,
-            new_value={"channel_type": ticket.channel.channel_type},
-            request=request,
-        )
-        response = HttpResponseRedirect(destination)
-        response["Cache-Control"] = "no-store, max-age=0"
-        response["Referrer-Policy"] = "no-referrer"
-        return response
+        # Never looks the ticket up and never decrypts the channel: there is nothing left to redirect to.
+        raise ExternalChannelLinkRetired()
