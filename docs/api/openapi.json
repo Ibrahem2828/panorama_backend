@@ -4656,6 +4656,13 @@
                 "parameters": [
                     {
                         "in": "query",
+                        "name": "faculty",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
                         "name": "is_published",
                         "schema": {
                             "type": "boolean"
@@ -16913,10 +16920,25 @@
                         "readOnly": true
                     },
                     "subject": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true
                     },
                     "subject_name": {
                         "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "faculty": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "faculty_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "is_general": {
+                        "type": "boolean",
                         "readOnly": true
                     },
                     "title": {
@@ -16988,9 +17010,11 @@
                 },
                 "required": [
                     "created_at",
+                    "faculty_name",
                     "failure_code",
                     "failure_message",
                     "id",
+                    "is_general",
                     "original_filename",
                     "original_mime_type",
                     "original_sha256",
@@ -16998,7 +17022,6 @@
                     "page_count",
                     "published_at",
                     "status",
-                    "subject",
                     "subject_name",
                     "title",
                     "updated_at",
@@ -17009,7 +17032,12 @@
                 "type": "object",
                 "properties": {
                     "subject": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "faculty": {
+                        "type": "integer",
+                        "nullable": true
                     },
                     "title": {
                         "type": "string",
@@ -17029,7 +17057,6 @@
                     }
                 },
                 "required": [
-                    "subject",
                     "title"
                 ]
             },
@@ -18532,10 +18559,26 @@
                     },
                     "subject": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "subject_name": {
                         "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "faculty": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "faculty_name": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "is_general": {
+                        "type": "boolean",
                         "readOnly": true
                     },
                     "title": {
@@ -18587,7 +18630,10 @@
                     "can_view",
                     "created_at",
                     "description",
+                    "faculty",
+                    "faculty_name",
                     "id",
+                    "is_general",
                     "is_published",
                     "page_count",
                     "published_at",
@@ -21073,7 +21119,12 @@
                 "type": "object",
                 "properties": {
                     "subject": {
-                        "type": "integer"
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "faculty": {
+                        "type": "integer",
+                        "nullable": true
                     },
                     "title": {
                         "type": "string",

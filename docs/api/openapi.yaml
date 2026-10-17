@@ -2973,6 +2973,10 @@ paths:
       description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
+        name: faculty
+        schema:
+          type: integer
+      - in: query
         name: is_published
         schema:
           type: boolean
@@ -10923,8 +10927,20 @@ components:
           readOnly: true
         subject:
           type: integer
+          nullable: true
         subject_name:
           type: string
+          nullable: true
+          readOnly: true
+        faculty:
+          type: integer
+          nullable: true
+        faculty_name:
+          type: string
+          nullable: true
+          readOnly: true
+        is_general:
+          type: boolean
           readOnly: true
         title:
           type: string
@@ -10976,9 +10992,11 @@ components:
           readOnly: true
       required:
       - created_at
+      - faculty_name
       - failure_code
       - failure_message
       - id
+      - is_general
       - original_filename
       - original_mime_type
       - original_sha256
@@ -10986,7 +11004,6 @@ components:
       - page_count
       - published_at
       - status
-      - subject
       - subject_name
       - title
       - updated_at
@@ -10996,6 +11013,10 @@ components:
       properties:
         subject:
           type: integer
+          nullable: true
+        faculty:
+          type: integer
+          nullable: true
         title:
           type: string
           minLength: 1
@@ -11009,7 +11030,6 @@ components:
         is_published:
           type: boolean
       required:
-      - subject
       - title
     DashboardMessageReport:
       type: object
@@ -12165,8 +12185,21 @@ components:
         subject:
           type: integer
           readOnly: true
+          nullable: true
         subject_name:
           type: string
+          nullable: true
+          readOnly: true
+        faculty:
+          type: integer
+          readOnly: true
+          nullable: true
+        faculty_name:
+          type: string
+          nullable: true
+          readOnly: true
+        is_general:
+          type: boolean
           readOnly: true
         title:
           type: string
@@ -12204,7 +12237,10 @@ components:
       - can_view
       - created_at
       - description
+      - faculty
+      - faculty_name
       - id
+      - is_general
       - is_published
       - page_count
       - published_at
@@ -14069,6 +14105,10 @@ components:
       properties:
         subject:
           type: integer
+          nullable: true
+        faculty:
+          type: integer
+          nullable: true
         title:
           type: string
           minLength: 1

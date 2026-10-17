@@ -34,10 +34,10 @@ from apps.product.models import FeatureFlag
 from apps.universities.models import AcademicYear, Faculty, Major, Semester, Subject, University
 
 
-def make_pdf() -> bytes:
+def make_pdf(width: int = 100) -> bytes:
     output = BytesIO()
     writer = PdfWriter()
-    writer.add_blank_page(width=100, height=100)
+    writer.add_blank_page(width=width, height=100)
     writer.write(output)
     return output.getvalue()
 
@@ -497,3 +497,153 @@ def test_lectures_require_approved_membership_in_the_subject_group(api_client, r
     pending.approve(reviewer=outsider)
     assert user_can_view_lecture(outsider, ready_lecture)
     assert accessible_lectures_for_user(outsider).filter(pk=ready_lecture.pk).exists()
+
+
+# --- general lectures (no subject) --------------------------------------------------------------------------------------------------
+
+
+def make_general_lecture(manager, faculty=None, title="General talk", sha="b" * 64):
+    return Lecture.objects.create(
+        subject=None,
+        faculty=faculty,
+        title=title,
+        original_file=ContentFile(make_pdf(), name="general.pdf"),
+        original_filename="general.pdf",
+        original_mime_type="application/pdf",
+        original_size=100,
+        original_sha256=sha,
+        viewer_pdf=ContentFile(make_pdf(), name="general-viewer.pdf"),
+        status=LectureProcessingStatus.READY,
+        page_count=1,
+        is_published=True,
+        uploaded_by=manager,
+    )
+
+
+def _upload(api_client, manager, **fields):
+    api_client.force_authenticate(manager)
+    distinct = 100 + sum(ord(c) for c in fields.get("title", "x"))  # each upload must hash differently
+    with patch("apps.lectures.views.process_lecture_document.delay"):
+        with patch("apps.lectures.views.transaction.on_commit", side_effect=lambda callback: callback()):
+            return api_client.post(
+                "/api/v1/dashboard/lectures/",
+                {"original_file": ContentFile(make_pdf(distinct), name=f"{fields.get('title', 'x')}.pdf"), **fields},
+                format="multipart",
+            )
+
+
+@pytest.mark.django_db
+def test_manager_can_upload_a_general_lecture_or_one_linked_to_a_subject(api_client, manager, academic_structure):
+    general = _upload(api_client, manager, title="Orientation")
+    assert general.status_code == status.HTTP_201_CREATED, general.content
+    assert general.data["data"]["subject"] is None and general.data["data"]["is_general"] is True
+    faculty_only = _upload(api_client, manager, title="Faculty talk", faculty=academic_structure["faculty"].id)
+    assert faculty_only.status_code == status.HTTP_201_CREATED
+    linked = _upload(api_client, manager, title="Algorithms 1", subject=academic_structure["subject"].id)
+    assert linked.status_code == status.HTTP_201_CREATED
+    assert linked.data["data"]["is_general"] is False
+    both = _upload(
+        api_client,
+        manager,
+        title="Both",
+        subject=academic_structure["subject"].id,
+        faculty=academic_structure["faculty"].id,
+    )
+    assert both.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_general_lecture_is_visible_to_any_approved_student_even_without_a_group(
+    api_client, manager, academic_structure, student
+):
+    ready_general = make_general_lecture(manager)
+    outsider = User.objects.create_user(
+        full_name="No group",
+        email="nogroup@example.com",
+        phone_number="+963955000099",
+        password="StrongPass123!",
+        role=UserRole.STUDENT,
+    )
+    StudentProfile.objects.create(
+        user=outsider,
+        university=academic_structure["university"],
+        faculty=academic_structure["faculty"],
+        verification_status=StudentVerificationStatus.APPROVED,
+    )
+    for user in (student, outsider):
+        api_client.force_authenticate(user)
+        listed = api_client.get("/api/v1/lectures/")
+        ids = (
+            [row["id"] for row in listed.data["data"]["results"]]
+            if "results" in listed.data["data"]
+            else [row["id"] for row in listed.data["data"]]
+        )
+        assert ready_general.id in ids, user.email
+        assert api_client.get(f"/api/v1/lectures/{ready_general.id}/").status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_subject_lecture_stays_hidden_from_students_outside_the_subject_group_but_general_ones_do_not(
+    api_client, manager, academic_structure, ready_lecture
+):
+    outsider = User.objects.create_user(
+        full_name="No group",
+        email="nogroup2@example.com",
+        phone_number="+963955000098",
+        password="StrongPass123!",
+        role=UserRole.STUDENT,
+    )
+    StudentProfile.objects.create(
+        user=outsider,
+        university=academic_structure["university"],
+        faculty=academic_structure["faculty"],
+        verification_status=StudentVerificationStatus.APPROVED,
+    )
+    general = make_general_lecture(manager)
+    api_client.force_authenticate(outsider)
+    payload = api_client.get("/api/v1/lectures/").data["data"]
+    ids = [row["id"] for row in (payload["results"] if "results" in payload else payload)]
+    assert general.id in ids
+    assert ready_lecture.id not in ids
+    assert api_client.get(f"/api/v1/lectures/{ready_lecture.id}/").status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+def test_faculty_narrowed_general_lecture_is_hidden_from_other_faculties(api_client, manager, academic_structure):
+    other_faculty = Faculty.objects.create(university=academic_structure["university"], name="Law", code="LAW")
+    narrowed = make_general_lecture(manager, faculty=other_faculty, title="Law talk", sha="c" * 64)
+    user = User.objects.create_user(
+        full_name="Engineer",
+        email="eng@example.com",
+        phone_number="+963955000097",
+        password="StrongPass123!",
+        role=UserRole.STUDENT,
+    )
+    StudentProfile.objects.create(
+        user=user,
+        university=academic_structure["university"],
+        faculty=academic_structure["faculty"],
+        verification_status=StudentVerificationStatus.APPROVED,
+    )
+    api_client.force_authenticate(user)
+    assert api_client.get(f"/api/v1/lectures/{narrowed.id}/").status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+def test_pending_or_unapproved_students_never_see_general_lectures(api_client, manager, academic_structure):
+    general = make_general_lecture(manager)
+    user = User.objects.create_user(
+        full_name="Pending",
+        email="pending@example.com",
+        phone_number="+963955000096",
+        password="StrongPass123!",
+        role=UserRole.STUDENT,
+    )
+    StudentProfile.objects.create(
+        user=user,
+        university=academic_structure["university"],
+        faculty=academic_structure["faculty"],
+        verification_status=StudentVerificationStatus.PENDING,
+    )
+    api_client.force_authenticate(user)
+    assert api_client.get(f"/api/v1/lectures/{general.id}/").status_code == status.HTTP_404_NOT_FOUND
