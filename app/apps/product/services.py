@@ -336,10 +336,64 @@ class AccountDeletionService:
         return deletion
 
     @staticmethod
-    def execute_due(limit: int = 100) -> int:
+    def execute(deletion_id: int, *, actor=None, reason: str = "", request=None, force: bool = False) -> bool:
+        """Anonymize ONE pending account. ``force`` skips the grace period (staff-initiated, audited with the reason).
+
+        Returns False when the request is not pending (or not due yet and not forced); nothing is changed then.
+        """
+
+        with transaction.atomic():
+            deletion = AccountDeletionRequest.objects.select_for_update().select_related("user").get(pk=deletion_id)
+            if deletion.status != AccountDeletionStatus.REQUESTED:
+                return False
+            if not force and deletion.scheduled_for > timezone.now():
+                return False
+            user = deletion.user
+            suffix = hashlib.sha256(f"{user.pk}:{deletion.pk}".encode()).hexdigest()[:16]
+            from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+
+            from apps.product.models import DeviceInstallation
+
+            anonymization_counts = anonymize_user_data(
+                user, original_email=user.email, original_phone=user.phone_number
+            )
+            for token in OutstandingToken.objects.filter(user=user):
+                BlacklistedToken.objects.get_or_create(token=token)
+            DeviceInstallation.objects.filter(user=user, revoked_at__isnull=True).update(
+                push_token=None,
+                notifications_enabled=False,
+                revoked_at=timezone.now(),
+                updated_at=timezone.now(),
+            )
+            user.full_name = "Deleted user"
+            user.email = f"deleted-{user.pk}-{suffix}@invalid.local"
+            user.phone_number = f"deleted-{user.pk}-{suffix[:8]}"
+            user.username = None
+            user.is_active = False
+            user.is_deleted = True
+            user.deleted_at = timezone.now()
+            user.set_unusable_password()
+            user.save()
+            deletion.status = AccountDeletionStatus.COMPLETED
+            deletion.completed_at = timezone.now()
+            deletion.save(update_fields=["status", "completed_at", "updated_at"])
+            details: dict[str, object] = {"anonymized": anonymization_counts}
+            if actor is not None:
+                details.update({"by_staff": True, "reason": reason})
+            AuditLogService.log(
+                actor=actor,
+                action=AuditAction.ACCOUNT_DELETION_COMPLETED,
+                target=deletion,
+                new_value=details,
+                request=request,
+                critical=True,  # inside the atomic block: an unrecorded erasure must roll back
+            )
+        return True
+
+    @classmethod
+    def execute_due(cls, limit: int = 100) -> int:
         """Anonymize due accounts without deleting records needed for retained audit trails."""
 
-        completed = 0
         due_ids = list(
             AccountDeletionRequest.objects.filter(
                 status=AccountDeletionStatus.REQUESTED,
@@ -349,46 +403,4 @@ class AccountDeletionService:
             .order_by("scheduled_for")
             .values_list("pk", flat=True)[:limit]
         )
-        for deletion_id in due_ids:
-            with transaction.atomic():
-                deletion = AccountDeletionRequest.objects.select_for_update().select_related("user").get(pk=deletion_id)
-                if deletion.status != AccountDeletionStatus.REQUESTED or deletion.scheduled_for > timezone.now():
-                    continue
-                user = deletion.user
-                suffix = hashlib.sha256(f"{user.pk}:{deletion.pk}".encode()).hexdigest()[:16]
-                from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
-
-                from apps.product.models import DeviceInstallation
-
-                anonymization_counts = anonymize_user_data(
-                    user, original_email=user.email, original_phone=user.phone_number
-                )
-                for token in OutstandingToken.objects.filter(user=user):
-                    BlacklistedToken.objects.get_or_create(token=token)
-                DeviceInstallation.objects.filter(user=user, revoked_at__isnull=True).update(
-                    push_token=None,
-                    notifications_enabled=False,
-                    revoked_at=timezone.now(),
-                    updated_at=timezone.now(),
-                )
-                user.full_name = "Deleted user"
-                user.email = f"deleted-{user.pk}-{suffix}@invalid.local"
-                user.phone_number = f"deleted-{user.pk}-{suffix[:8]}"
-                user.username = None
-                user.is_active = False
-                user.is_deleted = True
-                user.deleted_at = timezone.now()
-                user.set_unusable_password()
-                user.save()
-                deletion.status = AccountDeletionStatus.COMPLETED
-                deletion.completed_at = timezone.now()
-                deletion.save(update_fields=["status", "completed_at", "updated_at"])
-                AuditLogService.log(
-                    actor=None,
-                    action=AuditAction.ACCOUNT_DELETION_COMPLETED,
-                    target=deletion,
-                    new_value={"anonymized": anonymization_counts},
-                    critical=True,  # inside the atomic block: an unrecorded erasure must roll back
-                )
-                completed += 1
-        return completed
+        return sum(1 for deletion_id in due_ids if cls.execute(deletion_id))

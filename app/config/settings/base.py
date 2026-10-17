@@ -203,6 +203,7 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{"bearerAuth": []}],
     "ENUM_NAME_OVERRIDES": {
+        "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",
         "UserRoleEnum": [
             ("it_support", "IT Support"),
             ("admin", "Admin"),
