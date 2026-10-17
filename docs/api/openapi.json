@@ -13154,6 +13154,91 @@
                 }
             }
         },
+        "/api/v1/printing/convert/": {
+            "post": {
+                "operationId": "v1_printing_convert_create",
+                "description": "Accept a Word/PowerPoint file, convert it to PDF on the conversion worker and return a reference.\n\nThe reference is then sent as ``converted_upload`` on a print item (quote/order). If the worker is slow the\nresponse is 202 with status ``pending`` and clients poll the detail endpoint.",
+                "tags": [
+                    "Printing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintConvertUploadRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintConvertUploadRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/printing/convert/{token}/": {
+            "get": {
+                "operationId": "v1_printing_convert_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "token",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Printing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/printing/items/{id}/access-ticket/": {
             "post": {
                 "operationId": "v1_printing_items_access_ticket_create",
@@ -21124,6 +21209,19 @@
                     "binding"
                 ]
             },
+            "PrintConvertUploadRequest": {
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "A Word (doc, docx) or PowerPoint (ppt, pptx) file to convert to PDF."
+                    }
+                },
+                "required": [
+                    "file"
+                ]
+            },
             "PrintOrderCreateRequest": {
                 "type": "object",
                 "properties": {
@@ -21320,6 +21418,12 @@
                     "uploaded_file": {
                         "type": "string",
                         "format": "binary",
+                        "writeOnly": true,
+                        "nullable": true
+                    },
+                    "converted_upload": {
+                        "type": "string",
+                        "format": "uuid",
                         "writeOnly": true,
                         "nullable": true
                     },

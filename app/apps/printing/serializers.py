@@ -29,6 +29,10 @@ from .models import (
 from .services import PrintOrderService, PrintPricingService, PrintStatusService
 
 
+class PrintConvertUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text="A Word (doc, docx) or PowerPoint (ppt, pptx) file to convert to PDF.")
+
+
 class PrintOrderItemInputSerializer(serializers.Serializer):
     source_file = serializers.PrimaryKeyRelatedField(
         queryset=FileResource.objects.none(), required=False, allow_null=True

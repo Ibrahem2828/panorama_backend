@@ -43,6 +43,7 @@ from .serializers import (
     DashboardPrintOrderSerializer,
     MobilePrintOrderSerializer,
     PrintBindingPriceSerializer,
+    PrintConvertUploadSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
     PrintOrderNoteSerializer,
@@ -109,8 +110,9 @@ class PrintConvertView(APIView):
 
     parser_classes = [MultiPartParser, FormParser]
     throttle_classes = [PrintConvertRateThrottle]
+    serializer_class = PrintConvertUploadSerializer
 
-    @extend_schema(tags=["Printing"], responses={201: OpenApiTypes.OBJECT})
+    @extend_schema(tags=["Printing"], request=PrintConvertUploadSerializer, responses={201: OpenApiTypes.OBJECT})
     def post(self, request):
         from .tasks import convert_print_document
 
