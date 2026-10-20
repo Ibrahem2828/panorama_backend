@@ -225,6 +225,8 @@ def test_the_cashier_can_charge_a_different_price_and_take_part_payment(prices, 
     assert Decimal(data["paid_amount"]) == Decimal("100.00") and Decimal(data["due_amount"]) == Decimal("100.00")
     assert order.pricing_snapshot["price_overridden"] is True
     assert order.pricing_snapshot["suggested_total"] == "230.00"
+    # the typed price was not rounded, so the order reports no rounding
+    assert Decimal(data["rounding_adjustment"]) == Decimal("0.00")
 
 
 @pytest.mark.django_db

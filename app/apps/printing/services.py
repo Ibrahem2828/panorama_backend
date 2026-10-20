@@ -523,6 +523,9 @@ class CounterOrderService:
         if paid_amount > charged:
             raise ValidationError({"paid_amount": "The amount received cannot exceed the price."})
         now = timezone.now()
+        # The rounding belongs to the list price. If the cashier charges another amount, nothing was rounded.
+        overridden = quote["suggested_total"] is None or charged != quote["suggested_total"]
+        rounding = Decimal("0.00") if overridden else (quote["rounding_adjustment"] or Decimal("0.00"))
         order = PrintOrder.objects.create(
             user=None,
             source=PrintOrderSource.COUNTER,
@@ -544,8 +547,8 @@ class CounterOrderService:
                 "total_price": str(charged),
                 "exact_total": str(quote["exact_total"]),
                 "suggested_total": str(quote["suggested_total"]) if quote["suggested_total"] is not None else None,
-                "rounding_adjustment": str(quote["rounding_adjustment"] or Decimal("0")),
-                "price_overridden": quote["suggested_total"] is None or charged != quote["suggested_total"],
+                "rounding_adjustment": str(rounding),
+                "price_overridden": overridden,
                 "calculated_at": now.isoformat(),
             },
         )
