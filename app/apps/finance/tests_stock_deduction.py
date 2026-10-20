@@ -77,9 +77,15 @@ def reload(item):
 def test_seed_maps_paper_and_binding_to_what_orders_use(shelf):
     assert shelf["paper_a4"].consumption_per_use == Decimal("0.002")
     assert shelf["binding_spiral"].consumption_per_use == Decimal("0.01")
-    assert (
-        not InventoryItem.objects.filter(name__startswith="حبر").exclude(consumption_key="").exists()
-    )  # ink stays manual
+    inks = {
+        item.consumption_key: item.consumption_per_use for item in InventoryItem.objects.filter(name__startswith="حبر")
+    }
+    assert inks == {
+        "ink_black": Decimal("0.00005"),
+        "ink_cyan": Decimal("0.0001"),
+        "ink_magenta": Decimal("0.0001"),
+        "ink_yellow": Decimal("0.0001"),
+    }
 
 
 @pytest.mark.django_db
@@ -251,3 +257,58 @@ def test_the_owner_can_change_the_rule_from_the_inventory_item(shelf):
     assert (
         client.patch(url, {"consumption_key": "paper_a3"}, format="json").status_code == 400
     )  # already used by the A3 ream
+
+
+# ---- ink and the generic uses ---------------------------------------------------------------------------------------------------
+
+
+def ink(key):
+    return InventoryItem.objects.get(consumption_key=key)
+
+
+@pytest.mark.django_db
+def test_a_black_and_white_order_takes_black_ink_only(shelf, cashier):
+    black, cyan = ink("ink_black"), ink("ink_cyan")
+    black_start, cyan_start = black.quantity, cyan.quantity
+    data = counter_order(api(cashier), [line(pages_count=100, copies=2, binding="none")])  # 200 printed pages
+    assert reload(black).quantity == black_start - Decimal("0.01")  # 200 x 0.00005 = 0.01 litre
+    assert reload(cyan).quantity == cyan_start and reload(cyan).pending_consumption == Decimal("0")
+    assert black.name in {row["item"] for row in data["stock_usage"]}
+
+
+@pytest.mark.django_db
+def test_a_colour_order_takes_every_ink_and_small_amounts_wait(shelf, cashier):
+    black, cyan, magenta, yellow = ink("ink_black"), ink("ink_cyan"), ink("ink_magenta"), ink("ink_yellow")
+    start = {item.pk: item.quantity for item in (black, cyan, magenta, yellow)}
+    client = api(cashier)
+    counter_order(client, [line(pages_count=100, copies=1, binding="none", color_mode="color")])
+    for item in (cyan, magenta, yellow):
+        assert reload(item).quantity == start[item.pk] - Decimal("0.01")  # 100 colour pages x 0.0001
+    assert reload(black).quantity == start[black.pk] and reload(black).pending_consumption == Decimal("0.005000")
+    counter_order(client, [line(pages_count=100, copies=1, binding="none", color_mode="color")])
+    assert reload(black).quantity == start[black.pk] - Decimal("0.01") and reload(black).pending_consumption == Decimal(
+        "0"
+    )
+
+
+@pytest.mark.django_db
+def test_every_sheet_and_every_order_uses_can_be_stocked(shelf, cashier):
+    drum = InventoryItem.objects.create(
+        name="طبل",
+        category="other",
+        unit="قطعة",
+        quantity=Decimal("5"),
+        consumption_key="per_sheet",
+        consumption_per_use=Decimal("0.01"),
+    )
+    bags = InventoryItem.objects.create(
+        name="أكياس",
+        category="other",
+        unit="كيس",
+        quantity=Decimal("10"),
+        consumption_key="per_order",
+        consumption_per_use=Decimal("1"),
+    )
+    counter_order(api(cashier), [line(), line(paper_size="A3", binding="none")])  # 20 + 20 sheets, one order
+    assert reload(drum).quantity == Decimal("4.60")  # 40 sheets of any size x 0.01
+    assert reload(bags).quantity == Decimal("9.00")  # one per order, not per file

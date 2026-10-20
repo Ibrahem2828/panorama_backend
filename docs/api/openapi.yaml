@@ -11383,6 +11383,12 @@ components:
       - binding_spiral
       - binding_thermal
       - binding_beads
+      - ink_black
+      - ink_cyan
+      - ink_magenta
+      - ink_yellow
+      - per_sheet
+      - per_order
       type: string
       description: |-
         * `paper_a5` - Paper A5 (one sheet)
@@ -11392,6 +11398,12 @@ components:
         * `binding_spiral` - Spiral binding (one bound copy)
         * `binding_thermal` - Thermal binding (one bound copy)
         * `binding_beads` - Beads binding (one bound copy)
+        * `ink_black` - Black ink (one printed page)
+        * `ink_cyan` - Cyan ink (one colour page)
+        * `ink_magenta` - Magenta ink (one colour page)
+        * `ink_yellow` - Yellow ink (one colour page)
+        * `per_sheet` - Every sheet, any size (drum, maintenance)
+        * `per_order` - Every delivered order (bag, receipt roll)
     ContextEnum:
       enum:
       - app
