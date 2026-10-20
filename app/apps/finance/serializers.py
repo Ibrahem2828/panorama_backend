@@ -189,7 +189,7 @@ def print_job_row(order: PrintOrder, *, files: int, pages: int, sheets: int, pai
     paid = money(paid)
     return {
         "id": order.id,
-        "customer": order.user.full_name,
+        "customer": order.customer_display,
         "completed_at": order.completed_at,
         "files_count": files,
         "pages_count": pages,

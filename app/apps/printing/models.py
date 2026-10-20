@@ -49,6 +49,8 @@ class PrintBinding(models.TextChoices):
     STAPLE = "staple", "Staple"
     SPIRAL = "spiral", "Spiral"
     THERMAL = "thermal", "Thermal"
+    BEADS = "beads", "Beads"
+    OTHER = "other", "Other"
 
 
 class PrintPickupLocation(BaseModel):
@@ -113,8 +115,24 @@ class PrintBindingPrice(BaseModel):
         return self.binding
 
 
+class PrintOrderSource(models.TextChoices):
+    APP = "app", "Mobile or web app"
+    COUNTER = "counter", "Print shop counter"
+
+
 class PrintOrder(BaseModel):
-    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="print_orders")
+    # A counter (walk-in) order has no account: the customer is only a name and a phone number.
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="print_orders", null=True, blank=True
+    )
+    source = models.CharField(
+        max_length=16, choices=PrintOrderSource.choices, default=PrintOrderSource.APP, db_index=True
+    )
+    customer_name = models.CharField(max_length=150, blank=True)
+    customer_phone = models.CharField(max_length=32, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, related_name="counter_print_orders", null=True, blank=True
+    )
     idempotency_key_hash = models.CharField(max_length=64, blank=True, editable=False)
     status = models.CharField(max_length=32, choices=PrintOrderStatus.choices, default=PrintOrderStatus.SUBMITTED)
     priority = models.CharField(max_length=32, choices=PrintOrderPriority.choices, default=PrintOrderPriority.NORMAL)
@@ -158,6 +176,14 @@ class PrintOrder(BaseModel):
             )
         ]
 
+    @property
+    def customer_display(self) -> str:
+        """Who the order is for: the account holder, or the name typed in at the counter."""
+
+        if self.user is not None:
+            return self.user.full_name
+        return self.customer_name or "زبون المحل"
+
     def __str__(self) -> str:
         return f"PrintOrder #{self.id}"
 
@@ -177,6 +203,7 @@ class PrintOrderItem(BaseModel):
     paper_size = models.CharField(max_length=8, choices=PrintPaperSize.choices, default=PrintPaperSize.A4)
     sides = models.CharField(max_length=32, choices=PrintSides.choices, default=PrintSides.ONE_SIDED)
     binding = models.CharField(max_length=32, choices=PrintBinding.choices, default=PrintBinding.NONE)
+    binding_note = models.CharField(max_length=120, blank=True)
     sheets_count = models.PositiveIntegerField(default=0)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     binding_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -184,7 +211,9 @@ class PrintOrderItem(BaseModel):
     pricing_snapshot = models.JSONField(default=dict, blank=True)
 
     def clean(self):
-        if bool(self.source_file) == bool(self.uploaded_file):
+        # A counter order is typed in at the shop: there is no file to attach.
+        counter = self.order_id and self.order.source == PrintOrderSource.COUNTER
+        if not counter and bool(self.source_file) == bool(self.uploaded_file):
             raise ValidationError("Exactly one of source_file or uploaded_file is required.")
         if not 1 <= self.copies <= 99:
             raise ValidationError({"copies": "Copies must be between 1 and 99."})
