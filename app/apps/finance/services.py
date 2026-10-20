@@ -10,8 +10,13 @@ from django.db.models import Count, F, Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.accounts.choices import UserRole
+from apps.accounts.models import User
+from apps.accounts.permissions import PermissionService
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.notifications.models import NotificationType
+from apps.notifications.services import NotificationService
 from apps.printing.models import PrintBinding, PrintOrder, PrintOrderItem, PrintOrderStatus
 
 from .models import (
@@ -32,6 +37,63 @@ def money(value) -> Decimal:
 
 
 # ---- stock ------------------------------------------------------------------------------------------------------------------------
+
+
+def _plain(quantity: Decimal) -> str:
+    """12.50 -> "12.5", 4.00 -> "4": how a stock quantity reads in a message."""
+
+    text = format(Decimal(quantity).quantize(Decimal("0.01")), "f")
+    return text.rstrip("0").rstrip(".") if "." in text else text
+
+
+class StockAlertService:
+    """Tells the staff the moment an item runs low or runs out, once per crossing (not on every later movement).
+
+    "Low" means the quantity is at or under the item's reorder level (a level of 0 switches the alert off). "Out" means the
+    stock reached zero from above. Buying stock back over the level re-arms the alert, so the next dip warns again.
+    """
+
+    STAFF_ROLES = (UserRole.PRINT_STAFF, UserRole.ADMIN, UserRole.IT_SUPPORT)
+
+    @staticmethod
+    def kind(item: InventoryItem, before: Decimal, after: Decimal) -> str | None:
+        if not item.is_active or item.is_deleted:
+            return None
+        if before > 0 and after <= 0:
+            return "out_of_stock"
+        level = item.reorder_level
+        if level > 0 and before > level and after <= level:
+            return "low_stock"
+        return None
+
+    @classmethod
+    def recipients(cls) -> list[User]:
+        candidates = User.objects.filter(role__in=cls.STAFF_ROLES, is_active=True, is_deleted=False)
+        return [user for user in candidates if PermissionService.has(user, "printing.manage")]
+
+    @classmethod
+    def notify(cls, item: InventoryItem, before: Decimal, after: Decimal) -> str | None:
+        kind = cls.kind(item, before, after)
+        if kind is None:
+            return None
+        if kind == "out_of_stock":
+            title = f"نفد المخزون: {item.name}"
+            body = f"وصلت كمية «{item.name}» إلى الصفر. أعد التعبئة قبل أن يتوقف العمل."
+        else:
+            title = f"مخزون منخفض: {item.name}"
+            body = (
+                f"بقي {_plain(after)} {item.unit} من «{item.name}»، وحد إعادة الطلب {_plain(item.reorder_level)}. "
+                "حان وقت الشراء."
+            )
+        data = {
+            "kind": kind,
+            "inventory_item_id": item.pk,
+            "quantity": str(after),
+            "reorder_level": str(item.reorder_level),
+        }
+        for user in cls.recipients():
+            NotificationService.create_notification(user, title, body, type=NotificationType.PRINTING, data=data)
+        return kind
 
 
 class InventoryService:
@@ -60,6 +122,7 @@ class InventoryService:
         if movement_type != StockMovementType.ADJUSTMENT and quantity < 0:
             raise ValidationError({"quantity": "Use a positive quantity; the movement type decides the direction."})
         locked = InventoryItem.objects.select_for_update().get(pk=item.pk)
+        before = locked.quantity
         delta = {
             StockMovementType.PURCHASE: quantity,
             StockMovementType.USAGE: -quantity,
@@ -77,7 +140,7 @@ class InventoryService:
                 locked.currency = currency
             update_fields += ["unit_cost", "currency"]
         locked.save(update_fields=update_fields)
-        return StockMovement.objects.create(
+        movement = StockMovement.objects.create(
             item=locked,
             movement_type=movement_type,
             quantity=delta,
@@ -89,6 +152,8 @@ class InventoryService:
             expense=expense,
             order=order,
         )
+        StockAlertService.notify(locked, before, after)
+        return movement
 
 
 # ---- automatic usage ---------------------------------------------------------------------------------------------------------------
