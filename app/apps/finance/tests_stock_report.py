@@ -37,7 +37,7 @@ def cashier(db):
     return make_user(UserRole.PRINT_STAFF, "report-cashier@example.com", "+963944500002")
 
 
-def move(item, kind, quantity, when, *, cost=None, currency="", order=None):
+def move(item, kind, quantity, when: tuple[int, int, int], *, cost=None, currency="", order=None):
     movement = StockMovement.objects.create(
         item=item,
         movement_type=kind,
@@ -47,7 +47,7 @@ def move(item, kind, quantity, when, *, cost=None, currency="", order=None):
         currency=currency,
         order=order,
     )
-    stamp = timezone.make_aware(datetime(*when, 12, 0))
+    stamp = timezone.make_aware(datetime(when[0], when[1], when[2], 12, 0))
     StockMovement.objects.filter(pk=movement.pk).update(created_at=stamp)
     return movement
 
