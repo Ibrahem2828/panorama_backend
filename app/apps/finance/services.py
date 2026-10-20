@@ -20,7 +20,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
-from apps.printing.models import PrintBinding, PrintOrder, PrintOrderItem, PrintOrderStatus
+from apps.printing.models import PrintBinding, PrintColorMode, PrintOrder, PrintOrderItem, PrintOrderStatus
 
 from .models import (
     ExchangeRate,
@@ -170,20 +170,34 @@ class StockConsumptionService:
     """Takes from the shelf what a delivered print order used: paper by size and one binding unit per bound copy.
 
     Which stock item stands for which use is set on the item itself (``consumption_key`` + ``consumption_per_use``), so a shop that
-    maps nothing deducts nothing. Ink is not metered per sheet and stays a manual movement. An order is deducted exactly once
+    maps nothing deducts nothing. Ink is an estimate per printed page (the owner calibrates it to a bottle). An order is deducted exactly once
     (``stock_deducted_at``); running short never blocks the delivery, it is reported and the missing amount stays owed.
     """
 
     @staticmethod
     def uses(order: PrintOrder) -> dict[str, int]:
-        """How many sheets of each paper size and how many bound copies of each binding the order used."""
+        """What the order used: sheets per paper size, bound copies per binding, printed pages for the inks, and the totals."""
 
         needs: dict[str, int] = defaultdict(int)
+        pages = colour_pages = sheets = 0
         for item in order.items.filter(is_deleted=False):
             if item.sheets_count:
                 needs[f"paper_{item.paper_size.lower()}"] += item.sheets_count
+                sheets += item.sheets_count
             if item.binding in _STOCK_BINDINGS:
                 needs[f"binding_{item.binding}"] += item.copies
+            printed = (item.pages_count or 0) * item.copies  # every page of every copy is one printed side
+            pages += printed
+            if item.color_mode == PrintColorMode.COLOR:
+                colour_pages += printed
+        if pages:
+            needs["ink_black"] = pages  # black is laid down on colour pages too
+        if colour_pages:
+            for ink in ("ink_cyan", "ink_magenta", "ink_yellow"):
+                needs[ink] = colour_pages
+        if sheets:
+            needs["per_sheet"] = sheets
+        needs["per_order"] = 1
         return dict(needs)
 
     @classmethod

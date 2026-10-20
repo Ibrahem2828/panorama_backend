@@ -68,6 +68,13 @@ class ConsumptionKey(models.TextChoices):
     BINDING_SPIRAL = "binding_spiral", "Spiral binding (one bound copy)"
     BINDING_THERMAL = "binding_thermal", "Thermal binding (one bound copy)"
     BINDING_BEADS = "binding_beads", "Beads binding (one bound copy)"
+    # Ink is estimated per printed page: black is used on every page, the three colours only on colour pages.
+    INK_BLACK = "ink_black", "Black ink (one printed page)"
+    INK_CYAN = "ink_cyan", "Cyan ink (one colour page)"
+    INK_MAGENTA = "ink_magenta", "Magenta ink (one colour page)"
+    INK_YELLOW = "ink_yellow", "Yellow ink (one colour page)"
+    PER_SHEET = "per_sheet", "Every sheet, any size (drum, maintenance)"
+    PER_ORDER = "per_order", "Every delivered order (bag, receipt roll)"
 
 
 class InventoryItem(BaseModel):
