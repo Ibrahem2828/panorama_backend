@@ -256,7 +256,7 @@ class DashboardPrintOrderViewSet(StandardReadOnlyModelViewSet):
         return (
             PrintOrder.objects.filter(is_deleted=False)
             .select_related("user", "assigned_to", "created_by", "pickup_location")
-            .prefetch_related("items__source_file", "status_history__changed_by")
+            .prefetch_related("items__source_file", "status_history__changed_by", "stock_movements__item")
             .annotate(
                 paid_total=Coalesce(
                     Sum("payments__amount", filter=Q(payments__is_deleted=False)),

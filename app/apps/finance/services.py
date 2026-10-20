@@ -3,14 +3,16 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
 
 from django.db import transaction
 from django.db.models import Count, F, Sum
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from apps.printing.models import PrintOrder, PrintOrderItem, PrintOrderStatus
+from apps.audit.models import AuditAction
+from apps.audit.services import AuditLogService
+from apps.printing.models import PrintBinding, PrintOrder, PrintOrderItem, PrintOrderStatus
 
 from .models import (
     ExchangeRate,
@@ -45,6 +47,7 @@ class InventoryService:
         currency: str = "",
         note: str = "",
         expense: Expense | None = None,
+        order: PrintOrder | None = None,
     ) -> StockMovement:
         """Apply one stock movement under a row lock. Usage/waste cannot take the stock below zero.
 
@@ -84,7 +87,88 @@ class InventoryService:
             note=note[:255],
             created_by=actor,
             expense=expense,
+            order=order,
         )
+
+
+# ---- automatic usage ---------------------------------------------------------------------------------------------------------------
+
+
+_STOCK_BINDINGS = (PrintBinding.STAPLE, PrintBinding.SPIRAL, PrintBinding.THERMAL, PrintBinding.BEADS)
+HUNDREDTH = Decimal("0.01")
+
+
+class StockConsumptionService:
+    """Takes from the shelf what a delivered print order used: paper by size and one binding unit per bound copy.
+
+    Which stock item stands for which use is set on the item itself (``consumption_key`` + ``consumption_per_use``), so a shop that
+    maps nothing deducts nothing. Ink is not metered per sheet and stays a manual movement. An order is deducted exactly once
+    (``stock_deducted_at``); running short never blocks the delivery, it is reported and the missing amount stays owed.
+    """
+
+    @staticmethod
+    def uses(order: PrintOrder) -> dict[str, int]:
+        """How many sheets of each paper size and how many bound copies of each binding the order used."""
+
+        needs: dict[str, int] = defaultdict(int)
+        for item in order.items.filter(is_deleted=False):
+            if item.sheets_count:
+                needs[f"paper_{item.paper_size.lower()}"] += item.sheets_count
+            if item.binding in _STOCK_BINDINGS:
+                needs[f"binding_{item.binding}"] += item.copies
+        return dict(needs)
+
+    @classmethod
+    @transaction.atomic
+    def deduct_for_order(cls, order: PrintOrder, actor=None, request=None) -> list[dict]:
+        locked = PrintOrder.objects.select_for_update().get(pk=order.pk)
+        if locked.stock_deducted_at:
+            order.stock_deducted_at = locked.stock_deducted_at
+            return []
+        report: list[dict] = []
+        for key, uses in sorted(cls.uses(locked).items()):
+            item = (
+                InventoryItem.objects.select_for_update()
+                .filter(consumption_key=key, is_active=True, is_deleted=False, consumption_per_use__gt=0)
+                .first()
+            )
+            if item is None:
+                report.append({"key": key, "uses": uses, "item": None, "deducted": "0.00", "shortfall": "0.00"})
+                continue
+            owed = item.pending_consumption + Decimal(uses) * item.consumption_per_use
+            whole = owed.quantize(HUNDREDTH, rounding=ROUND_DOWN)
+            take = min(whole, item.quantity)
+            shortfall = whole - take
+            if take > 0:
+                note = f"خصم تلقائي لطلب الطباعة #{locked.id}"
+                if shortfall > 0:
+                    note += f" (النقص {shortfall})"
+                movement = InventoryService.record_movement(
+                    item, StockMovementType.USAGE, take, actor=actor, note=note, order=locked
+                )
+                AuditLogService.log(
+                    actor=actor,
+                    action=AuditAction.STOCK_MOVEMENT_RECORDED,
+                    target=item,
+                    new_value={
+                        "type": movement.movement_type,
+                        "quantity": str(movement.quantity),
+                        "after": str(movement.quantity_after),
+                        "print_order": locked.id,
+                        "automatic": True,
+                        "shortfall": str(shortfall),
+                    },
+                    request=request,
+                )
+            # What is still owed (a sub-hundredth remainder, or stock that was missing) waits for the next order.
+            InventoryItem.objects.filter(pk=item.pk).update(pending_consumption=owed - take)
+            report.append(
+                {"key": key, "uses": uses, "item": item.name, "deducted": str(take), "shortfall": str(shortfall)}
+            )
+        locked.stock_deducted_at = timezone.now()
+        locked.save(update_fields=["stock_deducted_at", "updated_at"])
+        order.stock_deducted_at = locked.stock_deducted_at
+        return report
 
 
 # ---- payments ---------------------------------------------------------------------------------------------------------------------
