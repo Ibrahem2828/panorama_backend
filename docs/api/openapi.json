@@ -4812,6 +4812,46 @@
                 }
             }
         },
+        "/api/v1/dashboard/finance/stock-report/": {
+            "get": {
+                "operationId": "v1_dashboard_finance_stock_report_retrieve",
+                "description": "Month by month: what was bought, what was used (by delivered orders and by hand), and what is left, per item.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "month",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "YYYY-MM, default the current month"
+                    }
+                ],
+                "tags": [
+                    "Dashboard finance"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/finance/summary/": {
             "get": {
                 "operationId": "v1_dashboard_finance_summary_retrieve",

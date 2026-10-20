@@ -11,6 +11,7 @@ from .views import (
     PaymentVoidView,
     PrintJobViewSet,
     StockMovementViewSet,
+    StockReportView,
 )
 
 router = DefaultRouter()
@@ -28,5 +29,6 @@ router.register("dashboard/printing/jobs", PrintJobViewSet, basename="dashboard-
 urlpatterns = [
     path("dashboard/finance/payments/<int:pk>/void/", PaymentVoidView.as_view(), name="dashboard-finance-payment-void"),
     path("dashboard/finance/summary/", FinanceSummaryView.as_view(), name="dashboard-finance-summary"),
+    path("dashboard/finance/stock-report/", StockReportView.as_view(), name="dashboard-finance-stock-report"),
     *router.urls,
 ]
