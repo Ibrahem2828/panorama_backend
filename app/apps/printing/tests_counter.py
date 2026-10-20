@@ -149,13 +149,21 @@ def test_counter_quote_prices_lines_and_rounds_the_total(prices, cashier):
 
 @pytest.mark.django_db
 def test_double_sided_lines_use_half_the_sheets(prices, cashier):
-    data = api(cashier).post(QUOTE, {"items": [line(sides="double_sided", binding="none", pages_count=11)]}, format="json").json()["data"]
+    data = (
+        api(cashier)
+        .post(QUOTE, {"items": [line(sides="double_sided", binding="none", pages_count=11)]}, format="json")
+        .json()["data"]
+    )
     assert data["items"][0]["sheets_count"] == 12  # ceil(11 / 2) x 2 copies
 
 
 @pytest.mark.django_db
 def test_a_line_without_a_price_is_reported_not_guessed(prices, cashier):
-    data = api(cashier).post(QUOTE, {"items": [line(), line(binding="beads", binding_note="")]}, format="json").json()["data"]
+    data = (
+        api(cashier)
+        .post(QUOTE, {"items": [line(), line(binding="beads", binding_note="")]}, format="json")
+        .json()["data"]
+    )
     assert data["complete"] is False
     assert data["suggested_total"] is None and data["rounding_adjustment"] is None
     assert data["items"][1]["unavailable"] == "binding" and data["items"][1]["subtotal"] is None
@@ -166,8 +174,12 @@ def test_counter_quote_validates_its_input(prices, cashier):
     client = api(cashier)
     assert client.post(QUOTE, {"items": []}, format="json").status_code == status.HTTP_400_BAD_REQUEST
     assert client.post(QUOTE, {"items": [line(copies=0)]}, format="json").status_code == status.HTTP_400_BAD_REQUEST
-    assert client.post(QUOTE, {"items": [line(pages_count=0)]}, format="json").status_code == status.HTTP_400_BAD_REQUEST
-    assert client.post(QUOTE, {"items": [line(binding="glue")]}, format="json").status_code == status.HTTP_400_BAD_REQUEST
+    assert (
+        client.post(QUOTE, {"items": [line(pages_count=0)]}, format="json").status_code == status.HTTP_400_BAD_REQUEST
+    )
+    assert (
+        client.post(QUOTE, {"items": [line(binding="glue")]}, format="json").status_code == status.HTTP_400_BAD_REQUEST
+    )
 
 
 # ---- creating a counter order ----------------------------------------------------------------------------------------------------
@@ -176,7 +188,9 @@ def test_counter_quote_validates_its_input(prices, cashier):
 @pytest.mark.django_db
 def test_a_counter_order_defaults_to_delivered_and_paid_at_the_rounded_price(prices, cashier):
     response = api(cashier).post(
-        COUNTER, {"customer_name": "أحمد", "customer_phone": "0944000000", "items": [line(title="محاضرة")]}, format="json"
+        COUNTER,
+        {"customer_name": "أحمد", "customer_phone": "0944000000", "items": [line(title="محاضرة")]},
+        format="json",
     )
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()["data"]
@@ -197,7 +211,13 @@ def test_a_counter_order_defaults_to_delivered_and_paid_at_the_rounded_price(pri
 
 @pytest.mark.django_db
 def test_the_cashier_can_charge_a_different_price_and_take_part_payment(prices, cashier):
-    body = {"items": [line()], "total_price": "200", "status": "printing", "paid_amount": "100", "payment_method": "cash"}
+    body = {
+        "items": [line()],
+        "total_price": "200",
+        "status": "printing",
+        "paid_amount": "100",
+        "payment_method": "cash",
+    }
     data = api(cashier).post(COUNTER, body, format="json").json()["data"]
     order = PrintOrder.objects.get(pk=data["id"])
     assert order.total_price == Decimal("200.00") and order.status == PrintOrderStatus.PRINTING
@@ -265,7 +285,9 @@ def test_a_counter_order_moves_through_the_normal_statuses_without_notifying_any
 @pytest.mark.django_db
 def test_the_order_list_shows_source_customer_and_amounts_and_can_be_filtered(prices, cashier, customer):
     client = api(cashier)
-    client.post(COUNTER, {"customer_name": "سلمى", "items": [line()], "status": "ready", "paid_amount": "20"}, format="json")
+    client.post(
+        COUNTER, {"customer_name": "سلمى", "items": [line()], "status": "ready", "paid_amount": "20"}, format="json"
+    )
     PrintOrder.objects.create(user=customer, total_price=Decimal("50"), currency="SYP")
     everything = client.get("/api/v1/dashboard/printing/orders/").json()["data"]
     rows = everything["results"] if isinstance(everything, dict) else everything
