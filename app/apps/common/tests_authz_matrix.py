@@ -273,6 +273,7 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/devices/{pk}/revoke/": DASHBOARD,
     "dashboard/devices/stats/": DASHBOARD,
     "dashboard/finance/summary/": DASHBOARD,
+    "dashboard/finance/stock-report/": DASHBOARD,
     "dashboard/finance/exchange-rates/": DASHBOARD,
     "dashboard/finance/exchange-rates/{pk}/": DASHBOARD,
     "dashboard/finance/expenses/": DASHBOARD,

@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 328
+**Operations:** 329
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -97,6 +97,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_dashboard_finance_inventory_items_partial_update | PATCH | /api/v1/dashboard/finance/inventory-items/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PatchedInventoryItemRequest; application/x-www-form-urlencoded: #/components/schemas/PatchedInventoryItemRequest; multipart/form-data: #/components/schemas/PatchedInventoryItemRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_finance_inventory_items_update | PUT | /api/v1/dashboard/finance/inventory-items/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/InventoryItemRequest; application/x-www-form-urlencoded: #/components/schemas/InventoryItemRequest; multipart/form-data: #/components/schemas/InventoryItemRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_finance_payments_void_create | POST | /api/v1/dashboard/finance/payments/{id}/void/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PaymentVoidRequest; application/x-www-form-urlencoded: #/components/schemas/PaymentVoidRequest; multipart/form-data: #/components/schemas/PaymentVoidRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
+| v1_dashboard_finance_stock_report_retrieve | GET | /api/v1/dashboard/finance/stock-report/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_finance_summary_retrieve | GET | /api/v1/dashboard/finance/summary/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_group_memberships_approve_create | POST | /api/v1/dashboard/group-memberships/{id}/approve/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_group_memberships_block_create | POST | /api/v1/dashboard/group-memberships/{id}/block/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |

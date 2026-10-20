@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import calendar
+import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
@@ -319,6 +322,119 @@ def _total(bucket: dict[str, Decimal], target: str, rate: ExchangeRate | None) -
     parts = [convert(value, currency, target, rate) for currency, value in bucket.items()]
     known = [part for part in parts if part is not None]
     return None if len(known) != len(parts) else sum(known, Decimal("0"))
+
+
+class StockReportService:
+    """Consumption against purchases for one calendar month, item by item, computed from the movement ledger.
+
+    The closing balance of the month is today's quantity minus every movement made after the month ended; the opening balance is the
+    closing balance minus the month's own movements, so no snapshot has to be stored. "Used by orders" is the automatic deduction of
+    delivered print orders; "used by hand" is every other usage movement.
+    """
+
+    #: A daily rate needs a few days of data before it is worth projecting from.
+    MIN_DAYS_FOR_RATE = 3
+    COVER_DAYS = 30
+
+    @staticmethod
+    def parse_month(value: str | None) -> tuple[date, date]:
+        today = timezone.localdate()
+        if value:
+            match = re.fullmatch(r"(\d{4})-(\d{2})", value)
+            if not match or not 1 <= int(match.group(2)) <= 12:
+                raise ValidationError({"month": "Use a month like 2026-10."})
+            first = date(int(match.group(1)), int(match.group(2)), 1)
+        else:
+            first = today.replace(day=1)
+        if first > today:
+            raise ValidationError({"month": "The month has not started yet."})
+        last = date(first.year, first.month, calendar.monthrange(first.year, first.month)[1])
+        return first, last
+
+    @classmethod
+    def monthly(cls, month: str | None) -> dict:
+        first, last = cls.parse_month(month)
+        period = Period.parse(first.isoformat(), last.isoformat())
+        elapsed = (min(last, timezone.localdate()) - first).days + 1
+        ledger = StockMovement.objects.filter(is_deleted=False)
+        inside = ledger.filter(created_at__gte=period.start, created_at__lt=period.end)
+        later = ledger.filter(created_at__gte=period.end)
+
+        by_type: dict[int, dict[str, Decimal]] = defaultdict(lambda: defaultdict(lambda: Decimal("0")))
+        for row in inside.values("item", "movement_type").annotate(total=Sum("quantity")):
+            by_type[row["item"]][row["movement_type"]] = row["total"]
+        by_orders = {
+            row["item"]: row["total"]
+            for row in inside.filter(movement_type=StockMovementType.USAGE, order__isnull=False)
+            .values("item")
+            .annotate(total=Sum("quantity"))
+        }
+        after_period = {row["item"]: row["total"] for row in later.values("item").annotate(total=Sum("quantity"))}
+        spent: dict[int, dict[str, Decimal]] = defaultdict(lambda: defaultdict(lambda: Decimal("0")))
+        purchases = inside.filter(movement_type=StockMovementType.PURCHASE, unit_cost__isnull=False)
+        for row in purchases.values("item", "currency").annotate(cost=Sum(F("quantity") * F("unit_cost"))):
+            spent[row["item"]][row["currency"]] += money(row["cost"])
+
+        rows = []
+        totals_cost: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+        for item in InventoryItem.objects.filter(is_deleted=False).order_by("category", "name"):
+            moves = by_type.get(item.pk, {})
+            if not item.is_active and not moves:
+                continue
+            net = sum(moves.values(), Decimal("0"))
+            closing = item.quantity - after_period.get(item.pk, Decimal("0"))
+            opening = closing - net
+            used = -moves.get(StockMovementType.USAGE, Decimal("0"))
+            used_orders = -by_orders.get(item.pk, Decimal("0"))
+            waste = -moves.get(StockMovementType.WASTE, Decimal("0"))
+            daily = days_left = suggested = None
+            if elapsed >= cls.MIN_DAYS_FOR_RATE and used > 0:
+                rate = used / Decimal(elapsed)
+                daily = rate.quantize(Decimal("0.0001"))
+                days_left = int(closing / rate) if closing > 0 else 0
+                missing = rate * cls.COVER_DAYS - closing
+                suggested = Decimal(math.ceil(missing * 2) / 2).quantize(CENT) if missing > 0 else Decimal("0.00")
+            for currency, amount in spent.get(item.pk, {}).items():
+                totals_cost[currency] += amount
+            rows.append(
+                {
+                    "id": item.pk,
+                    "name": item.name,
+                    "category": item.category,
+                    "unit": item.unit,
+                    "is_active": item.is_active,
+                    "opening": opening.quantize(CENT),
+                    "purchased": moves.get(StockMovementType.PURCHASE, Decimal("0")).quantize(CENT),
+                    "purchase_cost": {currency: str(amount) for currency, amount in spent.get(item.pk, {}).items()},
+                    "used": used.quantize(CENT),
+                    "used_by_orders": used_orders.quantize(CENT),
+                    "used_by_hand": (used - used_orders).quantize(CENT),
+                    "waste": waste.quantize(CENT),
+                    "adjustment": moves.get(StockMovementType.ADJUSTMENT, Decimal("0")).quantize(CENT),
+                    "closing": closing.quantize(CENT),
+                    "reorder_level": item.reorder_level,
+                    "is_low": item.is_low,
+                    "daily_usage": daily,
+                    "days_left": days_left,
+                    "suggested_purchase": suggested,
+                }
+            )
+        delivered = finished_orders(period)
+        sheets = PrintOrderItem.objects.filter(order__in=delivered).aggregate(sheets=Sum("sheets_count"))["sheets"] or 0
+        return {
+            "month": first.strftime("%Y-%m"),
+            "period": {"from": first, "to": last},
+            "days_elapsed": elapsed,
+            "rate_basis_days": cls.MIN_DAYS_FOR_RATE,
+            "cover_days": cls.COVER_DAYS,
+            "items": rows,
+            "totals": {
+                "purchase_cost": {currency: str(amount) for currency, amount in totals_cost.items()},
+                "orders_delivered": delivered.count(),
+                "sheets_printed": sheets,
+                "items_low": sum(1 for row in rows if row["is_low"]),
+            },
+        }
 
 
 class FinanceReportService:

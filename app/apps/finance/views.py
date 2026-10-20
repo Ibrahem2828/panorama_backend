@@ -42,7 +42,7 @@ from .serializers import (
     StockMovementSerializer,
     print_job_row,
 )
-from .services import FinanceReportService, InventoryService, Period, finished_orders, money
+from .services import FinanceReportService, InventoryService, Period, StockReportService, finished_orders, money
 
 
 def _int(value: str, name: str) -> int:
@@ -340,6 +340,22 @@ class PrintJobViewSet(StandardExplicitActionViewSet):
             response.data["data"]["totals_by_currency"] = totals_by_currency
             return response
         return success_response(data={"results": rows, "totals_by_currency": totals_by_currency}, request=request)
+
+
+class StockReportView(APIView):
+    """Month by month: what was bought, what was used (by delivered orders and by hand), and what is left, per item."""
+
+    permission_classes = [CanManageFinance]
+
+    @extend_schema(
+        tags=["Dashboard finance"],
+        parameters=[OpenApiParameter("month", OpenApiTypes.STR, description="YYYY-MM, default the current month")],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        return success_response(
+            data=StockReportService.monthly(request.query_params.get("month")), request=request, code="STOCK_REPORT"
+        )
 
 
 class FinanceSummaryView(APIView):
