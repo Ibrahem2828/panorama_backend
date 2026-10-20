@@ -58,6 +58,18 @@ class InventoryCategory(models.TextChoices):
     OTHER = "other", "Other supplies"
 
 
+class ConsumptionKey(models.TextChoices):
+    """What a delivered print order uses up. One stock item may carry each key (paper per size, binding per kind)."""
+
+    PAPER_A5 = "paper_a5", "Paper A5 (one sheet)"
+    PAPER_A4 = "paper_a4", "Paper A4 (one sheet)"
+    PAPER_A3 = "paper_a3", "Paper A3 (one sheet)"
+    BINDING_STAPLE = "binding_staple", "Staple binding (one bound copy)"
+    BINDING_SPIRAL = "binding_spiral", "Spiral binding (one bound copy)"
+    BINDING_THERMAL = "binding_thermal", "Thermal binding (one bound copy)"
+    BINDING_BEADS = "binding_beads", "Beads binding (one bound copy)"
+
+
 class InventoryItem(BaseModel):
     """A stocked thing: paper, ink, pens, printers... ``quantity`` only ever changes through ``StockMovement`` rows."""
 
@@ -72,13 +84,29 @@ class InventoryItem(BaseModel):
     location = models.CharField(max_length=150, blank=True)
     notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    # Automatic usage: a delivered order takes ``consumption_per_use`` stock units for every sheet / bound copy it used.
+    consumption_key = models.CharField(max_length=24, choices=ConsumptionKey.choices, blank=True)
+    consumption_per_use = models.DecimalField(
+        max_digits=14,
+        decimal_places=6,
+        default=Decimal("0"),
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="Stock units used per sheet or bound copy, e.g. 0.002 for a 500-sheet ream.",
+    )
+    # Used stock below one hundredth of a unit is kept here until it adds up to a whole hundredth (quantity has 2 places).
+    pending_consumption = models.DecimalField(max_digits=14, decimal_places=6, default=Decimal("0"), editable=False)
 
     class Meta:
         ordering = ["category", "name"]
         constraints = [
             models.UniqueConstraint(
                 fields=["category", "name"], condition=models.Q(is_deleted=False), name="finance_item_unique_live_name"
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["consumption_key"],
+                condition=models.Q(is_deleted=False) & ~models.Q(consumption_key=""),
+                name="finance_item_unique_consumption_key",
+            ),
         ]
         indexes = [models.Index(fields=["category", "is_active"], name="finance_item_category_idx")]
 
@@ -115,10 +143,21 @@ class StockMovement(BaseModel):
     expense = models.ForeignKey(
         "finance.Expense", null=True, blank=True, on_delete=models.SET_NULL, related_name="movements"
     )
+    # Set when the movement is the automatic usage of a delivered print order.
+    order = models.ForeignKey(
+        "printing.PrintOrder", null=True, blank=True, on_delete=models.SET_NULL, related_name="stock_movements"
+    )
 
     class Meta:
         ordering = ["-created_at", "-id"]
         indexes = [models.Index(fields=["item", "created_at"], name="finance_move_item_idx")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order", "item"],
+                condition=models.Q(order__isnull=False) & models.Q(is_deleted=False),
+                name="finance_move_unique_order_item",
+            )
+        ]
 
 
 class ExpenseCategory(models.TextChoices):

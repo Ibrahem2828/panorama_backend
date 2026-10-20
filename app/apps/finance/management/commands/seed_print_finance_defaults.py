@@ -49,6 +49,16 @@ BINDING_PRICES = {
     PrintBinding.THERMAL: ("1.00", "120"),
 }
 
+# What a delivered order uses of the seeded items: (consumption key, stock units per sheet / bound copy).
+# A 500-sheet ream -> 0.002 per sheet; a box of 100 covers -> 0.01 per spiral-bound copy; a box of ~5000 staples, 2 per copy.
+CONSUMPTION = {
+    "ورق A4 - 80 غ": ("paper_a4", "0.002"),
+    "ورق A3 - 80 غ": ("paper_a3", "0.002"),
+    "ورق A5 - 80 غ": ("paper_a5", "0.002"),
+    "أغلفة تجليد حلزوني": ("binding_spiral", "0.01"),
+    "دبابيس تدبيس": ("binding_staple", "0.0004"),
+}
+
 # (category, name, unit, quantity, reorder level, unit cost in USD)
 STOCK = [
     (InventoryCategory.PAPER, "ورق A4 - 80 غ", "رزمة (500 ورقة)", "20", "5", "4.00"),
@@ -118,7 +128,7 @@ class Command(BaseCommand):
         counts["pickup"] = int(created)
 
         for category, name, unit, quantity, reorder, usd_cost in STOCK:
-            _, created = InventoryItem.objects.get_or_create(
+            item, created = InventoryItem.objects.get_or_create(
                 category=category,
                 name=name,
                 is_deleted=False,
@@ -132,5 +142,11 @@ class Command(BaseCommand):
                 },
             )
             counts["stock"] += int(created)
+            mapping = CONSUMPTION.get(name)
+            # Only fill an item that has no rule yet: a rule the owner edited is never overwritten.
+            if mapping and not item.consumption_key and item.consumption_per_use == 0:
+                if not InventoryItem.objects.filter(consumption_key=mapping[0], is_deleted=False).exists():
+                    item.consumption_key, item.consumption_per_use = mapping[0], Decimal(mapping[1])
+                    item.save(update_fields=["consumption_key", "consumption_per_use", "updated_at"])
 
         self.stdout.write(self.style.SUCCESS(f"Seeded (created only what was missing): {counts}"))

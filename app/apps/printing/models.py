@@ -160,6 +160,8 @@ class PrintOrder(BaseModel):
     completed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     rejected_reason = models.TextField(blank=True)
+    # Set once the stock this order used has been deducted, so delivering twice never deducts twice.
+    stock_deducted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

@@ -410,6 +410,10 @@ class PrintStatusService:
             public_note=public_note.strip(),
             internal_note=internal_note.strip(),
         )
+        from apps.finance.services import StockConsumptionService  # local import: finance depends on printing
+
+        if new_status == PrintOrderStatus.DELIVERED:
+            StockConsumptionService.deduct_for_order(order, actor=changed_by, request=request)
         if order.user_id:  # a counter order has no account to notify
             NotificationService.create_notification(
                 order.user,
@@ -577,6 +581,10 @@ class CounterOrderService:
             public_note="طلب من المحل.",
             internal_note="Counter order",
         )
+        if status_value == PrintOrderStatus.DELIVERED:
+            from apps.finance.services import StockConsumptionService
+
+            StockConsumptionService.deduct_for_order(order, actor=actor, request=request)
         if paid_amount > 0:
             PaymentService.record(
                 order, amount=paid_amount, method=payment_method, actor=actor, note="Received at the counter"

@@ -42,6 +42,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "sku",
             "quantity",
             "opening_quantity",
+            "consumption_key",
+            "consumption_per_use",
+            "pending_consumption",
             "reorder_level",
             "unit_cost",
             "currency",
@@ -53,7 +56,15 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "quantity", "stock_value", "is_low", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "quantity",
+            "pending_consumption",
+            "stock_value",
+            "is_low",
+            "created_at",
+            "updated_at",
+        ]
 
     def validate(self, attrs):
         name = attrs.get("name", getattr(self.instance, "name", None))
@@ -95,6 +106,7 @@ class StockMovementSerializer(serializers.ModelSerializer):
             "unit_cost",
             "currency",
             "note",
+            "order",
             "created_by_name",
             "created_at",
         ]

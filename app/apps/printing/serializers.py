@@ -249,6 +249,7 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
     paid_amount = serializers.SerializerMethodField()
     due_amount = serializers.SerializerMethodField()
     rounding_adjustment = serializers.SerializerMethodField()
+    stock_usage = serializers.SerializerMethodField()
 
     class Meta:
         model = PrintOrder
@@ -272,6 +273,8 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
             "price_calculated_at",
             "pickup_location",
             "pickup_location_detail",
+            "stock_deducted_at",
+            "stock_usage",
             "user_notes",
             "internal_notes",
             "assigned_to",
@@ -311,6 +314,16 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.CharField())
     def get_rounding_adjustment(self, obj: PrintOrder) -> str:
         return _rounding_adjustment(obj)
+
+    @extend_schema_field(serializers.ListField(child=serializers.DictField(child=serializers.CharField())))
+    def get_stock_usage(self, obj: PrintOrder) -> list[dict[str, str]]:
+        """What this order took from the shelf when it was delivered."""
+
+        return [
+            {"item": move.item.name, "unit": move.item.unit, "quantity": str(abs(move.quantity))}
+            for move in obj.stock_movements.all()
+            if not move.is_deleted
+        ]
 
 
 class BasePrintRequestSerializer(serializers.Serializer):

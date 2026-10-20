@@ -11350,6 +11350,24 @@ components:
       description: |-
         * `terms` - Terms
         * `privacy` - Privacy
+    ConsumptionKeyEnum:
+      enum:
+      - paper_a5
+      - paper_a4
+      - paper_a3
+      - binding_staple
+      - binding_spiral
+      - binding_thermal
+      - binding_beads
+      type: string
+      description: |-
+        * `paper_a5` - Paper A5 (one sheet)
+        * `paper_a4` - Paper A4 (one sheet)
+        * `paper_a3` - Paper A3 (one sheet)
+        * `binding_staple` - Staple binding (one bound copy)
+        * `binding_spiral` - Spiral binding (one bound copy)
+        * `binding_thermal` - Thermal binding (one bound copy)
+        * `binding_beads` - Beads binding (one bound copy)
     ContextEnum:
       enum:
       - app
@@ -12390,6 +12408,18 @@ components:
           allOf:
           - $ref: '#/components/schemas/PrintPickupLocation'
           readOnly: true
+        stock_deducted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        stock_usage:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+          readOnly: true
         user_notes:
           type: string
           readOnly: true
@@ -12460,6 +12490,8 @@ components:
       - source
       - status
       - status_history
+      - stock_deducted_at
+      - stock_usage
       - total_price
       - updated_at
       - user
@@ -13590,6 +13622,21 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           readOnly: true
+        consumption_key:
+          oneOf:
+          - $ref: '#/components/schemas/ConsumptionKeyEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        consumption_per_use:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          description: Stock units used per sheet or bound copy, e.g. 0.002 for a
+            500-sheet ream.
+        pending_consumption:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          readOnly: true
         reorder_level:
           type: string
           format: decimal
@@ -13628,6 +13675,7 @@ components:
       - id
       - is_low
       - name
+      - pending_consumption
       - quantity
       - stock_value
       - updated_at
@@ -13652,6 +13700,16 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           writeOnly: true
+        consumption_key:
+          oneOf:
+          - $ref: '#/components/schemas/ConsumptionKeyEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        consumption_per_use:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          description: Stock units used per sheet or bound copy, e.g. 0.002 for a
+            500-sheet ream.
         reorder_level:
           type: string
           format: decimal
@@ -16007,6 +16065,16 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           writeOnly: true
+        consumption_key:
+          oneOf:
+          - $ref: '#/components/schemas/ConsumptionKeyEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        consumption_per_use:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,6})?$
+          description: Stock units used per sheet or bound copy, e.g. 0.002 for a
+            500-sheet ream.
         reorder_level:
           type: string
           format: decimal
@@ -17261,6 +17329,10 @@ components:
         note:
           type: string
           readOnly: true
+        order:
+          type: integer
+          readOnly: true
+          nullable: true
         created_by_name:
           type: string
           nullable: true
@@ -17278,6 +17350,7 @@ components:
       - item_name
       - movement_type
       - note
+      - order
       - quantity
       - quantity_after
       - unit_cost
