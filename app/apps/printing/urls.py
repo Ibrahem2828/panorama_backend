@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     DashboardBindingPriceViewSet,
+    DashboardCounterOrderCreateView,
+    DashboardCounterQuoteView,
     DashboardPickupLocationViewSet,
     DashboardPrintAssignView,
     DashboardPrintNoteView,
@@ -54,4 +56,14 @@ urlpatterns = [
         "dashboard/printing/orders/<int:pk>/status/", DashboardPrintStatusView.as_view(), name="dashboard-print-status"
     ),
     path("dashboard/printing/orders/<int:pk>/note/", DashboardPrintNoteView.as_view(), name="dashboard-print-note"),
+    path(
+        "dashboard/printing/counter-orders/quote/",
+        DashboardCounterQuoteView.as_view(),
+        name="dashboard-counter-quote",
+    ),
+    path(
+        "dashboard/printing/counter-orders/",
+        DashboardCounterOrderCreateView.as_view(),
+        name="dashboard-counter-order-create",
+    ),
 ]

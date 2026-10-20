@@ -235,6 +235,8 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/printing/orders/{pk}/assign/": DASHBOARD,
     "dashboard/printing/orders/{pk}/status/": DASHBOARD,
     "dashboard/printing/orders/{pk}/note/": DASHBOARD,
+    "dashboard/printing/counter-orders/": DASHBOARD,
+    "dashboard/printing/counter-orders/quote/": DASHBOARD,
     "dashboard/printing/pricing-rules/": DASHBOARD,
     "dashboard/printing/pricing-rules/{pk}/": DASHBOARD,
     "dashboard/printing/binding-prices/": DASHBOARD,

@@ -4501,6 +4501,64 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/dashboard/printing/counter-orders/:
+    post:
+      operationId: v1_dashboard_printing_counter_orders_create
+      description: 'Record a print order taken at the shop counter: the items, the
+        price charged and what was paid.'
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CounterOrderCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CounterOrderCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CounterOrderCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPrintOrder'
+          description: ''
+  /api/v1/dashboard/printing/counter-orders/quote/:
+    post:
+      operationId: v1_dashboard_printing_counter_orders_quote_create
+      description: Price the lines of a counter order with the shop's price list,
+        so the cashier sees the rounded price at once.
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CounterQuoteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CounterQuoteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CounterQuoteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CounterQuote'
+          description: ''
   /api/v1/dashboard/printing/jobs/:
     get:
       operationId: v1_dashboard_printing_jobs_list
@@ -4626,6 +4684,16 @@ paths:
         description: مصطلح البحث.
         schema:
           type: string
+      - in: query
+        name: source
+        schema:
+          type: string
+          enum:
+          - app
+          - counter
+        description: |-
+          * `app` - Mobile or web app
+          * `counter` - Print shop counter
       - in: query
         name: status
         schema:
@@ -11147,12 +11215,16 @@ components:
       - staple
       - spiral
       - thermal
+      - beads
+      - other
       type: string
       description: |-
         * `none` - None
         * `staple` - Staple
         * `spiral` - Spiral
         * `thermal` - Thermal
+        * `beads` - Beads
+        * `other` - Other
     BlankEnum:
       enum:
       - ''
@@ -11320,6 +11392,155 @@ components:
         * `settings` - Settings
         * `external_channel` - External Channel
         * `other` - Other
+    CounterItem:
+      type: object
+      description: 'One line typed in at the counter: there is no file, only what
+        is being printed.'
+      properties:
+        title:
+          type: string
+          description: What it is, for the slip.
+          maxLength: 255
+        pages_count:
+          type: integer
+          maximum: 100000
+          minimum: 1
+          description: Pages of ONE copy.
+        copies:
+          type: integer
+          maximum: 99
+          minimum: 1
+        color_mode:
+          $ref: '#/components/schemas/ColorModeEnum'
+        paper_size:
+          $ref: '#/components/schemas/PaperSizeEnum'
+        sides:
+          $ref: '#/components/schemas/SidesEnum'
+        binding:
+          allOf:
+          - $ref: '#/components/schemas/BindingEnum'
+          default: none
+        binding_note:
+          type: string
+          maxLength: 120
+      required:
+      - color_mode
+      - copies
+      - pages_count
+      - paper_size
+      - sides
+    CounterItemRequest:
+      type: object
+      description: 'One line typed in at the counter: there is no file, only what
+        is being printed.'
+      properties:
+        title:
+          type: string
+          description: What it is, for the slip.
+          maxLength: 255
+        pages_count:
+          type: integer
+          maximum: 100000
+          minimum: 1
+          description: Pages of ONE copy.
+        copies:
+          type: integer
+          maximum: 99
+          minimum: 1
+        color_mode:
+          $ref: '#/components/schemas/ColorModeEnum'
+        paper_size:
+          $ref: '#/components/schemas/PaperSizeEnum'
+        sides:
+          $ref: '#/components/schemas/SidesEnum'
+        binding:
+          allOf:
+          - $ref: '#/components/schemas/BindingEnum'
+          default: none
+        binding_note:
+          type: string
+          maxLength: 120
+      required:
+      - color_mode
+      - copies
+      - pages_count
+      - paper_size
+      - sides
+    CounterOrderCreateRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CounterItemRequest'
+        currency:
+          $ref: '#/components/schemas/FinanceCurrencyEnum'
+        customer_name:
+          type: string
+          maxLength: 150
+        customer_phone:
+          type: string
+          maxLength: 32
+        total_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: The price taken from the customer. Defaults to the rounded
+            list price.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CounterOrderCreateStatusEnum'
+          default: delivered
+        paid_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: What the customer has paid now. Defaults to the full price
+            when the order is delivered.
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          default: cash
+        notes:
+          type: string
+          maxLength: 2000
+        internal_notes:
+          type: string
+          maxLength: 4000
+      required:
+      - items
+    CounterOrderCreateStatusEnum:
+      enum:
+      - printing
+      - ready
+      - delivered
+      type: string
+      description: |-
+        * `printing` - printing
+        * `ready` - ready
+        * `delivered` - delivered
+    CounterQuote:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CounterItem'
+        currency:
+          $ref: '#/components/schemas/FinanceCurrencyEnum'
+      required:
+      - items
+    CounterQuoteRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CounterItemRequest'
+        currency:
+          $ref: '#/components/schemas/FinanceCurrencyEnum'
+      required:
+      - items
     DashboardAccountDeletion:
       type: object
       properties:
@@ -12108,8 +12329,23 @@ components:
         user:
           type: integer
           readOnly: true
+          nullable: true
         user_name:
           type: string
+          readOnly: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/SourceEnum'
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        customer_phone:
+          type: string
+          readOnly: true
+        created_by_name:
+          type: string
+          nullable: true
           readOnly: true
         status:
           allOf:
@@ -12123,6 +12359,15 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        rounding_adjustment:
+          type: string
+          readOnly: true
+        paid_amount:
+          type: string
+          readOnly: true
+        due_amount:
+          type: string
           readOnly: true
         currency:
           type: string
@@ -12195,10 +12440,15 @@ components:
       - cancelled_at
       - completed_at
       - created_at
+      - created_by_name
       - currency
+      - customer_name
+      - customer_phone
+      - due_amount
       - id
       - internal_notes
       - items
+      - paid_amount
       - pickup_location
       - pickup_location_detail
       - price_calculated_at
@@ -12206,6 +12456,8 @@ components:
       - pricing_snapshot
       - priority
       - rejected_reason
+      - rounding_adjustment
+      - source
       - status
       - status_history
       - total_price
@@ -14069,6 +14321,9 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           readOnly: true
+        rounding_adjustment:
+          type: string
+          readOnly: true
         currency:
           type: string
           readOnly: true
@@ -14135,6 +14390,7 @@ components:
       - pricing_revision
       - priority
       - rejected_reason
+      - rounding_adjustment
       - status
       - status_history
       - total_price
@@ -16368,6 +16624,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/BindingEnum'
           readOnly: true
+        binding_note:
+          type: string
+          readOnly: true
         sheets_count:
           type: integer
           readOnly: true
@@ -16394,6 +16653,7 @@ components:
           readOnly: true
       required:
       - binding
+      - binding_note
       - binding_price
       - color_mode
       - copies
@@ -16953,6 +17213,14 @@ components:
       description: |-
         * `one_sided` - One Sided
         * `double_sided` - Double Sided
+    SourceEnum:
+      enum:
+      - app
+      - counter
+      type: string
+      description: |-
+        * `app` - Mobile or web app
+        * `counter` - Print shop counter
     StockMovement:
       type: object
       properties:

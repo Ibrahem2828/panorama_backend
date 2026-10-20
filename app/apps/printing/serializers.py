@@ -3,10 +3,13 @@ from __future__ import annotations
 import copy
 import json
 from collections.abc import Sequence
+from decimal import Decimal
 from typing import Any, cast
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models import Sum
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.accounts.choices import UserRole
@@ -14,20 +17,30 @@ from apps.accounts.models import User
 from apps.common.file_validation import validate_document_upload
 from apps.files.models import FileResource
 from apps.files.services import accessible_files_for_user
-from apps.finance.models import FinanceCurrency
+from apps.finance.models import FinanceCurrency, PaymentMethod
 
 from .models import (
+    PrintBinding,
     PrintBindingPrice,
+    PrintColorMode,
     PrintConversion,
     PrintConversionStatus,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
     PrintOrderStatusHistory,
+    PrintPaperSize,
     PrintPickupLocation,
     PrintPricingRule,
+    PrintSides,
 )
-from .services import PrintOrderService, PrintPricingService, PrintStatusService
+from .services import (
+    COUNTER_STATUSES,
+    CounterOrderService,
+    PrintOrderService,
+    PrintPricingService,
+    PrintStatusService,
+)
 
 
 class PrintConvertUploadSerializer(serializers.Serializer):
@@ -108,6 +121,7 @@ class PrintOrderItemSerializer(serializers.ModelSerializer):
             "paper_size",
             "sides",
             "binding",
+            "binding_note",
             "sheets_count",
             "unit_price",
             "binding_price",
@@ -184,10 +198,17 @@ class PrintBindingPriceSerializer(serializers.ModelSerializer):
         return attrs
 
 
+def _rounding_adjustment(order: PrintOrder) -> str:
+    """How much the order total was rounded (signed, in the order currency), as an exact string."""
+
+    return str((order.pricing_snapshot or {}).get("rounding_adjustment") or "0.00")
+
+
 class MobilePrintOrderSerializer(serializers.ModelSerializer):
     items = PrintOrderItemSerializer(many=True, read_only=True)
     status_history = MobilePrintOrderStatusHistorySerializer(many=True, read_only=True)
     pickup_location_detail = PrintPickupLocationSerializer(source="pickup_location", read_only=True)
+    rounding_adjustment = serializers.SerializerMethodField()
 
     class Meta:
         model = PrintOrder
@@ -196,6 +217,7 @@ class MobilePrintOrderSerializer(serializers.ModelSerializer):
             "status",
             "priority",
             "total_price",
+            "rounding_adjustment",
             "currency",
             "pricing_revision",
             "price_calculated_at",
@@ -212,13 +234,21 @@ class MobilePrintOrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.CharField())
+    def get_rounding_adjustment(self, obj: PrintOrder) -> str:
+        return _rounding_adjustment(obj)
+
 
 class DashboardPrintOrderSerializer(serializers.ModelSerializer):
     items = PrintOrderItemSerializer(many=True, read_only=True)
     status_history = DashboardPrintOrderStatusHistorySerializer(many=True, read_only=True)
-    user_name = serializers.CharField(source="user.full_name", read_only=True)
+    user_name = serializers.SerializerMethodField()
+    created_by_name = serializers.SerializerMethodField()
     assigned_to_name = serializers.CharField(source="assigned_to.full_name", read_only=True)
     pickup_location_detail = PrintPickupLocationSerializer(source="pickup_location", read_only=True)
+    paid_amount = serializers.SerializerMethodField()
+    due_amount = serializers.SerializerMethodField()
+    rounding_adjustment = serializers.SerializerMethodField()
 
     class Meta:
         model = PrintOrder
@@ -226,9 +256,16 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "user_name",
+            "source",
+            "customer_name",
+            "customer_phone",
+            "created_by_name",
             "status",
             "priority",
             "total_price",
+            "rounding_adjustment",
+            "paid_amount",
+            "due_amount",
             "currency",
             "pricing_snapshot",
             "pricing_revision",
@@ -248,6 +285,32 @@ class DashboardPrintOrderSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
+
+    @extend_schema_field(serializers.CharField())
+    def get_user_name(self, obj: PrintOrder) -> str:
+        return obj.customer_display
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_created_by_name(self, obj: PrintOrder) -> str | None:
+        return obj.created_by.full_name if obj.created_by else None
+
+    def _paid(self, obj: PrintOrder) -> Decimal:
+        annotated = getattr(obj, "paid_total", None)  # the list view annotates it: no query per row
+        if annotated is None:
+            annotated = obj.payments.filter(is_deleted=False).aggregate(total=Sum("amount"))["total"]
+        return Decimal(annotated or 0).quantize(Decimal("0.01"))
+
+    @extend_schema_field(serializers.CharField())
+    def get_paid_amount(self, obj: PrintOrder) -> str:
+        return str(self._paid(obj))
+
+    @extend_schema_field(serializers.CharField())
+    def get_due_amount(self, obj: PrintOrder) -> str:
+        return str(max(Decimal(obj.total_price) - self._paid(obj), Decimal("0")).quantize(Decimal("0.01")))
+
+    @extend_schema_field(serializers.CharField())
+    def get_rounding_adjustment(self, obj: PrintOrder) -> str:
+        return _rounding_adjustment(obj)
 
 
 class BasePrintRequestSerializer(serializers.Serializer):
@@ -361,3 +424,70 @@ class PrintOrderNoteSerializer(serializers.Serializer):
         order.internal_notes = self.validated_data["internal_notes"]
         order.save(update_fields=["internal_notes", "updated_at"])
         return order
+
+
+class CounterItemSerializer(serializers.Serializer):
+    """One line typed in at the counter: there is no file, only what is being printed."""
+
+    title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, help_text="What it is, for the slip."
+    )
+    pages_count = serializers.IntegerField(min_value=1, max_value=100000, help_text="Pages of ONE copy.")
+    copies = serializers.IntegerField(min_value=1, max_value=99)
+    color_mode = serializers.ChoiceField(choices=PrintColorMode.choices)
+    paper_size = serializers.ChoiceField(choices=PrintPaperSize.choices)
+    sides = serializers.ChoiceField(choices=PrintSides.choices)
+    binding = serializers.ChoiceField(choices=PrintBinding.choices, default=PrintBinding.NONE)
+    binding_note = serializers.CharField(max_length=120, required=False, allow_blank=True)
+
+
+class CounterQuoteSerializer(serializers.Serializer):
+    items = CounterItemSerializer(many=True)
+    currency = serializers.ChoiceField(choices=FinanceCurrency.choices, required=False)
+
+    def validate_items(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one line is required.")
+        if len(value) > 20:
+            raise serializers.ValidationError("A counter order cannot contain more than 20 lines.")
+        return value
+
+
+class CounterOrderCreateSerializer(CounterQuoteSerializer):
+    customer_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    customer_phone = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    total_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal("0"),
+        required=False,
+        help_text="The price taken from the customer. Defaults to the rounded list price.",
+    )
+    status = serializers.ChoiceField(choices=[(value, value) for value in COUNTER_STATUSES], default="delivered")
+    paid_amount = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        min_value=Decimal("0"),
+        required=False,
+        help_text="What the customer has paid now. Defaults to the full price when the order is delivered.",
+    )
+    payment_method = serializers.ChoiceField(choices=PaymentMethod.choices, default=PaymentMethod.CASH)
+    notes = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+    internal_notes = serializers.CharField(max_length=4000, required=False, allow_blank=True)
+
+    def save(self, **kwargs):
+        data = self.validated_data
+        return CounterOrderService.create(
+            self.context["request"].user,
+            [dict(item) for item in data["items"]],
+            customer_name=data.get("customer_name", ""),
+            customer_phone=data.get("customer_phone", ""),
+            currency=data.get("currency"),
+            total_price=data.get("total_price"),
+            status_value=data["status"],
+            paid_amount=data.get("paid_amount"),
+            payment_method=data["payment_method"],
+            notes=data.get("notes", ""),
+            internal_notes=data.get("internal_notes", ""),
+            request=self.context["request"],
+        )

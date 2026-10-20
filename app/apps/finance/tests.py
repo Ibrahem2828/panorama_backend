@@ -99,9 +99,9 @@ def test_quote_can_be_priced_in_usd_or_new_syp(customer):
     syp = quote_request(client).json()["data"]  # default currency
     usd = quote_request(client, "USD").json()["data"]
     assert syp["currency"] == "SYP" and usd["currency"] == "USD"
-    # 2 copies of 1 page + spiral: USD 0.03*2 + 0.60*2 = 1.26 ; SYP 4*2 + 72*2 = 152
+    # 2 copies of 1 page + spiral: USD 0.03*2 + 0.60*2 = 1.26 ; SYP 4*2 + 72*2 = 152 exactly, quoted as 150 (tens)
     assert Decimal(str(usd["total_price"])) == Decimal("1.26")
-    assert Decimal(str(syp["total_price"])) == Decimal("152")
+    assert Decimal(str(syp["total_price"])) == Decimal("150")
     assert quote_request(client, "EUR").status_code == status.HTTP_400_BAD_REQUEST
 
 

@@ -7241,6 +7241,104 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/counter-orders/": {
+            "post": {
+                "operationId": "v1_dashboard_printing_counter_orders_create",
+                "description": "Record a print order taken at the shop counter: the items, the price charged and what was paid.",
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CounterOrderCreateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CounterOrderCreateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CounterOrderCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPrintOrder"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/counter-orders/quote/": {
+            "post": {
+                "operationId": "v1_dashboard_printing_counter_orders_quote_create",
+                "description": "Price the lines of a counter order with the shop's price list, so the cashier sees the rounded price at once.",
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CounterQuoteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CounterQuoteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CounterQuoteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CounterQuote"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/jobs/": {
             "get": {
                 "operationId": "v1_dashboard_printing_jobs_list",
@@ -7427,6 +7525,18 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "source",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "app",
+                                "counter"
+                            ]
+                        },
+                        "description": "* `app` - Mobile or web app\n* `counter` - Print shop counter"
                     },
                     {
                         "in": "query",
@@ -17597,10 +17707,12 @@
                     "none",
                     "staple",
                     "spiral",
-                    "thermal"
+                    "thermal",
+                    "beads",
+                    "other"
                 ],
                 "type": "string",
-                "description": "* `none` - None\n* `staple` - Staple\n* `spiral` - Spiral\n* `thermal` - Thermal"
+                "description": "* `none` - None\n* `staple` - Staple\n* `spiral` - Spiral\n* `thermal` - Thermal\n* `beads` - Beads\n* `other` - Other"
             },
             "BlankEnum": {
                 "enum": [
@@ -17777,6 +17889,210 @@
                 ],
                 "type": "string",
                 "description": "* `app` - Whole App\n* `onboarding` - Onboarding\n* `registration` - Registration\n* `login` - Login\n* `verification` - Student Verification\n* `home` - Home\n* `subject` - Subject\n* `group` - Group\n* `chat` - Chat\n* `file` - File Viewer\n* `printing` - Printing\n* `notification` - Notifications\n* `support` - Support\n* `profile` - Profile\n* `search` - Search\n* `announcement` - Announcement\n* `settings` - Settings\n* `external_channel` - External Channel\n* `other` - Other"
+            },
+            "CounterItem": {
+                "type": "object",
+                "description": "One line typed in at the counter: there is no file, only what is being printed.",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "What it is, for the slip.",
+                        "maxLength": 255
+                    },
+                    "pages_count": {
+                        "type": "integer",
+                        "maximum": 100000,
+                        "minimum": 1,
+                        "description": "Pages of ONE copy."
+                    },
+                    "copies": {
+                        "type": "integer",
+                        "maximum": 99,
+                        "minimum": 1
+                    },
+                    "color_mode": {
+                        "$ref": "#/components/schemas/ColorModeEnum"
+                    },
+                    "paper_size": {
+                        "$ref": "#/components/schemas/PaperSizeEnum"
+                    },
+                    "sides": {
+                        "$ref": "#/components/schemas/SidesEnum"
+                    },
+                    "binding": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/BindingEnum"
+                            }
+                        ],
+                        "default": "none"
+                    },
+                    "binding_note": {
+                        "type": "string",
+                        "maxLength": 120
+                    }
+                },
+                "required": [
+                    "color_mode",
+                    "copies",
+                    "pages_count",
+                    "paper_size",
+                    "sides"
+                ]
+            },
+            "CounterItemRequest": {
+                "type": "object",
+                "description": "One line typed in at the counter: there is no file, only what is being printed.",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "What it is, for the slip.",
+                        "maxLength": 255
+                    },
+                    "pages_count": {
+                        "type": "integer",
+                        "maximum": 100000,
+                        "minimum": 1,
+                        "description": "Pages of ONE copy."
+                    },
+                    "copies": {
+                        "type": "integer",
+                        "maximum": 99,
+                        "minimum": 1
+                    },
+                    "color_mode": {
+                        "$ref": "#/components/schemas/ColorModeEnum"
+                    },
+                    "paper_size": {
+                        "$ref": "#/components/schemas/PaperSizeEnum"
+                    },
+                    "sides": {
+                        "$ref": "#/components/schemas/SidesEnum"
+                    },
+                    "binding": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/BindingEnum"
+                            }
+                        ],
+                        "default": "none"
+                    },
+                    "binding_note": {
+                        "type": "string",
+                        "maxLength": 120
+                    }
+                },
+                "required": [
+                    "color_mode",
+                    "copies",
+                    "pages_count",
+                    "paper_size",
+                    "sides"
+                ]
+            },
+            "CounterOrderCreateRequest": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CounterItemRequest"
+                        }
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "customer_phone": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "total_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "description": "The price taken from the customer. Defaults to the rounded list price."
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CounterOrderCreateStatusEnum"
+                            }
+                        ],
+                        "default": "delivered"
+                    },
+                    "paid_amount": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "description": "What the customer has paid now. Defaults to the full price when the order is delivered."
+                    },
+                    "payment_method": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaymentMethodEnum"
+                            }
+                        ],
+                        "default": "cash"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 2000
+                    },
+                    "internal_notes": {
+                        "type": "string",
+                        "maxLength": 4000
+                    }
+                },
+                "required": [
+                    "items"
+                ]
+            },
+            "CounterOrderCreateStatusEnum": {
+                "enum": [
+                    "printing",
+                    "ready",
+                    "delivered"
+                ],
+                "type": "string",
+                "description": "* `printing` - printing\n* `ready` - ready\n* `delivered` - delivered"
+            },
+            "CounterQuote": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CounterItem"
+                        }
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    }
+                },
+                "required": [
+                    "items"
+                ]
+            },
+            "CounterQuoteRequest": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CounterItemRequest"
+                        }
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                    }
+                },
+                "required": [
+                    "items"
+                ]
             },
             "DashboardAccountDeletion": {
                 "type": "object",
@@ -18816,10 +19132,32 @@
                     },
                     "user": {
                         "type": "integer",
-                        "readOnly": true
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "user_name": {
                         "type": "string",
+                        "readOnly": true
+                    },
+                    "source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SourceEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "customer_phone": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_by_name": {
+                        "type": "string",
+                        "nullable": true,
                         "readOnly": true
                     },
                     "status": {
@@ -18842,6 +19180,18 @@
                         "type": "string",
                         "format": "decimal",
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "rounding_adjustment": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "paid_amount": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "due_amount": {
+                        "type": "string",
                         "readOnly": true
                     },
                     "currency": {
@@ -18938,10 +19288,15 @@
                     "cancelled_at",
                     "completed_at",
                     "created_at",
+                    "created_by_name",
                     "currency",
+                    "customer_name",
+                    "customer_phone",
+                    "due_amount",
                     "id",
                     "internal_notes",
                     "items",
+                    "paid_amount",
                     "pickup_location",
                     "pickup_location_detail",
                     "price_calculated_at",
@@ -18949,6 +19304,8 @@
                     "pricing_snapshot",
                     "priority",
                     "rejected_reason",
+                    "rounding_adjustment",
+                    "source",
                     "status",
                     "status_history",
                     "total_price",
@@ -21358,6 +21715,10 @@
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
                         "readOnly": true
                     },
+                    "rounding_adjustment": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "currency": {
                         "type": "string",
                         "readOnly": true
@@ -21443,6 +21804,7 @@
                     "pricing_revision",
                     "priority",
                     "rejected_reason",
+                    "rounding_adjustment",
                     "status",
                     "status_history",
                     "total_price",
@@ -24493,6 +24855,10 @@
                         ],
                         "readOnly": true
                     },
+                    "binding_note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "sheets_count": {
                         "type": "integer",
                         "readOnly": true
@@ -24526,6 +24892,7 @@
                 },
                 "required": [
                     "binding",
+                    "binding_note",
                     "binding_price",
                     "color_mode",
                     "copies",
@@ -25259,6 +25626,14 @@
                 ],
                 "type": "string",
                 "description": "* `one_sided` - One Sided\n* `double_sided` - Double Sided"
+            },
+            "SourceEnum": {
+                "enum": [
+                    "app",
+                    "counter"
+                ],
+                "type": "string",
+                "description": "* `app` - Mobile or web app\n* `counter` - Print shop counter"
             },
             "StockMovement": {
                 "type": "object",

@@ -8,6 +8,8 @@ from typing import cast
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import DecimalField, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -23,6 +25,7 @@ from apps.accounts.permissions import CanManagePrinting, Capability, PermissionS
 from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle, PrintConvertRateThrottle
 from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -40,6 +43,8 @@ from .models import (
     PrintPricingRule,
 )
 from .serializers import (
+    CounterOrderCreateSerializer,
+    CounterQuoteSerializer,
     DashboardPrintOrderSerializer,
     MobilePrintOrderSerializer,
     PrintBindingPriceSerializer,
@@ -52,7 +57,7 @@ from .serializers import (
     PrintQuoteSerializer,
     PrintStatusUpdateSerializer,
 )
-from .services import PrintStatusService
+from .services import CounterOrderService, PrintStatusService
 
 
 class PrintQuoteView(APIView):
@@ -66,6 +71,8 @@ class PrintQuoteView(APIView):
         quote = serializer.save()
         data = {
             "total_price": quote["total_price"],
+            "exact_total": quote["exact_total"],
+            "rounding_adjustment": quote["rounding_adjustment"],
             "currency": quote["currency"],
             "pricing_revision": quote["pricing_revision"],
             "calculated_at": quote["calculated_at"],
@@ -233,17 +240,77 @@ class DashboardPrintOrderViewSet(StandardReadOnlyModelViewSet):
     permission_classes = [CanManagePrinting]
     serializer_class = DashboardPrintOrderSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["status", "priority", "user", "assigned_to", "pickup_location"]
-    search_fields = ["user__full_name", "user__email", "user__phone_number", "id"]
+    filterset_fields = ["status", "priority", "user", "assigned_to", "pickup_location", "source"]
+    search_fields = [
+        "user__full_name",
+        "user__email",
+        "user__phone_number",
+        "customer_name",
+        "customer_phone",
+        "id",
+    ]
     ordering_fields = ["created_at", "status", "priority", "total_price"]
     ordering = ["-created_at"]
 
     def get_queryset(self):
         return (
             PrintOrder.objects.filter(is_deleted=False)
-            .select_related("user", "assigned_to", "pickup_location")
+            .select_related("user", "assigned_to", "created_by", "pickup_location")
             .prefetch_related("items__source_file", "status_history__changed_by")
+            .annotate(
+                paid_total=Coalesce(
+                    Sum("payments__amount", filter=Q(payments__is_deleted=False)),
+                    Value(0),
+                    output_field=DecimalField(max_digits=14, decimal_places=2),
+                )
+            )
         )
+
+
+class DashboardCounterQuoteView(APIView):
+    """Price the lines of a counter order with the shop's price list, so the cashier sees the rounded price at once."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = CounterQuoteSerializer
+
+    @extend_schema(tags=["Dashboard"], request=CounterQuoteSerializer)
+    def post(self, request):
+        serializer = CounterQuoteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        quote = CounterOrderService.quote(
+            [dict(item) for item in serializer.validated_data["items"]], serializer.validated_data.get("currency")
+        )
+        for line in quote["items"]:
+            line.pop("snapshot", None)
+        return success_response(
+            data=quote, message="Counter quote calculated", request=request, code="COUNTER_QUOTE_CALCULATED"
+        )
+
+
+class DashboardCounterOrderCreateView(APIView):
+    """Record a print order taken at the shop counter: the items, the price charged and what was paid."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = CounterOrderCreateSerializer
+
+    @extend_schema(
+        tags=["Dashboard"], request=CounterOrderCreateSerializer, responses={201: DashboardPrintOrderSerializer}
+    )
+    def post(self, request):
+        serializer = CounterOrderCreateSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        def write():
+            order = serializer.save()
+            return success_response(
+                data=DashboardPrintOrderSerializer(order, context={"request": request}).data,
+                message="Counter order created",
+                status_code=status.HTTP_201_CREATED,
+                request=request,
+                code="COUNTER_ORDER_CREATED",
+            )
+
+        return run_idempotent(request, "dashboard-counter-order-create", write)
 
 
 class DashboardPrintAssignView(APIView):

@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 326
+**Operations:** 328
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -144,6 +144,8 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_dashboard_printing_binding_prices_retrieve | GET | /api/v1/dashboard/printing/binding-prices/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_printing_binding_prices_partial_update | PATCH | /api/v1/dashboard/printing/binding-prices/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PatchedPrintBindingPriceRequest; application/x-www-form-urlencoded: #/components/schemas/PatchedPrintBindingPriceRequest; multipart/form-data: #/components/schemas/PatchedPrintBindingPriceRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_printing_binding_prices_update | PUT | /api/v1/dashboard/printing/binding-prices/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PrintBindingPriceRequest; application/x-www-form-urlencoded: #/components/schemas/PrintBindingPriceRequest; multipart/form-data: #/components/schemas/PrintBindingPriceRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
+| v1_dashboard_printing_counter_orders_create | POST | /api/v1/dashboard/printing/counter-orders/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/CounterOrderCreateRequest; application/x-www-form-urlencoded: #/components/schemas/CounterOrderCreateRequest; multipart/form-data: #/components/schemas/CounterOrderCreateRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
+| v1_dashboard_printing_counter_orders_quote_create | POST | /api/v1/dashboard/printing/counter-orders/quote/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/CounterQuoteRequest; application/x-www-form-urlencoded: #/components/schemas/CounterQuoteRequest; multipart/form-data: #/components/schemas/CounterQuoteRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_printing_jobs_list | GET | /api/v1/dashboard/printing/jobs/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_printing_jobs_retrieve | GET | /api/v1/dashboard/printing/jobs/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_printing_orders_list | GET | /api/v1/dashboard/printing/orders/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
