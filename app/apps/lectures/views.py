@@ -20,6 +20,7 @@ from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.idempotency import run_idempotent
+from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
 from apps.common.throttles import LectureNotesRateThrottle, LectureViewerRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -225,6 +226,7 @@ class LectureViewerSessionView(APIView):
 
 class LectureViewerPageView(APIView):
     throttle_classes = [LectureViewerRateThrottle]
+    content_negotiation_class = IgnoreClientContentNegotiation
 
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiResponse(description="Protected page image")})
     def get(self, request, pk: int, page_number: int):
@@ -237,6 +239,7 @@ class LectureViewerPageView(APIView):
 
 class LectureViewerThumbnailView(APIView):
     throttle_classes = [LectureViewerRateThrottle]
+    content_negotiation_class = IgnoreClientContentNegotiation
 
     @extend_schema(tags=["Lecture viewer"], responses={200: OpenApiResponse(description="Protected thumbnail image")})
     def get(self, request, pk: int, page_number: int):

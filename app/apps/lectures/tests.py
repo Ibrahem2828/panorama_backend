@@ -252,6 +252,26 @@ def test_viewer_never_exposes_original_and_enforces_curriculum(api_client, ready
 
 
 @pytest.mark.django_db
+def test_viewer_images_accept_an_image_accept_header(api_client, ready_lecture, student):
+    # Mobile image loaders send `Accept: image/*`; DRF content negotiation used to answer that with 406.
+    api_client.force_authenticate(student)
+    token = api_client.post(f"/api/v1/lectures/{ready_lecture.id}/viewer/session/").data["data"]["session_token"]
+    page = api_client.get(
+        f"/api/v1/lectures/{ready_lecture.id}/viewer/pages/1/", HTTP_X_VIEWER_SESSION=token, HTTP_ACCEPT="image/*"
+    )
+    assert page.status_code == status.HTTP_200_OK
+    assert page["Content-Type"] == "image/png"
+    assert b"".join(page.streaming_content).startswith(bytes([0x89]) + b"PNG")
+    thumbnail = api_client.get(
+        f"/api/v1/lectures/{ready_lecture.id}/viewer/pages/1/thumbnail/",
+        HTTP_X_VIEWER_SESSION=token,
+        HTTP_ACCEPT="image/*",
+    )
+    assert thumbnail.status_code in (status.HTTP_200_OK, status.HTTP_404_NOT_FOUND)
+    assert thumbnail.status_code != status.HTTP_406_NOT_ACCEPTABLE
+
+
+@pytest.mark.django_db
 def test_viewer_session_expiry_and_notes_are_isolated(api_client, ready_lecture, student, other_student):
     api_client.force_authenticate(student)
     create = api_client.post(
