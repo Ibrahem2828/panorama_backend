@@ -74,6 +74,16 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             clash = clash.exclude(pk=self.instance.pk)
         if clash.exists():
             raise serializers.ValidationError({"name": "An item with this name already exists in the category."})
+        # The unique constraint is conditional (live rows, non-empty key); check it here so a duplicate answers 400, not a DB error.
+        key = attrs.get("consumption_key", getattr(self.instance, "consumption_key", ""))
+        if key:
+            taken = InventoryItem.objects.filter(is_deleted=False, consumption_key=key)
+            if self.instance:
+                taken = taken.exclude(pk=self.instance.pk)
+            if taken.exists():
+                raise serializers.ValidationError(
+                    {"consumption_key": "Another item already uses this consumption key."}
+                )
         return attrs
 
     def create(self, validated_data):
