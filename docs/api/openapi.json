@@ -18623,6 +18623,7 @@
                     },
                     "action_key": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -18689,7 +18690,6 @@
                     }
                 },
                 "required": [
-                    "action_key",
                     "context",
                     "created_at",
                     "id",
@@ -18706,6 +18706,7 @@
                     },
                     "action_key": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -18764,7 +18765,6 @@
                     "verification_statuses": {}
                 },
                 "required": [
-                    "action_key",
                     "context",
                     "question",
                     "title"
@@ -20083,6 +20083,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -20100,7 +20101,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "created_at",
                     "id",
                     "name",
@@ -20122,6 +20122,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -20129,7 +20130,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "name",
                     "university"
                 ]
@@ -20150,6 +20150,7 @@
                         "type": "boolean"
                     },
                     "platform": {
+                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -20161,6 +20162,7 @@
                     },
                     "role": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -20179,8 +20181,6 @@
                 "required": [
                     "id",
                     "key",
-                    "platform",
-                    "role",
                     "updated_at"
                 ]
             },
@@ -20197,6 +20197,7 @@
                         "type": "boolean"
                     },
                     "platform": {
+                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -20208,6 +20209,7 @@
                     },
                     "role": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -20219,9 +20221,7 @@
                     }
                 },
                 "required": [
-                    "key",
-                    "platform",
-                    "role"
+                    "key"
                 ]
             },
             "FeedbackKindEnum": {
@@ -20319,7 +20319,8 @@
                     },
                     "action_key": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "default": ""
                     },
                     "title": {
                         "type": "string",
@@ -21386,6 +21387,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -21403,7 +21405,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "created_at",
                     "faculty",
                     "faculty_name",
@@ -21426,6 +21427,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -21433,7 +21435,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "faculty",
                     "name"
                 ]
@@ -21710,7 +21711,8 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": true
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -21783,7 +21785,8 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": true
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -23687,6 +23690,7 @@
                     },
                     "action_key": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -23960,6 +23964,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -23980,6 +23985,7 @@
                         "type": "boolean"
                     },
                     "platform": {
+                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -23991,6 +23997,7 @@
                     },
                     "role": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -24256,6 +24263,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -24318,7 +24326,8 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": true
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -26214,7 +26223,8 @@
                     },
                     "code": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "default": ""
                     },
                     "university": {
                         "allOf": [
