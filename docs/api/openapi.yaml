@@ -11951,6 +11951,7 @@ components:
           $ref: '#/components/schemas/ContextEnum'
         action_key:
           type: string
+          default: ''
           maxLength: 100
         title:
           type: string
@@ -12002,7 +12003,6 @@ components:
           format: date-time
           readOnly: true
       required:
-      - action_key
       - context
       - created_at
       - id
@@ -12016,6 +12016,7 @@ components:
           $ref: '#/components/schemas/ContextEnum'
         action_key:
           type: string
+          default: ''
           maxLength: 100
         title:
           type: string
@@ -12061,7 +12062,6 @@ components:
         roles: {}
         verification_statuses: {}
       required:
-      - action_key
       - context
       - question
       - title
@@ -13065,6 +13065,7 @@ components:
           maxLength: 255
         code:
           type: string
+          default: ''
           maxLength: 32
         is_active:
           type: boolean
@@ -13077,7 +13078,6 @@ components:
           format: date-time
           readOnly: true
       required:
-      - code
       - created_at
       - id
       - name
@@ -13095,11 +13095,11 @@ components:
           maxLength: 255
         code:
           type: string
+          default: ''
           maxLength: 32
         is_active:
           type: boolean
       required:
-      - code
       - name
       - university
     FeatureFlag:
@@ -13115,11 +13115,13 @@ components:
         enabled:
           type: boolean
         platform:
+          default: ''
           oneOf:
           - $ref: '#/components/schemas/MobilePlatformEnum'
           - $ref: '#/components/schemas/BlankEnum'
         role:
           type: string
+          default: ''
           maxLength: 32
         expose_to_mobile:
           type: boolean
@@ -13133,8 +13135,6 @@ components:
       required:
       - id
       - key
-      - platform
-      - role
       - updated_at
     FeatureFlagRequest:
       type: object
@@ -13147,11 +13147,13 @@ components:
         enabled:
           type: boolean
         platform:
+          default: ''
           oneOf:
           - $ref: '#/components/schemas/MobilePlatformEnum'
           - $ref: '#/components/schemas/BlankEnum'
         role:
           type: string
+          default: ''
           maxLength: 32
         expose_to_mobile:
           type: boolean
@@ -13160,8 +13162,6 @@ components:
           maxLength: 255
       required:
       - key
-      - platform
-      - role
     FeedbackKindEnum:
       enum:
       - rating
@@ -13242,6 +13242,7 @@ components:
         action_key:
           type: string
           readOnly: true
+          default: ''
         title:
           type: string
           readOnly: true
@@ -14081,6 +14082,7 @@ components:
           maxLength: 255
         code:
           type: string
+          default: ''
           maxLength: 32
         is_active:
           type: boolean
@@ -14093,7 +14095,6 @@ components:
           format: date-time
           readOnly: true
       required:
-      - code
       - created_at
       - faculty
       - faculty_name
@@ -14112,11 +14113,11 @@ components:
           maxLength: 255
         code:
           type: string
+          default: ''
           maxLength: 32
         is_active:
           type: boolean
       required:
-      - code
       - faculty
       - name
     Message:
@@ -14331,6 +14332,7 @@ components:
           nullable: true
         is_active:
           type: boolean
+          default: true
         emergency_update_bypass:
           type: boolean
         updated_at:
@@ -14383,6 +14385,7 @@ components:
           nullable: true
         is_active:
           type: boolean
+          default: true
         emergency_update_bypass:
           type: boolean
       required:
@@ -15794,6 +15797,7 @@ components:
           $ref: '#/components/schemas/ContextEnum'
         action_key:
           type: string
+          default: ''
           maxLength: 100
         title:
           type: string
@@ -15994,6 +15998,7 @@ components:
           maxLength: 255
         code:
           type: string
+          default: ''
           maxLength: 32
         is_active:
           type: boolean
@@ -16008,11 +16013,13 @@ components:
         enabled:
           type: boolean
         platform:
+          default: ''
           oneOf:
           - $ref: '#/components/schemas/MobilePlatformEnum'
           - $ref: '#/components/schemas/BlankEnum'
         role:
           type: string
+          default: ''
           maxLength: 32
         expose_to_mobile:
           type: boolean
@@ -16204,6 +16211,7 @@ components:
           maxLength: 255
         code:
           type: string
+          default: ''
           maxLength: 32
         is_active:
           type: boolean
@@ -16248,6 +16256,7 @@ components:
           nullable: true
         is_active:
           type: boolean
+          default: true
         emergency_update_bypass:
           type: boolean
     PatchedNotificationPreferenceRequest:
@@ -17668,6 +17677,7 @@ components:
         code:
           type: string
           readOnly: true
+          default: ''
         university:
           allOf:
           - $ref: '#/components/schemas/University'
