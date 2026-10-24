@@ -90,6 +90,11 @@ class GroupMembershipService:
         group = Group.objects.select_for_update().get(pk=group.pk)
         if not group.is_active or group.is_deleted:
             raise ValidationError("Group is not active.")
+        if group.subject_id:
+            # Subject groups are filled from approved enrollment requests (Learnata screenshot), never by hand.
+            raise ValidationError(
+                {"detail": "Register your subjects to join this group.", "code": "ENROLLMENT_REQUIRED"}
+            )
         if not is_student_eligible_for_group(user, group):
             raise ValidationError("You are not eligible to join this group.")
 
