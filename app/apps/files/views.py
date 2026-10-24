@@ -1,31 +1,51 @@
 from __future__ import annotations
 
 import mimetypes
+from datetime import timedelta
 from pathlib import Path
 from typing import cast
 
 from django.db import transaction
+from django.db.models import Count
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.accounts.permissions import CanManageFiles
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
-from apps.common.throttles import FileTicketRateThrottle
+from apps.common.throttles import FileTicketRateThrottle, LectureViewerRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 from apps.groups.models import GroupMembershipStatus
+from apps.lectures.views import _inline_file_response, _viewer_token
+from apps.product.services import feature_enabled_or_raise
 
-from .models import FileAccessPurpose, FileAccessTicket, FileResource
+from .models import (
+    IN_FLIGHT_FILE_STATUSES,
+    FileAccessPurpose,
+    FileAccessTicket,
+    FileProcessingStatus,
+    FileResource,
+)
 from .serializers import FileResourceSerializer
-from .services import FileAccessService, accessible_files_for_user, user_can_access_file
+from .services import (
+    FileAccessService,
+    accessible_files_for_user,
+    get_authorized_file_page,
+    issue_file_viewer_session,
+    user_can_access_file,
+)
+from .tasks import dispatch_file_processing
 
 FILE_RANGE_CHUNK_SIZE = 64 * 1024
 
@@ -84,6 +104,7 @@ class FileResourceViewSet(StandardReadOnlyModelViewSet):
         "group",
         "is_active",
         "is_printable",
+        "processing_status",
     ]
     search_fields = ["title", "description"]
     ordering_fields = ["created_at", "title", "file_size"]
@@ -134,8 +155,62 @@ class DashboardFileResourceViewSet(StandardModelViewSet):
             "uploaded_by", "university", "faculty", "major", "academic_year", "semester", "subject", "group"
         )
 
+    def perform_update(self, serializer):
+        resource = serializer.save()
+        if resource.processing_status == FileProcessingStatus.QUEUED:  # a new document was uploaded
+            dispatch_file_processing(resource.pk)
+
+    @extend_schema(tags=["Dashboard"], request=None, responses={202: OpenApiTypes.OBJECT})
+    @action(detail=True, methods=["post"], url_path="reprocess")
+    def reprocess(self, request, pk=None):
+        """Re-queue page rendering for one file (failed, never processed, or stalled)."""
+
+        resource = get_object_or_404(FileResource, pk=pk, is_deleted=False)
+        _queue_reprocess(resource, request)
+        return success_response(
+            data={"id": resource.pk, "processing_status": FileProcessingStatus.QUEUED},
+            message="File processing re-queued.",
+            status_code=status.HTTP_202_ACCEPTED,
+            request=request,
+            code="FILE_PROCESSING_REQUEUED",
+        )
+
+    @extend_schema(tags=["Dashboard"], responses={200: OpenApiTypes.OBJECT})
+    @action(detail=False, methods=["get"], url_path="processing-summary")
+    def processing_summary(self, request):
+        counts = {value: 0 for value in FileProcessingStatus.values}
+        for row in FileResource.objects.filter(is_deleted=False).values("processing_status").annotate(n=Count("id")):
+            counts[row["processing_status"]] = row["n"]
+        return success_response(data=counts, message="File processing summary", request=request)
+
+    @extend_schema(tags=["Dashboard"], request=OpenApiTypes.OBJECT, responses={202: OpenApiTypes.OBJECT})
+    @action(detail=False, methods=["post"], url_path="reprocess-bulk")
+    def reprocess_bulk(self, request):
+        """Re-queue many files: ids or a scope (unprocessed / failed). Never touches ready or quarantined files."""
+
+        ids = request.data.get("ids")
+        scope = request.data.get("scope")
+        queryset = FileResource.objects.filter(is_deleted=False, is_active=True)
+        if isinstance(ids, list) and ids:
+            queryset = queryset.filter(pk__in=[int(value) for value in ids if str(value).isdigit()][:500])
+        elif scope == "failed":
+            queryset = queryset.filter(processing_status=FileProcessingStatus.FAILED)
+        elif scope == "unprocessed":
+            queryset = queryset.filter(processing_status=FileProcessingStatus.PENDING)
+        else:
+            raise ValidationError({"detail": "Send ids or a scope (unprocessed or failed)."})
+        queued = 0
+        skipped = (FileProcessingStatus.READY, FileProcessingStatus.QUARANTINED, *IN_FLIGHT_FILE_STATUSES)
+        for resource in queryset.exclude(processing_status__in=skipped)[:500]:
+            _queue_reprocess(resource, request, audit=False)
+            queued += 1
+        return success_response(
+            data={"queued": queued}, message="Files re-queued", status_code=status.HTTP_202_ACCEPTED, request=request
+        )
+
     def perform_create(self, serializer):
         resource = serializer.save(uploaded_by=self.request.user)
+        dispatch_file_processing(resource.pk)
         AuditLogService.log(
             actor=self.request.user,
             action=AuditAction.FILE_UPLOADED,
@@ -143,6 +218,40 @@ class DashboardFileResourceViewSet(StandardModelViewSet):
             new_value={"visibility": resource.visibility, "sha256": resource.sha256},
             request=self.request,
         )
+
+
+class FileNotReprocessable(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "This file is being processed or cannot be reprocessed."
+    default_code = "file_not_reprocessable"
+
+
+def _queue_reprocess(resource: FileResource, request, *, audit: bool = True) -> None:
+    with transaction.atomic():
+        locked = FileResource.objects.select_for_update().get(pk=resource.pk)
+        recently_active = locked.updated_at > timezone.now() - timedelta(minutes=30)
+        if locked.processing_status in IN_FLIGHT_FILE_STATUSES and recently_active:
+            raise FileNotReprocessable()
+        if locked.processing_status == FileProcessingStatus.QUARANTINED:
+            raise FileNotReprocessable()
+        previous = locked.processing_status
+        locked.processing_status = FileProcessingStatus.QUEUED
+        locked.failure_code = ""
+        locked.failure_message = ""
+        locked.processing_task_id = ""
+        locked.save(
+            update_fields=["processing_status", "failure_code", "failure_message", "processing_task_id", "updated_at"]
+        )
+        if audit:
+            AuditLogService.log(
+                actor=request.user,
+                action=AuditAction.FILE_UPLOADED,
+                target=locked,
+                old_value={"processing_status": previous},
+                new_value={"processing_status": locked.processing_status, "reprocess": True},
+                request=request,
+            )
+        dispatch_file_processing(locked.pk)
 
 
 class FileAccessTicketView(APIView):
@@ -240,3 +349,97 @@ class ProtectedFileStreamView(APIView):
             "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
         )
         return response
+
+
+# -- protected page viewer (same engine and wire format as the lecture viewer) ---------------------------------------------
+
+
+def _viewable_file(request, pk: int) -> FileResource:
+    resource = get_object_or_404(accessible_files_for_user(request.user), pk=pk)
+    if not user_can_access_file(request.user, resource):
+        raise NotFound("File is unavailable.")
+    return resource
+
+
+class FileViewerManifestView(APIView):
+    throttle_classes = [LectureViewerRateThrottle]
+
+    @extend_schema(tags=["File viewer"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request, pk: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
+        resource = _viewable_file(request, pk)
+        return success_response(
+            data={
+                "file_id": resource.pk,
+                "title": resource.title,
+                "status": resource.processing_status,
+                "page_count": resource.pages_count or 0,
+                "ready": resource.viewer_ready,
+                "text_available": resource.pages.filter(text_content__gt="").exists(),
+                "viewer_capabilities": {"page_streaming": True, "download_original": False, "annotations": True},
+            },
+            request=request,
+            code="FILE_VIEWER_MANIFEST",
+        )
+
+
+class FileViewerSessionView(APIView):
+    throttle_classes = [LectureViewerRateThrottle]
+
+    @extend_schema(tags=["File viewer"], request=None, responses={201: OpenApiTypes.OBJECT})
+    def post(self, request, pk: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
+        resource = _viewable_file(request, pk)
+        session = issue_file_viewer_session(request.user, resource)
+        return success_response(
+            data={"session_token": str(session.token), "expires_at": session.expires_at},
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="FILE_VIEWER_SESSION_CREATED",
+        )
+
+
+class FileViewerPageView(APIView):
+    throttle_classes = [LectureViewerRateThrottle]
+    content_negotiation_class = IgnoreClientContentNegotiation
+
+    @extend_schema(tags=["File viewer"], responses={200: OpenApiResponse(description="Protected page image")})
+    def get(self, request, pk: int, page_number: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
+        resource = _viewable_file(request, pk)
+        page = get_authorized_file_page(request.user, resource, _viewer_token(request), page_number)
+        return _inline_file_response(page.rendered_file, f"file-{resource.pk}-page-{page_number}.png", "image/png")
+
+
+class FileViewerThumbnailView(APIView):
+    throttle_classes = [LectureViewerRateThrottle]
+    content_negotiation_class = IgnoreClientContentNegotiation
+
+    @extend_schema(tags=["File viewer"], responses={200: OpenApiResponse(description="Protected thumbnail image")})
+    def get(self, request, pk: int, page_number: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
+        resource = _viewable_file(request, pk)
+        page = get_authorized_file_page(request.user, resource, _viewer_token(request), page_number)
+        if not page.thumbnail:
+            raise Http404("Thumbnail is unavailable.")
+        return _inline_file_response(page.thumbnail, f"file-{resource.pk}-thumbnail-{page_number}.png", "image/png")
+
+
+class FileViewerTextView(APIView):
+    throttle_classes = [LectureViewerRateThrottle]
+
+    @extend_schema(tags=["File viewer"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request, pk: int, page_number: int):
+        feature_enabled_or_raise("lecture_viewer_enabled", request=request)
+        resource = _viewable_file(request, pk)
+        page = get_authorized_file_page(request.user, resource, _viewer_token(request), page_number)
+        return success_response(
+            data={
+                "lecture_id": resource.pk,
+                "file_id": resource.pk,
+                "page_number": page_number,
+                "text": page.text_content,
+            },
+            request=request,
+            code="FILE_PAGE_TEXT",
+        )

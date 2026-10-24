@@ -29,8 +29,10 @@ def detect_pages_count(file_obj, filename: str) -> int:
     extension = Path(filename).suffix.lower()
     if extension in {".png", ".jpg", ".jpeg", ".webp"}:
         return 1
+    if extension in {".doc", ".docx", ".ppt", ".pptx"}:
+        return 0  # the real count is known only after the document is converted for the viewer
     if extension != ".pdf":
-        raise ValidationError({"file": "Only PDF and supported image files can be processed."})
+        raise ValidationError({"file": "Only PDF, image and Office files can be processed."})
     position = file_obj.tell() if hasattr(file_obj, "tell") else None
     try:
         if hasattr(file_obj, "seek"):

@@ -23,6 +23,28 @@ class FileVisibility(models.TextChoices):
     ADMIN_ONLY = "admin_only", "Admin Only"
 
 
+class FileProcessingStatus(models.TextChoices):
+    """Where a library file is on its way to protected page images (same vocabulary as lecture processing)."""
+
+    PENDING = "pending", "Not processed yet"
+    QUEUED = "queued", "Queued"
+    SCANNING = "scanning", "Scanning"
+    CONVERTING = "converting", "Converting"
+    EXTRACTING = "extracting", "Extracting"
+    RENDERING = "rendering", "Rendering"
+    READY = "ready", "Ready"
+    FAILED = "failed", "Failed"
+    QUARANTINED = "quarantined", "Quarantined"
+
+
+IN_FLIGHT_FILE_STATUSES = (
+    FileProcessingStatus.SCANNING,
+    FileProcessingStatus.CONVERTING,
+    FileProcessingStatus.EXTRACTING,
+    FileProcessingStatus.RENDERING,
+)
+
+
 class FileResource(BaseModel):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -58,10 +80,19 @@ class FileResource(BaseModel):
     visibility = models.CharField(max_length=32, choices=FileVisibility.choices, default=FileVisibility.PUBLIC)
     is_printable = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
+    #: Protected page images for the in-app viewer (never the original file).
+    processing_status = models.CharField(
+        max_length=16, choices=FileProcessingStatus.choices, default=FileProcessingStatus.PENDING
+    )
+    processing_task_id = models.CharField(max_length=255, blank=True)
+    failure_code = models.CharField(max_length=64, blank=True)
+    failure_message = models.CharField(max_length=255, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
         indexes = [
+            models.Index(fields=["processing_status", "is_active"], name="files_processing_status_idx"),
             models.Index(fields=["visibility", "is_active"]),
             models.Index(fields=["university", "faculty", "major", "academic_year", "semester"]),
             models.Index(fields=["group", "visibility"]),
@@ -87,8 +118,60 @@ class FileResource(BaseModel):
             self.file_type = Path(self.file.name).suffix.lower().lstrip(".")[:32]
         super().save(*args, **kwargs)
 
+    @property
+    def viewer_ready(self) -> bool:
+        return self.processing_status == FileProcessingStatus.READY and self.is_active and not self.is_deleted
+
     def __str__(self) -> str:
         return self.title
+
+
+class FilePage(BaseModel):
+    """One protected page image (and thumbnail + extracted text) of a library file."""
+
+    file_resource = models.ForeignKey(FileResource, on_delete=models.CASCADE, related_name="pages")
+    page_number = models.PositiveIntegerField()
+    rendered_file = models.FileField(upload_to="files/pages/")
+    thumbnail = models.FileField(upload_to="files/thumbnails/", blank=True)
+    text_content = models.TextField(blank=True)
+    width = models.PositiveIntegerField(default=0)
+    height = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["page_number"]
+        constraints = [models.UniqueConstraint(fields=["file_resource", "page_number"], name="files_page_unique")]
+        indexes = [models.Index(fields=["file_resource", "page_number"], name="files_page_lookup_idx")]
+
+
+class FileViewerSession(BaseModel):
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    file_resource = models.ForeignKey(FileResource, on_delete=models.CASCADE, related_name="viewer_sessions")
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="file_viewer_sessions")
+    expires_at = models.DateTimeField()
+    max_page_requests = models.PositiveIntegerField()
+    page_request_count = models.PositiveIntegerField(default=0)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["token", "expires_at"], name="files_viewer_session_token_idx")]
+
+    @property
+    def is_valid(self) -> bool:
+        return (
+            self.revoked_at is None
+            and self.expires_at > timezone.now()
+            and self.page_request_count < self.max_page_requests
+            and self.file_resource.viewer_ready
+        )
+
+    @classmethod
+    def issue(cls, file_resource, user):
+        return cls.objects.create(
+            file_resource=file_resource,
+            user=user,
+            expires_at=timezone.now() + timedelta(seconds=getattr(settings, "LECTURE_VIEWER_SESSION_TTL_SECONDS", 900)),
+            max_page_requests=getattr(settings, "LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS", 1200),
+        )
 
 
 class FileAccessPurpose(models.TextChoices):

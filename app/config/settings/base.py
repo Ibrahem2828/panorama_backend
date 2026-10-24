@@ -25,6 +25,7 @@ LOCAL_APPS = [
     "apps.universities",
     "apps.verification",
     "apps.enrollment",
+    "apps.annotations",
     "apps.groups",
     "apps.files",
     "apps.lectures",
@@ -423,6 +424,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, cast=int)
 CELERY_TASK_ROUTES = {
     "apps.lectures.tasks.*": {"queue": "conversion"},
+    "apps.files.tasks.process_file_resource": {"queue": "conversion"},
     "apps.printing.tasks.convert_print_document": {"queue": "conversion"},
 }
 # Redelivery window for unacknowledged tasks; must exceed the longest task (lecture conversion).
@@ -461,6 +463,10 @@ CELERY_BEAT_SCHEDULE = {
     # Lectures whose worker died mid-conversion would otherwise stay "processing" forever.
     "fail-stuck-lectures": {
         "task": "apps.lectures.tasks.fail_stuck_lectures",
+        "schedule": 600.0,
+    },
+    "fail-stuck-files": {
+        "task": "apps.files.tasks.fail_stuck_files",
         "schedule": 600.0,
     },
 }
