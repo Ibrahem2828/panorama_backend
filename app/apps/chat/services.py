@@ -215,6 +215,49 @@ class ChatBroadcastService:
         cls._group_send(group_id, {"type": "message.deleted", "data": {"id": message_id, "group_id": group_id}})
 
     @classmethod
+    def receipt_updated(cls, group_id: int, user_id: int, delivered_up_to: int, read_up_to: int) -> None:
+        cls._group_send(
+            group_id,
+            {
+                "type": "receipt.updated",
+                "data": {
+                    "group_id": group_id,
+                    "user_id": user_id,
+                    "delivered_up_to": delivered_up_to,
+                    "read_up_to": read_up_to,
+                },
+            },
+        )
+
+    @classmethod
+    def reaction_updated(
+        cls, group_id: int, message_id: int, user_id: int, emoji: str | None, counts: dict[str, int]
+    ) -> None:
+        cls._group_send(
+            group_id,
+            {
+                "type": "reaction.updated",
+                "data": {
+                    "group_id": group_id,
+                    "message_id": message_id,
+                    "user_id": user_id,
+                    "emoji": emoji,
+                    "counts": counts,
+                },
+            },
+        )
+
+    @classmethod
+    def after_commit_receipt(cls, group_id: int, user_id: int, delivered_up_to: int, read_up_to: int) -> None:
+        transaction.on_commit(lambda: cls.receipt_updated(group_id, user_id, delivered_up_to, read_up_to))
+
+    @classmethod
+    def after_commit_reaction(
+        cls, group_id: int, message_id: int, user_id: int, emoji: str | None, counts: dict[str, int]
+    ) -> None:
+        transaction.on_commit(lambda: cls.reaction_updated(group_id, message_id, user_id, emoji, counts))
+
+    @classmethod
     def after_commit_created(cls, message: Message) -> None:
         transaction.on_commit(lambda: cls.message_created(message.pk))
 
@@ -263,7 +306,7 @@ class ChatMessageService:
             raise ValidationError({"message_type": "System messages are server generated."})
         if reply_to and (reply_to.group_id != group.id or reply_to.is_deleted):
             raise ValidationError({"reply_to": "The referenced message is not available in this group."})
-        return Message.objects.create(
+        message = Message.objects.create(
             group=group,
             sender=sender,
             content=content,
@@ -271,6 +314,20 @@ class ChatMessageService:
             attachment=attachment,
             reply_to=reply_to,
         )
+        # Every path that creates a message (REST and WebSocket) tells the other members once it is committed.
+        transaction.on_commit(lambda: ChatMessageService.queue_notification(message.pk))
+        return message
+
+    @staticmethod
+    def queue_notification(message_id: int) -> None:
+        """Hand the notification fan-out to the worker; a broker outage must never fail or delay the send."""
+
+        try:
+            from .tasks import notify_chat_message
+
+            notify_chat_message.delay(message_id)
+        except Exception:
+            logger.exception("chat_notification_queue_failed", extra={"message_id": message_id})
 
     @staticmethod
     def create_and_announce(**kwargs) -> Message:

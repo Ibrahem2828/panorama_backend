@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.db import transaction
+from django.db.models import Count, Max, OuterRef, Q, Subquery
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, serializers, status
@@ -15,6 +16,7 @@ from apps.audit.services import AuditLogService
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.viewsets import StandardExplicitActionViewSet
+from apps.groups.models import Group, GroupMembershipStatus
 
 from .models import UNRESOLVED_REPORT_STATUSES, Message, MessageReport, MessageReportStatus
 from .services import ChatMessageService
@@ -173,3 +175,65 @@ class DashboardMessageReportResolveView(APIView):
             )
 
         return run_idempotent(request, f"dashboard-chat-report-resolve:{pk}", write)
+
+
+class DashboardChatGroupSerializer(serializers.ModelSerializer):
+    subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
+    faculty_name = serializers.CharField(source="faculty.name", read_only=True, default=None)
+    members = serializers.IntegerField(read_only=True)
+    last_message_at = serializers.DateTimeField(read_only=True)
+    last_message_excerpt = serializers.CharField(read_only=True, default="")
+    open_reports = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Group
+        fields = [
+            "id",
+            "name",
+            "subject_name",
+            "faculty_name",
+            "is_active",
+            "members",
+            "last_message_at",
+            "last_message_excerpt",
+            "open_reports",
+        ]
+        read_only_fields = fields
+
+
+class DashboardChatGroupViewSet(StandardExplicitActionViewSet):
+    """The chat console's group list: ``GET /dashboard/chat/groups/`` (``search`` by group or subject, ``reported=1``).
+
+    Opening a chat from here uses the ordinary message endpoints: staff with ``groups.manage`` may read and write in
+    every group chat, and their messages carry their position title instead of a name.
+    """
+
+    permission_classes = [CanManageGroups]
+    serializer_class = DashboardChatGroupSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["name", "subject__name", "faculty__name"]
+
+    def get_queryset(self):
+        latest = Message.objects.filter(group=OuterRef("pk"), is_deleted=False).order_by("-created_at", "-id")
+        queryset = (
+            Group.objects.filter(is_deleted=False)
+            .select_related("subject", "faculty")
+            .annotate(
+                members=Count(
+                    "memberships", filter=Q(memberships__status=GroupMembershipStatus.APPROVED), distinct=True
+                ),
+                last_message_at=Max("messages__created_at", filter=Q(messages__is_deleted=False)),
+                last_message_excerpt=Subquery(latest.values("content")[:1]),
+                open_reports=Count(
+                    "messages__reports",
+                    filter=Q(
+                        messages__reports__status__in=UNRESOLVED_REPORT_STATUSES, messages__reports__is_deleted=False
+                    ),
+                    distinct=True,
+                ),
+            )
+            .order_by("-open_reports", "-last_message_at", "name")
+        )
+        if self.request.query_params.get("reported") in {"1", "true"}:
+            queryset = queryset.filter(open_reports__gt=0)
+        return queryset

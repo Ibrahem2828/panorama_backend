@@ -227,7 +227,15 @@ class PushNotificationService:
         for start in range(0, len(tokens), EXPO_BATCH_SIZE):
             batch = tokens[start : start + EXPO_BATCH_SIZE]
             messages = [
-                {"to": token, "sound": "default", "title": title[:200], "body": body[:1000], "data": data or {}}
+                {
+                    "to": token,
+                    "sound": "default",
+                    "title": title[:200],
+                    "body": body[:1000],
+                    "data": data or {},
+                    # An Android notification channel chosen by the sender (the app creates "chat", "printing"...).
+                    **({"channelId": data["channel_id"]} if data and data.get("channel_id") else {}),
+                }
                 for token in batch
             ]
             try:

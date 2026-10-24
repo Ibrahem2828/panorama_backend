@@ -12,6 +12,8 @@ from django.core.cache import cache
 
 from apps.groups.models import Group
 
+from . import presence
+from .receipts import ChatReceiptService
 from .serializers import MessageSerializer
 from .services import ChatMessageService, ChatPermissionService
 
@@ -63,6 +65,8 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         if hasattr(self, "room_group_name"):
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+            if getattr(self.user, "is_authenticated", False):
+                await database_sync_to_async(presence.mark_absent)(self.group_id, self.user.id)
 
     def _take_frame_token(self) -> bool:
         now = _monotonic()
@@ -131,6 +135,9 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
                 },
             )
             return
+        if event_type in {"receipt", "presence"}:
+            await self.handle_read_frame(event_type, payload)
+            return
         if event_type != "message":
             await self.send_error("UNKNOWN_EVENT", "Unsupported WebSocket event type.")
             return
@@ -161,6 +168,35 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
             return
         await self.channel_layer.group_send(self.room_group_name, {"type": "message_event", "data": data})
 
+    async def handle_read_frame(self, event_type: str, payload: dict) -> None:
+        """``receipt`` moves the member's delivered/read cursors; ``presence`` says whether they are looking at the chat.
+
+        Both are cheap state updates that rely on the cached authorization (a revoked member is dropped within the TTL).
+        """
+
+        if not await self.consume_rate_limit("receipt", 30, 10):
+            return
+        close_code = await self.cached_authorization()
+        if close_code is not None:
+            await self.close(code=close_code)
+            return
+        if event_type == "presence":
+            await database_sync_to_async(presence.mark_present if payload.get("active") else presence.mark_absent)(
+                self.group_id, self.user.id
+            )
+            return
+        try:
+            delivered = int(payload.get("delivered_up_to") or 0)
+            read = int(payload.get("read_up_to") or 0)
+        except (TypeError, ValueError):
+            await self.send_error("INVALID_PAYLOAD", "Receipts need numeric message ids.")
+            return
+        try:
+            await self.update_receipts(delivered, read)
+        except Exception:
+            logger.exception("chat_receipt_failed", extra={"group_id": self.group_id})
+            await self.close(code=AUTHORIZATION_CLOSE_CODE)
+
     async def send_error(self, code: str, message: str):
         await self.send(text_data=json.dumps({"type": "error", "code": code, "message": message}))
 
@@ -181,6 +217,14 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         # ``group_send({"type": "message.deleted"})`` is dispatched to this method (dots become underscores).
         if await self._deliverable():
             await self.send(text_data=json.dumps({"type": "message.deleted", "data": event["data"]}))
+
+    async def receipt_updated(self, event):
+        if await self._deliverable():
+            await self.send(text_data=json.dumps({"type": "receipt", "data": event["data"]}))
+
+    async def reaction_updated(self, event):
+        if await self._deliverable():
+            await self.send(text_data=json.dumps({"type": "reaction", "data": event["data"]}))
 
     async def typing_event(self, event):
         if event["user_id"] == self.user.id:
@@ -217,6 +261,13 @@ class GroupChatConsumer(AsyncWebsocketConsumer):
         group = Group.objects.get(pk=self.group_id, is_deleted=False)
         message = ChatMessageService.create_message(group=group, sender=self.user, content=content)
         return MessageSerializer(message).data
+
+    @database_sync_to_async
+    def update_receipts(self, delivered: int, read: int) -> None:
+        group = Group.objects.get(pk=self.group_id, is_deleted=False)
+        ChatReceiptService.update(group=group, user=self.user, delivered_up_to=delivered, read_up_to=read)
+        if read:
+            presence.mark_present(self.group_id, self.user.id)
 
     @database_sync_to_async
     def consume_rate_limit(self, bucket: str, limit: int, window_seconds: int) -> bool:
