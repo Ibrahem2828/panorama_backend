@@ -57,11 +57,7 @@ CONSUMPTION = {
     "ورق A5 - 80 غ": ("paper_a5", "0.002"),
     "أغلفة تجليد حلزوني": ("binding_spiral", "0.01"),
     "دبابيس تدبيس": ("binding_staple", "0.0004"),
-    # Ink is a rough estimate per printed page (1 litre ~ 20,000 black pages or ~ 10,000 pages per colour): the owner must calibrate it.
-    "حبر أسود": ("ink_black", "0.00005"),
-    "حبر سماوي (Cyan)": ("ink_cyan", "0.0001"),
-    "حبر أرجواني (Magenta)": ("ink_magenta", "0.0001"),
-    "حبر أصفر (Yellow)": ("ink_yellow", "0.0001"),
+    # Ink is intentionally NOT mapped: it is tracked as purchases (with a reorder reminder), never as per-page consumption.
 }
 
 # (category, name, unit, quantity, reorder level, unit cost in USD)

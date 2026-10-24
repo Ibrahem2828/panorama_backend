@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .staff_views import AcceptInvitationView, InvitationInfoView
 from .views import (
     ChangePasswordView,
     ConfirmPasswordResetView,
@@ -25,5 +26,7 @@ urlpatterns = [
     path("otp/send/", SendOTPView.as_view(), name="otp-send"),
     path("otp/verify/", VerifyOTPView.as_view(), name="otp-verify"),
     path("request-password-reset/", RequestPasswordResetView.as_view(), name="request-password-reset"),
+    path("invitations/accept/", AcceptInvitationView.as_view(), name="invitation-accept"),
+    path("invitations/<str:token>/", InvitationInfoView.as_view(), name="invitation-info"),
     path("confirm-password-reset/", ConfirmPasswordResetView.as_view(), name="confirm-password-reset"),
 ]

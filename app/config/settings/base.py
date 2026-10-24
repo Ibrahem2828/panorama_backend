@@ -167,6 +167,7 @@ REST_FRAMEWORK = {
         "otp_request": config("THROTTLE_OTP_REQUEST", default="3/10min"),
         "otp_verify": config("THROTTLE_OTP_VERIFY", default="8/10min"),
         "password_reset": config("THROTTLE_PASSWORD_RESET", default="4/hour"),
+        "invitation_accept": config("THROTTLE_INVITATION_ACCEPT", default="20/hour"),
         # Per-account budgets, independent of the source IP.
         "otp_request_account": config("THROTTLE_OTP_REQUEST_ACCOUNT", default="10/hour"),
         "otp_verify_account": config("THROTTLE_OTP_VERIFY_ACCOUNT", default="20/hour"),
@@ -382,6 +383,9 @@ SMS_OTP_PROVIDER_ENABLED = get_bool_env("SMS_OTP_PROVIDER_ENABLED", default=Fals
 
 FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
 APP_BASE_URL = config("APP_BASE_URL", default="http://localhost:8000").rstrip("/")
+# Where staff open the dashboard (invitation links point here).
+DASHBOARD_BASE_URL = config("DASHBOARD_BASE_URL", default="http://localhost:3100").rstrip("/")
+INVITATION_TTL_HOURS = config("INVITATION_TTL_HOURS", default=48, cast=int)
 FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
 FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
 EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
@@ -453,6 +457,11 @@ CELERY_BEAT_SCHEDULE = {
     "flush-expired-jwt-tokens": {
         "task": "apps.common.tasks.flush_expired_jwt_tokens",
         "schedule": crontab(hour=4, minute=5),
+    },
+    # "Buy ink again" style reminders, once per purchase cycle.
+    "notify-due-purchase-reminders": {
+        "task": "apps.finance.tasks.notify_due_purchase_reminders",
+        "schedule": crontab(hour=7, minute=30),
     },
     "purge-expired-print-conversions": {
         "task": "apps.printing.tasks.purge_expired_print_conversions",

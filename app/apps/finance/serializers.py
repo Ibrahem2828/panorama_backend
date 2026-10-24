@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from apps.common.file_validation import validate_document_upload
 from apps.printing.models import PrintOrder
 
 from .models import (
@@ -12,10 +13,12 @@ from .models import (
     FinanceCurrency,
     InventoryItem,
     OrderPayment,
+    PurchaseReminder,
     StockMovement,
     StockMovementType,
+    WasteReason,
 )
-from .services import PaymentService, money
+from .services import PaymentService, PurchaseReminderService, money
 
 
 class ExchangeRateSerializer(serializers.ModelSerializer):
@@ -76,6 +79,10 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"name": "An item with this name already exists in the category."})
         # The unique constraint is conditional (live rows, non-empty key); check it here so a duplicate answers 400, not a DB error.
         key = attrs.get("consumption_key", getattr(self.instance, "consumption_key", ""))
+        if key.startswith("ink_") and key != getattr(self.instance, "consumption_key", ""):
+            raise serializers.ValidationError(
+                {"consumption_key": "Ink is tracked as purchases, not as per-page consumption."}
+            )
         if key:
             taken = InventoryItem.objects.filter(is_deleted=False, consumption_key=key)
             if self.instance:
@@ -116,6 +123,7 @@ class StockMovementSerializer(serializers.ModelSerializer):
             "unit_cost",
             "currency",
             "note",
+            "waste_reason",
             "order",
             "created_by_name",
             "created_at",
@@ -132,6 +140,7 @@ class StockMovementCreateSerializer(serializers.Serializer):
     unit_cost = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal("0"), required=False)
     currency = serializers.ChoiceField(choices=FinanceCurrency.choices, required=False)
     note = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    waste_reason = serializers.ChoiceField(choices=WasteReason.choices, required=False)
     record_expense = serializers.BooleanField(
         required=False, default=False, help_text="For a purchase: also book quantity x unit cost as a supplies expense."
     )
@@ -143,11 +152,79 @@ class StockMovementCreateSerializer(serializers.Serializer):
         return attrs
 
 
+class PurchaseReminderSerializer(serializers.ModelSerializer):
+    last_purchase = serializers.SerializerMethodField()
+    weeks_since = serializers.SerializerMethodField()
+    due_on = serializers.SerializerMethodField()
+    is_due = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseReminder
+        fields = [
+            "id",
+            "name",
+            "interval_weeks",
+            "is_active",
+            "last_purchase",
+            "weeks_since",
+            "due_on",
+            "is_due",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def _info(self, obj: PurchaseReminder) -> dict:
+        cache = self.__dict__.setdefault("_status_cache", {})
+        if obj.pk not in cache:
+            cache[obj.pk] = PurchaseReminderService.status(obj)
+        return cache[obj.pk]
+
+    def get_last_purchase(self, obj) -> str | None:
+        value = self._info(obj)["last_purchase"]
+        return value.isoformat() if value else None
+
+    def get_weeks_since(self, obj) -> int | None:
+        return self._info(obj)["weeks_since"]
+
+    def get_due_on(self, obj) -> str | None:
+        value = self._info(obj)["due_on"]
+        return value.isoformat() if value else None
+
+    def get_is_due(self, obj) -> bool:
+        return self._info(obj)["is_due"]
+
+
 class ExpenseSerializer(serializers.ModelSerializer):
+    reminder_name = serializers.CharField(source="reminder.name", read_only=True, default=None)
+    has_invoice = serializers.SerializerMethodField()
+    invoice = serializers.FileField(write_only=True, required=False, allow_null=True)
+
     class Meta:
         model = Expense
-        fields = ["id", "spent_on", "category", "description", "amount", "currency", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "spent_on",
+            "category",
+            "kind",
+            "description",
+            "amount",
+            "currency",
+            "supplier",
+            "notes",
+            "invoice",
+            "has_invoice",
+            "reminder",
+            "reminder_name",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_has_invoice(self, obj: Expense) -> bool:
+        return bool(obj.invoice)
+
+    def validate_invoice(self, value):
+        return validate_document_upload(value, "invoice") if value else value
 
 
 class OrderPaymentSerializer(serializers.ModelSerializer):
