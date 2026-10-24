@@ -50,6 +50,8 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "pending_consumption",
             "reorder_level",
             "unit_cost",
+            "is_sellable",
+            "sale_price",
             "currency",
             "stock_value",
             "is_low",

@@ -12317,6 +12317,341 @@
           ]
         },
         {
+          "name": "v1_dashboard_printing_covers_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/covers/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "covers"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/covers/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_covers_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/covers/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "covers"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/printing/covers/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_covers_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/covers/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "covers",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/printing/covers/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_covers_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/covers/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "covers",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/covers/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_covers_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/covers/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "covers",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/printing/covers/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_covers_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/covers/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "covers",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/printing/covers/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_printing_jobs_list",
           "request": {
             "method": "GET",
@@ -12615,6 +12950,73 @@
               ]
             },
             "description": "العقد الفعلي: POST /api/v1/dashboard/printing/orders/{id}/note/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_orders_print_jobs_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/orders/{{id}}/print-jobs/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "orders",
+                "{{id}}",
+                "print-jobs"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/printing/orders/{id}/print-jobs/. Permission and schema are authoritative in OpenAPI. ",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -13536,6 +13938,618 @@
           ]
         },
         {
+          "name": "v1_dashboard_printing_print_jobs_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/print-jobs/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "print-jobs"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/print-jobs/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_print_jobs_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/print-jobs/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "print-jobs",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/print-jobs/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_print_jobs_file_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/print-jobs/{{id}}/file/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "print-jobs",
+                "{{id}}",
+                "file"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/print-jobs/{id}/file/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_print_jobs_retry_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/print-jobs/{{id}}/retry/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "print-jobs",
+                "{{id}}",
+                "retry"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/printing/print-jobs/{id}/retry/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_print_jobs_status_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/print-jobs/{{id}}/status/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "print-jobs",
+                "{{id}}",
+                "status"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/printing/print-jobs/{id}/status/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_products_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/products/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "products"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/products/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_products_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/products/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "products"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/printing/products/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_products_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/printing/products/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_products_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/products/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_products_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/printing/products/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_products_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/printing/products/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_printing_stock_movements_list",
           "request": {
             "method": "GET",
@@ -13830,6 +14844,650 @@
                 }
               }
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_wire_specs_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/wire-specs/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "wire-specs"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/wire-specs/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_wire_specs_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/wire-specs/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "wire-specs"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/printing/wire-specs/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_wire_specs_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/wire-specs/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "wire-specs",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/printing/wire-specs/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_wire_specs_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/wire-specs/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "wire-specs",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/printing/wire-specs/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_wire_specs_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/wire-specs/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "wire-specs",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/printing/wire-specs/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_printing_wire_specs_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/printing/wire-specs/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "printing",
+                "wire-specs",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/printing/wire-specs/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_shop_items_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/shop/items/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "shop",
+                "items"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/shop/items/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_shop_items_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/shop/items/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "shop",
+                "items",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/shop/items/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_shop_sales_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/shop/sales/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "shop",
+                "sales"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/shop/sales/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_shop_sales_create_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/shop/sales/create/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "shop",
+                "sales",
+                "create"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/shop/sales/create/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_shop_sales_report_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/shop/sales/report/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "shop",
+                "sales",
+                "report"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/shop/sales/report/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_shop_sales_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/shop/sales/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "shop",
+                "sales",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/shop/sales/{id}/. Permission and schema are authoritative in OpenAPI. "
           },
           "event": [
             {

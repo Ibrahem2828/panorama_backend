@@ -68,6 +68,8 @@ class ConsumptionKey(models.TextChoices):
     BINDING_SPIRAL = "binding_spiral", "Spiral binding (one bound copy)"
     BINDING_THERMAL = "binding_thermal", "Thermal binding (one bound copy)"
     BINDING_BEADS = "binding_beads", "Beads binding (one bound copy)"
+    # Wire is bought by weight: one use is one gram, so the stock item is counted in kilograms (0.001 per use).
+    SPIRAL_WIRE = "spiral_wire", "Spiral wire (one gram of wire)"
     # Ink is estimated per printed page: black is used on every page, the three colours only on colour pages.
     INK_BLACK = "ink_black", "Black ink (one printed page)"
     INK_CYAN = "ink_cyan", "Cyan ink (one colour page)"
@@ -102,6 +104,9 @@ class InventoryItem(BaseModel):
     )
     # Used stock below one hundredth of a unit is kept here until it adds up to a whole hundredth (quantity has 2 places).
     pending_consumption = models.DecimalField(max_digits=14, decimal_places=6, default=Decimal("0"), editable=False)
+    # Stationery sold over the counter: only sellable items appear on the quick-sale screen.
+    is_sellable = models.BooleanField(default=False)
+    sale_price = money_field(default=Decimal("0"), validators=[MinValueValidator(Decimal("0"))])
 
     class Meta:
         ordering = ["category", "name"]

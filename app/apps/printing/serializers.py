@@ -25,6 +25,8 @@ from .models import (
     PrintColorMode,
     PrintConversion,
     PrintConversionStatus,
+    PrintCoverOption,
+    PrintJob,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
@@ -33,6 +35,15 @@ from .models import (
     PrintPickupLocation,
     PrintPricingRule,
     PrintSides,
+    ReadyProduct,
+    SpiralWireSpec,
+)
+from .options import (
+    MAX_PAGE_RANGE_LENGTH,
+    PAGES_PER_SHEET_CHOICES,
+    DuplexFlip,
+    NUpDirection,
+    PrintOrientation,
 )
 from .services import (
     COUNTER_STATUSES,
@@ -47,21 +58,46 @@ class PrintConvertUploadSerializer(serializers.Serializer):
     file = serializers.FileField(help_text="A Word (doc, docx) or PowerPoint (ppt, pptx) file to convert to PDF.")
 
 
+def available_binding_codes() -> set[str]:
+    """Binding codes a customer may choose: the shop's configured types plus the built-in ones (an unpriced one is reported
+    as "unavailable" when the order is priced, as before)."""
+
+    configured = set(
+        PrintBindingPrice.objects.filter(is_active=True, is_deleted=False).values_list("binding", flat=True)
+    )
+    return configured | set(PrintBinding.values)
+
+
 class PrintOrderItemInputSerializer(serializers.Serializer):
     source_file = serializers.PrimaryKeyRelatedField(
         queryset=FileResource.objects.none(), required=False, allow_null=True
     )
     uploaded_file = serializers.FileField(required=False, allow_null=True, write_only=True)
     converted_upload = serializers.UUIDField(required=False, allow_null=True, write_only=True)
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=ReadyProduct.objects.filter(is_active=True, is_deleted=False),
+        required=False,
+        allow_null=True,
+        help_text="A ready-made product: its specification and price are fixed.",
+    )
     copies = serializers.IntegerField(min_value=1, max_value=99, default=1)
     color_mode = serializers.ChoiceField(
-        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("color_mode").choices)
+        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("color_mode").choices), required=False
     )
     paper_size = serializers.ChoiceField(
-        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("paper_size").choices)
+        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("paper_size").choices), required=False
     )
-    sides = serializers.ChoiceField(choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("sides").choices))
-    binding = serializers.ChoiceField(choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("binding").choices))
+    sides = serializers.ChoiceField(
+        choices=cast(Sequence[Any], PrintOrderItem._meta.get_field("sides").choices), required=False
+    )
+    binding = serializers.CharField(max_length=32, required=False)
+    cover = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    pages_per_sheet = serializers.ChoiceField(choices=PAGES_PER_SHEET_CHOICES, default=1)
+    n_up_direction = serializers.ChoiceField(choices=NUpDirection.choices, default=NUpDirection.LTR)
+    duplex_flip = serializers.ChoiceField(choices=DuplexFlip.choices, default=DuplexFlip.LONG_EDGE)
+    orientation = serializers.ChoiceField(choices=PrintOrientation.choices, default=PrintOrientation.AUTO)
+    page_range = serializers.CharField(max_length=MAX_PAGE_RANGE_LENGTH, required=False, allow_blank=True)
+    collate = serializers.BooleanField(default=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,6 +105,11 @@ class PrintOrderItemInputSerializer(serializers.Serializer):
         if request and request.user.is_authenticated:
             source_file = cast(serializers.PrimaryKeyRelatedField, self.fields["source_file"])
             source_file.queryset = accessible_files_for_user(request.user).filter(is_printable=True)
+
+    def validate_binding(self, value):
+        if value not in available_binding_codes():
+            raise serializers.ValidationError("This binding type is not offered.")
+        return value
 
     def validate_uploaded_file(self, value):
         return validate_document_upload(value, "uploaded_file") if value else value
@@ -94,8 +135,19 @@ class PrintOrderItemInputSerializer(serializers.Serializer):
             if attrs.get("uploaded_file"):
                 raise serializers.ValidationError("Send either uploaded_file or converted_upload, not both.")
             attrs["uploaded_file"] = self._resolve_conversion(token)
+        if attrs.get("product"):
+            if attrs.get("source_file") or attrs.get("uploaded_file"):
+                raise serializers.ValidationError("A ready-made product does not take a file.")
+            return attrs
         if bool(attrs.get("source_file")) == bool(attrs.get("uploaded_file")):
             raise serializers.ValidationError("Exactly one source_file, uploaded_file or converted_upload is required.")
+        missing = {
+            name: "This field is required."
+            for name in ("color_mode", "paper_size", "sides", "binding")
+            if name not in attrs
+        }
+        if missing:
+            raise serializers.ValidationError(missing)
         return attrs
 
 
@@ -122,6 +174,16 @@ class PrintOrderItemSerializer(serializers.ModelSerializer):
             "sides",
             "binding",
             "binding_note",
+            "pages_per_sheet",
+            "n_up_direction",
+            "duplex_flip",
+            "orientation",
+            "page_range",
+            "selected_pages",
+            "collate",
+            "cover",
+            "cover_price",
+            "product",
             "sheets_count",
             "unit_price",
             "binding_price",
@@ -445,13 +507,40 @@ class CounterItemSerializer(serializers.Serializer):
     title = serializers.CharField(
         max_length=255, required=False, allow_blank=True, help_text="What it is, for the slip."
     )
-    pages_count = serializers.IntegerField(min_value=1, max_value=100000, help_text="Pages of ONE copy.")
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=ReadyProduct.objects.filter(is_active=True, is_deleted=False),
+        required=False,
+        allow_null=True,
+        help_text="A ready-made product: its specification and fixed price are used.",
+    )
+    pages_count = serializers.IntegerField(
+        min_value=1, max_value=100000, required=False, help_text="Pages of ONE copy."
+    )
     copies = serializers.IntegerField(min_value=1, max_value=99)
-    color_mode = serializers.ChoiceField(choices=PrintColorMode.choices)
-    paper_size = serializers.ChoiceField(choices=PrintPaperSize.choices)
-    sides = serializers.ChoiceField(choices=PrintSides.choices)
-    binding = serializers.ChoiceField(choices=PrintBinding.choices, default=PrintBinding.NONE)
+    color_mode = serializers.ChoiceField(choices=PrintColorMode.choices, required=False)
+    paper_size = serializers.ChoiceField(choices=PrintPaperSize.choices, required=False)
+    sides = serializers.ChoiceField(choices=PrintSides.choices, required=False)
+    binding = serializers.CharField(max_length=32, default=PrintBinding.NONE)
+    cover = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    pages_per_sheet = serializers.ChoiceField(choices=PAGES_PER_SHEET_CHOICES, default=1)
     binding_note = serializers.CharField(max_length=120, required=False, allow_blank=True)
+
+    def validate_binding(self, value):
+        if value not in available_binding_codes():
+            raise serializers.ValidationError("This binding type is not offered.")
+        return value
+
+    def validate(self, attrs):
+        if attrs.get("product"):
+            return attrs
+        missing = {
+            name: "This field is required."
+            for name in ("pages_count", "color_mode", "paper_size", "sides")
+            if name not in attrs
+        }
+        if missing:
+            raise serializers.ValidationError(missing)
+        return attrs
 
 
 class CounterQuoteSerializer(serializers.Serializer):
@@ -504,3 +593,123 @@ class CounterOrderCreateSerializer(CounterQuoteSerializer):
             internal_notes=data.get("internal_notes", ""),
             request=self.context["request"],
         )
+
+
+class SpiralWireSpecSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SpiralWireSpec
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
+
+    def validate(self, attrs):
+        instance = self.instance or SpiralWireSpec()
+        for key, value in attrs.items():
+            setattr(instance, key, value)
+        instance.clean()
+        return attrs
+
+
+class PrintCoverOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrintCoverOption
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
+
+    def validate(self, attrs):
+        instance = self.instance or PrintCoverOption()
+        for key, value in attrs.items():
+            setattr(instance, key, value)
+        instance.clean()
+        return attrs
+
+
+class ReadyProductSerializer(serializers.ModelSerializer):
+    """Staff view of a product (all fields) used by the dashboard catalog."""
+
+    image = serializers.ImageField(required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReadyProduct
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
+
+    def get_image_url(self, obj) -> str | None:
+        request = self.context.get("request")
+        if not obj.image:
+            return None
+        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+
+    def validate_image(self, value):
+        from apps.common.file_validation import validate_image_upload
+
+        return validate_image_upload(value, "image") if value else value
+
+    def validate(self, attrs):
+        instance = self.instance or ReadyProduct()
+        for key, value in attrs.items():
+            setattr(instance, key, value)
+        instance.clean()
+        return attrs
+
+
+class PublicReadyProductSerializer(serializers.ModelSerializer):
+    """What a customer sees of a product (no internal fields)."""
+
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReadyProduct
+        fields = [
+            "id",
+            "name",
+            "description",
+            "image_url",
+            "pages_count",
+            "paper_size",
+            "color_mode",
+            "sides",
+            "binding",
+            "cover",
+            "price",
+            "currency",
+        ]
+        read_only_fields = fields
+
+    def get_image_url(self, obj) -> str | None:
+        request = self.context.get("request")
+        if not obj.image:
+            return None
+        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+
+
+class PrintQueueJobSerializer(serializers.ModelSerializer):
+    order_id = serializers.IntegerField(read_only=True)
+    item_name = serializers.CharField(source="item.original_file_name", read_only=True)
+    created_by_name = serializers.CharField(source="created_by.full_name", read_only=True, default=None)
+
+    class Meta:
+        model = PrintJob
+        fields = [
+            "id",
+            "order_id",
+            "item",
+            "item_name",
+            "status",
+            "printer_name",
+            "sides_printed",
+            "sheets",
+            "options",
+            "error",
+            "created_by_name",
+            "started_at",
+            "finished_at",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class PrintJobStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["printing", "done", "failed"])
+    printer_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    error = serializers.CharField(max_length=255, required=False, allow_blank=True)
