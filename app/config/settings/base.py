@@ -461,6 +461,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.common.tasks.flush_expired_jwt_tokens",
         "schedule": crontab(hour=4, minute=5),
     },
+    # Expo answers a push twice; the second answer (receipt) tells whether it was delivered or the device is gone.
+    "check-push-receipts": {
+        "task": "apps.notifications.tasks.check_push_receipts",
+        "schedule": 300.0,
+    },
+    "purge-old-push-deliveries": {
+        "task": "apps.notifications.tasks.purge_old_push_deliveries",
+        "schedule": crontab(hour=4, minute=25),
+    },
     # "Buy ink again" style reminders, once per purchase cycle.
     "notify-due-purchase-reminders": {
         "task": "apps.finance.tasks.notify_due_purchase_reminders",

@@ -47,6 +47,19 @@ class SupportTicketService:
             new_value={"category": category},
             request=request,
         )
+
+        def announce():
+            from apps.notifications.staff import notify_staff
+
+            notify_staff(
+                "support_ticket",
+                "تذكرة دعم جديدة",
+                f"{user.full_name}: {ticket.subject[:80]}",
+                object_id=ticket.pk,
+                actor_id=user.pk,
+            )
+
+        transaction.on_commit(announce)
         return ticket
 
     @staticmethod

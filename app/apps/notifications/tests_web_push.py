@@ -568,6 +568,8 @@ def test_web_push_is_queued_even_when_expo_is_disabled(user, django_capture_on_c
         "status": "approved",
         "notification_id": notification.pk,
         "type": "verification",
+        "category": "verification",
+        "channel_id": "verification",
         "deep_link": "/verification",
     }
     assert delay.call_args.kwargs == {"channels": ["web"]}
@@ -611,7 +613,12 @@ def test_bulk_notifications_queue_web_push_per_allowed_user_with_their_own_notif
     assert len(created) == 2
     assert [call.args[0] for call in delay.call_args_list] == [user.id]
     mine = Notification.objects.get(user=user)
-    assert delay.call_args.args[3] == {"notification_id": mine.pk, "type": "announcement"}
+    assert delay.call_args.args[3] == {
+        "notification_id": mine.pk,
+        "type": "announcement",
+        "category": "general",
+        "channel_id": "default",
+    }
     assert delay.call_args.kwargs == {"channels": ["web"]}
 
 

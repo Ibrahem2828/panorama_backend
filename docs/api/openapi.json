@@ -8378,6 +8378,49 @@
                 }
             }
         },
+        "/api/v1/dashboard/notifications/health/": {
+            "get": {
+                "operationId": "v1_dashboard_notifications_health_retrieve",
+                "description": "``GET /dashboard/notifications/health/?range=24h|7d`` (system administrators): what was sent, delivered and lost.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "range",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "24h",
+                                "7d"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/permission-templates/": {
             "get": {
                 "operationId": "v1_dashboard_permission_templates_list",
@@ -11977,6 +12020,36 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/quick-access/": {
+            "get": {
+                "operationId": "v1_dashboard_quick_access_retrieve",
+                "description": "``GET /dashboard/quick-access/``: live counters behind the dashboard's quick-actions panel and command palette.",
+                "tags": [
+                    "Dashboard notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -19152,6 +19225,36 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Notification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/notifications/summary/": {
+            "get": {
+                "operationId": "v1_notifications_summary_retrieve",
+                "description": "``GET /notifications/summary/``: unread count in total and per category (the bell and the inbox tabs).",
+                "tags": [
+                    "Notifications"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
@@ -26961,6 +27064,10 @@
                         ],
                         "readOnly": true
                     },
+                    "category": {
+                        "type": "string",
+                        "readOnly": true
+                    },
                     "data": {
                         "readOnly": true
                     },
@@ -27002,6 +27109,7 @@
                     "body",
                     "body_ar",
                     "body_en",
+                    "category",
                     "created_at",
                     "data",
                     "deep_link",
@@ -27064,6 +27172,7 @@
             },
             "NotificationPreference": {
                 "type": "object",
+                "description": "``channels`` switches a push channel off ({\"chat\": false}); ``quiet_hours`` holds pushes back at night.\n\nA channel that is not listed is on. The in-app notification is kept in both cases.",
                 "properties": {
                     "in_app_enabled": {
                         "type": "boolean"
@@ -27072,6 +27181,15 @@
                         "type": "boolean"
                     },
                     "disabled_types": {},
+                    "channels": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        }
+                    },
+                    "quiet_hours": {
+                        "$ref": "#/components/schemas/QuietHours"
+                    },
                     "updated_at": {
                         "type": "string",
                         "format": "date-time",
@@ -29498,6 +29616,7 @@
             },
             "PatchedNotificationPreferenceRequest": {
                 "type": "object",
+                "description": "``channels`` switches a push channel off ({\"chat\": false}); ``quiet_hours`` holds pushes back at night.\n\nA channel that is not listed is on. The in-app notification is kept in both cases.",
                 "properties": {
                     "in_app_enabled": {
                         "type": "boolean"
@@ -29505,7 +29624,16 @@
                     "push_enabled": {
                         "type": "boolean"
                     },
-                    "disabled_types": {}
+                    "disabled_types": {},
+                    "channels": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        }
+                    },
+                    "quiet_hours": {
+                        "$ref": "#/components/schemas/QuietHoursRequest"
+                    }
                 }
             },
             "PatchedPermissionTemplateRequest": {
@@ -31674,6 +31802,57 @@
                 },
                 "required": [
                     "name"
+                ]
+            },
+            "QuietHours": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "start": {
+                        "type": "string",
+                        "format": "time",
+                        "nullable": true
+                    },
+                    "end": {
+                        "type": "string",
+                        "format": "time",
+                        "nullable": true
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "enabled"
+                ]
+            },
+            "QuietHoursRequest": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "start": {
+                        "type": "string",
+                        "format": "time",
+                        "nullable": true
+                    },
+                    "end": {
+                        "type": "string",
+                        "format": "time",
+                        "nullable": true
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    }
+                },
+                "required": [
+                    "enabled"
                 ]
             },
             "ReactionRequest": {
