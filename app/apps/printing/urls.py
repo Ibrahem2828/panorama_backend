@@ -5,19 +5,29 @@ from .views import (
     DashboardBindingPriceViewSet,
     DashboardCounterOrderCreateView,
     DashboardCounterQuoteView,
+    DashboardCoverOptionViewSet,
     DashboardPickupLocationViewSet,
     DashboardPrintAssignView,
+    DashboardPrintJobFileView,
+    DashboardPrintJobRetryView,
+    DashboardPrintJobStatusView,
+    DashboardPrintJobViewSet,
     DashboardPrintNoteView,
+    DashboardPrintOrderJobsView,
     DashboardPrintOrderViewSet,
     DashboardPrintPricingRuleViewSet,
     DashboardPrintStatusView,
+    DashboardReadyProductViewSet,
+    DashboardWireSpecViewSet,
     MyPrintOrderViewSet,
     PrintConvertDetailView,
     PrintConvertView,
     PrintItemAccessTicketView,
+    PrintOptionsView,
     PrintOrderCancelView,
     PrintOrderCreateView,
     PrintPickupLocationViewSet,
+    PrintProductViewSet,
     PrintQuoteView,
     ProtectedPrintItemStreamView,
 )
@@ -25,6 +35,11 @@ from .views import (
 router = DefaultRouter()
 router.register("printing/orders/my", MyPrintOrderViewSet, basename="my-print-orders")
 router.register("printing/pickup-locations", PrintPickupLocationViewSet, basename="print-pickup-locations")
+router.register("printing/products", PrintProductViewSet, basename="print-products")
+router.register("dashboard/printing/covers", DashboardCoverOptionViewSet, basename="dashboard-print-covers")
+router.register("dashboard/printing/wire-specs", DashboardWireSpecViewSet, basename="dashboard-print-wire-specs")
+router.register("dashboard/printing/products", DashboardReadyProductViewSet, basename="dashboard-print-products")
+router.register("dashboard/printing/print-jobs", DashboardPrintJobViewSet, basename="dashboard-print-jobs")
 router.register("dashboard/printing/orders", DashboardPrintOrderViewSet, basename="dashboard-print-orders")
 router.register(
     "dashboard/printing/pricing-rules", DashboardPrintPricingRuleViewSet, basename="dashboard-print-pricing-rules"
@@ -35,7 +50,28 @@ router.register(
 )
 
 urlpatterns = [
+    path("printing/options/", PrintOptionsView.as_view(), name="print-options"),
     path("printing/quote/", PrintQuoteView.as_view(), name="print-quote"),
+    path(
+        "dashboard/printing/orders/<int:pk>/print-jobs/",
+        DashboardPrintOrderJobsView.as_view(),
+        name="dashboard-print-order-jobs",
+    ),
+    path(
+        "dashboard/printing/print-jobs/<int:pk>/status/",
+        DashboardPrintJobStatusView.as_view(),
+        name="dashboard-print-job-status",
+    ),
+    path(
+        "dashboard/printing/print-jobs/<int:pk>/retry/",
+        DashboardPrintJobRetryView.as_view(),
+        name="dashboard-print-job-retry",
+    ),
+    path(
+        "dashboard/printing/print-jobs/<int:pk>/file/",
+        DashboardPrintJobFileView.as_view(),
+        name="dashboard-print-job-file",
+    ),
     path("printing/convert/", PrintConvertView.as_view(), name="print-convert"),
     path("printing/convert/<uuid:token>/", PrintConvertDetailView.as_view(), name="print-convert-detail"),
     path("printing/orders/", PrintOrderCreateView.as_view(), name="print-order-create"),

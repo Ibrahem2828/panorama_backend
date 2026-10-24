@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, ROUND_UP, Decimal
 
 from django.db import transaction
 from django.db.models import Count, F, Sum
@@ -184,8 +184,14 @@ class StockConsumptionService:
             if item.sheets_count:
                 needs[f"paper_{item.paper_size.lower()}"] += item.sheets_count
                 sheets += item.sheets_count
-            if item.binding in _STOCK_BINDINGS:
-                needs[f"binding_{item.binding}"] += item.copies
+            snapshot = item.pricing_snapshot or {}
+            # The binding's kind (staple, spiral...) decides which shelf item it uses; old orders only have the code.
+            kind = snapshot.get("binding_kind") or item.binding
+            if kind in _STOCK_BINDINGS:
+                needs[f"binding_{kind}"] += item.copies
+            wire = snapshot.get("wire_grams_per_copy")
+            if kind == PrintBinding.SPIRAL and wire:
+                needs["spiral_wire"] += int((Decimal(wire) * item.copies).to_integral_value(ROUND_UP))
             printed = (item.pages_count or 0) * item.copies  # every page of every copy is one printed side
             pages += printed
             if item.color_mode == PrintColorMode.COLOR:
