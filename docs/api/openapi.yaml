@@ -138,6 +138,73 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountDeletionRequest'
           description: ''
+  /api/v1/annotations/{kind}/{id}/:
+    get:
+      operationId: v1_annotations_retrieve
+      description: '``GET /annotations/<lectures|files>/<id>/?since=<revision>``:
+        the caller''s own marks changed after ``since``.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - Annotations
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/annotations/{kind}/{id}/sync/:
+    post:
+      operationId: v1_annotations_sync_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kind
+        schema:
+          type: string
+        required: true
+      tags:
+      - Annotations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SyncRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/announcements/:
     get:
       operationId: v1_announcements_list
@@ -2708,6 +2775,80 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/dashboard/files/{id}/reprocess/:
+    post:
+      operationId: v1_dashboard_files_reprocess_create
+      description: Re-queue page rendering for one file (failed, never processed,
+        or stalled).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا file resource.
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/files/processing-summary/:
+    get:
+      operationId: v1_dashboard_files_processing_summary_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/files/reprocess-bulk/:
+    post:
+      operationId: v1_dashboard_files_reprocess_bulk_create
+      description: 'Re-queue many files: ids or a scope (unprocessed / failed). Never
+        touches ready or quarantined files.'
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/dashboard/finance/exchange-rates/:
     get:
       operationId: v1_dashboard_finance_exchange_rates_list
@@ -8300,6 +8441,121 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/files/{id}/viewer/manifest/:
+    get:
+      operationId: v1_files_viewer_manifest_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/files/{id}/viewer/pages/{page_number}/:
+    get:
+      operationId: v1_files_viewer_pages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: page_number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Protected page image
+  /api/v1/files/{id}/viewer/pages/{page_number}/text/:
+    get:
+      operationId: v1_files_viewer_pages_text_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: page_number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/files/{id}/viewer/pages/{page_number}/thumbnail/:
+    get:
+      operationId: v1_files_viewer_pages_thumbnail_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: page_number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Protected thumbnail image
+  /api/v1/files/{id}/viewer/session/:
+    post:
+      operationId: v1_files_viewer_session_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File viewer
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/groups/:
     get:
       operationId: v1_groups_list
@@ -9705,6 +9961,24 @@ paths:
       security:
       - bearerAuth: []
       - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/my-notes/:
+    get:
+      operationId: v1_my_notes_retrieve
+      description: '``GET /my-notes/?q=``: the caller''s text notes and bookmarks
+        across lectures and files (own data only).'
+      tags:
+      - Annotations
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -14113,6 +14387,27 @@ components:
         download_allowed:
           type: boolean
           readOnly: true
+        processing_status:
+          allOf:
+          - $ref: '#/components/schemas/ProcessingStatusEnum'
+          readOnly: true
+        failure_code:
+          type: string
+          readOnly: true
+        failure_message:
+          type: string
+          readOnly: true
+        processed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        viewer_ready:
+          type: boolean
+          readOnly: true
+        viewer_endpoint:
+          type: string
+          readOnly: true
         uploaded_by:
           type: integer
           readOnly: true
@@ -14157,16 +14452,22 @@ components:
       required:
       - created_at
       - download_allowed
+      - failure_code
+      - failure_message
       - file_size
       - file_type
       - id
       - pages_count
       - preview_ticket_endpoint
+      - processed_at
+      - processing_status
       - sha256
       - title
       - updated_at
       - uploaded_by
       - uploaded_by_name
+      - viewer_endpoint
+      - viewer_ready
     FileResourceRequest:
       type: object
       properties:
@@ -17950,6 +18251,28 @@ components:
           format: date-time
       required:
       - version
+    ProcessingStatusEnum:
+      enum:
+      - pending
+      - queued
+      - scanning
+      - converting
+      - extracting
+      - rendering
+      - ready
+      - failed
+      - quarantined
+      type: string
+      description: |-
+        * `pending` - Not processed yet
+        * `queued` - Queued
+        * `scanning` - Scanning
+        * `converting` - Converting
+        * `extracting` - Extracting
+        * `rendering` - Rendering
+        * `ready` - Ready
+        * `failed` - Failed
+        * `quarantined` - Quarantined
     PublicSuggestion:
       type: object
       properties:
@@ -18742,6 +19065,26 @@ components:
         * `waiting_user` - Waiting User
         * `resolved` - Resolved
         * `closed` - Closed
+    SyncRequest:
+      type: object
+      properties:
+        base_revision:
+          type: integer
+          minimum: 0
+          default: 0
+        upserts:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          maxItems: 200
+        deletes:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+          maxItems: 200
     TargetUserTypeEnum:
       enum:
       - all

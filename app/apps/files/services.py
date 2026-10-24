@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+from django.db import transaction
 from django.db.models import Q
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.common.request_utils import get_client_ip
 from apps.groups.models import GroupMembershipStatus
 
-from .models import FileAccessPurpose, FileAccessTicket, FileResource, FileVisibility
+from .models import (
+    FileAccessPurpose,
+    FileAccessTicket,
+    FilePage,
+    FileProcessingStatus,
+    FileResource,
+    FileViewerSession,
+    FileVisibility,
+)
 
 
 def user_can_access_file(user, file_resource: FileResource) -> bool:
@@ -71,3 +80,37 @@ class FileAccessService:
             purpose=purpose,
             ip_address=get_client_ip(request),
         )
+
+
+def issue_file_viewer_session(user, resource: FileResource) -> FileViewerSession:
+    if not resource.viewer_ready or not user_can_access_file(user, resource):
+        raise NotFound("File is unavailable.")
+    return FileViewerSession.issue(resource, user)
+
+
+def get_authorized_file_page(user, resource: FileResource, token: str, page_number: int) -> FilePage:
+    """Atomically account for the short-lived viewer session, then return the requested page."""
+
+    with transaction.atomic():
+        session = (
+            FileViewerSession.objects.select_for_update()
+            .select_related("file_resource")
+            .filter(token=token, file_resource=resource, user=user, is_deleted=False)
+            .first()
+        )
+        if not session or not session.is_valid or not user_can_access_file(user, session.file_resource):
+            raise NotFound("Viewer session is invalid or expired.")
+        session.page_request_count += 1
+        session.save(update_fields=["page_request_count", "updated_at"])
+    page = FilePage.objects.filter(file_resource=resource, page_number=page_number, is_deleted=False).first()
+    if not page or not page.rendered_file:
+        raise NotFound("File page is unavailable.")
+    return page
+
+
+#: A file that has sat in one of these states without progress is stalled (worker or dispatch lost).
+RETRYABLE_STATUSES = (
+    FileProcessingStatus.PENDING,
+    FileProcessingStatus.FAILED,
+    FileProcessingStatus.QUEUED,
+)
