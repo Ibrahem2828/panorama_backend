@@ -430,6 +430,111 @@
           ]
         },
         {
+          "name": "v1_auth_invitations_accept_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/invitations/accept/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "invitations",
+                "accept"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/auth/invitations/accept/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_auth_invitations_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/invitations/{{token}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "invitations",
+                "{{token}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/auth/invitations/{token}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_auth_login_create",
           "request": {
             "method": "POST",
@@ -1165,6 +1270,71 @@
           ]
         },
         {
+          "name": "v1_dashboard_users_invite_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/invite/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "invite"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/users/invite/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_users_retrieve",
           "request": {
             "method": "GET",
@@ -1472,6 +1642,121 @@
           ]
         },
         {
+          "name": "v1_dashboard_users_activity_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/{{user_id}}/activity/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "{{user_id}}",
+                "activity"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/users/{user_id}/activity/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_users_end_sessions_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/{{user_id}}/end-sessions/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "{{user_id}}",
+                "end-sessions"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/users/{user_id}/end-sessions/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_users_permission_overrides_remove_legacy",
           "request": {
             "method": "DELETE",
@@ -1680,12 +1965,474 @@
               }
             }
           ]
+        },
+        {
+          "name": "v1_dashboard_users_resend_invitation_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/{{user_id}}/resend-invitation/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "{{user_id}}",
+                "resend-invitation"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/users/{user_id}/resend-invitation/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_users_revoke_invitation_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/{{user_id}}/revoke-invitation/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "{{user_id}}",
+                "revoke-invitation"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/users/{user_id}/revoke-invitation/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
       "name": "04 - Roles and Permissions",
-      "item": []
+      "item": [
+        {
+          "name": "v1_dashboard_permission_templates_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/permission-templates/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "permission-templates"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/permission-templates/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_permission_templates_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/permission-templates/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "permission-templates"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/permission-templates/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_permission_templates_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/permission-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "permission-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/permission-templates/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_permission_templates_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/permission-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "permission-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/permission-templates/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_permission_templates_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/permission-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "permission-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/permission-templates/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_permission_templates_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/permission-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "permission-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/permission-templates/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "05 - Faculties and Departments",
@@ -7918,6 +8665,335 @@
           ]
         },
         {
+          "name": "v1_dashboard_file_visibility_templates_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/file-visibility-templates/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "file-visibility-templates"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/file-visibility-templates/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_file_visibility_templates_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/file-visibility-templates/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "file-visibility-templates"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/file-visibility-templates/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_file_visibility_templates_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/file-visibility-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "file-visibility-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/file-visibility-templates/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_file_visibility_templates_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/file-visibility-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "file-visibility-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/file-visibility-templates/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_file_visibility_templates_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/file-visibility-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "file-visibility-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/file-visibility-templates/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_file_visibility_templates_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/file-visibility-templates/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "file-visibility-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/file-visibility-templates/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_files_list",
           "request": {
             "method": "GET",
@@ -8874,6 +9950,55 @@
           ]
         },
         {
+          "name": "v1_dashboard_finance_expenses_export_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/expenses/export/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "expenses",
+                "export"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/finance/expenses/export/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_finance_expenses_destroy",
           "request": {
             "method": "DELETE",
@@ -9481,6 +10606,389 @@
                 }
               }
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchase_reminders_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchase-reminders/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchase-reminders"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/finance/purchase-reminders/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchase_reminders_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchase-reminders/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchase-reminders"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/finance/purchase-reminders/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchase_reminders_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchase-reminders/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchase-reminders",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/finance/purchase-reminders/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchase_reminders_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchase-reminders/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchase-reminders",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/finance/purchase-reminders/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchase_reminders_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchase-reminders/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchase-reminders",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/finance/purchase-reminders/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchase_reminders_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchase-reminders/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchase-reminders",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/finance/purchase-reminders/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_finance_purchases_report_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/finance/purchases-report/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "finance",
+                "purchases-report"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/finance/purchases-report/. Permission and schema are authoritative in OpenAPI. "
           },
           "event": [
             {

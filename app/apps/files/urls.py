@@ -13,9 +13,13 @@ from .views import (
     GroupFileResourceViewSet,
     ProtectedFileStreamView,
 )
+from .visibility_templates import FileVisibilityTemplateViewSet
 
 router = DefaultRouter()
 router.register("files", FileResourceViewSet, basename="files")
+router.register(
+    "dashboard/file-visibility-templates", FileVisibilityTemplateViewSet, basename="dashboard-file-visibility-templates"
+)
 router.register("dashboard/files", DashboardFileResourceViewSet, basename="dashboard-files")
 
 urlpatterns = [

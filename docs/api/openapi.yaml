@@ -360,6 +360,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/ConfirmPasswordReset'
           description: ''
+  /api/v1/auth/invitations/{token}/:
+    get:
+      operationId: v1_auth_invitations_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - Auth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/auth/invitations/accept/:
+    post:
+      operationId: v1_auth_invitations_accept_create
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/auth/login/:
     post:
       operationId: v1_auth_login_create
@@ -1224,6 +1268,7 @@ paths:
           - password_reset_completed
           - payment_recorded
           - payment_voided
+          - permission_template_changed
           - policy_accepted
           - policy_version_published
           - policy_version_unpublished
@@ -1239,9 +1284,13 @@ paths:
           - support_ticket_created
           - support_ticket_priority_changed
           - support_ticket_status_changed
+          - user_invitation_accepted
+          - user_invitation_revoked
+          - user_invited
           - user_permission_override_changed
           - user_registered
           - user_role_changed
+          - user_sessions_ended
           - user_status_changed
           - verification_approved
           - verification_card_accessed
@@ -1250,6 +1299,11 @@ paths:
           - verification_submitted
         description: |-
           * `user_registered` - User Registered
+          * `user_invited` - User Invited
+          * `user_invitation_accepted` - User Invitation Accepted
+          * `user_invitation_revoked` - User Invitation Revoked
+          * `user_sessions_ended` - User Sessions Ended
+          * `permission_template_changed` - Permission Template Changed
           * `enrollment_submitted` - Enrollment Submitted
           * `enrollment_reviewed` - Enrollment Reviewed
           * `enrollment_cancelled` - Enrollment Cancelled
@@ -2545,6 +2599,182 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardFeedback'
           description: ''
+  /api/v1/dashboard/file-visibility-templates/:
+    get:
+      operationId: v1_dashboard_file_visibility_templates_list
+      description: Standard envelopes for the two methods safe for read-only resources.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFileVisibilityTemplateList'
+          description: ''
+    post:
+      operationId: v1_dashboard_file_visibility_templates_create
+      description: Standard envelopes for the two methods safe for read-only resources.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileVisibilityTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FileVisibilityTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileVisibilityTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileVisibilityTemplate'
+          description: ''
+  /api/v1/dashboard/file-visibility-templates/{id}/:
+    get:
+      operationId: v1_dashboard_file_visibility_templates_retrieve
+      description: Standard envelopes for the two methods safe for read-only resources.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا file visibility template.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileVisibilityTemplate'
+          description: ''
+    put:
+      operationId: v1_dashboard_file_visibility_templates_update
+      description: Standard envelopes for the two methods safe for read-only resources.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا file visibility template.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileVisibilityTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FileVisibilityTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileVisibilityTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileVisibilityTemplate'
+          description: ''
+    patch:
+      operationId: v1_dashboard_file_visibility_templates_partial_update
+      description: Standard envelopes for the two methods safe for read-only resources.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا file visibility template.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFileVisibilityTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFileVisibilityTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFileVisibilityTemplateRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileVisibilityTemplate'
+          description: ''
+    delete:
+      operationId: v1_dashboard_file_visibility_templates_destroy
+      description: Standard envelopes for the two methods safe for read-only resources.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا file visibility template.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/dashboard/files/:
     get:
       operationId: v1_dashboard_files_list
@@ -3040,7 +3270,8 @@ paths:
   /api/v1/dashboard/finance/expenses/:
     get:
       operationId: v1_dashboard_finance_expenses_list
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: Purchases, consumables, miscellaneous and equipment. ``multipart``
+        bodies may carry an ``invoice`` file.
       parameters:
       - name: ordering
         required: false
@@ -3080,7 +3311,8 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_finance_expenses_create
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: Purchases, consumables, miscellaneous and equipment. ``multipart``
+        bodies may carry an ``invoice`` file.
       tags:
       - v1
       requestBody:
@@ -3088,10 +3320,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExpenseRequest'
-          application/x-www-form-urlencoded:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ExpenseRequest'
-          multipart/form-data:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ExpenseRequest'
         required: true
@@ -3108,7 +3340,8 @@ paths:
   /api/v1/dashboard/finance/expenses/{id}/:
     get:
       operationId: v1_dashboard_finance_expenses_retrieve
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: Purchases, consumables, miscellaneous and equipment. ``multipart``
+        bodies may carry an ``invoice`` file.
       parameters:
       - in: path
         name: id
@@ -3130,7 +3363,8 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_finance_expenses_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: Purchases, consumables, miscellaneous and equipment. ``multipart``
+        bodies may carry an ``invoice`` file.
       parameters:
       - in: path
         name: id
@@ -3145,10 +3379,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExpenseRequest'
-          application/x-www-form-urlencoded:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ExpenseRequest'
-          multipart/form-data:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/ExpenseRequest'
         required: true
@@ -3164,7 +3398,8 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_finance_expenses_partial_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: Purchases, consumables, miscellaneous and equipment. ``multipart``
+        bodies may carry an ``invoice`` file.
       parameters:
       - in: path
         name: id
@@ -3179,10 +3414,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedExpenseRequest'
-          application/x-www-form-urlencoded:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedExpenseRequest'
-          multipart/form-data:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/PatchedExpenseRequest'
       security:
@@ -3197,7 +3432,8 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_finance_expenses_destroy
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: Purchases, consumables, miscellaneous and equipment. ``multipart``
+        bodies may carry an ``invoice`` file.
       parameters:
       - in: path
         name: id
@@ -3213,6 +3449,24 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/dashboard/finance/expenses/export/:
+    get:
+      operationId: v1_dashboard_finance_expenses_export_retrieve
+      description: CSV of the expenses that match the list filters (same query parameters);
+        finance managers only.
+      tags:
+      - Dashboard finance
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/dashboard/finance/inventory-items/:
     get:
       operationId: v1_dashboard_finance_inventory_items_list
@@ -3429,6 +3683,204 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderPayment'
+          description: ''
+  /api/v1/dashboard/finance/purchase-reminders/:
+    get:
+      operationId: v1_dashboard_finance_purchase_reminders_list
+      description: '"Buy again every N weeks" reminders (ink, cleaning supplies...),
+        each showing when it was last bought.'
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPurchaseReminderList'
+          description: ''
+    post:
+      operationId: v1_dashboard_finance_purchase_reminders_create
+      description: '"Buy again every N weeks" reminders (ink, cleaning supplies...),
+        each showing when it was last bought.'
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseReminderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseReminderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseReminderRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseReminder'
+          description: ''
+  /api/v1/dashboard/finance/purchase-reminders/{id}/:
+    get:
+      operationId: v1_dashboard_finance_purchase_reminders_retrieve
+      description: '"Buy again every N weeks" reminders (ink, cleaning supplies...),
+        each showing when it was last bought.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا purchase reminder.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseReminder'
+          description: ''
+    put:
+      operationId: v1_dashboard_finance_purchase_reminders_update
+      description: '"Buy again every N weeks" reminders (ink, cleaning supplies...),
+        each showing when it was last bought.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا purchase reminder.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseReminderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseReminderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseReminderRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseReminder'
+          description: ''
+    patch:
+      operationId: v1_dashboard_finance_purchase_reminders_partial_update
+      description: '"Buy again every N weeks" reminders (ink, cleaning supplies...),
+        each showing when it was last bought.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا purchase reminder.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchaseReminderRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchaseReminderRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPurchaseReminderRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseReminder'
+          description: ''
+    delete:
+      operationId: v1_dashboard_finance_purchase_reminders_destroy
+      description: '"Buy again every N weeks" reminders (ink, cleaning supplies...),
+        each showing when it was last bought.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا purchase reminder.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/finance/purchases-report/:
+    get:
+      operationId: v1_dashboard_finance_purchases_report_retrieve
+      parameters:
+      - in: query
+        name: month
+        schema:
+          type: string
+        description: 'YYYY-MM (default: this month)'
+      tags:
+      - Dashboard finance
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/dashboard/finance/stock-report/:
     get:
@@ -4756,6 +5208,182 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/dashboard/permission-templates/:
+    get:
+      operationId: v1_dashboard_permission_templates_list
+      description: Editable permission templates. The five system templates can be
+        edited or switched off, never deleted.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPermissionTemplateList'
+          description: ''
+    post:
+      operationId: v1_dashboard_permission_templates_create
+      description: Editable permission templates. The five system templates can be
+        edited or switched off, never deleted.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PermissionTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PermissionTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionTemplate'
+          description: ''
+  /api/v1/dashboard/permission-templates/{id}/:
+    get:
+      operationId: v1_dashboard_permission_templates_retrieve
+      description: Editable permission templates. The five system templates can be
+        edited or switched off, never deleted.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا permission template.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionTemplate'
+          description: ''
+    put:
+      operationId: v1_dashboard_permission_templates_update
+      description: Editable permission templates. The five system templates can be
+        edited or switched off, never deleted.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا permission template.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PermissionTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PermissionTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionTemplate'
+          description: ''
+    patch:
+      operationId: v1_dashboard_permission_templates_partial_update
+      description: Editable permission templates. The five system templates can be
+        edited or switched off, never deleted.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا permission template.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPermissionTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPermissionTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPermissionTemplateRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionTemplate'
+          description: ''
+    delete:
+      operationId: v1_dashboard_permission_templates_destroy
+      description: Editable permission templates. The five system templates can be
+        edited or switched off, never deleted.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا permission template.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/dashboard/printing/binding-prices/:
     get:
       operationId: v1_dashboard_printing_binding_prices_list
@@ -7349,6 +7977,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardUser'
           description: ''
+  /api/v1/dashboard/users/{user_id}/activity/:
+    get:
+      operationId: v1_dashboard_users_activity_retrieve
+      description: Last login, live sessions and the user's recent audited actions.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/users/{user_id}/end-sessions/:
+    post:
+      operationId: v1_dashboard_users_end_sessions_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/dashboard/users/{user_id}/permission-overrides/:
     get:
       operationId: v1_dashboard_users_permission_overrides_retrieve
@@ -7450,6 +8123,78 @@ paths:
       - bearerAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/users/{user_id}/resend-invitation/:
+    post:
+      operationId: v1_dashboard_users_resend_invitation_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/users/{user_id}/revoke-invitation/:
+    post:
+      operationId: v1_dashboard_users_revoke_invitation_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/users/invite/:
+    post:
+      operationId: v1_dashboard_users_invite_create
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteUserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
           content:
             application/json:
               schema:
@@ -11504,6 +12249,27 @@ components:
       required:
       - name
       - order
+    AcceptInvitationRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 128
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - password_confirm
+      - token
     AccountDeletionRequest:
       type: object
       properties:
@@ -11908,6 +12674,11 @@ components:
     AuditLogActionEnum:
       enum:
       - user_registered
+      - user_invited
+      - user_invitation_accepted
+      - user_invitation_revoked
+      - user_sessions_ended
+      - permission_template_changed
       - enrollment_submitted
       - enrollment_reviewed
       - enrollment_cancelled
@@ -11990,6 +12761,11 @@ components:
       type: string
       description: |-
         * `user_registered` - User Registered
+        * `user_invited` - User Invited
+        * `user_invitation_accepted` - User Invitation Accepted
+        * `user_invitation_revoked` - User Invitation Revoked
+        * `user_sessions_ended` - User Sessions Ended
+        * `permission_template_changed` - Permission Template Changed
         * `enrollment_submitted` - Enrollment Submitted
         * `enrollment_reviewed` - Enrollment Reviewed
         * `enrollment_cancelled` - Enrollment Cancelled
@@ -14086,6 +14862,8 @@ components:
           format: date
         category:
           $ref: '#/components/schemas/ExpenseCategoryEnum'
+        kind:
+          $ref: '#/components/schemas/ExpenseKindEnum'
         description:
           type: string
           maxLength: 255
@@ -14095,6 +14873,20 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         currency:
           $ref: '#/components/schemas/FinanceCurrencyEnum'
+        supplier:
+          type: string
+          maxLength: 150
+        notes:
+          type: string
+        has_invoice:
+          type: boolean
+          readOnly: true
+        reminder:
+          type: integer
+          nullable: true
+        reminder_name:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -14107,7 +14899,9 @@ components:
       - amount
       - created_at
       - description
+      - has_invoice
       - id
+      - reminder_name
       - updated_at
     ExpenseCategoryEnum:
       enum:
@@ -14129,6 +14923,18 @@ components:
         * `utilities` - Electricity, internet and utilities
         * `transport` - Transport
         * `other` - Other
+    ExpenseKindEnum:
+      enum:
+      - purchases
+      - consumables
+      - miscellaneous
+      - equipment
+      type: string
+      description: |-
+        * `purchases` - Purchases
+        * `consumables` - Consumables
+        * `miscellaneous` - Miscellaneous
+        * `equipment` - Equipment
     ExpenseRequest:
       type: object
       properties:
@@ -14137,6 +14943,8 @@ components:
           format: date
         category:
           $ref: '#/components/schemas/ExpenseCategoryEnum'
+        kind:
+          $ref: '#/components/schemas/ExpenseKindEnum'
         description:
           type: string
           minLength: 1
@@ -14147,6 +14955,19 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         currency:
           $ref: '#/components/schemas/FinanceCurrencyEnum'
+        supplier:
+          type: string
+          maxLength: 150
+        notes:
+          type: string
+        invoice:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        reminder:
+          type: integer
+          nullable: true
       required:
       - amount
       - description
@@ -14583,6 +15404,86 @@ components:
       required:
       - file
       - title
+    FileVisibilityTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        university:
+          type: integer
+          nullable: true
+        faculty:
+          type: integer
+          nullable: true
+        major:
+          type: integer
+          nullable: true
+        academic_year:
+          type: integer
+          nullable: true
+        semester:
+          type: integer
+          nullable: true
+        subject:
+          type: integer
+          nullable: true
+        group:
+          type: integer
+          nullable: true
+        is_printable:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+    FileVisibilityTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        university:
+          type: integer
+          nullable: true
+        faculty:
+          type: integer
+          nullable: true
+        major:
+          type: integer
+          nullable: true
+        academic_year:
+          type: integer
+          nullable: true
+        semester:
+          type: integer
+          nullable: true
+        subject:
+          type: integer
+          nullable: true
+        group:
+          type: integer
+          nullable: true
+        is_printable:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - name
     FinanceCurrencyEnum:
       enum:
       - SYP
@@ -14901,6 +15802,32 @@ components:
           type: boolean
       required:
       - name
+    InviteUserRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          minLength: 1
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 32
+        template:
+          type: integer
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          default: link
+      required:
+      - email
+      - full_name
+      - phone_number
+      - template
     Lecture:
       type: object
       properties:
@@ -15737,6 +16664,14 @@ components:
       - status
       - subject
       - updated_at
+    ModeEnum:
+      enum:
+      - link
+      - temporary_password
+      type: string
+      description: |-
+        * `link` - link
+        * `temporary_password` - temporary_password
     NormalUserRegisterRequest:
       type: object
       properties:
@@ -16425,6 +17360,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileResource'
+    PaginatedFileVisibilityTemplateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileVisibilityTemplate'
     PaginatedGroupList:
       type: object
       required:
@@ -16701,6 +17659,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrderPayment'
+    PaginatedPermissionTemplateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionTemplate'
     PaginatedPrintJobList:
       type: object
       required:
@@ -16793,6 +17774,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicSuggestion'
+    PaginatedPurchaseReminderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseReminder'
     PaginatedSemesterList:
       type: object
       required:
@@ -17189,6 +18193,8 @@ components:
           format: date
         category:
           $ref: '#/components/schemas/ExpenseCategoryEnum'
+        kind:
+          $ref: '#/components/schemas/ExpenseKindEnum'
         description:
           type: string
           minLength: 1
@@ -17199,6 +18205,19 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
         currency:
           $ref: '#/components/schemas/FinanceCurrencyEnum'
+        supplier:
+          type: string
+          maxLength: 150
+        notes:
+          type: string
+        invoice:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        reminder:
+          type: integer
+          nullable: true
     PatchedFacultyRequest:
       type: object
       properties:
@@ -17287,6 +18306,40 @@ components:
           nullable: true
         visibility:
           $ref: '#/components/schemas/VisibilityEnum'
+        is_printable:
+          type: boolean
+        is_active:
+          type: boolean
+    PatchedFileVisibilityTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        university:
+          type: integer
+          nullable: true
+        faculty:
+          type: integer
+          nullable: true
+        major:
+          type: integer
+          nullable: true
+        academic_year:
+          type: integer
+          nullable: true
+        semester:
+          type: integer
+          nullable: true
+        subject:
+          type: integer
+          nullable: true
+        group:
+          type: integer
+          nullable: true
         is_printable:
           type: boolean
         is_active:
@@ -17474,6 +18527,34 @@ components:
         push_enabled:
           type: boolean
         disabled_types: {}
+    PatchedPermissionTemplateRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 40
+          pattern: ^[-a-zA-Z0-9_]+$
+        name_ar:
+          type: string
+          minLength: 1
+          maxLength: 80
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        capabilities: {}
+        is_active:
+          type: boolean
+        confirm_dangerous:
+          type: boolean
+          writeOnly: true
+          default: false
     PatchedPrintBindingPriceRequest:
       type: object
       properties:
@@ -17582,6 +18663,20 @@ components:
         published_at:
           type: string
           format: date-time
+    PatchedPurchaseReminderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        interval_weeks:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        is_active:
+          type: boolean
     PatchedSemesterRequest:
       type: object
       properties:
@@ -17741,6 +18836,79 @@ components:
       required:
       - effect
       - permission_code
+    PermissionTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        key:
+          type: string
+          maxLength: 40
+          pattern: ^[-a-zA-Z0-9_]+$
+        name_ar:
+          type: string
+          maxLength: 80
+        name_en:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        capabilities: {}
+        is_system:
+          type: boolean
+          readOnly: true
+        is_active:
+          type: boolean
+        warnings:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - id
+      - is_system
+      - key
+      - name_ar
+      - name_en
+      - role
+      - warnings
+    PermissionTemplateRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+          maxLength: 40
+          pattern: ^[-a-zA-Z0-9_]+$
+        name_ar:
+          type: string
+          minLength: 1
+          maxLength: 80
+        name_en:
+          type: string
+          minLength: 1
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 255
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        capabilities: {}
+        is_active:
+          type: boolean
+        confirm_dangerous:
+          type: boolean
+          writeOnly: true
+          default: false
+      required:
+      - key
+      - name_ar
+      - name_en
+      - role
     PolicyAcceptanceRequest:
       type: object
       properties:
@@ -18393,6 +19561,65 @@ components:
       - title
       - updated_at
       - votes_count
+    PurchaseReminder:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        interval_weeks:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        is_active:
+          type: boolean
+        last_purchase:
+          type: string
+          nullable: true
+          readOnly: true
+        weeks_since:
+          type: integer
+          nullable: true
+          readOnly: true
+        due_on:
+          type: string
+          nullable: true
+          readOnly: true
+        is_due:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - due_on
+      - id
+      - is_due
+      - last_purchase
+      - name
+      - weeks_since
+    PurchaseReminderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        interval_weeks:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        is_active:
+          type: boolean
+      required:
+      - name
     ReactionRequest:
       type: object
       properties:
@@ -18635,6 +19862,10 @@ components:
         note:
           type: string
           readOnly: true
+        waste_reason:
+          allOf:
+          - $ref: '#/components/schemas/WasteReasonEnum'
+          readOnly: true
         order:
           type: integer
           readOnly: true
@@ -18660,6 +19891,7 @@ components:
       - quantity
       - quantity_after
       - unit_cost
+      - waste_reason
     StockMovementCreateRequest:
       type: object
       properties:
@@ -18678,6 +19910,8 @@ components:
         note:
           type: string
           maxLength: 255
+        waste_reason:
+          $ref: '#/components/schemas/WasteReasonEnum'
         record_expense:
           type: boolean
           default: false
@@ -19344,6 +20578,9 @@ components:
           items:
             type: string
           readOnly: true
+        must_change_password:
+          type: boolean
+          readOnly: true
         date_joined:
           type: string
           format: date-time
@@ -19356,6 +20593,7 @@ components:
       - id
       - is_email_verified
       - is_phone_verified
+      - must_change_password
       - phone_number
       - role
       - student_verification_status
@@ -19772,6 +21010,22 @@ components:
         * `major_only` - Major Only
         * `group_only` - Group Only
         * `admin_only` - Admin Only
+    WasteReasonEnum:
+      enum:
+      - jam
+      - misprint
+      - damaged
+      - expired
+      - lost
+      - other
+      type: string
+      description: |-
+        * `jam` - Paper jam or misfeed
+        * `misprint` - Misprint or wrong settings
+        * `damaged` - Damaged or wet
+        * `expired` - Expired or dried out
+        * `lost` - Lost
+        * `other` - Other
     WebPushKeys:
       type: object
       properties:

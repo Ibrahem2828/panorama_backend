@@ -8,6 +8,11 @@ from apps.common.models import BaseModel
 
 class AuditAction(models.TextChoices):
     USER_REGISTERED = "user_registered", "User Registered"
+    USER_INVITED = "user_invited", "User Invited"
+    USER_INVITATION_ACCEPTED = "user_invitation_accepted", "User Invitation Accepted"
+    USER_INVITATION_REVOKED = "user_invitation_revoked", "User Invitation Revoked"
+    USER_SESSIONS_ENDED = "user_sessions_ended", "User Sessions Ended"
+    PERMISSION_TEMPLATE_CHANGED = "permission_template_changed", "Permission Template Changed"
     ENROLLMENT_SUBMITTED = "enrollment_submitted", "Enrollment Submitted"
     ENROLLMENT_REVIEWED = "enrollment_reviewed", "Enrollment Reviewed"
     ENROLLMENT_CANCELLED = "enrollment_cancelled", "Enrollment Cancelled"

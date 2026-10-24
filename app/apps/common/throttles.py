@@ -114,6 +114,15 @@ class PasswordResetAccountThrottle(AccountRateThrottle):
     scope = "password_reset_account"
 
 
+class InvitationAcceptThrottle(SimpleRateThrottle):
+    """Token guessing is hopeless (256-bit), but the endpoint is anonymous: one budget per source IP."""
+
+    scope = "invitation_accept"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": _request_ip(request)}
+
+
 class LoginRateThrottle(IdentifierRateThrottle):
     scope = "auth_login"
 
