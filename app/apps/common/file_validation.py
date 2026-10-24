@@ -43,6 +43,12 @@ LECTURE_DOCUMENT_POLICY = UploadPolicy(
     max_size_bytes=getattr(settings, "LECTURE_MAX_UPLOAD_SIZE", 50 * 1024 * 1024),
 )
 
+#: Library files: PDFs, images and Office documents (everything becomes protected page images for the viewer).
+LIBRARY_DOCUMENT_POLICY = UploadPolicy(
+    allowed_extensions=DOCUMENT_POLICY.allowed_extensions | LECTURE_DOCUMENT_POLICY.allowed_extensions,
+    allowed_mime_types=DOCUMENT_POLICY.allowed_mime_types | LECTURE_DOCUMENT_POLICY.allowed_mime_types,
+    max_size_bytes=LECTURE_DOCUMENT_POLICY.max_size_bytes,
+)
 
 _OLE_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
 _ZIP_SIGNATURE = bytes.fromhex("504B0304")
@@ -166,6 +172,10 @@ def validate_uploaded_file(uploaded_file, policy: UploadPolicy, field_name: str 
     if supplied_mime not in _UNINFORMATIVE_MIMES and supplied_mime not in compatible_supplied:
         raise ValidationError({field_name: "The declared file type does not match its content."})
     return uploaded_file
+
+
+def validate_library_upload(uploaded_file, field_name: str = "file"):
+    return validate_uploaded_file(uploaded_file, LIBRARY_DOCUMENT_POLICY, field_name)
 
 
 def validate_document_upload(uploaded_file, field_name: str = "file"):
