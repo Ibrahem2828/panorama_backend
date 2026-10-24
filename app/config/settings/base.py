@@ -24,6 +24,7 @@ LOCAL_APPS = [
     "apps.accounts",
     "apps.universities",
     "apps.verification",
+    "apps.enrollment",
     "apps.groups",
     "apps.files",
     "apps.lectures",
@@ -204,6 +205,8 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{"bearerAuth": []}],
     "ENUM_NAME_OVERRIDES": {
+        "EnrollmentStatusEnum": "apps.enrollment.models.EnrollmentStatus",
+        "EnrollmentItemStatusEnum": "apps.enrollment.models.EnrollmentItemStatus",
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",
         "CategoryEnum": "apps.support.models.SupportTicketCategory",
         "FinanceCurrencyEnum": "apps.finance.models.FinanceCurrency",

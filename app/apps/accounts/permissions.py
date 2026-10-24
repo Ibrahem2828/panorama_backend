@@ -14,6 +14,7 @@ class Capability:
     USERS_MANAGE = "users.manage"
     ACADEMIC_MANAGE = "academic.manage"
     VERIFICATION_REVIEW = "verification.review"
+    ENROLLMENT_REVIEW = "enrollment.review"
     GROUPS_MANAGE = "groups.manage"
     GROUPS_EXTERNAL_CHANNELS_MANAGE = "groups.external_channels.manage"
     FILES_MANAGE = "files.manage"
@@ -34,6 +35,7 @@ ROLE_CAPABILITIES = {
         Capability.USERS_MANAGE,
         Capability.ACADEMIC_MANAGE,
         Capability.VERIFICATION_REVIEW,
+        Capability.ENROLLMENT_REVIEW,
         Capability.GROUPS_MANAGE,
         Capability.GROUPS_EXTERNAL_CHANNELS_MANAGE,
         Capability.FILES_MANAGE,
@@ -192,6 +194,10 @@ class CanManageAcademic(CapabilityPermission):
 
 class CanReviewVerification(CapabilityPermission):
     capability = Capability.VERIFICATION_REVIEW
+
+
+class CanReviewEnrollment(CapabilityPermission):
+    capability = Capability.ENROLLMENT_REVIEW
 
 
 class CanManageGroups(CapabilityPermission):

@@ -132,6 +132,10 @@ class VerificationService:
             deep_link = "/setup/verification/status"
 
         profile.save()
+        if status == VerificationStatus.APPROVED:
+            from apps.enrollment.services import FacultyCommunityService
+
+            FacultyCommunityService.join(verification.user)
         NotificationService.create_notification(
             verification.user,
             title=title,

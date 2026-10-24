@@ -1114,6 +1114,10 @@ paths:
           - announcement_updated
           - device_installation_registered
           - device_installation_revoked
+          - enrollment_cancelled
+          - enrollment_reviewed
+          - enrollment_screenshot_accessed
+          - enrollment_submitted
           - feature_flag_updated
           - feedback_privacy_requested
           - feedback_submitted
@@ -1179,6 +1183,10 @@ paths:
           - verification_submitted
         description: |-
           * `user_registered` - User Registered
+          * `enrollment_submitted` - Enrollment Submitted
+          * `enrollment_reviewed` - Enrollment Reviewed
+          * `enrollment_cancelled` - Enrollment Cancelled
+          * `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed
           * `user_role_changed` - User Role Changed
           * `user_status_changed` - User Status Changed
           * `user_permission_override_changed` - User Permission Override Changed
@@ -1562,6 +1570,166 @@ paths:
   /api/v1/dashboard/devices/stats/:
     get:
       operationId: v1_dashboard_devices_stats_retrieve
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/enrollment/requests/:
+    get:
+      operationId: v1_dashboard_enrollment_requests_list
+      description: '``GET /dashboard/enrollment/requests/``: filter by ``status``,
+        ``faculty``; search name, e-mail or student number.'
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardEnrollmentList'
+          description: ''
+  /api/v1/dashboard/enrollment/requests/{id}/:
+    get:
+      operationId: v1_dashboard_enrollment_requests_retrieve
+      description: '``GET /dashboard/enrollment/requests/``: filter by ``status``,
+        ``faculty``; search name, e-mail or student number.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardEnrollment'
+          description: ''
+  /api/v1/dashboard/enrollment/requests/{id}/decision/:
+    post:
+      operationId: v1_dashboard_enrollment_requests_decision_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardEnrollment'
+          description: ''
+  /api/v1/dashboard/enrollment/requests/{id}/screenshot-ticket/:
+    post:
+      operationId: v1_dashboard_enrollment_requests_screenshot_ticket_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/enrollment/requests/bulk-decision/:
+    post:
+      operationId: v1_dashboard_enrollment_requests_bulk_decision_create
+      description: Approve all / reject all across many requests; each request is
+        decided on its own (one failing never blocks the rest).
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkDecisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BulkDecisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BulkDecisionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/enrollment/summary/:
+    get:
+      operationId: v1_dashboard_enrollment_summary_retrieve
       tags:
       - Dashboard
       security:
@@ -7345,6 +7513,107 @@ paths:
               schema:
                 $ref: '#/components/schemas/VerificationRequest'
           description: ''
+  /api/v1/enrollment-screenshot-access/{token}/:
+    get:
+      operationId: v1_enrollment_screenshot_access_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Protected Assets
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Inline protected image
+  /api/v1/enrollment/requests/:
+    get:
+      operationId: v1_enrollment_requests_list
+      tags:
+      - Enrollment
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnrollmentRequest'
+          description: ''
+    post:
+      operationId: v1_enrollment_requests_create
+      tags:
+      - Enrollment
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnrollmentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EnrollmentCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentRequest'
+          description: ''
+  /api/v1/enrollment/requests/{id}/cancel/:
+    post:
+      operationId: v1_enrollment_requests_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Enrollment
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentRequest'
+          description: ''
+  /api/v1/enrollment/subjects/:
+    get:
+      operationId: v1_enrollment_subjects_list
+      description: 'Type-ahead: ``?q=`` of at least two characters, at most eight
+        results, never the full list.'
+      tags:
+      - Enrollment
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubjectBrief'
+          description: ''
   /api/v1/external-channels/open/{token}/:
     get:
       operationId: v1_external_channels_open_retrieve
@@ -11293,6 +11562,10 @@ components:
     AuditLogActionEnum:
       enum:
       - user_registered
+      - enrollment_submitted
+      - enrollment_reviewed
+      - enrollment_cancelled
+      - enrollment_screenshot_accessed
       - user_role_changed
       - user_status_changed
       - user_permission_override_changed
@@ -11371,6 +11644,10 @@ components:
       type: string
       description: |-
         * `user_registered` - User Registered
+        * `enrollment_submitted` - Enrollment Submitted
+        * `enrollment_reviewed` - Enrollment Reviewed
+        * `enrollment_cancelled` - Enrollment Cancelled
+        * `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed
         * `user_role_changed` - User Role Changed
         * `user_status_changed` - User Status Changed
         * `user_permission_override_changed` - User Permission Override Changed
@@ -11465,6 +11742,30 @@ components:
     BlankEnum:
       enum:
       - ''
+    BulkDecisionActionEnum:
+      enum:
+      - approve_all
+      - reject_all
+      type: string
+      description: |-
+        * `approve_all` - approve_all
+        * `reject_all` - reject_all
+    BulkDecisionRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+        action:
+          $ref: '#/components/schemas/BulkDecisionActionEnum'
+        reason:
+          type: string
+          maxLength: 500
+      required:
+      - action
+      - ids
     CategoryEnum:
       enum:
       - account
@@ -12037,6 +12338,77 @@ components:
       - revoked_at
       - timezone_name
       - user
+    DashboardEnrollment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/EnrollmentStatusEnum'
+          readOnly: true
+        review_note:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrollmentItem'
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        user_email:
+          type: string
+          format: email
+          readOnly: true
+        student_number:
+          type: string
+          readOnly: true
+        faculty_name:
+          type: string
+          readOnly: true
+        academic_year_name:
+          type: string
+          readOnly: true
+        semester_name:
+          type: string
+          readOnly: true
+        reviewed_by_name:
+          type: string
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        screenshot_ticket_endpoint:
+          type: string
+          readOnly: true
+      required:
+      - academic_year_name
+      - created_at
+      - faculty_name
+      - id
+      - items
+      - review_note
+      - reviewed_at
+      - reviewed_by_name
+      - screenshot_ticket_endpoint
+      - semester_name
+      - status
+      - student_number
+      - user_email
+      - user_id
+      - user_name
     DashboardFeedback:
       type: object
       properties:
@@ -13032,6 +13404,30 @@ components:
           $ref: '#/components/schemas/UserRoleEnum'
       required:
       - full_name
+    DecisionActionEnum:
+      enum:
+      - approve_all
+      - reject_all
+      - approve_selected
+      type: string
+      description: |-
+        * `approve_all` - approve_all
+        * `reject_all` - reject_all
+        * `approve_selected` - approve_selected
+    DecisionRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/DecisionActionEnum'
+        item_ids:
+          type: array
+          items:
+            type: integer
+        reason:
+          type: string
+          maxLength: 500
+      required:
+      - action
     DeviceInstallation:
       type: object
       properties:
@@ -13188,6 +13584,104 @@ components:
       description: |-
         * `allow` - Allow
         * `deny` - Deny
+    EnrollmentCreateRequest:
+      type: object
+      properties:
+        screenshot:
+          type: string
+          format: binary
+          writeOnly: true
+        subject_ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 20
+      required:
+      - screenshot
+      - subject_ids
+    EnrollmentItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/SubjectBrief'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/EnrollmentItemStatusEnum'
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - reason
+      - status
+      - subject
+    EnrollmentItemStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `rejected` - Rejected
+    EnrollmentRequest:
+      type: object
+      description: What the student sees of their own request (never the screenshot
+        URL).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/EnrollmentStatusEnum'
+          readOnly: true
+        review_note:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrollmentItem'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - id
+      - items
+      - review_note
+      - reviewed_at
+      - status
+    EnrollmentStatusEnum:
+      enum:
+      - pending
+      - approved
+      - partially_approved
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Pending review
+        * `approved` - Approved
+        * `partially_approved` - Partially approved
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
     EventEnum:
       enum:
       - shown
@@ -15259,6 +15753,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardDevice'
+    PaginatedDashboardEnrollmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardEnrollment'
     PaginatedDashboardFeedbackList:
       type: object
       required:
@@ -18013,6 +18530,30 @@ components:
       - semester
       - semester_name
       - updated_at
+    SubjectBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        academic_year_name:
+          type: string
+          readOnly: true
+        semester_name:
+          type: string
+          readOnly: true
+      required:
+      - academic_year_name
+      - code
+      - id
+      - name
+      - semester_name
     SubjectFaculty:
       type: object
       description: Compact faculty summary embedded in a subject.
