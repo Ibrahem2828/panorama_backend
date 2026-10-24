@@ -136,3 +136,56 @@ class FileAccessTicket(BaseModel):
             max_uses=settings.FILE_ACCESS_TICKET_MAX_USES,
             issued_ip_hash=ip_hash,
         )
+
+
+class FileVisibilityTemplate(BaseModel):
+    """A named audience for uploads: the visibility and the academic scope (and group) a file should get."""
+
+    name = models.CharField(max_length=120)
+    visibility = models.CharField(
+        max_length=32, choices=FileVisibility.choices, default=FileVisibility.VERIFIED_STUDENTS_ONLY
+    )
+    university = models.ForeignKey(
+        "universities.University", on_delete=models.SET_NULL, related_name="+", null=True, blank=True
+    )
+    faculty = models.ForeignKey(
+        "universities.Faculty", on_delete=models.SET_NULL, related_name="+", null=True, blank=True
+    )
+    major = models.ForeignKey("universities.Major", on_delete=models.SET_NULL, related_name="+", null=True, blank=True)
+    academic_year = models.ForeignKey(
+        "universities.AcademicYear", on_delete=models.SET_NULL, related_name="+", null=True, blank=True
+    )
+    semester = models.ForeignKey(
+        "universities.Semester", on_delete=models.SET_NULL, related_name="+", null=True, blank=True
+    )
+    subject = models.ForeignKey(
+        "universities.Subject", on_delete=models.SET_NULL, related_name="+", null=True, blank=True
+    )
+    group = models.ForeignKey("groups.Group", on_delete=models.SET_NULL, related_name="+", null=True, blank=True)
+    is_printable = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name"], condition=models.Q(is_deleted=False), name="files_visibility_template_name"
+            )
+        ]
+
+    def clean(self):
+        validate_academic_hierarchy(
+            university=self.university,
+            faculty=self.faculty,
+            major=self.major,
+            academic_year=self.academic_year,
+            semester=self.semester,
+            subject=self.subject,
+        )
+        if self.visibility == FileVisibility.GROUP_ONLY and not self.group:
+            raise ValidationError({"group": "Group is required for group-only files."})
+        if self.visibility == FileVisibility.MAJOR_ONLY and (not self.major or not self.academic_year):
+            raise ValidationError({"major": "Major and academic year are required for major-only files."})
+
+    def __str__(self) -> str:
+        return self.name

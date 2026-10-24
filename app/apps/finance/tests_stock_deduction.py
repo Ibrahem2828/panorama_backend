@@ -77,15 +77,8 @@ def reload(item):
 def test_seed_maps_paper_and_binding_to_what_orders_use(shelf):
     assert shelf["paper_a4"].consumption_per_use == Decimal("0.002")
     assert shelf["binding_spiral"].consumption_per_use == Decimal("0.01")
-    inks = {
-        item.consumption_key: item.consumption_per_use for item in InventoryItem.objects.filter(name__startswith="حبر")
-    }
-    assert inks == {
-        "ink_black": Decimal("0.00005"),
-        "ink_cyan": Decimal("0.0001"),
-        "ink_magenta": Decimal("0.0001"),
-        "ink_yellow": Decimal("0.0001"),
-    }
+    # Ink is bought, not metered: the seed leaves it unmapped.
+    assert not InventoryItem.objects.filter(consumption_key__startswith="ink_").exists()
 
 
 @pytest.mark.django_db
@@ -262,33 +255,42 @@ def test_the_owner_can_change_the_rule_from_the_inventory_item(shelf):
 # ---- ink and the generic uses ---------------------------------------------------------------------------------------------------
 
 
-def ink(key):
-    return InventoryItem.objects.get(consumption_key=key)
+def legacy_ink(key):
+    """An ink item still carrying an old ink_* rule (set before ink became purchases-only)."""
 
-
-@pytest.mark.django_db
-def test_a_black_and_white_order_takes_black_ink_only(shelf, cashier):
-    black, cyan = ink("ink_black"), ink("ink_cyan")
-    black_start, cyan_start = black.quantity, cyan.quantity
-    data = counter_order(api(cashier), [line(pages_count=100, copies=2, binding="none")])  # 200 printed pages
-    assert reload(black).quantity == black_start - Decimal("0.01")  # 200 x 0.00005 = 0.01 litre
-    assert reload(cyan).quantity == cyan_start and reload(cyan).pending_consumption == Decimal("0")
-    assert black.name in {row["item"] for row in data["stock_usage"]}
-
-
-@pytest.mark.django_db
-def test_a_colour_order_takes_every_ink_and_small_amounts_wait(shelf, cashier):
-    black, cyan, magenta, yellow = ink("ink_black"), ink("ink_cyan"), ink("ink_magenta"), ink("ink_yellow")
-    start = {item.pk: item.quantity for item in (black, cyan, magenta, yellow)}
-    client = api(cashier)
-    counter_order(client, [line(pages_count=100, copies=1, binding="none", color_mode="color")])
-    for item in (cyan, magenta, yellow):
-        assert reload(item).quantity == start[item.pk] - Decimal("0.01")  # 100 colour pages x 0.0001
-    assert reload(black).quantity == start[black.pk] and reload(black).pending_consumption == Decimal("0.005000")
-    counter_order(client, [line(pages_count=100, copies=1, binding="none", color_mode="color")])
-    assert reload(black).quantity == start[black.pk] - Decimal("0.01") and reload(black).pending_consumption == Decimal(
-        "0"
+    return InventoryItem.objects.create(
+        name=f"legacy {key}",
+        category="ink",
+        unit="bottle",
+        quantity=Decimal("4"),
+        reorder_level=Decimal("2"),
+        consumption_key=key,
+        consumption_per_use=Decimal("0.0001"),
     )
+
+
+@pytest.mark.django_db
+def test_orders_no_longer_deduct_ink_even_with_a_legacy_rule(shelf, cashier):
+    black = legacy_ink("ink_black")
+    counter_order(api(cashier), [line(pages_count=100, copies=2, binding="none", color_mode="color")])
+    assert reload(black).quantity == Decimal("4.00") and reload(black).pending_consumption == Decimal("0")
+    assert not StockMovement.objects.filter(item=black).exists()
+
+
+@pytest.mark.django_db
+def test_new_ink_consumption_rules_are_refused(shelf, cashier):
+    admin = User.objects.create_user(
+        full_name="a",
+        email="ink-admin@example.com",
+        phone_number="+963944480002",
+        password="StrongPass123!",
+        role=UserRole.ADMIN,
+    )
+    item = InventoryItem.objects.create(name="حبر", category="ink", unit="bottle")
+    response = api(admin).patch(
+        f"/api/v1/dashboard/finance/inventory-items/{item.pk}/", {"consumption_key": "ink_black"}, format="json"
+    )
+    assert response.status_code == 400
 
 
 @pytest.mark.django_db
