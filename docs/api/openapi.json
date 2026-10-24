@@ -1865,11 +1865,15 @@
                                 "policy_version_published",
                                 "policy_version_unpublished",
                                 "policy_version_updated",
+                                "print_file_prepared",
+                                "print_job_created",
+                                "print_job_status_changed",
                                 "print_order_assigned",
                                 "print_order_created",
                                 "print_order_note_updated",
                                 "print_order_status_changed",
                                 "print_pricing_changed",
+                                "stationery_sale_recorded",
                                 "stock_movement_recorded",
                                 "student_profile_updated",
                                 "support_ticket_assigned",
@@ -1887,7 +1891,7 @@
                                 "verification_submitted"
                             ]
                         },
-                        "description": "* `user_registered` - User Registered\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
+                        "description": "* `user_registered` - User Registered\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
                     },
                     {
                         "in": "query",
@@ -7744,6 +7748,271 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/covers/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_covers_list",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PrintCoverOption"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_covers_create",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintCoverOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintCoverOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintCoverOptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintCoverOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/covers/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_covers_retrieve",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print cover option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintCoverOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_covers_update",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print cover option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintCoverOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintCoverOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintCoverOptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintCoverOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_covers_partial_update",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print cover option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintCoverOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintCoverOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintCoverOptionRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintCoverOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_covers_destroy",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print cover option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/jobs/": {
             "get": {
                 "operationId": "v1_dashboard_printing_jobs_list",
@@ -8141,6 +8410,70 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/DashboardPrintOrder"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/orders/{id}/print-jobs/": {
+            "post": {
+                "operationId": "v1_dashboard_printing_orders_print_jobs_create",
+                "description": "``POST``: queue the order's files (all, or ``item_ids``) for printing and prepare their print-ready PDFs.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": {}
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": {}
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": {}
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PrintQueueJob"
+                                    }
                                 }
                             }
                         },
@@ -8958,6 +9291,524 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/print-jobs/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_print_jobs_list",
+                "description": "The queue of files sent to the printer: ``?status=queued`` is what the silent-print agent polls.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "item",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "order",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "done",
+                                "failed",
+                                "printing",
+                                "queued"
+                            ]
+                        },
+                        "description": "* `queued` - Queued\n* `printing` - Printing\n* `done` - Done\n* `failed` - Failed"
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedPrintQueueJobList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/print-jobs/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_print_jobs_retrieve",
+                "description": "The queue of files sent to the printer: ``?status=queued`` is what the silent-print agent polls.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print job.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintQueueJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/print-jobs/{id}/file/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_print_jobs_file_retrieve",
+                "description": "The print-ready PDF of a job (inline, never cached). Prepared from the stored file each time, so it cannot go stale.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Print-ready PDF"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/print-jobs/{id}/retry/": {
+            "post": {
+                "operationId": "v1_dashboard_printing_print_jobs_retry_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintQueueJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/print-jobs/{id}/status/": {
+            "patch": {
+                "operationId": "v1_dashboard_printing_print_jobs_status_partial_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintJobStatusRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintJobStatusRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintJobStatusRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintQueueJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/products/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_products_list",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ReadyProduct"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_products_create",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReadyProductRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReadyProductRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReadyProductRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReadyProduct"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/products/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_products_retrieve",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا ready product.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReadyProduct"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_products_update",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا ready product.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReadyProductRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReadyProductRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReadyProductRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReadyProduct"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_products_partial_update",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا ready product.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReadyProductRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReadyProductRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedReadyProductRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReadyProduct"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_products_destroy",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا ready product.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/stock/": {
             "get": {
                 "operationId": "v1_dashboard_printing_stock_list",
@@ -9295,6 +10146,271 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/wire-specs/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_wire_specs_list",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SpiralWireSpec"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_wire_specs_create",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpiralWireSpecRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpiralWireSpecRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpiralWireSpecRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpiralWireSpec"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/wire-specs/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_wire_specs_retrieve",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا spiral wire spec.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpiralWireSpec"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_wire_specs_update",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا spiral wire spec.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpiralWireSpecRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpiralWireSpecRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SpiralWireSpecRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpiralWireSpec"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_wire_specs_partial_update",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا spiral wire spec.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedSpiralWireSpecRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedSpiralWireSpecRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedSpiralWireSpecRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SpiralWireSpec"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_wire_specs_destroy",
+                "description": "Audit every pricing/configuration mutation because it affects charged totals.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا spiral wire spec.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
                     }
                 }
             }
@@ -9884,6 +11000,311 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/shop/items/": {
+            "get": {
+                "operationId": "v1_dashboard_shop_items_list",
+                "description": "The quick-sale screen's item list: only active items marked as for sale (with their sale price and what is left).",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedSellableItemList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/shop/items/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_shop_items_retrieve",
+                "description": "The quick-sale screen's item list: only active items marked as for sale (with their sale price and what is left).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا inventory item.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SellableItem"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/shop/sales/": {
+            "get": {
+                "operationId": "v1_dashboard_shop_sales_list",
+                "description": "List the recorded sales (``from`` / ``to`` days, default the current month).",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "from",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "to",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedSaleList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/shop/sales/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_shop_sales_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Sale"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/shop/sales/create/": {
+            "post": {
+                "operationId": "v1_dashboard_shop_sales_create_create",
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaleCreateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaleCreateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaleCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Sale"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/shop/sales/report/": {
+            "get": {
+                "operationId": "v1_dashboard_shop_sales_report_retrieve",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "from",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "to",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -16343,6 +17764,45 @@
                 }
             }
         },
+        "/api/v1/printing/options/": {
+            "get": {
+                "operationId": "v1_printing_options_retrieve",
+                "description": "Everything the print-options screen needs: the shop's binding types and covers with prices, and the dialog choices.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "currency",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Printing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/printing/orders/": {
             "post": {
                 "operationId": "v1_printing_orders_create",
@@ -16622,6 +18082,78 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/PrintPickupLocation"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/printing/products/": {
+            "get": {
+                "operationId": "v1_printing_products_list",
+                "description": "Ready-made printed products (notebooks and the like) the customer can order with one tap.",
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PublicReadyProduct"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/printing/products/{id}/": {
+            "get": {
+                "operationId": "v1_printing_products_retrieve",
+                "description": "Ready-made printed products (notebooks and the like) the customer can order with one tap.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا ready product.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicReadyProduct"
                                 }
                             }
                         },
@@ -18521,6 +20053,10 @@
                     "print_order_assigned",
                     "print_order_note_updated",
                     "print_pricing_changed",
+                    "print_job_created",
+                    "print_job_status_changed",
+                    "print_file_prepared",
+                    "stationery_sale_recorded",
                     "finance_rate_changed",
                     "finance_expense_changed",
                     "inventory_item_changed",
@@ -18554,19 +20090,7 @@
                     "policy_version_unpublished"
                 ],
                 "type": "string",
-                "description": "* `user_registered` - User Registered\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
-            },
-            "BindingEnum": {
-                "enum": [
-                    "none",
-                    "staple",
-                    "spiral",
-                    "thermal",
-                    "beads",
-                    "other"
-                ],
-                "type": "string",
-                "description": "* `none` - None\n* `staple` - Staple\n* `spiral` - Spiral\n* `thermal` - Thermal\n* `beads` - Beads\n* `other` - Other"
+                "description": "* `user_registered` - User Registered\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
             },
             "BlankEnum": {
                 "enum": [
@@ -18781,6 +20305,7 @@
                     "binding_spiral",
                     "binding_thermal",
                     "binding_beads",
+                    "spiral_wire",
                     "ink_black",
                     "ink_cyan",
                     "ink_magenta",
@@ -18789,7 +20314,7 @@
                     "per_order"
                 ],
                 "type": "string",
-                "description": "* `paper_a5` - Paper A5 (one sheet)\n* `paper_a4` - Paper A4 (one sheet)\n* `paper_a3` - Paper A3 (one sheet)\n* `binding_staple` - Staple binding (one bound copy)\n* `binding_spiral` - Spiral binding (one bound copy)\n* `binding_thermal` - Thermal binding (one bound copy)\n* `binding_beads` - Beads binding (one bound copy)\n* `ink_black` - Black ink (one printed page)\n* `ink_cyan` - Cyan ink (one colour page)\n* `ink_magenta` - Magenta ink (one colour page)\n* `ink_yellow` - Yellow ink (one colour page)\n* `per_sheet` - Every sheet, any size (drum, maintenance)\n* `per_order` - Every delivered order (bag, receipt roll)"
+                "description": "* `paper_a5` - Paper A5 (one sheet)\n* `paper_a4` - Paper A4 (one sheet)\n* `paper_a3` - Paper A3 (one sheet)\n* `binding_staple` - Staple binding (one bound copy)\n* `binding_spiral` - Spiral binding (one bound copy)\n* `binding_thermal` - Thermal binding (one bound copy)\n* `binding_beads` - Beads binding (one bound copy)\n* `spiral_wire` - Spiral wire (one gram of wire)\n* `ink_black` - Black ink (one printed page)\n* `ink_cyan` - Cyan ink (one colour page)\n* `ink_magenta` - Magenta ink (one colour page)\n* `ink_yellow` - Yellow ink (one colour page)\n* `per_sheet` - Every sheet, any size (drum, maintenance)\n* `per_order` - Every delivered order (bag, receipt roll)"
             },
             "ContextEnum": {
                 "enum": [
@@ -18825,6 +20350,11 @@
                         "description": "What it is, for the slip.",
                         "maxLength": 255
                     },
+                    "product": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "A ready-made product: its specification and fixed price are used."
+                    },
                     "pages_count": {
                         "type": "integer",
                         "maximum": 100000,
@@ -18846,12 +20376,21 @@
                         "$ref": "#/components/schemas/SidesEnum"
                     },
                     "binding": {
+                        "type": "string",
+                        "default": "none",
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "pages_per_sheet": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/BindingEnum"
+                                "$ref": "#/components/schemas/PagesPerSheetEnum"
                             }
                         ],
-                        "default": "none"
+                        "default": 1
                     },
                     "binding_note": {
                         "type": "string",
@@ -18859,11 +20398,7 @@
                     }
                 },
                 "required": [
-                    "color_mode",
-                    "copies",
-                    "pages_count",
-                    "paper_size",
-                    "sides"
+                    "copies"
                 ]
             },
             "CounterItemRequest": {
@@ -18875,6 +20410,11 @@
                         "description": "What it is, for the slip.",
                         "maxLength": 255
                     },
+                    "product": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "A ready-made product: its specification and fixed price are used."
+                    },
                     "pages_count": {
                         "type": "integer",
                         "maximum": 100000,
@@ -18896,12 +20436,22 @@
                         "$ref": "#/components/schemas/SidesEnum"
                     },
                     "binding": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "none",
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "pages_per_sheet": {
                         "allOf": [
                             {
-                                "$ref": "#/components/schemas/BindingEnum"
+                                "$ref": "#/components/schemas/PagesPerSheetEnum"
                             }
                         ],
-                        "default": "none"
+                        "default": 1
                     },
                     "binding_note": {
                         "type": "string",
@@ -18909,11 +20459,7 @@
                     }
                 },
                 "required": [
-                    "color_mode",
-                    "copies",
-                    "pages_count",
-                    "paper_size",
-                    "sides"
+                    "copies"
                 ]
             },
             "CounterOrderCreateRequest": {
@@ -20938,6 +22484,14 @@
                     "token"
                 ]
             },
+            "DuplexFlipEnum": {
+                "enum": [
+                    "long_edge",
+                    "short_edge"
+                ],
+                "type": "string",
+                "description": "* `long_edge` - Flip on the long edge\n* `short_edge` - Flip on the short edge"
+            },
             "EffectEnum": {
                 "enum": [
                     "allow",
@@ -22036,6 +23590,14 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
                     },
+                    "is_sellable": {
+                        "type": "boolean"
+                    },
+                    "sale_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
                     "currency": {
                         "$ref": "#/components/schemas/FinanceCurrencyEnum"
                     },
@@ -22129,6 +23691,14 @@
                         "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
                     },
                     "unit_cost": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
+                    "is_sellable": {
+                        "type": "boolean"
+                    },
+                    "sale_price": {
                         "type": "string",
                         "format": "decimal",
                         "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
@@ -23249,6 +24819,14 @@
                     "updated_at"
                 ]
             },
+            "NUpDirectionEnum": {
+                "enum": [
+                    "ltr",
+                    "rtl"
+                ],
+                "type": "string",
+                "description": "* `ltr` - Left to right\n* `rtl` - Right to left"
+            },
             "NormalUserRegisterRequest": {
                 "type": "object",
                 "properties": {
@@ -23546,6 +25124,15 @@
                     "order"
                 ]
             },
+            "OrientationEnum": {
+                "enum": [
+                    "auto",
+                    "portrait",
+                    "landscape"
+                ],
+                "type": "string",
+                "description": "* `auto` - Automatic\n* `portrait` - Portrait\n* `landscape` - Landscape"
+            },
             "OtpChannelEnum": {
                 "enum": [
                     "email",
@@ -23553,6 +25140,18 @@
                 ],
                 "type": "string",
                 "description": "* `email` - Email\n* `phone` - Phone"
+            },
+            "PagesPerSheetEnum": {
+                "enum": [
+                    1,
+                    2,
+                    4,
+                    6,
+                    9,
+                    16
+                ],
+                "type": "integer",
+                "description": "* `1` - 1\n* `2` - 2\n* `4` - 4\n* `6` - 6\n* `9` - 9\n* `16` - 16"
             },
             "PaginatedAcademicYearList": {
                 "type": "object",
@@ -24608,6 +26207,37 @@
                     }
                 }
             },
+            "PaginatedPrintQueueJobList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PrintQueueJob"
+                        }
+                    }
+                }
+            },
             "PaginatedPrivacyPolicyVersionList": {
                 "type": "object",
                 "required": [
@@ -24666,6 +26296,68 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/PublicSuggestion"
+                        }
+                    }
+                }
+            },
+            "PaginatedSaleList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Sale"
+                        }
+                    }
+                }
+            },
+            "PaginatedSellableItemList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SellableItem"
                         }
                     }
                 }
@@ -25413,6 +27105,14 @@
                         "format": "decimal",
                         "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
                     },
+                    "is_sellable": {
+                        "type": "boolean"
+                    },
+                    "sale_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$"
+                    },
                     "currency": {
                         "$ref": "#/components/schemas/FinanceCurrencyEnum"
                     },
@@ -25614,7 +27314,72 @@
                 "type": "object",
                 "properties": {
                     "binding": {
-                        "$ref": "#/components/schemas/BindingEnum"
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Short code, e.g. spiral or hard_cover.",
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Shown to the customer; the code is shown when empty.",
+                        "maxLength": 100
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/PrintBindingPriceKindEnum"
+                    },
+                    "price_mode": {
+                        "$ref": "#/components/schemas/PriceModeEnum"
+                    },
+                    "price_per_copy": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_per_kg": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "description": "Used when the price is by the weight of the wire."
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "PatchedPrintCoverOptionRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Cover colour, e.g. #1E3A8A.",
+                        "maxLength": 7
                     },
                     "price_per_copy": {
                         "type": "string",
@@ -25627,8 +27392,30 @@
                         "default": "SYP",
                         "maxLength": 8
                     },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
                     "is_active": {
                         "type": "boolean"
+                    }
+                }
+            },
+            "PatchedPrintJobStatusRequest": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/PrintJobStatusStatusEnum"
+                    },
+                    "printer_name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "error": {
+                        "type": "string",
+                        "maxLength": 255
                     }
                 }
             },
@@ -25764,6 +27551,72 @@
                     }
                 }
             },
+            "PatchedReadyProductRequest": {
+                "type": "object",
+                "description": "Staff view of a product (all fields) used by the dashboard catalog.",
+                "properties": {
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "pages_count": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "paper_size": {
+                        "$ref": "#/components/schemas/PaperSizeEnum"
+                    },
+                    "color_mode": {
+                        "$ref": "#/components/schemas/ColorModeEnum"
+                    },
+                    "sides": {
+                        "$ref": "#/components/schemas/SidesEnum"
+                    },
+                    "binding": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 8
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "source_file": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                }
+            },
             "PatchedSemesterRequest": {
                 "type": "object",
                 "properties": {
@@ -25777,6 +27630,35 @@
                         "maximum": 9223372036854775807,
                         "minimum": 0,
                         "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "PatchedSpiralWireSpecRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "min_sheets": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "max_sheets": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "weight_grams": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,6}(?:\\.\\d{0,2})?$"
                     },
                     "is_active": {
                         "type": "boolean"
@@ -26003,6 +27885,14 @@
                     }
                 }
             },
+            "PriceModeEnum": {
+                "enum": [
+                    "per_copy",
+                    "per_wire_kg"
+                ],
+                "type": "string",
+                "description": "* `per_copy` - A fixed price for every bound copy\n* `per_wire_kg` - By the weight of the wire used"
+            },
             "PrintBindingPrice": {
                 "type": "object",
                 "properties": {
@@ -26031,12 +27921,41 @@
                         "nullable": true
                     },
                     "binding": {
-                        "$ref": "#/components/schemas/BindingEnum"
+                        "type": "string",
+                        "description": "Short code, e.g. spiral or hard_cover.",
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Shown to the customer; the code is shown when empty.",
+                        "maxLength": 100
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/PrintBindingPriceKindEnum"
+                    },
+                    "price_mode": {
+                        "$ref": "#/components/schemas/PriceModeEnum"
                     },
                     "price_per_copy": {
                         "type": "string",
                         "format": "decimal",
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_per_kg": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "description": "Used when the price is by the weight of the wire."
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "currency": {
                         "type": "string",
@@ -26056,16 +27975,57 @@
                     "updated_at"
                 ]
             },
+            "PrintBindingPriceKindEnum": {
+                "enum": [
+                    "staple",
+                    "spiral",
+                    "thermal",
+                    "beads",
+                    "other"
+                ],
+                "type": "string",
+                "description": "* `staple` - Staple\n* `spiral` - Spiral\n* `thermal` - Thermal\n* `beads` - Beads\n* `other` - Other"
+            },
             "PrintBindingPriceRequest": {
                 "type": "object",
                 "properties": {
                     "binding": {
-                        "$ref": "#/components/schemas/BindingEnum"
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Short code, e.g. spiral or hard_cover.",
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Shown to the customer; the code is shown when empty.",
+                        "maxLength": 100
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/PrintBindingPriceKindEnum"
+                    },
+                    "price_mode": {
+                        "$ref": "#/components/schemas/PriceModeEnum"
                     },
                     "price_per_copy": {
                         "type": "string",
                         "format": "decimal",
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_per_kg": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "description": "Used when the price is by the weight of the wire."
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
                     },
                     "currency": {
                         "type": "string",
@@ -26092,6 +28052,121 @@
                 },
                 "required": [
                     "file"
+                ]
+            },
+            "PrintCoverOption": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Cover colour, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "price_per_copy": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "created_at",
+                    "deleted_at",
+                    "id",
+                    "is_deleted",
+                    "name",
+                    "updated_at"
+                ]
+            },
+            "PrintCoverOptionRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Cover colour, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "price_per_copy": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "name"
                 ]
             },
             "PrintJob": {
@@ -26152,6 +28227,15 @@
                     "sheets_count",
                     "total_price"
                 ]
+            },
+            "PrintJobStatusStatusEnum": {
+                "enum": [
+                    "printing",
+                    "done",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `printing` - printing\n* `done` - done\n* `failed` - failed"
             },
             "PrintOrderCreateRequest": {
                 "type": "object",
@@ -26253,16 +28337,69 @@
                         "readOnly": true
                     },
                     "binding": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/BindingEnum"
-                            }
-                        ],
+                        "type": "string",
                         "readOnly": true
                     },
                     "binding_note": {
                         "type": "string",
                         "readOnly": true
+                    },
+                    "pages_per_sheet": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "n_up_direction": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NUpDirectionEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "duplex_flip": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DuplexFlipEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "orientation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrientationEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "page_range": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "selected_pages": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true,
+                        "description": "Pages printed per copy."
+                    },
+                    "collate": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "cover": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "cover_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "product": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
                     },
                     "sheets_count": {
                         "type": "integer",
@@ -26299,19 +28436,29 @@
                     "binding",
                     "binding_note",
                     "binding_price",
+                    "collate",
                     "color_mode",
                     "copies",
+                    "cover",
+                    "cover_price",
                     "created_at",
+                    "duplex_flip",
                     "file_size",
                     "file_type",
                     "has_uploaded_file",
                     "id",
+                    "n_up_direction",
+                    "orientation",
                     "original_file_name",
+                    "page_range",
                     "pages_count",
+                    "pages_per_sheet",
                     "paper_size",
                     "preview_ticket_endpoint",
                     "price",
                     "pricing_snapshot",
+                    "product",
+                    "selected_pages",
                     "sheets_count",
                     "sides",
                     "source_file",
@@ -26325,6 +28472,11 @@
                     "source_file": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "product": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "A ready-made product: its specification and price are fixed."
                     },
                     "copies": {
                         "type": "integer",
@@ -26342,15 +28494,54 @@
                         "$ref": "#/components/schemas/SidesEnum"
                     },
                     "binding": {
-                        "$ref": "#/components/schemas/BindingEnum"
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "pages_per_sheet": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PagesPerSheetEnum"
+                            }
+                        ],
+                        "default": 1
+                    },
+                    "n_up_direction": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NUpDirectionEnum"
+                            }
+                        ],
+                        "default": "ltr"
+                    },
+                    "duplex_flip": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DuplexFlipEnum"
+                            }
+                        ],
+                        "default": "long_edge"
+                    },
+                    "orientation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrientationEnum"
+                            }
+                        ],
+                        "default": "auto"
+                    },
+                    "page_range": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "collate": {
+                        "type": "boolean",
+                        "default": true
                     }
-                },
-                "required": [
-                    "binding",
-                    "color_mode",
-                    "paper_size",
-                    "sides"
-                ]
+                }
             },
             "PrintOrderItemInputRequest": {
                 "type": "object",
@@ -26371,6 +28562,11 @@
                         "writeOnly": true,
                         "nullable": true
                     },
+                    "product": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "A ready-made product: its specification and price are fixed."
+                    },
                     "copies": {
                         "type": "integer",
                         "maximum": 99,
@@ -26387,15 +28583,55 @@
                         "$ref": "#/components/schemas/SidesEnum"
                     },
                     "binding": {
-                        "$ref": "#/components/schemas/BindingEnum"
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "pages_per_sheet": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PagesPerSheetEnum"
+                            }
+                        ],
+                        "default": 1
+                    },
+                    "n_up_direction": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/NUpDirectionEnum"
+                            }
+                        ],
+                        "default": "ltr"
+                    },
+                    "duplex_flip": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/DuplexFlipEnum"
+                            }
+                        ],
+                        "default": "long_edge"
+                    },
+                    "orientation": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/OrientationEnum"
+                            }
+                        ],
+                        "default": "auto"
+                    },
+                    "page_range": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "collate": {
+                        "type": "boolean",
+                        "default": true
                     }
-                },
-                "required": [
-                    "binding",
-                    "color_mode",
-                    "paper_size",
-                    "sides"
-                ]
+                }
             },
             "PrintOrderNoteRequest": {
                 "type": "object",
@@ -26626,6 +28862,102 @@
                     "sides"
                 ]
             },
+            "PrintQueueJob": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "order_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "item": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "item_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PrintQueueJobStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "printer_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "sides_printed": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "description": "Faces in the print-ready file."
+                    },
+                    "sheets": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "options": {
+                        "readOnly": true
+                    },
+                    "error": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "created_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "finished_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "created_by_name",
+                    "error",
+                    "finished_at",
+                    "id",
+                    "item",
+                    "item_name",
+                    "options",
+                    "order_id",
+                    "printer_name",
+                    "sheets",
+                    "sides_printed",
+                    "started_at",
+                    "status"
+                ]
+            },
+            "PrintQueueJobStatusEnum": {
+                "enum": [
+                    "queued",
+                    "printing",
+                    "done",
+                    "failed"
+                ],
+                "type": "string",
+                "description": "* `queued` - Queued\n* `printing` - Printing\n* `done` - Done\n* `failed` - Failed"
+            },
             "PrintQuote": {
                 "type": "object",
                 "properties": {
@@ -26752,6 +29084,89 @@
                     "version"
                 ]
             },
+            "PublicReadyProduct": {
+                "type": "object",
+                "description": "What a customer sees of a product (no internal fields).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "pages_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "paper_size": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaperSizeEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "color_mode": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ColorModeEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "sides": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/SidesEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "binding": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "cover": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "currency": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "binding",
+                    "color_mode",
+                    "cover",
+                    "currency",
+                    "description",
+                    "id",
+                    "image_url",
+                    "name",
+                    "pages_count",
+                    "paper_size",
+                    "price",
+                    "sides"
+                ]
+            },
             "PublicSuggestion": {
                 "type": "object",
                 "properties": {
@@ -26831,6 +29246,178 @@
                 },
                 "required": [
                     "emoji"
+                ]
+            },
+            "ReadyProduct": {
+                "type": "object",
+                "description": "Staff view of a product (all fields) used by the dashboard catalog.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "pages_count": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "paper_size": {
+                        "$ref": "#/components/schemas/PaperSizeEnum"
+                    },
+                    "color_mode": {
+                        "$ref": "#/components/schemas/ColorModeEnum"
+                    },
+                    "sides": {
+                        "$ref": "#/components/schemas/SidesEnum"
+                    },
+                    "binding": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "maxLength": 8
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "source_file": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "deleted_at",
+                    "id",
+                    "image_url",
+                    "is_deleted",
+                    "name",
+                    "price",
+                    "updated_at"
+                ]
+            },
+            "ReadyProductRequest": {
+                "type": "object",
+                "description": "Staff view of a product (all fields) used by the dashboard catalog.",
+                "properties": {
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "pages_count": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "paper_size": {
+                        "$ref": "#/components/schemas/PaperSizeEnum"
+                    },
+                    "color_mode": {
+                        "$ref": "#/components/schemas/ColorModeEnum"
+                    },
+                    "sides": {
+                        "$ref": "#/components/schemas/SidesEnum"
+                    },
+                    "binding": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "cover": {
+                        "type": "string",
+                        "maxLength": 32
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 8
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "source_file": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "name",
+                    "price"
                 ]
             },
             "Receipt": {
@@ -26932,6 +29519,214 @@
                 },
                 "required": [
                     "action"
+                ]
+            },
+            "Sale": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "sold_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "total": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "payment_method": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaymentMethodEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "note": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "sold_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SaleLine"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "currency",
+                    "customer_name",
+                    "id",
+                    "lines",
+                    "note",
+                    "payment_method",
+                    "sold_at",
+                    "sold_by_name",
+                    "total"
+                ]
+            },
+            "SaleCreateRequest": {
+                "type": "object",
+                "properties": {
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SaleLineInputRequest"
+                        }
+                    },
+                    "payment_method": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PaymentMethodEnum"
+                            }
+                        ],
+                        "default": "cash"
+                    },
+                    "customer_name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "lines"
+                ]
+            },
+            "SaleLine": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "item": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "The item's name when it was sold."
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "unit_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "line_total": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "id",
+                    "item",
+                    "line_total",
+                    "name",
+                    "quantity",
+                    "unit_price"
+                ]
+            },
+            "SaleLineInputRequest": {
+                "type": "object",
+                "properties": {
+                    "item": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                    }
+                },
+                "required": [
+                    "item",
+                    "quantity"
+                ]
+            },
+            "SellableItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "sku": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "unit": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "quantity": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "sale_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,12}(?:\\.\\d{0,2})?$",
+                        "readOnly": true
+                    },
+                    "currency": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/FinanceCurrencyEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "currency",
+                    "id",
+                    "name",
+                    "quantity",
+                    "sale_price",
+                    "sku",
+                    "unit"
                 ]
             },
             "Semester": {
@@ -27083,6 +29878,103 @@
                 ],
                 "type": "string",
                 "description": "* `app` - Mobile or web app\n* `counter` - Print shop counter"
+            },
+            "SpiralWireSpec": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "min_sheets": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "max_sheets": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "weight_grams": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,6}(?:\\.\\d{0,2})?$"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "deleted_at",
+                    "id",
+                    "is_deleted",
+                    "max_sheets",
+                    "min_sheets",
+                    "updated_at",
+                    "weight_grams"
+                ]
+            },
+            "SpiralWireSpecRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "min_sheets": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "max_sheets": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "weight_grams": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,6}(?:\\.\\d{0,2})?$"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "max_sheets",
+                    "min_sheets",
+                    "weight_grams"
+                ]
             },
             "StockMovement": {
                 "type": "object",

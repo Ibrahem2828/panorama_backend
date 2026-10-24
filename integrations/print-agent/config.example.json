@@ -1,0 +1,8 @@
+{
+  "api_base": "https://api.xn--mgbaab0cxheq.tech",
+  "identifier": "print-agent@example.com",
+  "password": "CHANGE-ME",
+  "printer": "HP LaserJet Pro",
+  "sumatra_path": "C:\\Program Files\\SumatraPDF\\SumatraPDF.exe",
+  "poll_seconds": 5
+}
