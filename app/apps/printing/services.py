@@ -507,6 +507,19 @@ class PrintOrderService:
             type=NotificationType.PRINTING,
             data={"print_order_id": order.id, "status": order.status},
         )
+
+        def announce():
+            from apps.notifications.staff import notify_staff
+
+            notify_staff(
+                "print_order",
+                "طلب طباعة جديد",
+                f"طلب رقم {order.id} من {user.full_name} بقيمة {order.total_price} {order.currency}.",
+                object_id=order.id,
+                actor_id=user.pk,
+            )
+
+        transaction.on_commit(announce)
         AuditLogService.log(
             actor=user,
             action=AuditAction.PRINT_ORDER_CREATED,

@@ -174,6 +174,15 @@ class GroupMessageReportView(APIView):
                 from rest_framework.exceptions import ValidationError
 
                 raise ValidationError({"message": "You have already reported this message."}) from exc
+            from apps.notifications.staff import notify_staff
+
+            notify_staff(
+                "chat_report",
+                "بلاغ جديد على رسالة",
+                f"بلاغ في مجموعة «{group.name}»: {report.reason[:80]}",
+                object_id=report.pk,
+                actor_id=request.user.pk,
+            )
             return success_response(
                 data=MessageReportSerializer(report).data,
                 message="Message reported successfully",

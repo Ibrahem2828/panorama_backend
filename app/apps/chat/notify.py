@@ -11,7 +11,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.groups.models import GroupMembershipStatus
 from apps.notifications.models import Notification, NotificationPreference, NotificationType
-from apps.notifications.services import NotificationService, _push_data, push_channels
+from apps.notifications.services import NotificationService, _push_data, push_channels, push_suppressed_reason
 
 from .models import GroupChatPreference, Message, MessageType
 from .presence import is_present
@@ -119,8 +119,8 @@ class ChatNotificationService:
         user: User, preference: NotificationPreference, notification: Notification, title: str, body: str
     ) -> None:
         channels = push_channels()
-        if not channels or not preference.push_enabled:
-            return
+        if not channels or push_suppressed_reason(preference, "chat", user.pk) is not None:
+            return  # push off, chat channel off or quiet hours: the in-app notification is kept
         if not cache.add(
             f"chat:push:{notification.data.get('group_id')}:{user.pk}", True, timeout=PUSH_INTERVAL_SECONDS
         ):

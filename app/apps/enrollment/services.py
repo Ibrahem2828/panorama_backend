@@ -174,19 +174,15 @@ class EnrollmentService:
         enrollment = EnrollmentRequest.objects.select_related("user").filter(pk=enrollment_id).first()
         if enrollment is None:
             return
-        for reviewer in reviewers():
-            try:
-                NotificationService.create_notification(
-                    reviewer,
-                    title="طلب تسجيل مواد جديد",
-                    body=f"{enrollment.user.full_name} أرسل لقطة ليرناتا لمراجعتها.",
-                    type=NotificationType.GROUP,
-                    data={"kind": "enrollment", "enrollment_id": enrollment.pk},
-                    deduplication_key=f"enrollment:{enrollment.pk}",
-                    deep_link=f"/dashboard/enrollment?request={enrollment.pk}",
-                )
-            except Exception:
-                logger.exception("enrollment_notify_failed", extra={"enrollment_id": enrollment_id})
+        from apps.notifications.staff import notify_staff
+
+        notify_staff(
+            "enrollment",
+            "طلب تسجيل مواد جديد",
+            f"{enrollment.user.full_name} أرسل لقطة ليرناتا لمراجعتها.",
+            object_id=enrollment.pk,
+            actor_id=enrollment.user_id,
+        )
 
     @staticmethod
     @transaction.atomic
