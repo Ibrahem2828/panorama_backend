@@ -4046,6 +4046,25 @@
                         }
                     },
                     {
+                        "in": "query",
+                        "name": "processing_status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "converting",
+                                "extracting",
+                                "failed",
+                                "pending",
+                                "quarantined",
+                                "queued",
+                                "ready",
+                                "rendering",
+                                "scanning"
+                            ]
+                        },
+                        "description": "* `pending` - Not processed yet\n* `queued` - Queued\n* `scanning` - Scanning\n* `converting` - Converting\n* `extracting` - Extracting\n* `rendering` - Rendering\n* `ready` - Ready\n* `failed` - Failed\n* `quarantined` - Quarantined"
+                    },
+                    {
                         "name": "search",
                         "required": false,
                         "in": "query",
@@ -13401,6 +13420,25 @@
                         }
                     },
                     {
+                        "in": "query",
+                        "name": "processing_status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "converting",
+                                "extracting",
+                                "failed",
+                                "pending",
+                                "quarantined",
+                                "queued",
+                                "ready",
+                                "rendering",
+                                "scanning"
+                            ]
+                        },
+                        "description": "* `pending` - Not processed yet\n* `queued` - Queued\n* `scanning` - Scanning\n* `converting` - Converting\n* `extracting` - Extracting\n* `rendering` - Rendering\n* `ready` - Ready\n* `failed` - Failed\n* `quarantined` - Quarantined"
+                    },
+                    {
                         "name": "search",
                         "required": false,
                         "in": "query",
@@ -14560,6 +14598,25 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "processing_status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "converting",
+                                "extracting",
+                                "failed",
+                                "pending",
+                                "quarantined",
+                                "queued",
+                                "ready",
+                                "rendering",
+                                "scanning"
+                            ]
+                        },
+                        "description": "* `pending` - Not processed yet\n* `queued` - Queued\n* `scanning` - Scanning\n* `converting` - Converting\n* `extracting` - Extracting\n* `rendering` - Rendering\n* `ready` - Ready\n* `failed` - Failed\n* `quarantined` - Quarantined"
                     },
                     {
                         "name": "search",

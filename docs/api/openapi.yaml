@@ -2592,6 +2592,30 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: processing_status
+        schema:
+          type: string
+          enum:
+          - converting
+          - extracting
+          - failed
+          - pending
+          - quarantined
+          - queued
+          - ready
+          - rendering
+          - scanning
+        description: |-
+          * `pending` - Not processed yet
+          * `queued` - Queued
+          * `scanning` - Scanning
+          * `converting` - Converting
+          * `extracting` - Extracting
+          * `rendering` - Rendering
+          * `ready` - Ready
+          * `failed` - Failed
+          * `quarantined` - Quarantined
       - name: search
         required: false
         in: query
@@ -8344,6 +8368,30 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: processing_status
+        schema:
+          type: string
+          enum:
+          - converting
+          - extracting
+          - failed
+          - pending
+          - quarantined
+          - queued
+          - ready
+          - rendering
+          - scanning
+        description: |-
+          * `pending` - Not processed yet
+          * `queued` - Queued
+          * `scanning` - Scanning
+          * `converting` - Converting
+          * `extracting` - Extracting
+          * `rendering` - Rendering
+          * `ready` - Ready
+          * `failed` - Failed
+          * `quarantined` - Quarantined
       - name: search
         required: false
         in: query
@@ -9040,6 +9088,30 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: processing_status
+        schema:
+          type: string
+          enum:
+          - converting
+          - extracting
+          - failed
+          - pending
+          - quarantined
+          - queued
+          - ready
+          - rendering
+          - scanning
+        description: |-
+          * `pending` - Not processed yet
+          * `queued` - Queued
+          * `scanning` - Scanning
+          * `converting` - Converting
+          * `extracting` - Extracting
+          * `rendering` - Rendering
+          * `ready` - Ready
+          * `failed` - Failed
+          * `quarantined` - Quarantined
       - name: search
         required: false
         in: query

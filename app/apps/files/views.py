@@ -104,6 +104,7 @@ class FileResourceViewSet(StandardReadOnlyModelViewSet):
         "group",
         "is_active",
         "is_printable",
+        "processing_status",
     ]
     search_fields = ["title", "description"]
     ordering_fields = ["created_at", "title", "file_size"]

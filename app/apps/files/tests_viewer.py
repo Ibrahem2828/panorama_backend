@@ -307,3 +307,11 @@ def test_office_uploads_are_accepted_but_not_printable(world):
     assert response.status_code == 201, response.data
     assert response.data["data"]["is_printable"] is False
     assert response.data["data"]["pages_count"] is None
+
+
+def test_dashboard_can_filter_files_by_processing_status(world):
+    _file(world, name="a.png", processing_status=FileProcessingStatus.FAILED)
+    _file(world, name="b.png", processing_status=FileProcessingStatus.READY)
+    response = _client(world["admin"]).get("/api/v1/dashboard/files/?processing_status=failed")
+    rows = response.data["data"]["results"] if isinstance(response.data["data"], dict) else response.data["data"]
+    assert [row["processing_status"] for row in rows] == ["failed"]
