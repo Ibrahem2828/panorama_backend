@@ -849,6 +849,36 @@
                 }
             }
         },
+        "/api/v1/chat/unread/": {
+            "get": {
+                "operationId": "v1_chat_unread_retrieve",
+                "description": "Unread message count per chat the user belongs to (for list badges and the app icon).",
+                "tags": [
+                    "Chat"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/academic-years/": {
             "get": {
                 "operationId": "v1_dashboard_academic_years_list",
@@ -1999,6 +2029,64 @@
                                 "schema": {
                                     "type": "object",
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/chat/groups/": {
+            "get": {
+                "operationId": "v1_dashboard_chat_groups_list",
+                "description": "The chat console's group list: ``GET /dashboard/chat/groups/`` (``search`` by group or subject, ``reported=1``).\n\nOpening a chat from here uses the ordinary message endpoints: staff with ``groups.manage`` may read and write in\nevery group chat, and their messages carry their position title instead of a name.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDashboardChatGroupList"
                                 }
                             }
                         },
@@ -12870,6 +12958,158 @@
                 }
             }
         },
+        "/api/v1/groups/{group_id}/chat/preferences/": {
+            "get": {
+                "operationId": "v1_groups_chat_preferences_retrieve",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatPreference"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_groups_chat_preferences_update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatPreferenceRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatPreferenceRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChatPreferenceRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChatPreference"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/groups/{group_id}/chat/receipts/": {
+            "post": {
+                "operationId": "v1_groups_chat_receipts_create",
+                "description": "Tell the server how far this member's device has received / read the chat (drives everyone's ticks).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReceiptRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReceiptRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReceiptRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Receipt"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/groups/{group_id}/messages/": {
             "get": {
                 "operationId": "v1_groups_messages_list",
@@ -13074,6 +13314,120 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/groups/{group_id}/messages/{message_id}/reaction/": {
+            "put": {
+                "operationId": "v1_groups_messages_reaction_update",
+                "description": "PUT sets (or replaces) the member's single reaction, DELETE removes it.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "message_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReactionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReactionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReactionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_groups_messages_reaction_destroy",
+                "description": "PUT sets (or replaces) the member's single reaction, DELETE removes it.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "message_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -17822,6 +18176,28 @@
                     "websocket_path"
                 ]
             },
+            "ChatPreference": {
+                "type": "object",
+                "properties": {
+                    "is_muted": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "is_muted"
+                ]
+            },
+            "ChatPreferenceRequest": {
+                "type": "object",
+                "properties": {
+                    "is_muted": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "is_muted"
+                ]
+            },
             "ColorModeEnum": {
                 "enum": [
                     "black_white",
@@ -18290,6 +18666,60 @@
                     "user"
                 ]
             },
+            "DashboardChatGroup": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "subject_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "faculty_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "members": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "last_message_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "last_message_excerpt": {
+                        "type": "string",
+                        "readOnly": true,
+                        "default": ""
+                    },
+                    "open_reports": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "faculty_name",
+                    "id",
+                    "is_active",
+                    "last_message_at",
+                    "last_message_excerpt",
+                    "members",
+                    "name",
+                    "open_reports",
+                    "subject_name"
+                ]
+            },
             "DashboardDevice": {
                 "type": "object",
                 "properties": {
@@ -18623,7 +19053,6 @@
                     },
                     "action_key": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -18690,6 +19119,7 @@
                     }
                 },
                 "required": [
+                    "action_key",
                     "context",
                     "created_at",
                     "id",
@@ -18706,7 +19136,6 @@
                     },
                     "action_key": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -18765,6 +19194,7 @@
                     "verification_statuses": {}
                 },
                 "required": [
+                    "action_key",
                     "context",
                     "question",
                     "title"
@@ -20083,7 +20513,6 @@
                     },
                     "code": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -20101,6 +20530,7 @@
                     }
                 },
                 "required": [
+                    "code",
                     "created_at",
                     "id",
                     "name",
@@ -20122,7 +20552,6 @@
                     },
                     "code": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -20130,6 +20559,7 @@
                     }
                 },
                 "required": [
+                    "code",
                     "name",
                     "university"
                 ]
@@ -20150,7 +20580,6 @@
                         "type": "boolean"
                     },
                     "platform": {
-                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -20162,7 +20591,6 @@
                     },
                     "role": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -20181,6 +20609,8 @@
                 "required": [
                     "id",
                     "key",
+                    "platform",
+                    "role",
                     "updated_at"
                 ]
             },
@@ -20197,7 +20627,6 @@
                         "type": "boolean"
                     },
                     "platform": {
-                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -20209,7 +20638,6 @@
                     },
                     "role": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -20221,7 +20649,9 @@
                     }
                 },
                 "required": [
-                    "key"
+                    "key",
+                    "platform",
+                    "role"
                 ]
             },
             "FeedbackKindEnum": {
@@ -20319,8 +20749,7 @@
                     },
                     "action_key": {
                         "type": "string",
-                        "readOnly": true,
-                        "default": ""
+                        "readOnly": true
                     },
                     "title": {
                         "type": "string",
@@ -21387,7 +21816,6 @@
                     },
                     "code": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -21405,6 +21833,7 @@
                     }
                 },
                 "required": [
+                    "code",
                     "created_at",
                     "faculty",
                     "faculty_name",
@@ -21427,7 +21856,6 @@
                     },
                     "code": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -21435,6 +21863,7 @@
                     }
                 },
                 "required": [
+                    "code",
                     "faculty",
                     "name"
                 ]
@@ -21483,10 +21912,35 @@
                         "nullable": true,
                         "readOnly": true
                     },
+                    "attachment_meta": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
                     "reply_to": {
                         "type": "integer",
                         "readOnly": true,
                         "nullable": true
+                    },
+                    "reply_to_detail": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "reactions": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "my_reaction": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "delivery": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
                     },
                     "is_deleted": {
                         "type": "boolean",
@@ -21510,16 +21964,21 @@
                     }
                 },
                 "required": [
+                    "attachment_meta",
                     "attachment_ticket_endpoint",
                     "content",
                     "created_at",
                     "deleted_at",
+                    "delivery",
                     "group",
                     "has_attachment",
                     "id",
                     "is_deleted",
                     "message_type",
+                    "my_reaction",
+                    "reactions",
                     "reply_to",
+                    "reply_to_detail",
                     "sender",
                     "sender_detail",
                     "updated_at"
@@ -21625,11 +22084,23 @@
                     },
                     "full_name": {
                         "type": "string"
+                    },
+                    "title": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "is_staff": {
+                        "type": "boolean"
+                    },
+                    "real_name": {
+                        "type": "string"
                     }
                 },
                 "required": [
                     "full_name",
-                    "id"
+                    "id",
+                    "is_staff",
+                    "title"
                 ]
             },
             "MessageTypeEnum": {
@@ -21711,8 +22182,7 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -21785,8 +22255,7 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -22497,6 +22966,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/DashboardAccountDeletion"
+                        }
+                    }
+                }
+            },
+            "PaginatedDashboardChatGroupList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DashboardChatGroup"
                         }
                     }
                 }
@@ -23690,7 +24190,6 @@
                     },
                     "action_key": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -23964,7 +24463,6 @@
                     },
                     "code": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -23985,7 +24483,6 @@
                         "type": "boolean"
                     },
                     "platform": {
-                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -23997,7 +24494,6 @@
                     },
                     "role": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -24263,7 +24759,6 @@
                     },
                     "code": {
                         "type": "string",
-                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -24326,8 +24821,7 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean",
-                        "default": true
+                        "type": "boolean"
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -25555,6 +26049,50 @@
                     "votes_count"
                 ]
             },
+            "ReactionRequest": {
+                "type": "object",
+                "properties": {
+                    "emoji": {
+                        "type": "string",
+                        "nullable": true,
+                        "minLength": 1,
+                        "maxLength": 16
+                    }
+                },
+                "required": [
+                    "emoji"
+                ]
+            },
+            "Receipt": {
+                "type": "object",
+                "properties": {
+                    "delivered_up_to": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "read_up_to": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                }
+            },
+            "ReceiptRequest": {
+                "type": "object",
+                "properties": {
+                    "delivered_up_to": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "read_up_to": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                }
+            },
             "ReleaseChannelEnum": {
                 "enum": [
                     "production",
@@ -26223,8 +26761,7 @@
                     },
                     "code": {
                         "type": "string",
-                        "readOnly": true,
-                        "default": ""
+                        "readOnly": true
                     },
                     "university": {
                         "allOf": [

@@ -115,3 +115,46 @@ class MessageReport(BaseModel):
             models.Index(fields=["message", "reported_by"]),
             models.Index(fields=["status", "created_at"], name="chat_report_status_idx"),
         ]
+
+
+class GroupReadState(BaseModel):
+    """How far one member has received and read a group's chat (a cursor, not one row per message).
+
+    ``delivered_up_to`` / ``read_up_to`` are message ids: everything at or below them has reached / been read by this
+    member. A message's ticks are derived from the other members' cursors, so a 500-member group costs 500 rows in total,
+    not 500 rows for every message.
+    """
+
+    group = models.ForeignKey("groups.Group", on_delete=models.CASCADE, related_name="read_states")
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="chat_read_states")
+    delivered_up_to = models.PositiveBigIntegerField(default=0)
+    read_up_to = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["group", "user"], name="chat_read_state_unique")]
+        indexes = [models.Index(fields=["group", "user"], name="chat_read_state_lookup_idx")]
+
+
+#: One reaction per member per message (changing it replaces the previous one), chosen from this fixed set.
+ALLOWED_REACTIONS = ("👍", "❤️", "😂", "😮", "😢", "🙏")
+
+
+class MessageReaction(BaseModel):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="reactions")
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="chat_reactions")
+    emoji = models.CharField(max_length=16)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["message", "user"], name="chat_reaction_one_per_member")]
+        indexes = [models.Index(fields=["message"], name="chat_reaction_message_idx")]
+
+
+class GroupChatPreference(BaseModel):
+    """A member's own setting for one group chat (today: mute its notifications)."""
+
+    group = models.ForeignKey("groups.Group", on_delete=models.CASCADE, related_name="chat_preferences")
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="chat_preferences")
+    is_muted = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["group", "user"], name="chat_preference_unique")]

@@ -115,6 +115,10 @@ ROUTE_KINDS: dict[str, str] = {
     "groups/{group_id}/messages/{message_id}/delete/": AUTH,
     "groups/{group_id}/messages/{message_id}/report/": AUTH,
     "groups/{group_id}/messages/{message_id}/attachment-ticket/": AUTH,
+    "groups/{group_id}/chat/receipts/": AUTH,
+    "groups/{group_id}/chat/preferences/": AUTH,
+    "groups/{group_id}/messages/{message_id}/reaction/": AUTH,
+    "chat/unread/": AUTH,
     "protected-chat-attachments/{token}/": AUTH,
     # --- files --------------------------------------------------------------------------------------------------------
     "search/": AUTH,
@@ -218,6 +222,7 @@ ROUTE_KINDS: dict[str, str] = {
     "dashboard/groups/{group_pk}/memberships/": DASHBOARD,
     "dashboard/groups/{group_pk}/join-requests/": DASHBOARD,
     "dashboard/groups/{pk}/whatsapp-channel/": DASHBOARD,
+    "dashboard/chat/groups/": DASHBOARD,
     "dashboard/chat/reports/": DASHBOARD,
     "dashboard/chat/reports/{pk}/resolve/": DASHBOARD,
     "dashboard/group-memberships/{pk}/approve/": DASHBOARD,
