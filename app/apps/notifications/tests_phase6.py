@@ -111,7 +111,7 @@ def test_category_comes_from_kind_first_then_type():
 def test_android_channel_per_category():
     assert categories.android_channel_for("chat") == "chat"
     assert categories.android_channel_for("verification") == "verification"
-    assert categories.android_channel_for("purchases") == "default"
+    assert categories.android_channel_for("purchases") == "general"
     assert categories.preference_channel_for("enrollment") == "groups"
     assert categories.preference_channel_for("purchases") is None
 

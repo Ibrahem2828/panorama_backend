@@ -617,7 +617,7 @@ def test_bulk_notifications_queue_web_push_per_allowed_user_with_their_own_notif
         "notification_id": mine.pk,
         "type": "announcement",
         "category": "general",
-        "channel_id": "default",
+        "channel_id": "general",
     }
     assert delay.call_args.kwargs == {"channels": ["web"]}
 

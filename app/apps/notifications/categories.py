@@ -43,7 +43,7 @@ _TYPE_TO_CATEGORY = {
     NotificationType.SUPPORT: SUPPORT,
 }
 
-#: Android notification channel ids created by the app (``default`` is the catch-all).
+#: Android notification channel ids created by the app (``general`` is the catch-all; it carries the Panorama chime, ``default`` is only the legacy channel of older app versions).
 _CATEGORY_TO_CHANNEL = {
     CHAT: "chat",
     GROUPS: "groups",
@@ -51,9 +51,9 @@ _CATEGORY_TO_CHANNEL = {
     PRINTING: "printing",
     VERIFICATION: "verification",
     SUPPORT: "support",
-    REPORTS: "default",
-    PURCHASES: "default",
-    GENERAL: "default",
+    REPORTS: "general",
+    PURCHASES: "general",
+    GENERAL: "general",
 }
 
 #: The preference switch that governs a category (categories without their own switch follow their closest one).
@@ -73,7 +73,7 @@ def category_for(notification_type: str, data: dict | None = None) -> str:
 
 
 def android_channel_for(category: str) -> str:
-    return _CATEGORY_TO_CHANNEL.get(category, "default")
+    return _CATEGORY_TO_CHANNEL.get(category, "general")
 
 
 def preference_channel_for(category: str) -> str | None:

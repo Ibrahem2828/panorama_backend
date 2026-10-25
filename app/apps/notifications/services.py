@@ -281,6 +281,9 @@ class PushNotificationService:
                 {
                     "to": token,
                     "sound": "default",
+                    # High priority wakes a dozing phone, so the push shows up at once even if the app is closed.
+                    "priority": "high",
+                    "ttl": 86400,
                     "title": title[:200],
                     "body": body[:1000],
                     "data": data or {},
