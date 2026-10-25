@@ -53,6 +53,15 @@ class SubmitVerificationView(APIView):
                 new_value={"status": verification.status, "student_number": verification.student_number},
                 request=request,
             )
+            from apps.notifications.staff import notify_staff
+
+            notify_staff(
+                "verification_request",
+                "طلب توثيق جديد",
+                f"{request.user.full_name} أرسل بطاقته الجامعية للتوثيق.",
+                object_id=verification.pk,
+                actor_id=request.user.pk,
+            )
             return success_response(
                 data=VerificationRequestStudentSerializer(verification, context={"request": request}).data,
                 message="Verification request submitted successfully",

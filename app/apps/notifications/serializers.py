@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 from django.utils import timezone
 from rest_framework import serializers
 
+from .categories import PREFERENCE_CHANNELS
 from .models import DeviceToken, Notification, NotificationPreference, WebPushSubscription
 from .webpush_security import (
     AUTH_RAW_LENGTH,
@@ -26,6 +29,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             "body_ar",
             "body_en",
             "type",
+            "category",
             "data",
             "deep_link",
             "related_object_type",
@@ -73,11 +77,70 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
         return device
 
 
+class QuietHoursSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField()
+    start = serializers.TimeField(format="%H:%M", input_formats=["%H:%M", "%H:%M:%S"], allow_null=True, required=False)
+    end = serializers.TimeField(format="%H:%M", input_formats=["%H:%M", "%H:%M:%S"], allow_null=True, required=False)
+    timezone = serializers.CharField(max_length=64, required=False)
+
+    def validate_timezone(self, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise serializers.ValidationError("Unknown time zone.") from exc
+        return value
+
+
 class NotificationPreferenceSerializer(serializers.ModelSerializer):
+    """``channels`` switches a push channel off ({"chat": false}); ``quiet_hours`` holds pushes back at night.
+
+    A channel that is not listed is on. The in-app notification is kept in both cases.
+    """
+
+    channels = serializers.DictField(child=serializers.BooleanField(), required=False)
+    quiet_hours = QuietHoursSerializer(required=False)
+
     class Meta:
         model = NotificationPreference
-        fields = ["in_app_enabled", "push_enabled", "disabled_types", "updated_at"]
+        fields = ["in_app_enabled", "push_enabled", "disabled_types", "channels", "quiet_hours", "updated_at"]
         read_only_fields = ["updated_at"]
+
+    def validate_channels(self, value):
+        unknown = sorted(set(value) - set(PREFERENCE_CHANNELS))
+        if unknown:
+            raise serializers.ValidationError(f"Unknown channel(s): {', '.join(unknown)}.")
+        return value
+
+    def validate_quiet_hours(self, value):
+        if value.get("enabled") and not (value.get("start") and value.get("end")):
+            raise serializers.ValidationError("Quiet hours need a start and an end time.")
+        return value
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["channels"] = {name: bool(instance.channels.get(name, True)) for name in PREFERENCE_CHANNELS}
+        data["quiet_hours"] = {
+            "enabled": instance.quiet_enabled,
+            "start": instance.quiet_start.strftime("%H:%M") if instance.quiet_start else None,
+            "end": instance.quiet_end.strftime("%H:%M") if instance.quiet_end else None,
+            "timezone": instance.quiet_timezone,
+        }
+        return data
+
+    def update(self, instance, validated_data):
+        channels = validated_data.pop("channels", None)
+        quiet = validated_data.pop("quiet_hours", None)
+        if channels is not None:
+            instance.channels = {**instance.channels, **channels}
+        if quiet is not None:
+            instance.quiet_enabled = quiet["enabled"]
+            if "start" in quiet:
+                instance.quiet_start = quiet["start"]
+            if "end" in quiet:
+                instance.quiet_end = quiet["end"]
+            if "timezone" in quiet:
+                instance.quiet_timezone = quiet["timezone"]
+        return super().update(instance, validated_data)
 
     def validate_disabled_types(self, value):
         if not isinstance(value, list) or not all(isinstance(item, str) and len(item) <= 32 for item in value):

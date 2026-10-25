@@ -52,7 +52,13 @@ class NotificationViewSet(StandardReadOnlyModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Notification.objects.none()
-        return _visible_notifications(_current_user(self.request))
+        queryset = _visible_notifications(_current_user(self.request))
+        params = self.request.query_params
+        if params.get("category"):
+            queryset = queryset.filter(category=params["category"])
+        if params.get("is_read") in {"true", "false", "1", "0"}:
+            queryset = queryset.filter(is_read=params["is_read"] in {"true", "1"})
+        return queryset
 
 
 class UnreadNotificationCountView(APIView):
@@ -63,6 +69,20 @@ class UnreadNotificationCountView(APIView):
         # Same predicate as the list: an expired notification is neither listed nor counted.
         count = _visible_notifications(_current_user(request)).filter(is_read=False).count()
         return success_response(data={"count": count})
+
+
+class NotificationSummaryView(APIView):
+    """``GET /notifications/summary/``: unread count in total and per category (the bell and the inbox tabs)."""
+
+    serializer_class = NotificationSerializer
+
+    @extend_schema(tags=["Notifications"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request):
+        unread = _visible_notifications(_current_user(request)).filter(is_read=False)
+        by_category = {
+            (row["category"] or "general"): row["n"] for row in unread.values("category").annotate(n=models.Count("id"))
+        }
+        return success_response(data={"unread": sum(by_category.values()), "by_category": by_category}, request=request)
 
 
 class MarkNotificationReadView(APIView):
@@ -81,7 +101,10 @@ class MarkAllNotificationsReadView(APIView):
     @extend_schema(tags=["Notifications"])
     def post(self, request):
         now = timezone.now()
-        Notification.objects.filter(user=_current_user(request), is_read=False, is_deleted=False).update(
+        queryset = Notification.objects.filter(user=_current_user(request), is_read=False, is_deleted=False)
+        if request.query_params.get("category"):
+            queryset = queryset.filter(category=request.query_params["category"])
+        queryset.update(
             is_read=True,
             read_at=now,
             updated_at=now,

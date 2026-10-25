@@ -24,11 +24,14 @@ LOCAL_APPS = [
     "apps.accounts",
     "apps.universities",
     "apps.verification",
+    "apps.enrollment",
+    "apps.annotations",
     "apps.groups",
     "apps.files",
     "apps.lectures",
     "apps.printing",
     "apps.finance",
+    "apps.shop",
     "apps.announcements",
     "apps.notifications",
     "apps.chat",
@@ -166,6 +169,7 @@ REST_FRAMEWORK = {
         "otp_request": config("THROTTLE_OTP_REQUEST", default="3/10min"),
         "otp_verify": config("THROTTLE_OTP_VERIFY", default="8/10min"),
         "password_reset": config("THROTTLE_PASSWORD_RESET", default="4/hour"),
+        "invitation_accept": config("THROTTLE_INVITATION_ACCEPT", default="20/hour"),
         # Per-account budgets, independent of the source IP.
         "otp_request_account": config("THROTTLE_OTP_REQUEST_ACCOUNT", default="10/hour"),
         "otp_verify_account": config("THROTTLE_OTP_VERIFY_ACCOUNT", default="20/hour"),
@@ -204,6 +208,8 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{"bearerAuth": []}],
     "ENUM_NAME_OVERRIDES": {
+        "EnrollmentStatusEnum": "apps.enrollment.models.EnrollmentStatus",
+        "EnrollmentItemStatusEnum": "apps.enrollment.models.EnrollmentItemStatus",
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",
         "CategoryEnum": "apps.support.models.SupportTicketCategory",
         "FinanceCurrencyEnum": "apps.finance.models.FinanceCurrency",
@@ -379,6 +385,9 @@ SMS_OTP_PROVIDER_ENABLED = get_bool_env("SMS_OTP_PROVIDER_ENABLED", default=Fals
 
 FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
 APP_BASE_URL = config("APP_BASE_URL", default="http://localhost:8000").rstrip("/")
+# Where staff open the dashboard (invitation links point here).
+DASHBOARD_BASE_URL = config("DASHBOARD_BASE_URL", default="http://localhost:3100").rstrip("/")
+INVITATION_TTL_HOURS = config("INVITATION_TTL_HOURS", default=48, cast=int)
 FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
 FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
 EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
@@ -420,6 +429,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, cast=int)
 CELERY_TASK_ROUTES = {
     "apps.lectures.tasks.*": {"queue": "conversion"},
+    "apps.files.tasks.process_file_resource": {"queue": "conversion"},
     "apps.printing.tasks.convert_print_document": {"queue": "conversion"},
 }
 # Redelivery window for unacknowledged tasks; must exceed the longest task (lecture conversion).
@@ -451,6 +461,20 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.common.tasks.flush_expired_jwt_tokens",
         "schedule": crontab(hour=4, minute=5),
     },
+    # Expo answers a push twice; the second answer (receipt) tells whether it was delivered or the device is gone.
+    "check-push-receipts": {
+        "task": "apps.notifications.tasks.check_push_receipts",
+        "schedule": 300.0,
+    },
+    "purge-old-push-deliveries": {
+        "task": "apps.notifications.tasks.purge_old_push_deliveries",
+        "schedule": crontab(hour=4, minute=25),
+    },
+    # "Buy ink again" style reminders, once per purchase cycle.
+    "notify-due-purchase-reminders": {
+        "task": "apps.finance.tasks.notify_due_purchase_reminders",
+        "schedule": crontab(hour=7, minute=30),
+    },
     "purge-expired-print-conversions": {
         "task": "apps.printing.tasks.purge_expired_print_conversions",
         "schedule": 1800.0,
@@ -458,6 +482,10 @@ CELERY_BEAT_SCHEDULE = {
     # Lectures whose worker died mid-conversion would otherwise stay "processing" forever.
     "fail-stuck-lectures": {
         "task": "apps.lectures.tasks.fail_stuck_lectures",
+        "schedule": 600.0,
+    },
+    "fail-stuck-files": {
+        "task": "apps.files.tasks.fail_stuck_files",
         "schedule": 600.0,
     },
 }

@@ -3,11 +3,11 @@ from __future__ import annotations
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.common.file_validation import validate_document_upload
+from apps.common.file_validation import validate_library_upload
 from apps.universities.models import validate_academic_hierarchy
 
 from .document_inspection import compute_sha256, detect_pages_count
-from .models import FileResource, FileVisibility
+from .models import FileProcessingStatus, FileResource, FileVisibility
 
 
 class FileResourceSerializer(serializers.ModelSerializer):
@@ -15,6 +15,8 @@ class FileResourceSerializer(serializers.ModelSerializer):
     file = serializers.FileField(write_only=True)
     preview_ticket_endpoint = serializers.SerializerMethodField()
     download_allowed = serializers.SerializerMethodField()
+    viewer_ready = serializers.SerializerMethodField()
+    viewer_endpoint = serializers.SerializerMethodField()
 
     class Meta:
         model = FileResource
@@ -29,6 +31,12 @@ class FileResourceSerializer(serializers.ModelSerializer):
             "sha256",
             "preview_ticket_endpoint",
             "download_allowed",
+            "processing_status",
+            "failure_code",
+            "failure_message",
+            "processed_at",
+            "viewer_ready",
+            "viewer_endpoint",
             "uploaded_by",
             "uploaded_by_name",
             "university",
@@ -52,6 +60,12 @@ class FileResourceSerializer(serializers.ModelSerializer):
             "sha256",
             "preview_ticket_endpoint",
             "download_allowed",
+            "processing_status",
+            "failure_code",
+            "failure_message",
+            "processed_at",
+            "viewer_ready",
+            "viewer_endpoint",
             "uploaded_by",
             "created_at",
             "updated_at",
@@ -65,8 +79,28 @@ class FileResourceSerializer(serializers.ModelSerializer):
     def get_download_allowed(self, obj):
         return False
 
+    @extend_schema_field(serializers.BooleanField())
+    def get_viewer_ready(self, obj):
+        return obj.viewer_ready
+
+    @extend_schema_field(serializers.CharField())
+    def get_viewer_endpoint(self, obj):
+        return f"/api/v1/files/{obj.pk}/viewer/"
+
     def validate_file(self, value):
-        return validate_document_upload(value, "file")
+        return validate_library_upload(value, "file")
+
+    @staticmethod
+    def _prepare_upload(validated_data: dict, uploaded) -> None:
+        pages = detect_pages_count(uploaded, uploaded.name)
+        validated_data["pages_count"] = pages or None
+        validated_data["sha256"] = compute_sha256(uploaded)
+        validated_data["processing_status"] = FileProcessingStatus.QUEUED
+        validated_data["failure_code"] = ""
+        validated_data["failure_message"] = ""
+        if not pages:
+            # Office documents cannot be sent through the print pipeline as they are; they are read in the viewer only.
+            validated_data["is_printable"] = False
 
     def validate(self, attrs):
         instance = self.instance
@@ -93,13 +127,11 @@ class FileResourceSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         uploaded = validated_data["file"]
-        validated_data["pages_count"] = detect_pages_count(uploaded, uploaded.name)
-        validated_data["sha256"] = compute_sha256(uploaded)
+        self._prepare_upload(validated_data, uploaded)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         uploaded = validated_data.get("file")
         if uploaded:
-            validated_data["pages_count"] = detect_pages_count(uploaded, uploaded.name)
-            validated_data["sha256"] = compute_sha256(uploaded)
+            self._prepare_upload(validated_data, uploaded)
         return super().update(instance, validated_data)

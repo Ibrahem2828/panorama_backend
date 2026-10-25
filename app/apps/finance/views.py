@@ -10,6 +10,7 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import CanManageFinance, CanManagePrinting
@@ -28,6 +29,8 @@ from .models import (
     FinanceCurrency,
     InventoryItem,
     OrderPayment,
+    PurchaseKind,
+    PurchaseReminder,
     StockMovement,
     StockMovementType,
 )
@@ -38,11 +41,20 @@ from .serializers import (
     OrderPaymentSerializer,
     PaymentVoidSerializer,
     PrintJobSerializer,
+    PurchaseReminderSerializer,
     StockMovementCreateSerializer,
     StockMovementSerializer,
     print_job_row,
 )
-from .services import FinanceReportService, InventoryService, Period, StockReportService, finished_orders, money
+from .services import (
+    FinanceReportService,
+    InventoryService,
+    Period,
+    PurchaseReportService,
+    StockReportService,
+    finished_orders,
+    money,
+)
 
 
 def _int(value: str, name: str) -> int:
@@ -70,24 +82,36 @@ class ExchangeRateViewSet(_FinanceWriteViewSet):
 
 
 class ExpenseViewSet(_FinanceWriteViewSet):
+    """Purchases, consumables, miscellaneous and equipment. ``multipart`` bodies may carry an ``invoice`` file."""
+
     serializer_class = ExpenseSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["description"]
+    search_fields = ["description", "supplier", "notes"]
     ordering_fields = ["spent_on", "amount", "category"]
     ordering = ["-spent_on", "-id"]
     audit_create_action = audit_update_action = audit_delete_action = AuditAction.FINANCE_EXPENSE_CHANGED
 
-    def get_queryset(self):
+    @staticmethod
+    def filtered(request):
         queryset = Expense.objects.filter(is_deleted=False)
-        params = self.request.query_params
-        for field in ("category", "currency"):
+        params = request.query_params
+        for field in ("category", "currency", "kind"):
             if params.get(field):
                 queryset = queryset.filter(**{field: params[field]})
         if params.get("from"):
             queryset = queryset.filter(spent_on__gte=params["from"])
         if params.get("to"):
             queryset = queryset.filter(spent_on__lte=params["to"])
+        term = params.get("search", "").strip()
+        if term:
+            queryset = queryset.filter(
+                Q(description__icontains=term) | Q(supplier__icontains=term) | Q(notes__icontains=term)
+            )
         return queryset
+
+    def get_queryset(self):
+        return self.filtered(self.request)
 
 
 class InventoryItemViewSet(_FinanceWriteViewSet):
@@ -152,6 +176,7 @@ class InventoryStockViewSet(StandardExplicitActionViewSet):
                 expense = Expense.objects.create(
                     spent_on=timezone.localdate(),
                     category=ExpenseCategory.SUPPLIES,
+                    kind=PurchaseKind.PURCHASES,
                     description=f"Purchase: {item.name} x {data['quantity']}",
                     amount=money(data["quantity"] * data["unit_cost"]),
                     currency=currency,
@@ -166,6 +191,7 @@ class InventoryStockViewSet(StandardExplicitActionViewSet):
                 currency=data.get("currency", ""),
                 note=data.get("note", ""),
                 expense=expense,
+                waste_reason=data.get("waste_reason", ""),
             )
             AuditLogService.log(
                 actor=request.user,
@@ -378,3 +404,70 @@ class FinanceSummaryView(APIView):
         return success_response(
             data=FinanceReportService.summary(period, currency), request=request, code="FINANCE_SUMMARY"
         )
+
+
+class PurchaseReminderViewSet(_FinanceWriteViewSet):
+    """ "Buy again every N weeks" reminders (ink, cleaning supplies...), each showing when it was last bought."""
+
+    serializer_class = PurchaseReminderSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering = ["name"]
+    audit_create_action = audit_update_action = audit_delete_action = AuditAction.FINANCE_EXPENSE_CHANGED
+
+    def get_queryset(self):
+        return PurchaseReminder.objects.filter(is_deleted=False)
+
+
+class PurchaseReportView(APIView):
+    permission_classes = [CanManageFinance]
+
+    @extend_schema(
+        tags=["Dashboard finance"],
+        parameters=[OpenApiParameter("month", OpenApiTypes.STR, description="YYYY-MM (default: this month)")],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        return success_response(
+            data=PurchaseReportService.monthly(request.query_params.get("month")),
+            message="Purchases report",
+            request=request,
+        )
+
+
+class ExpenseExportView(APIView):
+    """CSV of the expenses that match the list filters (same query parameters); finance managers only."""
+
+    permission_classes = [CanManageFinance]
+
+    @extend_schema(tags=["Dashboard finance"], responses={(200, "text/csv"): OpenApiTypes.BINARY})
+    def get(self, request):
+        import csv
+
+        from django.http import HttpResponse
+
+        queryset = ExpenseViewSet.filtered(request)
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="expenses.csv"'
+        response.write("\ufeff")  # Excel opens UTF-8 (Arabic) correctly only with a BOM
+        writer = csv.writer(response)
+        writer.writerow(["date", "kind", "category", "description", "supplier", "amount", "currency", "notes"])
+        for row in queryset.order_by("-spent_on", "-id")[:5000]:
+            writer.writerow(
+                [
+                    row.spent_on.isoformat(),
+                    row.kind,
+                    row.category,
+                    _csv_safe(row.description),
+                    _csv_safe(row.supplier),
+                    row.amount,
+                    row.currency,
+                    _csv_safe(row.notes),
+                ]
+            )
+        return response
+
+
+def _csv_safe(value: str) -> str:
+    """Spreadsheet formula injection: a cell that starts with = + - @ is read as a formula, so it is quoted."""
+
+    return "'" + value if value[:1] in {"=", "+", "-", "@", "\t", "\r"} else value

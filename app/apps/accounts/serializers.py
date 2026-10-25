@@ -183,10 +183,12 @@ class UserSerializer(serializers.ModelSerializer):
             "is_email_verified",
             "student_verification_status",
             "effective_capabilities",
+            "must_change_password",
             "date_joined",
         ]
         read_only_fields = [
             "id",
+            "must_change_password",
             "email",
             "phone_number",
             "role",
@@ -416,7 +418,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         with transaction.atomic():
             user.set_password(self.validated_data["new_password"])
             user.last_password_change_at = timezone.now()
-            user.save(update_fields=["password", "last_password_change_at", "updated_at"])
+            user.must_change_password = False
+            user.save(update_fields=["password", "last_password_change_at", "must_change_password", "updated_at"])
             user.invalidate_sessions()
             AuditLogService.log(
                 actor=user,

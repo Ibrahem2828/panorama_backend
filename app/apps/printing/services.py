@@ -23,8 +23,11 @@ from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 
 from .models import (
+    BindingKind,
+    BindingPriceMode,
     PrintBinding,
     PrintBindingPrice,
+    PrintCoverOption,
     PrintOrder,
     PrintOrderItem,
     PrintOrderPriority,
@@ -33,7 +36,9 @@ from .models import (
     PrintOrderStatusHistory,
     PrintPricingRule,
     PrintSides,
+    SpiralWireSpec,
 )
+from .options import parse_page_range, sheet_layout, sheets_per_copy
 
 
 class PrintPricingUnavailable(APIException):
@@ -122,6 +127,13 @@ def _request_fingerprint(items_data: list[dict], user_notes: str, pickup_locatio
             str(item.get("sides")),
             str(item.get("binding")),
             str(item.get("page_range") or ""),
+            item.get("pages_per_sheet", 1),
+            str(item.get("n_up_direction", "ltr")),
+            str(item.get("duplex_flip", "long_edge")),
+            str(item.get("orientation", "auto")),
+            bool(item.get("collate", True)),
+            str(item.get("cover") or ""),
+            getattr(item.get("product"), "pk", None),
         ]
         for item in items_data
     ]
@@ -141,6 +153,26 @@ class PricedItem:
     subtotal: Decimal
     currency: str
     snapshot: dict
+
+
+#: The request fields copied to the stored order item (everything else in the request is pricing input only).
+ORDER_ITEM_INPUT_FIELDS = (
+    "source_file",
+    "uploaded_file",
+    "copies",
+    "color_mode",
+    "paper_size",
+    "sides",
+    "binding",
+    "pages_per_sheet",
+    "n_up_direction",
+    "duplex_flip",
+    "orientation",
+    "page_range",
+    "collate",
+    "cover",
+    "product",
+)
 
 
 def default_priority_for_user(user) -> str:
@@ -195,6 +227,28 @@ class PrintPricingService:
         return binding
 
     @staticmethod
+    def _cover(code: str, currency: str) -> PrintCoverOption | None:
+        if not code:
+            return None
+        cover = PrintCoverOption.objects.filter(code=code, currency=currency, is_active=True, is_deleted=False).first()
+        if not cover:
+            raise PrintBindingUnavailable("The selected cover is currently unavailable.")
+        return cover
+
+    @staticmethod
+    def wire_grams(sheets_in_copy: int) -> Decimal | None:
+        """Grams of spiral wire one copy of this many sheets takes, from the shop's own table (None when it has no row)."""
+
+        spec = (
+            SpiralWireSpec.objects.filter(
+                min_sheets__lte=sheets_in_copy, max_sheets__gte=sheets_in_copy, is_active=True, is_deleted=False
+            )
+            .order_by("min_sheets")
+            .first()
+        )
+        return spec.weight_grams if spec else None
+
+    @staticmethod
     def _pages_count(item_data: dict) -> int:
         manual = item_data.get("manual_pages_count")  # typed in at the print shop counter: there is no file to read
         if manual:
@@ -214,19 +268,95 @@ class PrintPricingService:
         raise ValidationError({"items": "A source file or uploaded file is required."})
 
     @classmethod
+    def _price_product(cls, item_data: dict, currency: str) -> PricedItem:
+        """A ready-made product costs its fixed price per copy; no print option can change it."""
+
+        product = item_data["product"]
+        copies = int(item_data["copies"])
+        if not 1 <= copies <= 99:
+            raise ValidationError({"copies": "Copies must be between 1 and 99."})
+        if not product.is_active or product.is_deleted or product.currency != currency:
+            raise PrintPricingUnavailable()
+        double = product.sides == PrintSides.DOUBLE_SIDED
+        per_copy_sheets = sheets_per_copy(product.pages_count, 1, double)
+        subtotal = product.price * copies
+        data = {
+            **item_data,
+            "source_file": product.source_file,
+            "color_mode": product.color_mode,
+            "paper_size": product.paper_size,
+            "sides": product.sides,
+            "binding": product.binding,
+            "cover": product.cover,
+        }
+        snapshot = {
+            "product_id": product.pk,
+            "product_name": product.name,
+            "product_price": str(product.price),
+            "pages_count": product.pages_count,
+            "selected_pages": product.pages_count,
+            "sheets_per_copy": per_copy_sheets,
+            "copies": copies,
+            "total_sheets": per_copy_sheets * copies,
+            "color_mode": product.color_mode,
+            "paper_size": product.paper_size,
+            "sides": product.sides,
+            "binding": product.binding,
+            "cover": product.cover,
+            "layout": sheet_layout(1).as_dict(),
+            "currency": product.currency,
+            "subtotal": str(subtotal),
+        }
+        return PricedItem(
+            input_data=data,
+            pages_count=product.pages_count,
+            sheets_count=per_copy_sheets * copies,
+            unit_price=product.price,
+            binding_price=Decimal("0"),
+            subtotal=subtotal,
+            currency=product.currency,
+            snapshot=snapshot,
+        )
+
+    @classmethod
     def price_item(cls, item_data: dict, currency: str) -> PricedItem:
+        if item_data.get("product"):
+            return cls._price_product(item_data, currency)
         pages_count = cls._pages_count(item_data)
         copies = int(item_data["copies"])
         if not 1 <= copies <= 99:
             raise ValidationError({"copies": "Copies must be between 1 and 99."})
+        pages_per_sheet = int(item_data.get("pages_per_sheet") or 1)
+        layout = sheet_layout(
+            pages_per_sheet, item_data.get("orientation", "auto"), item_data.get("n_up_direction", "ltr")
+        )
+        # A counter line already says how many pages one copy has: the page range only applies to uploaded documents.
+        if item_data.get("manual_pages_count"):
+            selected_pages = pages_count
+        else:
+            selected_pages = len(parse_page_range(item_data.get("page_range"), pages_count))
+        double = item_data["sides"] == PrintSides.DOUBLE_SIDED
         rule = cls._active_rule(item_data, currency)
         binding_rule = cls._binding(item_data, currency)
-        sheets_per_copy = ceil(pages_count / 2) if item_data["sides"] == PrintSides.DOUBLE_SIDED else pages_count
-        sheets_count = sheets_per_copy * copies
+        cover_rule = cls._cover(item_data.get("cover") or "", currency)
+        sheets_in_copy = sheets_per_copy(selected_pages, pages_per_sheet, double)
+        sheets_count = sheets_in_copy * copies
         print_cost = (Decimal(sheets_count) * rule.price_per_sheet) + rule.setup_fee
-        binding_price = binding_rule.price_per_copy if binding_rule else Decimal("0")
+        wire_grams: Decimal | None = None
+        binding_price = Decimal("0")
+        if binding_rule:
+            if binding_rule.kind == BindingKind.SPIRAL:
+                wire_grams = cls.wire_grams(sheets_in_copy)
+            if binding_rule.price_mode == BindingPriceMode.PER_WIRE_KG:
+                if wire_grams is None:
+                    raise PrintBindingUnavailable("The wire weight for this number of sheets is not set yet.")
+                binding_price = (wire_grams / Decimal("1000") * binding_rule.price_per_kg).quantize(CENT, ROUND_HALF_UP)
+            else:
+                binding_price = binding_rule.price_per_copy
         binding_cost = binding_price * copies
-        subtotal = print_cost + binding_cost
+        cover_price = cover_rule.price_per_copy if cover_rule else Decimal("0")
+        cover_cost = cover_price * copies
+        subtotal = print_cost + binding_cost + cover_cost
         snapshot = {
             "pricing_rule_id": rule.id,
             "pricing_rule_name": rule.name,
@@ -234,8 +364,18 @@ class PrintPricingService:
             "setup_fee": str(rule.setup_fee),
             "binding_rule_id": binding_rule.id if binding_rule else None,
             "binding_price_per_copy": str(binding_price),
+            "binding_kind": binding_rule.kind if binding_rule else "",
+            "wire_grams_per_copy": str(wire_grams) if wire_grams is not None else None,
+            "cover": cover_rule.code if cover_rule else "",
+            "cover_price_per_copy": str(cover_price),
             "pages_count": pages_count,
-            "sheets_per_copy": sheets_per_copy,
+            "selected_pages": selected_pages,
+            "page_range": item_data.get("page_range") or "",
+            "pages_per_sheet": pages_per_sheet,
+            "duplex_flip": item_data.get("duplex_flip", "long_edge"),
+            "collate": bool(item_data.get("collate", True)),
+            "layout": layout.as_dict(),
+            "sheets_per_copy": sheets_in_copy,
             "copies": copies,
             "total_sheets": sheets_count,
             "color_mode": item_data["color_mode"],
@@ -264,7 +404,7 @@ class PrintPricingService:
         priced_items: list[PricedItem] = []
         for item_data in items_data:
             source_file = item_data.get("source_file")
-            if source_file:
+            if source_file and not item_data.get("product"):
                 if not user_can_access_file(user, source_file):
                     raise ValidationError({"source_file": "You do not have access to this file."})
                 if not source_file.is_printable:
@@ -337,12 +477,14 @@ class PrintOrderService:
             },
         )
         for priced in quote["items"]:
-            data = dict(priced.input_data)
-            data.pop("pages_count", None)
-            data.pop("price", None)
+            data = {key: value for key, value in priced.input_data.items() if key in ORDER_ITEM_INPUT_FIELDS}
+            snapshot = priced.snapshot
             PrintOrderItem.objects.create(
                 order=order,
+                original_file_name=data["product"].name[:255] if data.get("product") else "",
                 **data,
+                selected_pages=snapshot.get("selected_pages"),
+                cover_price=Decimal(snapshot.get("cover_price_per_copy") or 0),
                 pages_count=priced.pages_count,
                 sheets_count=priced.sheets_count,
                 unit_price=priced.unit_price,
@@ -365,6 +507,19 @@ class PrintOrderService:
             type=NotificationType.PRINTING,
             data={"print_order_id": order.id, "status": order.status},
         )
+
+        def announce():
+            from apps.notifications.staff import notify_staff
+
+            notify_staff(
+                "print_order",
+                "طلب طباعة جديد",
+                f"طلب رقم {order.id} من {user.full_name} بقيمة {order.total_price} {order.currency}.",
+                object_id=order.id,
+                actor_id=user.pk,
+            )
+
+        transaction.on_commit(announce)
         AuditLogService.log(
             actor=user,
             action=AuditAction.PRINT_ORDER_CREATED,
@@ -449,14 +604,19 @@ class CounterOrderService:
         exact = Decimal("0")
         complete = True
         for item in items_data:
-            data = {**item, "manual_pages_count": item["pages_count"]}
+            product = item.get("product")
+            data = dict(item) if product else {**item, "manual_pages_count": item["pages_count"]}
             try:
                 priced = PrintPricingService.price_item(data, currency)
             except (PrintPricingUnavailable, PrintBindingUnavailable) as error:
                 complete = False
-                pages = int(item["pages_count"])
+                pages = int(product.pages_count if product else item["pages_count"])
                 copies = int(item["copies"])
-                per_copy = ceil(pages / 2) if item["sides"] == PrintSides.DOUBLE_SIDED else pages
+                per_copy = (
+                    ceil(pages / 2)
+                    if (product.sides if product else item["sides"]) == PrintSides.DOUBLE_SIDED
+                    else pages
+                )
                 lines.append(
                     {
                         "pages_count": pages,
@@ -557,15 +717,33 @@ class CounterOrderService:
             },
         )
         for item, line in zip(items_data, quote["items"], strict=True):
+            product = item.get("product")
+            spec = (
+                {
+                    "color_mode": product.color_mode,
+                    "paper_size": product.paper_size,
+                    "sides": product.sides,
+                    "binding": product.binding,
+                    "cover": product.cover,
+                }
+                if product
+                else item
+            )
+            snapshot = line.get("snapshot") or {}
             PrintOrderItem.objects.create(
                 order=order,
-                original_file_name=item.get("title", "")[:255],
+                product=product,
+                source_file=product.source_file if product else None,
+                original_file_name=(product.name if product else item.get("title", ""))[:255],
                 pages_count=line["pages_count"],
                 copies=item["copies"],
-                color_mode=item["color_mode"],
-                paper_size=item["paper_size"],
-                sides=item["sides"],
-                binding=item["binding"],
+                color_mode=spec["color_mode"],
+                paper_size=spec["paper_size"],
+                sides=spec["sides"],
+                binding=spec["binding"],
+                cover=spec.get("cover") or "",
+                cover_price=Decimal(snapshot.get("cover_price_per_copy") or 0),
+                pages_per_sheet=item.get("pages_per_sheet") or 1,
                 binding_note=item.get("binding_note", "")[:120],
                 sheets_count=line["sheets_count"],
                 unit_price=line["unit_price"] or Decimal("0"),

@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
@@ -31,17 +31,23 @@ from apps.common.throttles import FileTicketRateThrottle, PrintConvertRateThrott
 from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
 from apps.lectures.document_pipeline import DocumentPipelineError, inspect_lecture_document
 
+from .jobs import PrintJobService, render_item
 from .models import (
     PrintBindingPrice,
     PrintConversion,
     PrintConversionStatus,
+    PrintCoverOption,
     PrintItemAccessTicket,
+    PrintJob,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
     PrintPickupLocation,
     PrintPricingRule,
+    ReadyProduct,
+    SpiralWireSpec,
 )
+from .options import PAGES_PER_SHEET_CHOICES, DuplexFlip, NUpDirection, PrintOrientation
 from .serializers import (
     CounterOrderCreateSerializer,
     CounterQuoteSerializer,
@@ -49,15 +55,21 @@ from .serializers import (
     MobilePrintOrderSerializer,
     PrintBindingPriceSerializer,
     PrintConvertUploadSerializer,
+    PrintCoverOptionSerializer,
+    PrintJobStatusSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
     PrintOrderNoteSerializer,
     PrintPickupLocationSerializer,
     PrintPricingRuleSerializer,
+    PrintQueueJobSerializer,
     PrintQuoteSerializer,
     PrintStatusUpdateSerializer,
+    PublicReadyProductSerializer,
+    ReadyProductSerializer,
+    SpiralWireSpecSerializer,
 )
-from .services import CounterOrderService, PrintStatusService
+from .services import CounterOrderService, PrintStatusService, default_currency
 
 
 class PrintQuoteView(APIView):
@@ -487,4 +499,196 @@ class ProtectedPrintItemStreamView(APIView):
         response["Content-Security-Policy"] = (
             "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
         )
+        return response
+
+
+# ---- customer: options and ready products --------------------------------------------------------------------------------------
+
+
+class PrintOptionsView(APIView):
+    """Everything the print-options screen needs: the shop's binding types and covers with prices, and the dialog choices."""
+
+    @extend_schema(
+        tags=["Printing"],
+        parameters=[OpenApiParameter("currency", OpenApiTypes.STR, required=False)],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        currency = request.query_params.get("currency") or default_currency()
+        bindings = PrintBindingPrice.objects.filter(currency=currency, is_active=True, is_deleted=False)
+        covers = PrintCoverOption.objects.filter(currency=currency, is_active=True, is_deleted=False)
+        data = {
+            "currency": currency,
+            "pages_per_sheet": list(PAGES_PER_SHEET_CHOICES),
+            "orientations": [value for value, _label in PrintOrientation.choices],
+            "duplex_flips": [value for value, _label in DuplexFlip.choices],
+            "n_up_directions": [value for value, _label in NUpDirection.choices],
+            "binding_types": [
+                {
+                    "code": row.binding,
+                    "name": row.display_name,
+                    "description": row.description,
+                    "kind": row.kind,
+                    "price_mode": row.price_mode,
+                    "price_per_copy": row.price_per_copy,
+                    "price_per_kg": row.price_per_kg,
+                }
+                for row in bindings
+            ],
+            "covers": [
+                {"code": row.code, "name": row.name, "color_hex": row.color_hex, "price_per_copy": row.price_per_copy}
+                for row in covers
+            ],
+        }
+        return success_response(data=data, message="Print options", request=request, code="PRINT_OPTIONS")
+
+
+class PrintProductViewSet(StandardReadOnlyModelViewSet):
+    """Ready-made printed products (notebooks and the like) the customer can order with one tap."""
+
+    serializer_class = PublicReadyProductSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return ReadyProduct.objects.filter(is_active=True, is_deleted=False)
+
+
+# ---- dashboard: catalog configuration -------------------------------------------------------------------------------------------
+
+
+class DashboardCoverOptionViewSet(AuditedPrintConfigurationViewSet):
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintCoverOptionSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return PrintCoverOption.objects.filter(is_deleted=False)
+
+
+class DashboardWireSpecViewSet(AuditedPrintConfigurationViewSet):
+    permission_classes = [CanManagePrinting]
+    serializer_class = SpiralWireSpecSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return SpiralWireSpec.objects.filter(is_deleted=False)
+
+
+class DashboardReadyProductViewSet(AuditedPrintConfigurationViewSet):
+    permission_classes = [CanManagePrinting]
+    serializer_class = ReadyProductSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    pagination_class = None
+
+    def get_queryset(self):
+        return ReadyProduct.objects.filter(is_deleted=False)
+
+
+# ---- dashboard: print jobs ----------------------------------------------------------------------------------------------------------
+
+
+class DashboardPrintJobViewSet(StandardReadOnlyModelViewSet):
+    """The queue of files sent to the printer: ``?status=queued`` is what the silent-print agent polls."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintQueueJobSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["status", "order", "item"]
+    ordering_fields = ["created_at", "status"]
+    ordering = ["created_at"]
+
+    def get_queryset(self):
+        return PrintJob.objects.filter(is_deleted=False).select_related("item", "created_by", "order")
+
+
+class DashboardPrintOrderJobsView(APIView):
+    """``POST``: queue the order's files (all, or ``item_ids``) for printing and prepare their print-ready PDFs."""
+
+    permission_classes = [CanManagePrinting]
+
+    @extend_schema(tags=["Dashboard"], request=OpenApiTypes.OBJECT, responses={201: PrintQueueJobSerializer(many=True)})
+    def post(self, request, pk: int):
+        order = get_object_or_404(PrintOrder, pk=pk, is_deleted=False)
+        raw_ids = request.data.get("item_ids")
+        if raw_ids is not None and not (isinstance(raw_ids, list) and all(isinstance(value, int) for value in raw_ids)):
+            raise serializers.ValidationError({"item_ids": "Send a list of file ids."})
+        jobs = PrintJobService.create_for_order(
+            order,
+            request.user,
+            item_ids=raw_ids or None,
+            printer_name=str(request.data.get("printer_name", "")),
+            request=request,
+        )
+        return success_response(
+            data=PrintQueueJobSerializer(jobs, many=True).data,
+            message="Print jobs queued",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="PRINT_JOBS_QUEUED",
+        )
+
+
+class DashboardPrintJobStatusView(APIView):
+    permission_classes = [CanManagePrinting]
+
+    @extend_schema(tags=["Dashboard"], request=PrintJobStatusSerializer, responses={200: PrintQueueJobSerializer})
+    def patch(self, request, pk: int):
+        job = get_object_or_404(PrintJob, pk=pk, is_deleted=False)
+        serializer = PrintJobStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        job = PrintJobService.set_status(
+            job,
+            data["status"],
+            request.user,
+            printer_name=data.get("printer_name", ""),
+            error=data.get("error", ""),
+            request=request,
+        )
+        return success_response(
+            data=PrintQueueJobSerializer(job).data,
+            message="Print job updated",
+            request=request,
+            code="PRINT_JOB_UPDATED",
+        )
+
+
+class DashboardPrintJobRetryView(APIView):
+    permission_classes = [CanManagePrinting]
+
+    @extend_schema(tags=["Dashboard"], request=None, responses={200: PrintQueueJobSerializer})
+    def post(self, request, pk: int):
+        job = get_object_or_404(PrintJob, pk=pk, is_deleted=False)
+        job = PrintJobService.set_status(job, "queued", request.user, request=request)
+        return success_response(
+            data=PrintQueueJobSerializer(job).data,
+            message="Print job queued again",
+            request=request,
+            code="PRINT_JOB_REQUEUED",
+        )
+
+
+class DashboardPrintJobFileView(APIView):
+    """The print-ready PDF of a job (inline, never cached). Prepared from the stored file each time, so it cannot go stale."""
+
+    permission_classes = [CanManagePrinting]
+    throttle_classes = [FileTicketRateThrottle]
+
+    @extend_schema(tags=["Dashboard"], responses={200: OpenApiResponse(description="Print-ready PDF")})
+    def get(self, request, pk: int):
+        from django.http import HttpResponse
+
+        job = get_object_or_404(PrintJob.objects.select_related("item"), pk=pk, is_deleted=False)
+        data, _summary = render_item(job.item)
+        AuditLogService.log(
+            actor=request.user,
+            action=AuditAction.PRINT_FILE_PREPARED,
+            target=job,
+            new_value={"faces": job.sides_printed},
+            request=request,
+        )
+        response = HttpResponse(data, content_type="application/pdf")
+        response["Content-Disposition"] = f'inline; filename="print-job-{job.pk}.pdf"'
+        response["Cache-Control"] = "private, no-store, max-age=0"
+        response["X-Content-Type-Options"] = "nosniff"
         return response

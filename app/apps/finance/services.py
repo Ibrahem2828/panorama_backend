@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, ROUND_UP, Decimal
 
 from django.db import transaction
 from django.db.models import Count, F, Sum
@@ -26,10 +26,14 @@ from .models import (
     ExchangeRate,
     Expense,
     FinanceCurrency,
+    InventoryCategory,
     InventoryItem,
     OrderPayment,
+    PurchaseKind,
+    PurchaseReminder,
     StockMovement,
     StockMovementType,
+    WasteReason,
 )
 
 CENT = Decimal("0.01")
@@ -62,6 +66,8 @@ class StockAlertService:
     def kind(item: InventoryItem, before: Decimal, after: Decimal) -> str | None:
         if not item.is_active or item.is_deleted:
             return None
+        if item.category == InventoryCategory.INK:
+            return None  # ink is bought, not metered: the purchase reminder replaces the low-stock alert
         if before > 0 and after <= 0:
             return "out_of_stock"
         level = item.reorder_level
@@ -113,6 +119,7 @@ class InventoryService:
         note: str = "",
         expense: Expense | None = None,
         order: PrintOrder | None = None,
+        waste_reason: str = "",
     ) -> StockMovement:
         """Apply one stock movement under a row lock. Usage/waste cannot take the stock below zero.
 
@@ -151,6 +158,7 @@ class InventoryService:
             unit_cost=money(unit_cost) if unit_cost is not None else None,
             currency=currency or (locked.currency if unit_cost is not None else ""),
             note=note[:255],
+            waste_reason=waste_reason if movement_type == StockMovementType.WASTE else "",
             created_by=actor,
             expense=expense,
             order=order,
@@ -184,17 +192,20 @@ class StockConsumptionService:
             if item.sheets_count:
                 needs[f"paper_{item.paper_size.lower()}"] += item.sheets_count
                 sheets += item.sheets_count
-            if item.binding in _STOCK_BINDINGS:
-                needs[f"binding_{item.binding}"] += item.copies
+            snapshot = item.pricing_snapshot or {}
+            # The binding's kind (staple, spiral...) decides which shelf item it uses; old orders only have the code.
+            kind = snapshot.get("binding_kind") or item.binding
+            if kind in _STOCK_BINDINGS:
+                needs[f"binding_{kind}"] += item.copies
+            wire = snapshot.get("wire_grams_per_copy")
+            if kind == PrintBinding.SPIRAL and wire:
+                needs["spiral_wire"] += int((Decimal(wire) * item.copies).to_integral_value(ROUND_UP))
             printed = (item.pages_count or 0) * item.copies  # every page of every copy is one printed side
             pages += printed
             if item.color_mode == PrintColorMode.COLOR:
                 colour_pages += printed
-        if pages:
-            needs["ink_black"] = pages  # black is laid down on colour pages too
-        if colour_pages:
-            for ink in ("ink_cyan", "ink_magenta", "ink_yellow"):
-                needs[ink] = colour_pages
+        # Ink is NOT metered any more: the shop records what it buys (purchases screen + reminder). Items that still carry an
+        # ink_* key from before are left alone, so nothing is deducted and no retroactive change is made.
         if sheets:
             needs["per_sheet"] = sheets
         needs["per_order"] = 1
@@ -384,6 +395,13 @@ class StockReportService:
             .annotate(total=Sum("quantity"))
         }
         after_period = {row["item"]: row["total"] for row in later.values("item").annotate(total=Sum("quantity"))}
+        waste_by_reason: dict[int, dict[str, Decimal]] = defaultdict(lambda: defaultdict(lambda: Decimal("0")))
+        for row in (
+            inside.filter(movement_type=StockMovementType.WASTE)
+            .values("item", "waste_reason")
+            .annotate(total=Sum("quantity"))
+        ):
+            waste_by_reason[row["item"]][row["waste_reason"] or WasteReason.OTHER] += -row["total"]
         spent: dict[int, dict[str, Decimal]] = defaultdict(lambda: defaultdict(lambda: Decimal("0")))
         purchases = inside.filter(movement_type=StockMovementType.PURCHASE, unit_cost__isnull=False)
         for row in purchases.values("item", "currency").annotate(cost=Sum(F("quantity") * F("unit_cost"))):
@@ -401,6 +419,7 @@ class StockReportService:
             used = -moves.get(StockMovementType.USAGE, Decimal("0"))
             used_orders = -by_orders.get(item.pk, Decimal("0"))
             waste = -moves.get(StockMovementType.WASTE, Decimal("0"))
+            waste_split = {reason: total.quantize(CENT) for reason, total in waste_by_reason.get(item.pk, {}).items()}
             daily = days_left = suggested = None
             if elapsed >= cls.MIN_DAYS_FOR_RATE and used > 0:
                 rate = used / Decimal(elapsed)
@@ -424,6 +443,7 @@ class StockReportService:
                     "used_by_orders": used_orders.quantize(CENT),
                     "used_by_hand": (used - used_orders).quantize(CENT),
                     "waste": waste.quantize(CENT),
+                    "waste_by_reason": waste_split,
                     "adjustment": moves.get(StockMovementType.ADJUSTMENT, Decimal("0")).quantize(CENT),
                     "closing": closing.quantize(CENT),
                     "reorder_level": item.reorder_level,
@@ -517,4 +537,82 @@ class FinanceReportService:
                 }
                 for i in items.filter(reorder_level__gt=0, quantity__lte=F("reorder_level")).order_by("quantity")
             ],
+        }
+
+
+# ---- purchases: reminders and the monthly report -----------------------------------------------------------------------------------
+
+
+class PurchaseReminderService:
+    """ "Last bought X weeks ago" per reminder, and a once-per-period notice to finance staff when one is due."""
+
+    @staticmethod
+    def status(reminder: PurchaseReminder, today: date | None = None) -> dict:
+        today = today or timezone.localdate()
+        last = reminder.last_purchase_date()
+        due_on = last + timedelta(weeks=reminder.interval_weeks) if last else None
+        return {
+            "last_purchase": last,
+            "weeks_since": (today - last).days // 7 if last else None,
+            "due_on": due_on,
+            # Never bought yet is not "due": a reminder starts counting from the first recorded purchase.
+            "is_due": bool(reminder.is_active and due_on and today >= due_on),
+        }
+
+    @classmethod
+    def recipients(cls) -> list[User]:
+        candidates = User.objects.filter(
+            role__in=(UserRole.ADMIN, UserRole.IT_SUPPORT), is_active=True, is_deleted=False
+        )
+        return [user for user in candidates if PermissionService.has(user, "finance.manage")]
+
+    @classmethod
+    def notify_due(cls, today: date | None = None) -> int:
+        """Sends one notice per due reminder per purchase cycle; returns how many reminders were announced."""
+
+        today = today or timezone.localdate()
+        sent = 0
+        for reminder in PurchaseReminder.objects.filter(is_deleted=False, is_active=True):
+            info = cls.status(reminder, today)
+            if not info["is_due"]:
+                continue
+            last = info["last_purchase"]
+            if reminder.last_notified_at and reminder.last_notified_at.date() >= last:
+                continue  # already announced for the current cycle (it re-arms when a new purchase is recorded)
+            weeks = info["weeks_since"]
+            for user in cls.recipients():
+                NotificationService.create_notification(
+                    user,
+                    f"تذكير شراء: {reminder.name}",
+                    f"آخر شراء لـ«{reminder.name}» كان منذ {weeks} أسبوعًا، والمدة المعتادة {reminder.interval_weeks} أسابيع.",
+                    type=NotificationType.SYSTEM,
+                    data={"kind": "purchase_reminder", "reminder_id": reminder.pk},
+                    deep_link="/dashboard/finance/purchases",
+                )
+            reminder.last_notified_at = timezone.now()
+            reminder.save(update_fields=["last_notified_at", "updated_at"])
+            sent += 1
+        return sent
+
+
+class PurchaseReportService:
+    @staticmethod
+    def monthly(month: str | None) -> dict:
+        first, last = StockReportService.parse_month(month)
+        rows = Expense.objects.filter(is_deleted=False, spent_on__gte=first, spent_on__lte=last)
+        by_kind: dict[str, dict[str, Decimal]] = defaultdict(lambda: defaultdict(lambda: Decimal("0")))
+        for row in rows.values("kind", "currency").annotate(total=Sum("amount")):
+            by_kind[row["kind"]][row["currency"]] += money(row["total"])
+        totals: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+        for currencies in by_kind.values():
+            for currency, amount in currencies.items():
+                totals[currency] += amount
+        return {
+            "month": first.strftime("%Y-%m"),
+            "by_kind": {
+                kind: {currency: str(amount) for currency, amount in by_kind.get(kind, {}).items()}
+                for kind in PurchaseKind.values
+            },
+            "totals": {currency: str(amount) for currency, amount in totals.items()},
+            "count": rows.count(),
         }

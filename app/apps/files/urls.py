@@ -5,17 +5,39 @@ from .views import (
     DashboardFileResourceViewSet,
     FileAccessTicketView,
     FileResourceViewSet,
+    FileViewerManifestView,
+    FileViewerPageView,
+    FileViewerSessionView,
+    FileViewerTextView,
+    FileViewerThumbnailView,
     GroupFileResourceViewSet,
     ProtectedFileStreamView,
 )
+from .visibility_templates import FileVisibilityTemplateViewSet
 
 router = DefaultRouter()
 router.register("files", FileResourceViewSet, basename="files")
+router.register(
+    "dashboard/file-visibility-templates", FileVisibilityTemplateViewSet, basename="dashboard-file-visibility-templates"
+)
 router.register("dashboard/files", DashboardFileResourceViewSet, basename="dashboard-files")
 
 urlpatterns = [
     *router.urls,
     path("groups/<int:group_pk>/files/", GroupFileResourceViewSet.as_view({"get": "list"}), name="group-files"),
     path("files/<int:pk>/access-ticket/", FileAccessTicketView.as_view(), name="file-access-ticket"),
+    path("files/<int:pk>/viewer/manifest/", FileViewerManifestView.as_view(), name="file-viewer-manifest"),
+    path("files/<int:pk>/viewer/session/", FileViewerSessionView.as_view(), name="file-viewer-session"),
+    path("files/<int:pk>/viewer/pages/<int:page_number>/", FileViewerPageView.as_view(), name="file-viewer-page"),
+    path(
+        "files/<int:pk>/viewer/pages/<int:page_number>/thumbnail/",
+        FileViewerThumbnailView.as_view(),
+        name="file-viewer-thumbnail",
+    ),
+    path(
+        "files/<int:pk>/viewer/pages/<int:page_number>/text/",
+        FileViewerTextView.as_view(),
+        name="file-viewer-text",
+    ),
     path("protected-files/<uuid:token>/", ProtectedFileStreamView.as_view(), name="protected-file-stream"),
 ]

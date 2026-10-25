@@ -34,6 +34,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     date_joined = models.DateTimeField(default=timezone.now)
     last_password_change_at = models.DateTimeField(null=True, blank=True)
     session_version = models.PositiveIntegerField(default=1)
+    #: Set for accounts created with a temporary password: the dashboard sends them to the change-password screen first.
+    must_change_password = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -248,3 +250,44 @@ class UserPermissionOverride(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.user_id}:{self.permission_code}:{self.effect}"
+
+
+class PermissionTemplate(BaseModel):
+    """A named bundle of capabilities for a staff role ("print officer", "support staff"...). Applying one sets the user's role and
+    the overrides that make their effective capabilities exactly ``capabilities``."""
+
+    key = models.SlugField(max_length=40, unique=True)
+    name_ar = models.CharField(max_length=80)
+    name_en = models.CharField(max_length=80)
+    description = models.CharField(max_length=255, blank=True)
+    role = models.CharField(max_length=32, choices=UserRole.choices)
+    capabilities = models.JSONField(default=list)
+    is_system = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self) -> str:
+        return self.name_en
+
+
+class UserInvitation(BaseModel):
+    """One invitation to set up a staff account. Only the SHA-256 of the token is stored; the link is shown once (e-mailed)."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invitations")
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="sent_invitations"
+    )
+    template = models.ForeignKey(PermissionTemplate, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def is_usable(self) -> bool:
+        return self.accepted_at is None and self.revoked_at is None and self.expires_at > timezone.now()

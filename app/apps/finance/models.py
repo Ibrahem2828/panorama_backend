@@ -68,6 +68,8 @@ class ConsumptionKey(models.TextChoices):
     BINDING_SPIRAL = "binding_spiral", "Spiral binding (one bound copy)"
     BINDING_THERMAL = "binding_thermal", "Thermal binding (one bound copy)"
     BINDING_BEADS = "binding_beads", "Beads binding (one bound copy)"
+    # Wire is bought by weight: one use is one gram, so the stock item is counted in kilograms (0.001 per use).
+    SPIRAL_WIRE = "spiral_wire", "Spiral wire (one gram of wire)"
     # Ink is estimated per printed page: black is used on every page, the three colours only on colour pages.
     INK_BLACK = "ink_black", "Black ink (one printed page)"
     INK_CYAN = "ink_cyan", "Cyan ink (one colour page)"
@@ -102,6 +104,9 @@ class InventoryItem(BaseModel):
     )
     # Used stock below one hundredth of a unit is kept here until it adds up to a whole hundredth (quantity has 2 places).
     pending_consumption = models.DecimalField(max_digits=14, decimal_places=6, default=Decimal("0"), editable=False)
+    # Stationery sold over the counter: only sellable items appear on the quick-sale screen.
+    is_sellable = models.BooleanField(default=False)
+    sale_price = money_field(default=Decimal("0"), validators=[MinValueValidator(Decimal("0"))])
 
     class Meta:
         ordering = ["category", "name"]
@@ -129,6 +134,17 @@ class InventoryItem(BaseModel):
         return self.name
 
 
+class WasteReason(models.TextChoices):
+    """Why stock was thrown away; shown in the stock report so waste can be told apart from normal use."""
+
+    JAM = "jam", "Paper jam or misfeed"
+    MISPRINT = "misprint", "Misprint or wrong settings"
+    DAMAGED = "damaged", "Damaged or wet"
+    EXPIRED = "expired", "Expired or dried out"
+    LOST = "lost", "Lost"
+    OTHER = "other", "Other"
+
+
 class StockMovementType(models.TextChoices):
     PURCHASE = "purchase", "Purchase (adds stock)"
     USAGE = "usage", "Usage (consumes stock)"
@@ -144,6 +160,7 @@ class StockMovement(BaseModel):
     unit_cost = money_field(null=True, blank=True)
     currency = models.CharField(max_length=3, choices=FinanceCurrency.choices, blank=True)
     note = models.CharField(max_length=255, blank=True)
+    waste_reason = models.CharField(max_length=16, choices=WasteReason.choices, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
@@ -178,12 +195,54 @@ class ExpenseCategory(models.TextChoices):
     OTHER = "other", "Other"
 
 
+class PurchaseKind(models.TextChoices):
+    """The four buckets of the purchases screen (what the owner bought, not how it is accounted)."""
+
+    PURCHASES = "purchases", "Purchases"
+    CONSUMABLES = "consumables", "Consumables"
+    MISCELLANEOUS = "miscellaneous", "Miscellaneous"
+    EQUIPMENT = "equipment", "Equipment"
+
+
+class PurchaseReminder(BaseModel):
+    """ "Buy this again every N weeks": ink, cleaning supplies... The shop records what it BOUGHT; consumption is never estimated."""
+
+    name = models.CharField(max_length=120)
+    interval_weeks = models.PositiveSmallIntegerField(default=10, validators=[MinValueValidator(1)])
+    is_active = models.BooleanField(default=True)
+    #: Last time staff were told it is due, so the daily check says it once per due period, not every day.
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name"], condition=models.Q(is_deleted=False), name="finance_reminder_unique_name"
+            )
+        ]
+
+    def last_purchase_date(self):
+        row = self.expenses.filter(is_deleted=False).order_by("-spent_on", "-id").first()
+        return row.spent_on if row else None
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Expense(BaseModel):
     spent_on = models.DateField(default=timezone.localdate)
     category = models.CharField(max_length=16, choices=ExpenseCategory.choices, default=ExpenseCategory.OTHER)
+    #: The purchases-screen bucket. Old rows (and stock purchases booked automatically) keep ``miscellaneous``/``purchases``.
+    kind = models.CharField(max_length=16, choices=PurchaseKind.choices, default=PurchaseKind.MISCELLANEOUS)
     description = models.CharField(max_length=255)
     amount = money_field(validators=[MinValueValidator(Decimal("0.01"))])
     currency = models.CharField(max_length=3, choices=FinanceCurrency.choices, default=FinanceCurrency.SYP)
+    supplier = models.CharField(max_length=150, blank=True)
+    notes = models.TextField(blank=True)
+    invoice = models.FileField(upload_to="finance/invoices/", blank=True)
+    reminder = models.ForeignKey(
+        PurchaseReminder, null=True, blank=True, on_delete=models.SET_NULL, related_name="expenses"
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )

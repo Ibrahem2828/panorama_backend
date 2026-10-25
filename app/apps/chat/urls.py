@@ -1,21 +1,31 @@
 from django.urls import path
 
-from .dashboard_views import DashboardMessageReportResolveView, DashboardMessageReportViewSet
+from .dashboard_views import (
+    DashboardChatGroupViewSet,
+    DashboardMessageReportResolveView,
+    DashboardMessageReportViewSet,
+)
 from .views import (
+    ChatUnreadView,
     GroupChatHandshakeTicketView,
+    GroupChatPreferenceView,
     GroupMessageDeleteView,
     GroupMessageReportView,
     GroupMessageViewSet,
+    GroupReceiptView,
     MessageAttachmentAccessTicketView,
+    MessageReactionView,
     ProtectedMessageAttachmentStreamView,
 )
 
+chat_group_list = DashboardChatGroupViewSet.as_view({"get": "list"})
 report_list = DashboardMessageReportViewSet.as_view({"get": "list"})
 
 message_list = GroupMessageViewSet.as_view({"get": "list", "post": "create"})
 message_detail = GroupMessageViewSet.as_view({"get": "retrieve", "delete": "destroy"})
 
 urlpatterns = [
+    path("dashboard/chat/groups/", chat_group_list, name="dashboard-chat-groups"),
     path("dashboard/chat/reports/", report_list, name="dashboard-chat-reports"),
     path(
         "dashboard/chat/reports/<int:pk>/resolve/",
@@ -44,6 +54,14 @@ urlpatterns = [
         MessageAttachmentAccessTicketView.as_view(),
         name="group-message-attachment-ticket",
     ),
+    path("groups/<int:group_id>/chat/receipts/", GroupReceiptView.as_view(), name="group-chat-receipts"),
+    path("groups/<int:group_id>/chat/preferences/", GroupChatPreferenceView.as_view(), name="group-chat-preferences"),
+    path(
+        "groups/<int:group_id>/messages/<int:message_id>/reaction/",
+        MessageReactionView.as_view(),
+        name="group-message-reaction",
+    ),
+    path("chat/unread/", ChatUnreadView.as_view(), name="chat-unread"),
     path(
         "protected-chat-attachments/<uuid:token>/",
         ProtectedMessageAttachmentStreamView.as_view(),

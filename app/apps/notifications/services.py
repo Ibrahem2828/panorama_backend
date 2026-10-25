@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from collections import Counter
 from collections.abc import Iterable
+from datetime import timedelta
 from functools import partial
 from typing import Any
 from urllib import request as urllib_request
@@ -12,12 +14,22 @@ from urllib.parse import urlsplit
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 from pywebpush import WebPushException, webpush
 
-from .models import DeviceToken, Notification, NotificationPreference, NotificationType, WebPushSubscription
+from . import categories
+from .models import (
+    DeviceToken,
+    Notification,
+    NotificationPreference,
+    NotificationType,
+    PushDelivery,
+    PushDeliveryStatus,
+    WebPushSubscription,
+)
 from .webpush_security import InvalidWebPushInput, validate_endpoint
 
 logger = logging.getLogger(__name__)
@@ -64,6 +76,9 @@ def _push_data(notification: Notification, data: dict | None) -> dict:
     merged: dict[str, Any] = dict(data or {})
     merged.setdefault("notification_id", notification.pk)
     merged.setdefault("type", notification.type)
+    category = notification.category or categories.category_for(notification.type, merged)
+    merged.setdefault("category", category)
+    merged.setdefault("channel_id", categories.android_channel_for(category))
     if notification.deep_link:
         merged.setdefault("deep_link", notification.deep_link)
     # Arabic stays in the push ``title``/``body``; the localized variants let a client pick the user's language.
@@ -87,6 +102,37 @@ class PushDeliveryTransientError(RuntimeError):
         self.reason = reason
 
 
+#: Seconds during which further pushes of a collapsed (staff inbox) category to one person are folded into the first.
+BURST_WINDOW_SECONDS = 20
+
+
+def push_suppressed_reason(
+    preference: NotificationPreference | None, category: str, user_id: int, now=None, *, collapse: bool = False
+) -> str | None:
+    """Why a push must not be sent right now (the in-app notification is always kept), or None when it may go out.
+
+    Reasons: ``push_off`` (member turned push off), ``channel_off`` (that channel is switched off), ``quiet_hours``,
+    ``burst`` (an earlier push of the same inbox category went out a moment ago and covers this one).
+    """
+
+    if preference is not None:
+        if not preference.push_enabled:
+            return "push_off"
+        if not preference.channel_enabled(categories.preference_channel_for(category)):
+            return "channel_off"
+        if preference.in_quiet_hours(now):
+            return "quiet_hours"
+    if collapse:
+        window = int(getattr(settings, "PUSH_BURST_WINDOW_SECONDS", BURST_WINDOW_SECONDS))
+        if window > 0:
+            try:
+                if not cache.add(f"push:burst:{user_id}:{category}", True, timeout=window):
+                    return "burst"
+            except Exception:  # the cache is a courtesy: without it every push goes out
+                logger.warning("push burst cache unavailable")
+    return None
+
+
 class NotificationService:
     @staticmethod
     def create_notification(
@@ -95,16 +141,19 @@ class NotificationService:
         preference, _ = NotificationPreference.objects.get_or_create(user=user)
         if not preference.allows(type):
             return None
+        category = kwargs.pop("category", "") or categories.category_for(type, data)
         notification = Notification.objects.create(
             user=user,
             title=title,
             body=body,
             type=type,
+            category=category,
             data=data or {},
             **kwargs,
         )
         channels = push_channels()
-        if channels and preference.push_enabled:
+        collapse = str((data or {}).get("kind") or "") in categories.STAFF_KINDS
+        if channels and push_suppressed_reason(preference, category, user.pk, collapse=collapse) is None:
             from .tasks import deliver_push_notification
 
             push_data = _push_data(notification, data)
@@ -124,8 +173,9 @@ class NotificationService:
     ):
         users = list(users)
         preferences = {item.user_id: item for item in NotificationPreference.objects.filter(user__in=users)}
+        category = categories.category_for(type, data)
         notifications = [
-            Notification(user=user, title=title, body=body, type=type, data=data or {})
+            Notification(user=user, title=title, body=body, type=type, category=category, data=data or {})
             for user in users
             if preferences.get(user.id, None) is None or preferences[user.id].allows(type)
         ]
@@ -140,7 +190,7 @@ class NotificationService:
                 if user.id not in created_user_ids:
                     continue
                 preference = preferences.get(user.id)
-                if preference is not None and not preference.push_enabled:
+                if push_suppressed_reason(preference, category, user.id) is not None:
                     continue  # the single-user path honours this; campaigns must too
                 transaction.on_commit(
                     partial(
@@ -223,11 +273,20 @@ class PushNotificationService:
         accepted = 0
         dead: list[str] = []
         retry: list[str] = []
+        sent_rows: list[PushDelivery] = []
         error_codes: Counter[str] = Counter()
         for start in range(0, len(tokens), EXPO_BATCH_SIZE):
             batch = tokens[start : start + EXPO_BATCH_SIZE]
             messages = [
-                {"to": token, "sound": "default", "title": title[:200], "body": body[:1000], "data": data or {}}
+                {
+                    "to": token,
+                    "sound": "default",
+                    "title": title[:200],
+                    "body": body[:1000],
+                    "data": data or {},
+                    # An Android notification channel chosen by the sender (the app creates "chat", "printing"...).
+                    **({"channelId": data["channel_id"]} if data and data.get("channel_id") else {}),
+                }
                 for token in batch
             ]
             try:
@@ -256,14 +315,24 @@ class PushNotificationService:
             for token, ticket in zip(batch, tickets, strict=True):
                 if isinstance(ticket, dict) and ticket.get("status") == "ok":
                     accepted += 1
+                    sent_rows.append(PushNotificationService._delivery_row(token, ticket, data))
                     continue
                 details = ticket.get("details") if isinstance(ticket, dict) else None
                 code = str(details.get("error")) if isinstance(details, dict) and details.get("error") else "unknown"
                 error_codes[code] += 1
                 if code in PERMANENT_TOKEN_ERRORS:
                     dead.append(token)
+                    sent_rows.append(
+                        PushNotificationService._delivery_row(token, None, data, PushDeliveryStatus.DEAD, code)
+                    )
                 elif code in TRANSIENT_TICKET_ERRORS:
                     retry.append(token)
+                else:
+                    sent_rows.append(
+                        PushNotificationService._delivery_row(token, None, data, PushDeliveryStatus.FAILED, code)
+                    )
+        if sent_rows:
+            PushNotificationService._store_rows(sent_rows)
         if dead:
             PushNotificationService.deactivate_tokens(dead)
         if error_codes:
@@ -280,6 +349,34 @@ class PushNotificationService:
         if retry:
             raise PushDeliveryTransientError(retry, ",".join(sorted(error_codes)))
         return accepted
+
+    @staticmethod
+    def _delivery_row(
+        token: str,
+        ticket: dict | None,
+        data: dict | None,
+        status: str = PushDeliveryStatus.SENT,
+        error_code: str = "",
+    ) -> PushDelivery:
+        notification_id = (data or {}).get("notification_id")
+        return PushDelivery(
+            notification_id=notification_id if isinstance(notification_id, int) else None,
+            channel=CHANNEL_EXPO,
+            category=str((data or {}).get("category") or ""),
+            # The raw token is only needed while a receipt is pending (to switch a dead device off).
+            token=token if status == PushDeliveryStatus.SENT else "",
+            token_hash=hashlib.sha256(token.encode()).hexdigest(),
+            ticket_id=str((ticket or {}).get("id") or "")[:64],
+            status=status,
+            error_code=error_code[:64],
+        )
+
+    @staticmethod
+    def _store_rows(rows: list[PushDelivery]) -> None:
+        try:
+            PushDelivery.objects.bulk_create(rows)
+        except Exception:  # metrics must never break a delivery that already went out
+            logger.exception("push_delivery_record_failed")
 
     @staticmethod
     def deactivate_tokens(tokens: list[str]) -> None:
@@ -509,3 +606,102 @@ class WebPushService:
             WebPushSubscription.objects.filter(pk__in=failed, failure_count__gte=limit).update(
                 is_active=False, updated_at=now
             )
+
+
+class PushReceiptService:
+    """Expo answers a push twice: a ticket right away ("accepted") and a receipt later ("delivered to FCM" or an error).
+
+    ``check_pending`` asks for the receipts of pushes older than ``RECEIPT_MIN_AGE`` (Expo prepares them after about
+    15 minutes) and settles each: ok -> delivered, DeviceNotRegistered -> dead (the device is switched off in both token
+    stores), any other error -> failed. Pushes whose receipt never arrives are failed after ``RECEIPT_MAX_AGE``.
+    """
+
+    RECEIPT_MIN_AGE = timedelta(minutes=15)
+    RECEIPT_MAX_AGE = timedelta(hours=24)
+    BATCH = 300
+
+    @staticmethod
+    def _receipts_endpoint() -> str | None:
+        endpoint = PushNotificationService._endpoint()
+        if endpoint is None:
+            return None
+        return endpoint.rsplit("/", 1)[0] + "/getReceipts"
+
+    @staticmethod
+    def _fetch(endpoint: str, ids: list[str]) -> dict | None:
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        access_token = getattr(settings, "EXPO_ACCESS_TOKEN", "")
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
+        req = urllib_request.Request(
+            endpoint, data=json.dumps({"ids": ids}).encode("utf-8"), headers=headers, method="POST"
+        )
+        with urllib_request.urlopen(req, timeout=10) as response:  # nosec B310 - host allowlist in _endpoint
+            if not 200 <= response.status < 300:
+                return None
+            try:
+                payload = json.loads(response.read())
+            except (AttributeError, TypeError, ValueError):
+                return None
+        data = payload.get("data") if isinstance(payload, dict) else None
+        return data if isinstance(data, dict) else None
+
+    @classmethod
+    def check_pending(cls, now=None) -> dict[str, int]:
+        now = now or timezone.now()
+        result = {"checked": 0, "delivered": 0, "failed": 0, "dead": 0, "expired": 0}
+        expired = PushDelivery.objects.filter(
+            status=PushDeliveryStatus.SENT, channel=CHANNEL_EXPO, created_at__lt=now - cls.RECEIPT_MAX_AGE
+        )
+        result["expired"] = expired.update(
+            status=PushDeliveryStatus.FAILED, error_code="receipt_expired", token="", receipt_checked_at=now
+        )
+        endpoint = cls._receipts_endpoint()
+        if endpoint is None:
+            return result
+        pending = list(
+            PushDelivery.objects.filter(
+                status=PushDeliveryStatus.SENT, channel=CHANNEL_EXPO, created_at__lt=now - cls.RECEIPT_MIN_AGE
+            )
+            .exclude(ticket_id="")
+            .order_by("created_at")[: cls.BATCH]
+        )
+        if not pending:
+            return result
+        try:
+            receipts = cls._fetch(endpoint, [row.ticket_id for row in pending])
+        except (HTTPError, URLError, TimeoutError, OSError) as exc:
+            logger.warning("Push receipts unreachable", extra={"failure_class": type(exc).__name__})
+            return result
+        if receipts is None:
+            return result
+        dead_tokens: list[str] = []
+        for row in pending:
+            receipt = receipts.get(row.ticket_id)
+            if not isinstance(receipt, dict):
+                continue  # not ready yet: asked again next run
+            result["checked"] += 1
+            row.receipt_checked_at = now
+            if receipt.get("status") == "ok":
+                row.status = PushDeliveryStatus.DELIVERED
+                result["delivered"] += 1
+            else:
+                details = receipt.get("details")
+                code = str(details.get("error")) if isinstance(details, dict) and details.get("error") else "unknown"
+                row.error_code = code[:64]
+                if code in PERMANENT_TOKEN_ERRORS:
+                    row.status = PushDeliveryStatus.DEAD
+                    dead_tokens.append(row.token)
+                    result["dead"] += 1
+                else:
+                    row.status = PushDeliveryStatus.FAILED
+                    result["failed"] += 1
+            row.token = ""
+        PushDelivery.objects.bulk_update(
+            [row for row in pending if row.receipt_checked_at],
+            ["status", "error_code", "token", "receipt_checked_at", "updated_at"],
+        )
+        dead_tokens = [token for token in dead_tokens if token]
+        if dead_tokens:
+            PushNotificationService.deactivate_tokens(dead_tokens)
+        return result
