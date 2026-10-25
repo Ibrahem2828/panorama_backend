@@ -314,6 +314,20 @@ def test_backfill_command_is_idempotent(world):
     assert GroupMembership.objects.filter(user=world["student"], group=world["community"]).count() == 1
 
 
+def test_community_join_skips_groups_of_other_years(world):
+    other_year = AcademicYear.objects.create(name="Year 2", order=2)
+    pinned = Group.objects.create(
+        name="Year 2 community",
+        university=world["faculty"].university,
+        faculty=world["faculty"],
+        academic_year=other_year,
+        created_by=world["admin"],
+    )
+    call_command("backfill_faculty_communities")
+    assert _is_member(world["student"], world["community"])
+    assert not _is_member(world["student"], pinned)
+
+
 def test_blocked_member_stays_blocked(world):
     GroupMembership.objects.create(
         group=world["community"], user=world["student"], status=GroupMembershipStatus.BLOCKED
