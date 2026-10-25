@@ -14,6 +14,7 @@ from apps.accounts.permissions import Capability, PermissionService
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
+from apps.groups.services import is_student_eligible_for_group
 from apps.notifications.models import NotificationType
 from apps.notifications.services import NotificationService
 from apps.universities.models import Subject
@@ -83,7 +84,12 @@ class FacultyCommunityService:
             or profile.verification_status != StudentVerificationStatus.APPROVED
         ):
             return 0
-        return sum(1 for group in faculty_community_groups(profile.faculty_id) if add_to_group(user, group))
+        # A faculty group pinned to a year, semester or major is only for students of that exact level.
+        return sum(
+            1
+            for group in faculty_community_groups(profile.faculty_id)
+            if is_student_eligible_for_group(user, group) and add_to_group(user, group)
+        )
 
 
 # -- subject search -----------------------------------------------------------------------------------------------------
