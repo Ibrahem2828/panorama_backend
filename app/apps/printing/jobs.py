@@ -11,6 +11,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 
 from .models import (
+    Printer,
     PrintJob,
     PrintJobStatus,
     PrintOrder,
@@ -42,6 +43,8 @@ _ALLOWED = {
     PrintJobStatus.PRINTING: {PrintJobStatus.DONE, PrintJobStatus.FAILED},
     PrintJobStatus.FAILED: {PrintJobStatus.QUEUED},
     PrintJobStatus.DONE: set(),
+    # A cancelled job is final: the agent cannot pick it up or finish it (its PATCH gets a 409), staff queue a new one.
+    PrintJobStatus.CANCELLED: set(),
 }
 
 
@@ -101,6 +104,15 @@ def render_item(item: PrintOrderItem) -> tuple[bytes, dict]:
         source.close()
 
 
+def printer_for_name(name: str) -> Printer | None:
+    """The registered printer a job's free-text ``printer_name`` refers to (exact name), if there is one."""
+
+    name = (name or "").strip()
+    if not name:
+        return None
+    return Printer.objects.filter(name=name, is_deleted=False).first()
+
+
 class PrintJobService:
     @staticmethod
     @transaction.atomic
@@ -131,6 +143,7 @@ class PrintJobService:
                     item=item,
                     created_by=actor,
                     printer_name=printer_name.strip(),
+                    printer=printer_for_name(printer_name),
                     sides_printed=summary["faces"],
                     sheets=summary["sheets"],
                     options={**item_options(item), "summary": summary},
@@ -171,6 +184,7 @@ class PrintJobService:
             job.error = ""
         if printer_name:
             job.printer_name = printer_name.strip()[:150]
+            job.printer = printer_for_name(job.printer_name) or job.printer
         job.save()
         order = job.order
         # The first job that starts moves an accepted order to "printing" so the customer sees progress.
@@ -191,6 +205,32 @@ class PrintJobService:
             target=job,
             old_value={"status": old},
             new_value={"status": new_status, "printer": job.printer_name},
+            request=request,
+        )
+        return job
+
+    @staticmethod
+    @transaction.atomic
+    def cancel(job: PrintJob, actor, *, reason: str = "", request=None) -> PrintJob:
+        """Stop a job that has not finished. The order is left alone, exactly as when a job fails: staff decide what
+        happens to the order (print again, deliver by hand, cancel it)."""
+
+        job = PrintJob.objects.select_for_update().get(pk=job.pk, is_deleted=False)
+        if job.status == PrintJobStatus.CANCELLED:
+            return job  # cancelling twice is harmless
+        if job.status not in (PrintJobStatus.QUEUED, PrintJobStatus.PRINTING):
+            raise PrintJobConflict("Only a queued or printing job can be cancelled.")
+        old = job.status
+        job.status = PrintJobStatus.CANCELLED
+        job.finished_at = timezone.now()
+        job.error = reason.strip()[:255]
+        job.save()
+        AuditLogService.log(
+            actor=actor,
+            action=AuditAction.PRINT_JOB_CANCELLED,
+            target=job,
+            old_value={"status": old},
+            new_value={"status": job.status, "reason": job.error, "printer": job.printer_name},
             request=request,
         )
         return job

@@ -188,6 +188,7 @@ REST_FRAMEWORK = {
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
         "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
         "print_convert": config("THROTTLE_PRINT_CONVERT", default="20/hour"),
+        "print_agent": config("THROTTLE_PRINT_AGENT", default="120/min"),
     },
 }
 
@@ -208,6 +209,8 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY": [{"bearerAuth": []}],
     "ENUM_NAME_OVERRIDES": {
+        "DuplexFlipEnum": "apps.printing.options.DuplexFlip",
+        "CounterDuplexFlipEnum": [("long", "long"), ("short", "short")],
         "EnrollmentStatusEnum": "apps.enrollment.models.EnrollmentStatus",
         "EnrollmentItemStatusEnum": "apps.enrollment.models.EnrollmentItemStatus",
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",

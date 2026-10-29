@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import Any, cast
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
@@ -26,6 +27,7 @@ from .models import (
     PrintConversion,
     PrintConversionStatus,
     PrintCoverOption,
+    Printer,
     PrintJob,
     PrintOrder,
     PrintOrderItem,
@@ -39,12 +41,15 @@ from .models import (
     SpiralWireSpec,
 )
 from .options import (
+    MAX_COUNTER_PAGE_RANGE_LENGTH,
     MAX_PAGE_RANGE_LENGTH,
     PAGES_PER_SHEET_CHOICES,
     DuplexFlip,
     NUpDirection,
     PrintOrientation,
+    normalize_page_range,
 )
+from .printers import HEARTBEAT_STATUSES, PrinterService, is_online, with_job_counts
 from .services import (
     COUNTER_STATUSES,
     CounterOrderService,
@@ -524,14 +529,48 @@ class CounterItemSerializer(serializers.Serializer):
     cover = serializers.CharField(max_length=32, required=False, allow_blank=True)
     pages_per_sheet = serializers.ChoiceField(choices=PAGES_PER_SHEET_CHOICES, default=1)
     binding_note = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    duplex_flip = serializers.ChoiceField(
+        choices=[("long", "long"), ("short", "short")],
+        required=False,
+        allow_blank=True,
+        help_text="Which edge a two-sided sheet turns on. Only for two-sided lines; empty keeps the long edge.",
+    )
+    page_range = serializers.CharField(
+        max_length=MAX_COUNTER_PAGE_RANGE_LENGTH,
+        required=False,
+        allow_blank=True,
+        help_text="Pages of the customer's document to print, like 1-5,8 (ascending, not overlapping).",
+    )
 
     def validate_binding(self, value):
         if value not in available_binding_codes():
             raise serializers.ValidationError("This binding type is not offered.")
         return value
 
+    def validate_page_range(self, value):
+        return normalize_page_range(value)[0]
+
     def validate(self, attrs):
-        if attrs.get("product"):
+        product = attrs.get("product")
+        sides = product.sides if product else attrs.get("sides")
+        flip = attrs.pop("duplex_flip", "")
+        if flip:
+            if sides != PrintSides.DOUBLE_SIDED:
+                raise serializers.ValidationError({"duplex_flip": "اتجاه القلب متاح للطباعة على وجهين فقط."})
+            attrs["duplex_flip"] = DuplexFlip.SHORT_EDGE if flip == "short" else DuplexFlip.LONG_EDGE
+        if attrs.get("page_range"):
+            if product:
+                raise serializers.ValidationError({"page_range": "نطاق الصفحات غير متاح للمنتجات الجاهزة."})
+            selected = normalize_page_range(attrs["page_range"])[1]
+            if "pages_count" in attrs and attrs["pages_count"] != selected:
+                raise serializers.ValidationError(
+                    {
+                        "pages_count": f"عدد الصفحات ({attrs['pages_count']}) لا يطابق نطاق الصفحات "
+                        f"({selected} صفحة). احذف أحدهما أو صحّح الرقم."
+                    }
+                )
+            attrs["pages_count"] = selected
+        if product:
             return attrs
         missing = {
             name: "This field is required."
@@ -697,6 +736,7 @@ class PrintQueueJobSerializer(serializers.ModelSerializer):
             "item_name",
             "status",
             "printer_name",
+            "printer",
             "sides_printed",
             "sheets",
             "options",
@@ -713,3 +753,87 @@ class PrintJobStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=["printing", "done", "failed"])
     printer_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     error = serializers.CharField(max_length=255, required=False, allow_blank=True)
+
+
+class PrinterSerializer(serializers.ModelSerializer):
+    online = serializers.SerializerMethodField()
+    jobs = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Printer
+        fields = [
+            "id",
+            "name",
+            "station",
+            "is_active",
+            "is_default",
+            "notes",
+            "last_seen_at",
+            "last_status",
+            "last_detail",
+            "online",
+            "jobs",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "last_seen_at",
+            "last_status",
+            "last_detail",
+            "online",
+            "jobs",
+            "created_at",
+            "updated_at",
+        ]
+        # The partial unique constraints (name, single default) are enforced in validate_name / create / update.
+        validators: list = []
+        extra_kwargs: dict = {"name": {"validators": []}, "is_default": {"validators": []}}
+
+    def get_online(self, obj: Printer) -> bool:
+        return is_online(obj)
+
+    def get_jobs(self, obj: Printer) -> dict:
+        # The list view annotates the counts; a single printer (create, heartbeat) counts them here.
+        row: Any = obj if hasattr(obj, "jobs_queued") else with_job_counts(Printer.objects.filter(pk=obj.pk)).get()
+        return {"queued": row.jobs_queued, "printing": row.jobs_printing, "failed_24h": row.jobs_failed_24h}
+
+    def validate_name(self, value):
+        value = value.strip()
+        clash = Printer.objects.filter(name=value, is_deleted=False)
+        if self.instance:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError("A printer with this name already exists.")
+        return value
+
+    def validate(self, attrs):
+        active = attrs.get("is_active", self.instance.is_active if self.instance else True)
+        default = attrs.get("is_default", self.instance.is_default if self.instance else False)
+        if default and not active:
+            if attrs.get("is_default"):
+                raise serializers.ValidationError({"is_default": "An inactive printer cannot be the default."})
+            attrs["is_default"] = False  # deactivating the default printer drops its default flag
+        return attrs
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            if validated_data.get("is_default"):
+                PrinterService.clear_other_defaults(None)
+            return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            if validated_data.get("is_default"):
+                PrinterService.clear_other_defaults(instance.pk)
+            return super().update(instance, validated_data)
+
+
+class PrinterHeartbeatSerializer(serializers.Serializer):
+    printer_name = serializers.CharField(max_length=100)
+    status = serializers.ChoiceField(choices=HEARTBEAT_STATUSES)
+    detail = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+
+class PrintJobCancelSerializer(serializers.Serializer):
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")

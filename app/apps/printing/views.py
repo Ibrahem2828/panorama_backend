@@ -13,6 +13,7 @@ from django.db.models.functions import Coalesce
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.utils.http import content_disposition_header
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
@@ -27,7 +28,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
-from apps.common.throttles import FileTicketRateThrottle, PrintConvertRateThrottle
+from apps.common.throttles import FileTicketRateThrottle, PrintAgentRateThrottle, PrintConvertRateThrottle
 from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
 from apps.lectures.document_pipeline import DocumentPipelineError, inspect_lecture_document
 
@@ -37,6 +38,7 @@ from .models import (
     PrintConversion,
     PrintConversionStatus,
     PrintCoverOption,
+    Printer,
     PrintItemAccessTicket,
     PrintJob,
     PrintOrder,
@@ -48,6 +50,7 @@ from .models import (
     SpiralWireSpec,
 )
 from .options import PAGES_PER_SHEET_CHOICES, DuplexFlip, NUpDirection, PrintOrientation
+from .printers import PrinterService, with_job_counts
 from .serializers import (
     CounterOrderCreateSerializer,
     CounterQuoteSerializer,
@@ -56,6 +59,9 @@ from .serializers import (
     PrintBindingPriceSerializer,
     PrintConvertUploadSerializer,
     PrintCoverOptionSerializer,
+    PrinterHeartbeatSerializer,
+    PrinterSerializer,
+    PrintJobCancelSerializer,
     PrintJobStatusSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
@@ -264,7 +270,35 @@ class DashboardPrintOrderViewSet(StandardReadOnlyModelViewSet):
     ordering_fields = ["created_at", "status", "priority", "total_price"]
     ordering = ["-created_at"]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("created_after", OpenApiTypes.DATE, description="Orders created on or after this date."),
+            OpenApiParameter("created_before", OpenApiTypes.DATE, description="Orders created on or before this date."),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def _date_param(self, name: str):
+        raw = self.request.query_params.get(name)
+        if not raw:
+            return None
+        parsed = parse_date(raw)
+        if parsed is None:
+            raise serializers.ValidationError({name: "Use an ISO date like 2026-10-29."})
+        return parsed
+
     def get_queryset(self):
+        queryset = self._base_queryset()
+        created_after = self._date_param("created_after")
+        created_before = self._date_param("created_before")
+        if created_after:
+            queryset = queryset.filter(created_at__date__gte=created_after)
+        if created_before:
+            queryset = queryset.filter(created_at__date__lte=created_before)
+        return queryset
+
+    def _base_queryset(self):
         return (
             PrintOrder.objects.filter(is_deleted=False)
             .select_related("user", "assigned_to", "created_by", "pickup_location")
@@ -692,3 +726,88 @@ class DashboardPrintJobFileView(APIView):
         response["Cache-Control"] = "private, no-store, max-age=0"
         response["X-Content-Type-Options"] = "nosniff"
         return response
+
+
+class DashboardPrintJobCancelView(APIView):
+    """``POST``: stop a queued or printing job (optional ``reason``). A finished job answers 409."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintJobCancelSerializer
+
+    @extend_schema(tags=["Dashboard"], request=PrintJobCancelSerializer, responses={200: PrintQueueJobSerializer})
+    def post(self, request, pk: int):
+        job = get_object_or_404(PrintJob, pk=pk, is_deleted=False)
+        serializer = PrintJobCancelSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        job = PrintJobService.cancel(job, request.user, reason=serializer.validated_data["reason"], request=request)
+        return success_response(
+            data=PrintQueueJobSerializer(job).data,
+            message="Print job cancelled",
+            request=request,
+            code="PRINT_JOB_CANCELLED",
+        )
+
+
+# ---- printers: the registry and the agent heartbeat ---------------------------------------------------------------------------------
+
+
+class DashboardPrinterViewSet(AuditedModelWriteMixin, StandardModelViewSet):
+    """The printers the silent-print agent drives, with whether each is online and its job counts."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrinterSerializer
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["is_active", "is_default"]
+    search_fields = ["name", "station", "notes"]
+    ordering_fields = ["name", "station", "last_seen_at"]
+    ordering = ["name"]
+    audit_create_action = audit_update_action = audit_delete_action = AuditAction.PRINTER_CHANGED
+
+    def get_queryset(self):
+        return with_job_counts(Printer.objects.filter(is_deleted=False))
+
+    def destroy(self, request, *args, **kwargs):
+        printer = self.get_object()
+        if not PrinterService.has_jobs(printer):
+            return super().destroy(request, *args, **kwargs)
+        # It has a history: keep the row (the jobs still point at it) and only take it out of use.
+        old = {"is_active": printer.is_active, "is_default": printer.is_default}
+        with transaction.atomic():
+            printer.is_active = False
+            printer.is_default = False
+            printer.save(update_fields=["is_active", "is_default", "updated_at"])
+            self._audit(
+                AuditAction.PRINTER_CHANGED,
+                printer,
+                old=old,
+                new={"is_active": False, "is_default": False},
+                changed=["is_active", "is_default"],
+            )
+        return success_response(
+            data=PrinterSerializer(self.get_queryset().get(pk=printer.pk), context={"request": request}).data,
+            message="Printer has jobs, so it was deactivated instead of deleted",
+            request=request,
+            code="PRINTER_DEACTIVATED",
+        )
+
+
+class PrintAgentHeartbeatView(APIView):
+    """``POST``: the silent-print agent says it is alive. Authenticated like every other call the agent makes."""
+
+    permission_classes = [CanManagePrinting]
+    throttle_classes = [PrintAgentRateThrottle]
+    serializer_class = PrinterHeartbeatSerializer
+
+    @extend_schema(tags=["Printing"], request=PrinterHeartbeatSerializer, responses={200: PrinterSerializer})
+    def post(self, request):
+        serializer = PrinterHeartbeatSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        printer = PrinterService.heartbeat(data["printer_name"], data["status"], data["detail"])
+        return success_response(
+            data=PrinterSerializer(printer, context={"request": request}).data,
+            message="Heartbeat recorded",
+            request=request,
+            code="PRINTER_HEARTBEAT",
+        )

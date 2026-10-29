@@ -8,6 +8,8 @@ from .views import (
     DashboardCoverOptionViewSet,
     DashboardPickupLocationViewSet,
     DashboardPrintAssignView,
+    DashboardPrinterViewSet,
+    DashboardPrintJobCancelView,
     DashboardPrintJobFileView,
     DashboardPrintJobRetryView,
     DashboardPrintJobStatusView,
@@ -20,6 +22,7 @@ from .views import (
     DashboardReadyProductViewSet,
     DashboardWireSpecViewSet,
     MyPrintOrderViewSet,
+    PrintAgentHeartbeatView,
     PrintConvertDetailView,
     PrintConvertView,
     PrintItemAccessTicketView,
@@ -39,6 +42,7 @@ router.register("printing/products", PrintProductViewSet, basename="print-produc
 router.register("dashboard/printing/covers", DashboardCoverOptionViewSet, basename="dashboard-print-covers")
 router.register("dashboard/printing/wire-specs", DashboardWireSpecViewSet, basename="dashboard-print-wire-specs")
 router.register("dashboard/printing/products", DashboardReadyProductViewSet, basename="dashboard-print-products")
+router.register("dashboard/printing/printers", DashboardPrinterViewSet, basename="dashboard-printers")
 router.register("dashboard/printing/print-jobs", DashboardPrintJobViewSet, basename="dashboard-print-jobs")
 router.register("dashboard/printing/orders", DashboardPrintOrderViewSet, basename="dashboard-print-orders")
 router.register(
@@ -67,6 +71,12 @@ urlpatterns = [
         DashboardPrintJobRetryView.as_view(),
         name="dashboard-print-job-retry",
     ),
+    path(
+        "dashboard/printing/print-jobs/<int:pk>/cancel/",
+        DashboardPrintJobCancelView.as_view(),
+        name="dashboard-print-job-cancel",
+    ),
+    path("printing/agent/heartbeat/", PrintAgentHeartbeatView.as_view(), name="print-agent-heartbeat"),
     path(
         "dashboard/printing/print-jobs/<int:pk>/file/",
         DashboardPrintJobFileView.as_view(),

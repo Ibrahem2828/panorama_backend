@@ -63,6 +63,8 @@ class AuditAction(models.TextChoices):
     PRINT_PRICING_CHANGED = "print_pricing_changed", "Print Pricing Changed"
     PRINT_JOB_CREATED = "print_job_created", "Print Job Created"
     PRINT_JOB_STATUS_CHANGED = "print_job_status_changed", "Print Job Status Changed"
+    PRINT_JOB_CANCELLED = "print_job_cancelled", "Print Job Cancelled"
+    PRINTER_CHANGED = "printer_changed", "Printer Changed"
     PRINT_FILE_PREPARED = "print_file_prepared", "Print-ready File Prepared"
     STATIONERY_SALE_RECORDED = "stationery_sale_recorded", "Stationery Sale Recorded"
     FINANCE_RATE_CHANGED = "finance_rate_changed", "Exchange Rate Changed"

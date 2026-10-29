@@ -38,7 +38,7 @@ from .models import (
     PrintSides,
     SpiralWireSpec,
 )
-from .options import parse_page_range, sheet_layout, sheets_per_copy
+from .options import DuplexFlip, parse_page_range, sheet_layout, sheets_per_copy
 
 
 class PrintPricingUnavailable(APIException):
@@ -744,6 +744,9 @@ class CounterOrderService:
                 cover=spec.get("cover") or "",
                 cover_price=Decimal(snapshot.get("cover_price_per_copy") or 0),
                 pages_per_sheet=item.get("pages_per_sheet") or 1,
+                duplex_flip=item.get("duplex_flip") or DuplexFlip.LONG_EDGE,
+                page_range=item.get("page_range") or "",
+                selected_pages=line["pages_count"],
                 binding_note=item.get("binding_note", "")[:120],
                 sheets_count=line["sheets_count"],
                 unit_price=line["unit_price"] or Decimal("0"),

@@ -163,6 +163,12 @@ class PrintConvertRateThrottle(FileTicketRateThrottle):
     scope = "print_convert"
 
 
+class PrintAgentRateThrottle(FileTicketRateThrottle):
+    """The silent-print agent heartbeat (a few per minute per printer)."""
+
+    scope = "print_agent"
+
+
 class ExternalChannelRateThrottle(SimpleRateThrottle):
     scope = "external_channel"
 
