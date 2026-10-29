@@ -225,6 +225,8 @@ ROUTE_KINDS: dict[str, str] = {
     # --- dashboard (capability-gated) ---------------------------------------------------------------------------------
     "dashboard/stats/": DASHBOARD,
     "dashboard/capabilities/": DASHBOARD,
+    "dashboard/students/": DASHBOARD,
+    "dashboard/students/summary/": DASHBOARD,
     "dashboard/users/": DASHBOARD,
     "dashboard/users/{pk}/": DASHBOARD,
     "dashboard/users/{pk}/activate/": DASHBOARD,

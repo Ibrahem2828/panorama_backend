@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .dashboard_students import DashboardStudentViewSet
 from .dashboard_views import (
     DashboardCapabilitiesView,
     DashboardStudentDetailView,
@@ -19,6 +20,7 @@ from .staff_views import (
 
 router = DefaultRouter()
 router.register("dashboard/users", DashboardUserViewSet, basename="dashboard-users")
+router.register("dashboard/students", DashboardStudentViewSet, basename="dashboard-students")
 router.register("dashboard/permission-templates", PermissionTemplateViewSet, basename="dashboard-permission-templates")
 
 urlpatterns = [
