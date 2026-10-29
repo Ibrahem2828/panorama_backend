@@ -122,6 +122,36 @@
                 }
             }
         },
+        "/api/v1/academic/current-term/": {
+            "get": {
+                "operationId": "v1_academic_current_term_retrieve",
+                "description": "``GET /academic/current-term/``: the semester the app shows first, plus \"the other\" semester.",
+                "tags": [
+                    "Academic"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/account/deletion/cancel/": {
             "post": {
                 "operationId": "v1_account_deletion_cancel_create",
@@ -1372,6 +1402,283 @@
                 }
             }
         },
+        "/api/v1/dashboard/academic/current-term/": {
+            "get": {
+                "operationId": "v1_dashboard_academic_current_term_retrieve",
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_academic_current_term_update",
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CurrentTermWriteRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CurrentTermWriteRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CurrentTermWriteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/academic/end-term/": {
+            "get": {
+                "operationId": "v1_dashboard_academic_end_term_retrieve",
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_academic_end_term_create",
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EndTermRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EndTermRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EndTermRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/academic/end-term/{rollover_id}/undo/": {
+            "post": {
+                "operationId": "v1_dashboard_academic_end_term_undo_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "rollover_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/academic/end-term/{rollover_id}/whatsapp-list/": {
+            "get": {
+                "operationId": "v1_dashboard_academic_end_term_whatsapp_list_retrieve",
+                "description": "JSON by default; ``?format=csv`` for a UTF-8 (BOM) spreadsheet. Phone numbers: every read is audited.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "csv",
+                                "json"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "rollover_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/academic/end-term/preview/": {
+            "post": {
+                "operationId": "v1_dashboard_academic_end_term_preview_create",
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/account-deletions/": {
             "get": {
                 "operationId": "v1_dashboard_account_deletions_list",
@@ -2002,6 +2309,7 @@
                                 "announcement_created",
                                 "announcement_deleted",
                                 "announcement_updated",
+                                "current_term_changed",
                                 "device_installation_registered",
                                 "device_installation_revoked",
                                 "enrollment_cancelled",
@@ -2023,6 +2331,7 @@
                                 "group_external_channel_opened",
                                 "group_external_channel_ticket_issued",
                                 "group_external_channel_updated",
+                                "group_members_exported",
                                 "group_membership_approved",
                                 "group_membership_blocked",
                                 "group_membership_rejected",
@@ -2063,14 +2372,19 @@
                                 "stationery_sale_recorded",
                                 "stock_movement_recorded",
                                 "student_profile_updated",
+                                "student_term_confirmed",
                                 "support_ticket_assigned",
                                 "support_ticket_created",
                                 "support_ticket_priority_changed",
                                 "support_ticket_status_changed",
+                                "term_ended",
+                                "term_rollover_undone",
+                                "term_whatsapp_list_exported",
                                 "user_invitation_accepted",
                                 "user_invitation_revoked",
                                 "user_invited",
                                 "user_permission_override_changed",
+                                "user_profile_updated",
                                 "user_registered",
                                 "user_role_changed",
                                 "user_sessions_ended",
@@ -2082,7 +2396,7 @@
                                 "verification_submitted"
                             ]
                         },
-                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
+                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
                     },
                     {
                         "in": "query",
@@ -6675,10 +6989,11 @@
                                 "blocked",
                                 "left",
                                 "pending",
-                                "rejected"
+                                "rejected",
+                                "term_ended"
                             ]
                         },
-                        "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left"
+                        "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left\n* `term_ended` - Term ended"
                     }
                 ],
                 "tags": [
@@ -6778,10 +7093,11 @@
                                 "blocked",
                                 "left",
                                 "pending",
-                                "rejected"
+                                "rejected",
+                                "term_ended"
                             ]
                         },
-                        "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left"
+                        "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left\n* `term_ended` - Term ended"
                     }
                 ],
                 "tags": [
@@ -6991,6 +7307,74 @@
                 "responses": {
                     "204": {
                         "description": "No response body"
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/groups/{id}/members-export/": {
+            "get": {
+                "operationId": "v1_dashboard_groups_members_export_retrieve",
+                "description": "``GET dashboard/groups/<id>/members-export/``: approved members with phone numbers (``?status=all`` for everyone).\n\nJSON by default, ``?format=csv`` for a UTF-8 (BOM) spreadsheet. Handing out phone numbers is audited.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "format",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "csv",
+                                "json"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "all",
+                                "approved"
+                            ]
+                        }
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
                     }
                 }
             }
@@ -14746,6 +15130,46 @@
                 }
             }
         },
+        "/api/v1/dashboard/users/{user_id}/student-detail/": {
+            "get": {
+                "operationId": "v1_dashboard_users_student_detail_retrieve",
+                "description": "``GET dashboard/users/<id>/student-detail/``: everything staff need about one student on a single screen.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/users/invite/": {
             "post": {
                 "operationId": "v1_dashboard_users_invite_create",
@@ -20430,6 +20854,55 @@
                 }
             }
         },
+        "/api/v1/students/me/term-confirmation/": {
+            "post": {
+                "operationId": "v1_students_me_term_confirmation_create",
+                "description": "``POST students/me/term-confirmation/``: the student's own answer to \"did you move to the next year?\".",
+                "tags": [
+                    "Students"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TermConfirmationRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TermConfirmationRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TermConfirmationRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StudentAcademicProfile"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/students/student-number/parse/": {
             "get": {
                 "operationId": "v1_students_student_number_parse_retrieve",
@@ -21983,10 +22456,17 @@
                     "academic_entity_deleted",
                     "policy_version_published",
                     "policy_version_updated",
-                    "policy_version_unpublished"
+                    "policy_version_unpublished",
+                    "current_term_changed",
+                    "term_ended",
+                    "term_rollover_undone",
+                    "term_whatsapp_list_exported",
+                    "student_term_confirmed",
+                    "group_members_exported",
+                    "user_profile_updated"
                 ],
                 "type": "string",
-                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished"
+                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
             },
             "BlankEnum": {
                 "enum": [
@@ -22460,6 +22940,23 @@
                 },
                 "required": [
                     "items"
+                ]
+            },
+            "CurrentTermWriteRequest": {
+                "type": "object",
+                "properties": {
+                    "semester": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "label": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "semester"
                 ]
             },
             "DashboardAccountDeletion": {
@@ -24056,6 +24553,10 @@
                         "readOnly": true,
                         "nullable": true
                     },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
                     "email": {
                         "type": "string",
                         "format": "email",
@@ -24136,6 +24637,10 @@
                         "minLength": 1,
                         "maxLength": 255
                     },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 120
+                    },
                     "role": {
                         "$ref": "#/components/schemas/UserRoleEnum"
                     }
@@ -24154,6 +24659,10 @@
                     },
                     "role": {
                         "$ref": "#/components/schemas/UserRoleEnum"
+                    },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 120
                     }
                 },
                 "required": [
@@ -24395,6 +24904,31 @@
                 ],
                 "type": "string",
                 "description": "* `allow` - Allow\n* `deny` - Deny"
+            },
+            "EndTermRequest": {
+                "type": "object",
+                "properties": {
+                    "confirm": {
+                        "type": "boolean"
+                    },
+                    "next_semester": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "label": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 100
+                    },
+                    "disable_whatsapp_links": {
+                        "type": "boolean",
+                        "default": true
+                    }
+                },
+                "required": [
+                    "confirm",
+                    "next_semester"
+                ]
             },
             "EnrollmentCreateRequest": {
                 "type": "object",
@@ -25602,10 +26136,11 @@
                     "approved",
                     "rejected",
                     "blocked",
-                    "left"
+                    "left",
+                    "term_ended"
                 ],
                 "type": "string",
-                "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left"
+                "description": "* `pending` - Pending\n* `approved` - Approved\n* `rejected` - Rejected\n* `blocked` - Blocked\n* `left` - Left\n* `term_ended` - Term ended"
             },
             "GroupSendMessagesPermissionEnum": {
                 "enum": [
@@ -26524,6 +27059,9 @@
                     "id": {
                         "type": "integer"
                     },
+                    "user_id": {
+                        "type": "integer"
+                    },
                     "full_name": {
                         "type": "string"
                     },
@@ -26534,6 +27072,9 @@
                     "is_staff": {
                         "type": "boolean"
                     },
+                    "job_title": {
+                        "type": "string"
+                    },
                     "real_name": {
                         "type": "string"
                     }
@@ -26542,7 +27083,9 @@
                     "full_name",
                     "id",
                     "is_staff",
-                    "title"
+                    "job_title",
+                    "title",
+                    "user_id"
                 ]
             },
             "MessageTypeEnum": {
@@ -29072,6 +29615,10 @@
                     },
                     "role": {
                         "$ref": "#/components/schemas/UserRoleEnum"
+                    },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 120
                     }
                 }
             },
@@ -30192,6 +30739,10 @@
                         "type": "string",
                         "nullable": true,
                         "maxLength": 150
+                    },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 120
                     }
                 }
             },
@@ -32845,6 +33396,15 @@
                         "readOnly": true,
                         "nullable": true
                     },
+                    "needs_term_confirmation": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "current_term": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -32859,6 +33419,7 @@
                 "required": [
                     "academic_year_detail",
                     "created_at",
+                    "current_term",
                     "enrollment_year_code",
                     "enrollment_year_full",
                     "faculty_code_from_student_number",
@@ -32866,6 +33427,7 @@
                     "has_card_image",
                     "id",
                     "major_detail",
+                    "needs_term_confirmation",
                     "semester_detail",
                     "student_serial_number",
                     "university_detail",
@@ -33064,12 +33626,17 @@
                     "semester_name": {
                         "type": "string",
                         "readOnly": true
+                    },
+                    "in_current_term": {
+                        "type": "boolean",
+                        "readOnly": true
                     }
                 },
                 "required": [
                     "academic_year_name",
                     "code",
                     "id",
+                    "in_current_term",
                     "name",
                     "semester_name"
                 ]
@@ -33356,6 +33923,27 @@
                 "type": "string",
                 "description": "* `all` - All\n* `normal_users` - Normal Users\n* `students` - Students\n* `verified_students` - Verified Students\n* `admins` - Admins"
             },
+            "TermConfirmationRequest": {
+                "type": "object",
+                "properties": {
+                    "promoted": {
+                        "type": "boolean"
+                    },
+                    "academic_year": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    },
+                    "semester": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "promoted"
+                ]
+            },
             "TermsVersion": {
                 "type": "object",
                 "properties": {
@@ -33542,6 +34130,10 @@
                         "type": "string",
                         "nullable": true,
                         "maxLength": 150
+                    },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 120
                     },
                     "email": {
                         "type": "string",
