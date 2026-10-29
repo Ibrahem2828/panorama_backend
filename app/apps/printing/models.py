@@ -455,6 +455,36 @@ class PrintJobStatus(models.TextChoices):
     PRINTING = "printing", "Printing"
     DONE = "done", "Done"
     FAILED = "failed", "Failed"
+    CANCELLED = "cancelled", "Cancelled"
+
+
+class Printer(BaseModel):
+    """A physical printer the silent-print agent drives; the agent's heartbeat keeps ``last_seen_at`` fresh."""
+
+    name = models.CharField(max_length=100)
+    station = models.CharField(max_length=100, blank=True, help_text="Where it stands, e.g. the shop or location.")
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False)
+    notes = models.CharField(max_length=500, blank=True)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    last_status = models.CharField(max_length=16, blank=True)
+    last_detail = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name"], condition=models.Q(is_deleted=False), name="printing_printer_name_unique"
+            ),
+            models.UniqueConstraint(
+                fields=["is_default"],
+                condition=models.Q(is_default=True, is_deleted=False),
+                name="printing_printer_single_default",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
 
 
 class PrintJob(BaseModel):
@@ -467,6 +497,7 @@ class PrintJob(BaseModel):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="print_jobs"
     )
     printer_name = models.CharField(max_length=150, blank=True)
+    printer = models.ForeignKey(Printer, null=True, blank=True, on_delete=models.SET_NULL, related_name="jobs")
     sides_printed = models.PositiveIntegerField(default=0, help_text="Faces in the print-ready file.")
     sheets = models.PositiveIntegerField(default=0)
     options = models.JSONField(default=dict, blank=True)

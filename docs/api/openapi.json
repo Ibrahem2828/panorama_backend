@@ -2362,6 +2362,7 @@
                                 "policy_version_unpublished",
                                 "policy_version_updated",
                                 "print_file_prepared",
+                                "print_job_cancelled",
                                 "print_job_created",
                                 "print_job_status_changed",
                                 "print_order_assigned",
@@ -2369,6 +2370,7 @@
                                 "print_order_note_updated",
                                 "print_order_status_changed",
                                 "print_pricing_changed",
+                                "printer_changed",
                                 "stationery_sale_recorded",
                                 "stock_movement_recorded",
                                 "student_profile_updated",
@@ -2396,7 +2398,7 @@
                                 "verification_submitted"
                             ]
                         },
-                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
+                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
                     },
                     {
                         "in": "query",
@@ -9856,6 +9858,24 @@
                         }
                     },
                     {
+                        "in": "query",
+                        "name": "created_after",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "Orders created on or after this date."
+                    },
+                    {
+                        "in": "query",
+                        "name": "created_before",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "description": "Orders created on or before this date."
+                    },
+                    {
                         "name": "ordering",
                         "required": false,
                         "in": "query",
@@ -11054,13 +11074,14 @@
                         "schema": {
                             "type": "string",
                             "enum": [
+                                "cancelled",
                                 "done",
                                 "failed",
                                 "printing",
                                 "queued"
                             ]
                         },
-                        "description": "* `queued` - Queued\n* `printing` - Printing\n* `done` - Done\n* `failed` - Failed"
+                        "description": "* `queued` - Queued\n* `printing` - Printing\n* `done` - Done\n* `failed` - Failed\n* `cancelled` - Cancelled"
                     }
                 ],
                 "tags": [
@@ -11106,6 +11127,64 @@
                 "tags": [
                     "v1"
                 ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintQueueJob"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/print-jobs/{id}/cancel/": {
+            "post": {
+                "operationId": "v1_dashboard_printing_print_jobs_cancel_create",
+                "description": "``POST``: stop a queued or printing job (optional ``reason``). A finished job answers 409.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintJobCancelRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintJobCancelRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintJobCancelRequest"
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "jwtAuth": []
@@ -11251,6 +11330,305 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/printers/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_printers_list",
+                "description": "The printers the silent-print agent drives, with whether each is online and its job counts.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "is_active",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "is_default",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Printer"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_printers_create",
+                "description": "The printers the silent-print agent drives, with whether each is online and its job counts.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Printer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/printers/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_printers_retrieve",
+                "description": "The printers the silent-print agent drives, with whether each is online and its job counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا printer.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Printer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_printers_update",
+                "description": "The printers the silent-print agent drives, with whether each is online and its job counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا printer.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Printer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_printers_partial_update",
+                "description": "The printers the silent-print agent drives, with whether each is online and its job counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا printer.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrinterRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrinterRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrinterRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Printer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_printers_destroy",
+                "description": "The printers the silent-print agent drives, with whether each is online and its job counts.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا printer.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
                     }
                 }
             }
@@ -19928,6 +20306,55 @@
                 }
             }
         },
+        "/api/v1/printing/agent/heartbeat/": {
+            "post": {
+                "operationId": "v1_printing_agent_heartbeat_create",
+                "description": "``POST``: the silent-print agent says it is alive. Authenticated like every other call the agent makes.",
+                "tags": [
+                    "Printing"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterHeartbeatRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterHeartbeatRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrinterHeartbeatRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Printer"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/printing/convert/": {
             "post": {
                 "operationId": "v1_printing_convert_create",
@@ -22424,6 +22851,8 @@
                     "print_pricing_changed",
                     "print_job_created",
                     "print_job_status_changed",
+                    "print_job_cancelled",
+                    "printer_changed",
                     "print_file_prepared",
                     "stationery_sale_recorded",
                     "finance_rate_changed",
@@ -22466,7 +22895,7 @@
                     "user_profile_updated"
                 ],
                 "type": "string",
-                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
+                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
             },
             "BlankEnum": {
                 "enum": [
@@ -22717,6 +23146,14 @@
                 "type": "string",
                 "description": "* `app` - Whole App\n* `onboarding` - Onboarding\n* `registration` - Registration\n* `login` - Login\n* `verification` - Student Verification\n* `home` - Home\n* `subject` - Subject\n* `group` - Group\n* `chat` - Chat\n* `file` - File Viewer\n* `printing` - Printing\n* `notification` - Notifications\n* `support` - Support\n* `profile` - Profile\n* `search` - Search\n* `announcement` - Announcement\n* `settings` - Settings\n* `external_channel` - External Channel\n* `other` - Other"
             },
+            "CounterDuplexFlipEnum": {
+                "enum": [
+                    "long",
+                    "short"
+                ],
+                "type": "string",
+                "description": "* `long` - long\n* `short` - short"
+            },
             "CounterItem": {
                 "type": "object",
                 "description": "One line typed in at the counter: there is no file, only what is being printed.",
@@ -22771,6 +23208,22 @@
                     "binding_note": {
                         "type": "string",
                         "maxLength": 120
+                    },
+                    "duplex_flip": {
+                        "description": "Which edge a two-sided sheet turns on. Only for two-sided lines; empty keeps the long edge.\n\n* `long` - long\n* `short` - short",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CounterDuplexFlipEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "page_range": {
+                        "type": "string",
+                        "description": "Pages of the customer's document to print, like 1-5,8 (ascending, not overlapping).",
+                        "maxLength": 200
                     }
                 },
                 "required": [
@@ -22832,6 +23285,22 @@
                     "binding_note": {
                         "type": "string",
                         "maxLength": 120
+                    },
+                    "duplex_flip": {
+                        "description": "Which edge a two-sided sheet turns on. Only for two-sided lines; empty keeps the long edge.\n\n* `long` - long\n* `short` - short",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CounterDuplexFlipEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/BlankEnum"
+                            }
+                        ]
+                    },
+                    "page_range": {
+                        "type": "string",
+                        "description": "Pages of the customer's document to print, like 1-5,8 (ascending, not overlapping).",
+                        "maxLength": 200
                     }
                 },
                 "required": [
@@ -30428,6 +30897,31 @@
                     }
                 }
             },
+            "PatchedPrinterRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "station": {
+                        "type": "string",
+                        "description": "Where it stands, e.g. the shop or location.",
+                        "maxLength": 100
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                }
+            },
             "PatchedPrivacyPolicyVersionRequest": {
                 "type": "object",
                 "properties": {
@@ -31257,6 +31751,16 @@
                     "total_price"
                 ]
             },
+            "PrintJobCancelRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 255
+                    }
+                }
+            },
             "PrintJobStatusStatusEnum": {
                 "enum": [
                     "printing",
@@ -31922,6 +32426,11 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "printer": {
+                        "type": "integer",
+                        "readOnly": true,
+                        "nullable": true
+                    },
                     "sides_printed": {
                         "type": "integer",
                         "readOnly": true,
@@ -31970,6 +32479,7 @@
                     "item_name",
                     "options",
                     "order_id",
+                    "printer",
                     "printer_name",
                     "sheets",
                     "sides_printed",
@@ -31982,10 +32492,11 @@
                     "queued",
                     "printing",
                     "done",
-                    "failed"
+                    "failed",
+                    "cancelled"
                 ],
                 "type": "string",
-                "description": "* `queued` - Queued\n* `printing` - Printing\n* `done` - Done\n* `failed` - Failed"
+                "description": "* `queued` - Queued\n* `printing` - Printing\n* `done` - Done\n* `failed` - Failed\n* `cancelled` - Cancelled"
             },
             "PrintQuote": {
                 "type": "object",
@@ -32029,6 +32540,137 @@
                 },
                 "required": [
                     "items"
+                ]
+            },
+            "Printer": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "station": {
+                        "type": "string",
+                        "description": "Where it stands, e.g. the shop or location.",
+                        "maxLength": 100
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "last_seen_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "last_status": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "last_detail": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "online": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "jobs": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "created_at",
+                    "id",
+                    "jobs",
+                    "last_detail",
+                    "last_seen_at",
+                    "last_status",
+                    "name",
+                    "online",
+                    "updated_at"
+                ]
+            },
+            "PrinterHeartbeatRequest": {
+                "type": "object",
+                "properties": {
+                    "printer_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/PrinterHeartbeatStatusEnum"
+                    },
+                    "detail": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "printer_name",
+                    "status"
+                ]
+            },
+            "PrinterHeartbeatStatusEnum": {
+                "enum": [
+                    "idle",
+                    "busy",
+                    "error"
+                ],
+                "type": "string",
+                "description": "* `idle` - idle\n* `busy` - busy\n* `error` - error"
+            },
+            "PrinterRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "station": {
+                        "type": "string",
+                        "description": "Where it stands, e.g. the shop or location.",
+                        "maxLength": 100
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "name"
                 ]
             },
             "PrivacyPolicyVersion": {

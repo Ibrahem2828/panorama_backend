@@ -1453,6 +1453,7 @@ paths:
           - policy_version_unpublished
           - policy_version_updated
           - print_file_prepared
+          - print_job_cancelled
           - print_job_created
           - print_job_status_changed
           - print_order_assigned
@@ -1460,6 +1461,7 @@ paths:
           - print_order_note_updated
           - print_order_status_changed
           - print_pricing_changed
+          - printer_changed
           - stationery_sale_recorded
           - stock_movement_recorded
           - student_profile_updated
@@ -1542,6 +1544,8 @@ paths:
           * `print_pricing_changed` - Print Pricing Changed
           * `print_job_created` - Print Job Created
           * `print_job_status_changed` - Print Job Status Changed
+          * `print_job_cancelled` - Print Job Cancelled
+          * `printer_changed` - Printer Changed
           * `print_file_prepared` - Print-ready File Prepared
           * `stationery_sale_recorded` - Stationery Sale Recorded
           * `finance_rate_changed` - Exchange Rate Changed
@@ -6118,6 +6122,18 @@ paths:
         name: assigned_to
         schema:
           type: integer
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+        description: Orders created on or after this date.
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+        description: Orders created on or before this date.
       - name: ordering
         required: false
         in: query
@@ -6869,6 +6885,7 @@ paths:
         schema:
           type: string
           enum:
+          - cancelled
           - done
           - failed
           - printing
@@ -6878,6 +6895,7 @@ paths:
           * `printing` - Printing
           * `done` - Done
           * `failed` - Failed
+          * `cancelled` - Cancelled
       tags:
       - v1
       security:
@@ -6904,6 +6922,40 @@ paths:
         required: true
       tags:
       - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrintQueueJob'
+          description: ''
+  /api/v1/dashboard/printing/print-jobs/{id}/cancel/:
+    post:
+      operationId: v1_dashboard_printing_print_jobs_cancel_create
+      description: '``POST``: stop a queued or printing job (optional ``reason``).
+        A finished job answers 409.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrintJobCancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrintJobCancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrintJobCancelRequest'
       security:
       - jwtAuth: []
       - bearerAuth: []
@@ -6986,6 +7038,186 @@ paths:
               schema:
                 $ref: '#/components/schemas/PrintQueueJob'
           description: ''
+  /api/v1/dashboard/printing/printers/:
+    get:
+      operationId: v1_dashboard_printing_printers_list
+      description: The printers the silent-print agent drives, with whether each is
+        online and its job counts.
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_default
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Printer'
+          description: ''
+    post:
+      operationId: v1_dashboard_printing_printers_create
+      description: The printers the silent-print agent drives, with whether each is
+        online and its job counts.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrinterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrinterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrinterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+          description: ''
+  /api/v1/dashboard/printing/printers/{id}/:
+    get:
+      operationId: v1_dashboard_printing_printers_retrieve
+      description: The printers the silent-print agent drives, with whether each is
+        online and its job counts.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا printer.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+          description: ''
+    put:
+      operationId: v1_dashboard_printing_printers_update
+      description: The printers the silent-print agent drives, with whether each is
+        online and its job counts.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا printer.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrinterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrinterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrinterRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+          description: ''
+    patch:
+      operationId: v1_dashboard_printing_printers_partial_update
+      description: The printers the silent-print agent drives, with whether each is
+        online and its job counts.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا printer.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPrinterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPrinterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPrinterRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+          description: ''
+    delete:
+      operationId: v1_dashboard_printing_printers_destroy
+      description: The printers the silent-print agent drives, with whether each is
+        online and its job counts.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا printer.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/dashboard/printing/products/:
     get:
       operationId: v1_dashboard_printing_products_list
@@ -12319,6 +12551,35 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/printing/agent/heartbeat/:
+    post:
+      operationId: v1_printing_agent_heartbeat_create
+      description: '``POST``: the silent-print agent says it is alive. Authenticated
+        like every other call the agent makes.'
+      tags:
+      - Printing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrinterHeartbeatRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrinterHeartbeatRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrinterHeartbeatRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Printer'
+          description: ''
   /api/v1/printing/convert/:
     post:
       operationId: v1_printing_convert_create
@@ -14008,6 +14269,8 @@ components:
       - print_pricing_changed
       - print_job_created
       - print_job_status_changed
+      - print_job_cancelled
+      - printer_changed
       - print_file_prepared
       - stationery_sale_recorded
       - finance_rate_changed
@@ -14106,6 +14369,8 @@ components:
         * `print_pricing_changed` - Print Pricing Changed
         * `print_job_created` - Print Job Created
         * `print_job_status_changed` - Print Job Status Changed
+        * `print_job_cancelled` - Print Job Cancelled
+        * `printer_changed` - Printer Changed
         * `print_file_prepared` - Print-ready File Prepared
         * `stationery_sale_recorded` - Stationery Sale Recorded
         * `finance_rate_changed` - Exchange Rate Changed
@@ -14383,6 +14648,14 @@ components:
         * `settings` - Settings
         * `external_channel` - External Channel
         * `other` - Other
+    CounterDuplexFlipEnum:
+      enum:
+      - long
+      - short
+      type: string
+      description: |-
+        * `long` - long
+        * `short` - short
     CounterItem:
       type: object
       description: 'One line typed in at the counter: there is no file, only what
@@ -14426,6 +14699,20 @@ components:
         binding_note:
           type: string
           maxLength: 120
+        duplex_flip:
+          description: |-
+            Which edge a two-sided sheet turns on. Only for two-sided lines; empty keeps the long edge.
+
+            * `long` - long
+            * `short` - short
+          oneOf:
+          - $ref: '#/components/schemas/CounterDuplexFlipEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        page_range:
+          type: string
+          description: Pages of the customer's document to print, like 1-5,8 (ascending,
+            not overlapping).
+          maxLength: 200
       required:
       - copies
     CounterItemRequest:
@@ -14472,6 +14759,20 @@ components:
         binding_note:
           type: string
           maxLength: 120
+        duplex_flip:
+          description: |-
+            Which edge a two-sided sheet turns on. Only for two-sided lines; empty keeps the long edge.
+
+            * `long` - long
+            * `short` - short
+          oneOf:
+          - $ref: '#/components/schemas/CounterDuplexFlipEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        page_range:
+          type: string
+          description: Pages of the customer's document to print, like 1-5,8 (ascending,
+            not overlapping).
+          maxLength: 200
       required:
       - copies
     CounterOrderCreateRequest:
@@ -20216,6 +20517,24 @@ components:
         rejected_reason:
           type: string
           maxLength: 2000
+    PatchedPrinterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        station:
+          type: string
+          description: Where it stands, e.g. the shop or location.
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_default:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 500
     PatchedPrivacyPolicyVersionRequest:
       type: object
       properties:
@@ -20846,6 +21165,13 @@ components:
       - paid
       - sheets_count
       - total_price
+    PrintJobCancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 255
     PrintJobStatusStatusEnum:
       enum:
       - printing
@@ -21341,6 +21667,10 @@ components:
         printer_name:
           type: string
           readOnly: true
+        printer:
+          type: integer
+          readOnly: true
+          nullable: true
         sides_printed:
           type: integer
           readOnly: true
@@ -21380,6 +21710,7 @@ components:
       - item_name
       - options
       - order_id
+      - printer
       - printer_name
       - sheets
       - sides_printed
@@ -21391,12 +21722,14 @@ components:
       - printing
       - done
       - failed
+      - cancelled
       type: string
       description: |-
         * `queued` - Queued
         * `printing` - Printing
         * `done` - Done
         * `failed` - Failed
+        * `cancelled` - Cancelled
     PrintQuote:
       type: object
       properties:
@@ -21431,6 +21764,108 @@ components:
             * `USD` - US Dollar
       required:
       - items
+    Printer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        station:
+          type: string
+          description: Where it stands, e.g. the shop or location.
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_default:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 500
+        last_seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_status:
+          type: string
+          readOnly: true
+        last_detail:
+          type: string
+          readOnly: true
+        online:
+          type: boolean
+          readOnly: true
+        jobs:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - jobs
+      - last_detail
+      - last_seen_at
+      - last_status
+      - name
+      - online
+      - updated_at
+    PrinterHeartbeatRequest:
+      type: object
+      properties:
+        printer_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/PrinterHeartbeatStatusEnum'
+        detail:
+          type: string
+          default: ''
+          maxLength: 255
+      required:
+      - printer_name
+      - status
+    PrinterHeartbeatStatusEnum:
+      enum:
+      - idle
+      - busy
+      - error
+      type: string
+      description: |-
+        * `idle` - idle
+        * `busy` - busy
+        * `error` - error
+    PrinterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        station:
+          type: string
+          description: Where it stands, e.g. the shop or location.
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_default:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 500
+      required:
+      - name
     PrivacyPolicyVersion:
       type: object
       properties:

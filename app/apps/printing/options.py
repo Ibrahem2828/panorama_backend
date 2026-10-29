@@ -15,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 
 PAGES_PER_SHEET_CHOICES = (1, 2, 4, 6, 9, 16)
 MAX_PAGE_RANGE_LENGTH = 255
+MAX_COUNTER_PAGE_RANGE_LENGTH = 200
 
 
 class PrintOrientation(models.TextChoices):
@@ -74,6 +75,38 @@ def parse_page_range(text: str | None, total_pages: int) -> list[int]:
     if not pages:
         raise ValidationError({"page_range": "Write the pages like 1-5, 8."})
     return pages
+
+
+_STRICT_RANGE = re.compile(r"^\d+(-\d+)?(,\d+(-\d+)?)*$")
+
+
+def normalize_page_range(text: str | None) -> tuple[str, int]:
+    """Validate a typed range (digits, commas and hyphens; ascending and not overlapping) and count its pages.
+
+    Returns the cleaned text (``"1-5,8"``) and how many pages it selects. An empty text returns ``("", 0)``. It does not know
+    the document (a counter line has no file), so pages beyond the end are not checked here.
+    """
+
+    cleaned = (text or "").replace(" ", "").replace("،", ",")
+    if not cleaned:
+        return "", 0
+    if len(cleaned) > MAX_COUNTER_PAGE_RANGE_LENGTH:
+        raise ValidationError({"page_range": "نطاق الصفحات طويل جداً."})
+    if not _STRICT_RANGE.match(cleaned):
+        raise ValidationError({"page_range": "اكتب الصفحات بالأرقام والفواصل والشرطات فقط، مثل 1-5,8."})
+    count = 0
+    previous_end = 0
+    for part in cleaned.split(","):
+        first_text, _, last_text = part.partition("-")
+        first = int(first_text)
+        last = int(last_text) if last_text else first
+        if first < 1 or last < first:
+            raise ValidationError({"page_range": "يجب أن يبدأ كل نطاق من صفحة أصغر وينتهي بصفحة أكبر (ابتداءً من 1)."})
+        if first <= previous_end:
+            raise ValidationError({"page_range": "يجب أن تكون النطاقات تصاعدية وغير متداخلة."})
+        count += last - first + 1
+        previous_end = last
+    return cleaned, count
 
 
 @dataclass(frozen=True)
