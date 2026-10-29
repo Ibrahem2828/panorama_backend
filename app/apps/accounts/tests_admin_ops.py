@@ -137,16 +137,22 @@ def test_dashboard_users_list_detail_and_patch_include_job_title(world):
 def test_dashboard_patch_job_title_denied_without_users_manage_or_above_rank(world):
     w = world
     assert (
-        _client(w["printer"]).patch(f"/api/v1/dashboard/users/{w['support'].pk}/", {"job_title": "x"}, format="json").status_code
+        _client(w["printer"])
+        .patch(f"/api/v1/dashboard/users/{w['support'].pk}/", {"job_title": "x"}, format="json")
+        .status_code
         == 403
     )
     assert (
-        _client(w["student"]).patch(f"/api/v1/dashboard/users/{w['support'].pk}/", {"job_title": "x"}, format="json").status_code
+        _client(w["student"])
+        .patch(f"/api/v1/dashboard/users/{w['support'].pk}/", {"job_title": "x"}, format="json")
+        .status_code
         == 403
     )
     # an admin cannot edit IT support (higher rank)
     assert (
-        _client(w["admin"]).patch(f"/api/v1/dashboard/users/{w['it'].pk}/", {"job_title": "x"}, format="json").status_code
+        _client(w["admin"])
+        .patch(f"/api/v1/dashboard/users/{w['it'].pk}/", {"job_title": "x"}, format="json")
+        .status_code
         == 403
     )
 
@@ -375,7 +381,9 @@ def test_student_detail_open_to_a_reviewer_who_only_has_verification_review(worl
     from apps.accounts.models import UserPermissionOverride
 
     w = world
-    UserPermissionOverride.objects.create(user=w["printer"], permission_code=Capability.VERIFICATION_REVIEW, effect="allow")
+    UserPermissionOverride.objects.create(
+        user=w["printer"], permission_code=Capability.VERIFICATION_REVIEW, effect="allow"
+    )
     assert _client(w["printer"]).get(f"/api/v1/dashboard/users/{w['student'].pk}/student-detail/").status_code == 200
 
 

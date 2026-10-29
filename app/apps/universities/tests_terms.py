@@ -80,8 +80,12 @@ def world(db, settings):
     printer = _user("print@t.test", "+963900000003", UserRole.PRINT_STAFF, "Printer")
     subject_a = Subject.objects.create(faculty=faculty, academic_year=year, semester=sem1, name="Anatomy", code="A1")
     subject_b = Subject.objects.create(faculty=faculty, academic_year=year, semester=sem2, name="Biology", code="B1")
-    ga = Group.objects.create(name="Anatomy group", university=uni, faculty=faculty, subject=subject_a, created_by=admin)
-    gb = Group.objects.create(name="Biology group", university=uni, faculty=faculty, subject=subject_b, created_by=admin)
+    ga = Group.objects.create(
+        name="Anatomy group", university=uni, faculty=faculty, subject=subject_a, created_by=admin
+    )
+    gb = Group.objects.create(
+        name="Biology group", university=uni, faculty=faculty, subject=subject_b, created_by=admin
+    )
     community = Group.objects.create(name="Faculty community", university=uni, faculty=faculty, created_by=admin)
     ExternalChannelService.set_whatsapp_channel(ga, INVITE, admin)
     s1, s2, s3 = (_student({"uni": uni, "faculty": faculty, "year": year, "sem1": sem1}, n) for n in (1, 2, 3))
@@ -142,7 +146,9 @@ def test_current_term_falls_back_to_first_semester_then_follows_the_setting(worl
     assert data["term_started_at"] is None and data["term_label"] == ""
 
     response = _client(w["admin"]).put(
-        "/api/v1/dashboard/academic/current-term/", {"semester": w["sem2"].pk, "label": "  Spring  2027 "}, format="json"
+        "/api/v1/dashboard/academic/current-term/",
+        {"semester": w["sem2"].pk, "label": "  Spring  2027 "},
+        format="json",
     )
     assert response.status_code == 200
     data = student.get("/api/v1/academic/current-term/").data["data"]
@@ -546,8 +552,12 @@ def test_a_dashboard_approval_also_lifts_term_ended(populated):
 
 def test_subject_search_covers_any_term_and_lists_the_current_one_first(world):
     w = world
-    Subject.objects.create(faculty=w["faculty"], academic_year=w["year"], semester=w["sem2"], name="Anatomy II", code="A2")
-    Subject.objects.create(faculty=w["faculty"], academic_year=w["year"], semester=w["sem1"], name="Anatomy Lab", code="A3")
+    Subject.objects.create(
+        faculty=w["faculty"], academic_year=w["year"], semester=w["sem2"], name="Anatomy II", code="A2"
+    )
+    Subject.objects.create(
+        faculty=w["faculty"], academic_year=w["year"], semester=w["sem1"], name="Anatomy Lab", code="A3"
+    )
     client = _client(w["s1"])
     rows = client.get("/api/v1/enrollment/subjects/?q=Anatomy").data["data"]
     assert [(r["name"], r["in_current_term"]) for r in rows] == [
@@ -565,7 +575,9 @@ def test_subject_search_covers_any_term_and_lists_the_current_one_first(world):
     ]
     # a student of year 1 / semester 1 can still find and enrol in a later year's subject
     year3 = AcademicYear.objects.create(name="Year 3", order=3)
-    Subject.objects.create(faculty=w["faculty"], academic_year=year3, semester=w["sem1"], name="Anatomy Advanced", code="A4")
+    Subject.objects.create(
+        faculty=w["faculty"], academic_year=year3, semester=w["sem1"], name="Anatomy Advanced", code="A4"
+    )
     names = [r["name"] for r in client.get("/api/v1/enrollment/subjects/?q=Advanced").data["data"]]
     assert names == ["Anatomy Advanced"]
 

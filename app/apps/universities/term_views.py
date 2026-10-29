@@ -103,9 +103,9 @@ class EndTermView(APIView):
     @extend_schema(tags=["Dashboard"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         rollovers = list(
-            TermRollover.objects.filter(is_deleted=False).select_related("performed_by").order_by("-created_at", "-id")[
-                :100
-            ]
+            TermRollover.objects.filter(is_deleted=False)
+            .select_related("performed_by")
+            .order_by("-created_at", "-id")[:100]
         )
         latest = rollovers[0].pk if rollovers else None
         return success_response(data=[_rollover_dict(item, latest) for item in rollovers], request=request)

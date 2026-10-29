@@ -303,7 +303,9 @@ def undo_end_term(rollover_id: int, *, actor, request=None) -> dict[str, Any]:
     with transaction.atomic():
         # Same lock as ending a term, so an undo and an end-term can never interleave.
         term = CurrentTerm.objects.select_for_update().filter(pk=CurrentTerm.SINGLETON_PK).first()
-        latest = TermRollover.objects.select_for_update().filter(is_deleted=False).order_by("-created_at", "-id").first()
+        latest = (
+            TermRollover.objects.select_for_update().filter(is_deleted=False).order_by("-created_at", "-id").first()
+        )
         rollover = TermRollover.objects.select_for_update().filter(pk=rollover_id, is_deleted=False).first()
         if rollover is None:
             from django.http import Http404

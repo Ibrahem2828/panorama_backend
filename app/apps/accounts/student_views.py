@@ -51,7 +51,9 @@ class StudentTermConfirmationView(APIView):
     permission_classes = [IsStudent]
     serializer_class = TermConfirmationSerializer
 
-    @extend_schema(tags=["Students"], request=TermConfirmationSerializer, responses={200: StudentAcademicProfileSerializer})
+    @extend_schema(
+        tags=["Students"], request=TermConfirmationSerializer, responses={200: StudentAcademicProfileSerializer}
+    )
     def post(self, request):
         serializer = TermConfirmationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

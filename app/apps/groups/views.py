@@ -203,7 +203,9 @@ class DashboardGroupMembersExportView(APIView):
             request=request,
         )
         if not wants_csv:
-            return success_response(data={"group": {"id": group.pk, "name": group.name}, "members": rows}, request=request)
+            return success_response(
+                data={"group": {"id": group.pk, "name": group.name}, "members": rows}, request=request
+            )
         buffer = io.StringIO()
         buffer.write("\ufeff")  # Excel opens UTF-8 (Arabic) correctly only with a BOM
         writer = csv.writer(buffer)
