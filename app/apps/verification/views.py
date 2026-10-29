@@ -3,6 +3,7 @@ from __future__ import annotations
 import mimetypes
 from pathlib import Path
 
+import django_filters
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -17,6 +18,7 @@ from apps.accounts.permissions import CanReviewVerification, IsStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.file_validation import IMAGE_POLICY, detect_content_type
+from apps.common.filters import DateBoundFilter, StrictIntegerFilter
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle
@@ -135,18 +137,40 @@ class MyVerificationCardView(APIView):
         return response
 
 
+class DashboardVerificationFilter(django_filters.FilterSet):
+    semester = StrictIntegerFilter(field_name="semester_id")
+    reviewed_by = StrictIntegerFilter(field_name="reviewed_by_id")
+    created_after = DateBoundFilter(field_name="created_at", bound="after")
+    created_before = DateBoundFilter(field_name="created_at", bound="before")
+
+    class Meta:
+        model = VerificationRequest
+        fields = ["status", "university", "faculty", "major", "academic_year"]
+
+
 class DashboardVerificationViewSet(StandardReadOnlyModelViewSet):
+    """``GET dashboard/verifications/``: ``status``, ``university``, ``faculty``, ``major``, ``academic_year``,
+    ``semester``, ``reviewed_by``, ``created_after``/``created_before`` (inclusive YYYY-MM-DD); ``search``."""
+
     permission_classes = [CanReviewVerification]
     serializer_class = VerificationRequestSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["status", "university", "faculty", "major", "academic_year"]
+    filterset_class = DashboardVerificationFilter
     search_fields = ["user__full_name", "user__email", "user__phone_number", "student_number"]
     ordering_fields = ["created_at", "reviewed_at", "status"]
     ordering = ["-created_at"]
 
     def get_queryset(self):
         return VerificationRequest.objects.filter(is_deleted=False).select_related(
-            "user", "university", "faculty", "major", "academic_year", "semester", "reviewed_by"
+            "user",
+            "university",
+            "faculty",
+            "faculty__university",
+            "major",
+            "major__faculty",
+            "academic_year",
+            "semester",
+            "reviewed_by",
         )
 
 

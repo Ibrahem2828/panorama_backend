@@ -5,7 +5,8 @@ import io
 from datetime import datetime
 from typing import cast
 
-from django.db.models import Count, Prefetch, Q
+import django_filters
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,6 +19,7 @@ from apps.accounts.models import User
 from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups, IsVerifiedStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.filters import DateBoundFilter, PositiveIntegerFilter, StrictBooleanFilter, count_subquery
 from apps.common.idempotency import run_idempotent
 from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
@@ -25,6 +27,7 @@ from apps.common.throttles import ExternalChannelRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import (
+    ExternalChannelType,
     Group,
     GroupExternalChannel,
     GroupMembership,
@@ -145,16 +148,109 @@ class GroupDetailViewSet(StandardReadOnlyModelViewSet):
         return group
 
 
+GROUP_KINDS = ("subject", "faculty", "general")
+
+
+def _approved_memberships():
+    return GroupMembership.objects.filter(status=GroupMembershipStatus.APPROVED, is_deleted=False)
+
+
+def _pending_memberships():
+    return GroupMembership.objects.filter(status=GroupMembershipStatus.PENDING, is_deleted=False)
+
+
+def _whatsapp_channels():
+    return GroupExternalChannel.objects.filter(
+        channel_type=ExternalChannelType.WHATSAPP, is_active=True, is_deleted=False
+    )
+
+
+def group_kind_q(kind: str) -> Q:
+    """subject = pinned to a subject; faculty = pinned to a faculty but no subject; general = neither."""
+
+    if kind == "subject":
+        return Q(subject__isnull=False)
+    if kind == "faculty":
+        return Q(subject__isnull=True, faculty__isnull=False)
+    return Q(subject__isnull=True, faculty__isnull=True)
+
+
+class DashboardGroupFilter(django_filters.FilterSet):
+    kind = django_filters.ChoiceFilter(choices=[(k, k) for k in GROUP_KINDS], method="filter_kind")
+    requires_approval = StrictBooleanFilter(field_name="requires_approval")
+    is_active = StrictBooleanFilter(field_name="is_active")
+    has_whatsapp = StrictBooleanFilter(method="filter_has_whatsapp")
+    send_messages_permission = django_filters.ChoiceFilter(
+        choices=Group._meta.get_field("send_messages_permission").choices
+    )
+    has_pending_requests = StrictBooleanFilter(method="filter_has_pending_requests")
+    members_min = PositiveIntegerFilter(field_name="members_count", lookup_expr="gte")
+    members_max = PositiveIntegerFilter(field_name="members_count", lookup_expr="lte")
+    created_after = DateBoundFilter(field_name="created_at", bound="after")
+    created_before = DateBoundFilter(field_name="created_at", bound="before")
+
+    class Meta:
+        model = Group
+        fields = ["university", "faculty", "major", "academic_year", "semester", "subject"]
+
+    def filter_kind(self, queryset, name, value):
+        return queryset.filter(group_kind_q(value)) if value else queryset
+
+    def filter_has_whatsapp(self, queryset, name, value):
+        if value is None:
+            return queryset
+        return queryset.filter(has_whatsapp=value)
+
+    def filter_has_pending_requests(self, queryset, name, value):
+        if value is None:
+            return queryset
+        return queryset.filter(pending_requests_count__gt=0) if value else queryset.filter(pending_requests_count=0)
+
+
 class DashboardGroupViewSet(StandardModelViewSet):
+    """``GET dashboard/groups/``.
+
+    Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+    ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+    (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+    ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+    ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
+    """
+
     permission_classes = [CanManageGroups]
     serializer_class = DashboardGroupSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["university", "faculty", "major", "academic_year", "semester", "subject", "is_active"]
+    filterset_class = DashboardGroupFilter
     search_fields = ["name", "description"]
-    ordering_fields = ["name", "created_at"]
+    ordering_fields = ["name", "created_at", "members_count", "pending_requests_count"]
 
     def get_queryset(self):
-        return _group_queryset()
+        queryset = (
+            Group.objects.filter(is_deleted=False)
+            .select_related("university", "faculty", "major", "academic_year", "semester", "subject", "created_by")
+            .annotate(
+                members_count=count_subquery(_approved_memberships(), "pk", group_field="group_id"),
+                pending_requests_count=count_subquery(_pending_memberships(), "pk", group_field="group_id"),
+                has_whatsapp=Exists(_whatsapp_channels().filter(group=OuterRef("pk"))),
+            )
+            .prefetch_related(
+                Prefetch(
+                    "external_channels",
+                    queryset=GroupExternalChannel.objects.filter(is_active=True, is_deleted=False),
+                    to_attr="active_external_channels",
+                )
+            )
+        )
+        if not getattr(self, "swagger_fake_view", False) and self.request.user.is_authenticated:
+            # the serializer reports the caller's own membership; prefetch it once instead of three queries per row
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    "memberships",
+                    queryset=GroupMembership.objects.filter(user=self.request.user, is_deleted=False),
+                    to_attr="current_memberships",
+                )
+            )
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
