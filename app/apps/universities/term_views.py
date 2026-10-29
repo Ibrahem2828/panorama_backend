@@ -21,13 +21,13 @@ from .models import TermRollover
 
 class CurrentTermWriteSerializer(serializers.Serializer):
     semester = serializers.IntegerField(min_value=1)
-    label = serializers.CharField(max_length=100, allow_blank=True, required=False, default="")
+    label = serializers.CharField(max_length=100, allow_blank=True, required=False, default="")  # type: ignore[assignment]  # the API field is named "label"
 
 
 class EndTermSerializer(serializers.Serializer):
     confirm = serializers.BooleanField()
     next_semester = serializers.IntegerField(min_value=1)
-    label = serializers.CharField(max_length=100, allow_blank=True, required=False, default="")
+    label = serializers.CharField(max_length=100, allow_blank=True, required=False, default="")  # type: ignore[assignment]  # the API field is named "label"
     disable_whatsapp_links = serializers.BooleanField(required=False, default=True)
 
     def validate_confirm(self, value):

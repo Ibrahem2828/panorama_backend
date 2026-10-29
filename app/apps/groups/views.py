@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+from datetime import datetime
 from typing import cast
 
 from django.db.models import Count, Prefetch, Q
@@ -218,7 +219,7 @@ class DashboardGroupMembersExportView(APIView):
                     csv_phone(row["phone_number"]),
                     row["role"],
                     row["status"],
-                    row["joined_at"].isoformat() if row["joined_at"] else "",
+                    row["joined_at"].isoformat() if isinstance(row["joined_at"], datetime) else "",
                 ]
             )
         response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")

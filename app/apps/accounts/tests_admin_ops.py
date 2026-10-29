@@ -20,7 +20,6 @@ from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 from apps.groups.services import GroupMembershipService
 from apps.notifications.models import Notification
 from apps.printing.models import PrintOrder
-from apps.product.models import PrivacyPolicyVersion, TermsVersion
 from apps.support.models import SupportTicket
 from apps.universities.models import AcademicYear, Faculty, Semester, Subject, University
 from apps.verification.models import VerificationRequest
@@ -181,14 +180,6 @@ def test_chat_sender_detail_has_user_id_and_job_title(world):
 
 
 # -- staff notifications ------------------------------------------------------------------------------------------------
-
-
-@pytest.fixture
-def policies(db):
-    TermsVersion.objects.create(version="1", title="Terms", body="x", is_active=True, published_at=timezone.now())
-    PrivacyPolicyVersion.objects.create(
-        version="1", title="Privacy", body="x", is_active=True, published_at=timezone.now()
-    )
 
 
 def test_student_registration_notifies_verification_reviewers_only(world, django_capture_on_commit_callbacks):
