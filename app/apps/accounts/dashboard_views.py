@@ -28,7 +28,14 @@ from .dashboard_serializers import (
 )
 from .lockout import LoginLockoutService
 from .models import User, UserPermissionOverride
-from .permissions import CanManageUsers, actor_outranks, can_delegate_capability
+from .permissions import (
+    CanManageUsers,
+    CapabilityPermission,
+    Capability,
+    PermissionService,
+    actor_outranks,
+    can_delegate_capability,
+)
 
 
 class IdempotencyConflict(APIException):
@@ -79,16 +86,29 @@ class DashboardUserViewSet(StandardExplicitActionViewSet):
         with transaction.atomic():
             user = get_object_or_404(User.objects.select_for_update(), pk=pk, is_deleted=False)
             self._assert_can_manage(request.user, user)
-            old = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
+            old = {
+                "role": user.role,
+                "is_active": user.is_active,
+                "full_name": user.full_name,
+                "job_title": user.job_title,
+            }
             serializer = self.get_serializer(user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             if old["role"] != user.role:
                 user.invalidate_sessions()
-            new = {"role": user.role, "is_active": user.is_active, "full_name": user.full_name}
-            audit_action = (
-                AuditAction.USER_ROLE_CHANGED if old["role"] != new["role"] else AuditAction.USER_STATUS_CHANGED
-            )
+            new = {
+                "role": user.role,
+                "is_active": user.is_active,
+                "full_name": user.full_name,
+                "job_title": user.job_title,
+            }
+            if old["role"] != new["role"]:
+                audit_action = AuditAction.USER_ROLE_CHANGED
+            elif old["full_name"] != new["full_name"] or old["job_title"] != new["job_title"]:
+                audit_action = AuditAction.USER_PROFILE_UPDATED
+            else:
+                audit_action = AuditAction.USER_STATUS_CHANGED
             # Critical and inside the atomic block: the change and its audit row commit or roll back together.
             AuditLogService.log(
                 actor=request.user,
@@ -318,3 +338,148 @@ def remove_permission_override(request, user_id: int, code: str):
         request=request,
         code="PERMISSION_OVERRIDE_REMOVED",
     )
+
+
+class CanViewStudentDetail(CapabilityPermission):
+    """Student records are for people who manage users or review verifications."""
+
+    capability = Capability.USERS_MANAGE  # primary gate; ``verification.review`` is accepted as the alternative
+
+    def has_permission(self, request, view) -> bool:
+        return PermissionService.has(request.user, Capability.USERS_MANAGE) or PermissionService.has(
+            request.user, Capability.VERIFICATION_REVIEW
+        )
+
+
+STUDENT_DETAIL_LIMIT = 50
+
+
+def _named(obj):
+    return {"id": obj.pk, "name": obj.name} if obj is not None else None
+
+
+def _capped(queryset, build):
+    total = queryset.count()
+    return [build(item) for item in queryset[:STUDENT_DETAIL_LIMIT]], total
+
+
+class DashboardStudentDetailView(APIView):
+    """``GET dashboard/users/<id>/student-detail/``: everything staff need about one student on a single screen."""
+
+    permission_classes = [CanViewStudentDetail]
+
+    @extend_schema(tags=["Dashboard"], responses={200: OpenApiTypes.OBJECT})
+    def get(self, request, user_id: int):
+        from apps.enrollment.models import EnrollmentRequest
+        from apps.files.models import FileResource
+        from apps.groups.models import GroupMembership
+        from apps.printing.models import PrintOrder
+        from apps.support.models import SupportTicket
+        from apps.verification.models import VerificationRequest
+
+        user = get_object_or_404(
+            User.objects.select_related(
+                "student_profile__university",
+                "student_profile__faculty",
+                "student_profile__major",
+                "student_profile__academic_year",
+                "student_profile__semester",
+            ),
+            pk=user_id,
+            is_deleted=False,
+            role=UserRole.STUDENT,
+        )
+        profile = getattr(user, "student_profile", None)
+        groups, groups_total = _capped(
+            GroupMembership.objects.filter(user=user, is_deleted=False)
+            .select_related("group__subject")
+            .order_by("-created_at", "-id"),
+            lambda m: {
+                "membership_id": m.pk,
+                "group_id": m.group_id,
+                "group_name": m.group.name,
+                "subject": m.group.subject.name if m.group.subject else "",
+                "role": m.role,
+                "status": m.status,
+                "joined_at": m.joined_at,
+            },
+        )
+        enrollments, enrollments_total = _capped(
+            EnrollmentRequest.objects.filter(user=user, is_deleted=False)
+            .prefetch_related("items__subject")
+            .order_by("-created_at", "-id"),
+            lambda e: {
+                "id": e.pk,
+                "status": e.status,
+                "created_at": e.created_at,
+                "items": [{"subject": item.subject.name, "status": item.status} for item in e.items.all()],
+            },
+        )
+        files, files_total = _capped(
+            FileResource.objects.filter(uploaded_by=user, is_deleted=False).order_by("-created_at", "-id"),
+            lambda f: {
+                "id": f.pk,
+                "title": f.title,
+                "created_at": f.created_at,
+                "status": f.processing_status,
+            },
+        )
+        orders, orders_total = _capped(
+            PrintOrder.objects.filter(user=user, is_deleted=False).order_by("-created_at", "-id"),
+            lambda o: {"id": o.pk, "status": o.status, "total": o.total_price, "created_at": o.created_at},
+        )
+        tickets, tickets_total = _capped(
+            SupportTicket.objects.filter(user=user, is_deleted=False).order_by("-created_at", "-id"),
+            lambda t: {"id": t.pk, "subject": t.subject, "status": t.status, "created_at": t.created_at},
+        )
+        verifications, verifications_total = _capped(
+            VerificationRequest.objects.filter(user=user, is_deleted=False).order_by("-created_at", "-id"),
+            lambda v: {
+                "id": v.pk,
+                "status": v.status,
+                "created_at": v.created_at,
+                "reviewed_at": v.reviewed_at,
+                "note": v.rejection_reason or v.admin_note,
+            },
+        )
+        data = {
+            "user": {
+                "id": user.pk,
+                "full_name": user.full_name,
+                "email": user.email,
+                "phone_number": user.phone_number,
+                "job_title": user.job_title,
+                "is_active": user.is_active,
+                "last_login": user.last_login,
+                "created_at": user.date_joined,
+            },
+            "profile": (
+                {
+                    "university": _named(profile.university),
+                    "faculty": _named(profile.faculty),
+                    "major": _named(profile.major),
+                    "academic_year": _named(profile.academic_year),
+                    "semester": _named(profile.semester),
+                    "student_number": profile.student_number,
+                    "verification_status": profile.verification_status,
+                    "needs_term_confirmation": profile.needs_term_confirmation,
+                }
+                if profile
+                else None
+            ),
+            "groups": groups,
+            "enrollments": enrollments,
+            "files": files,
+            "print_orders": orders,
+            "support_tickets": tickets,
+            "verification_history": verifications,
+            "counts": {
+                "groups": groups_total,
+                "enrollments": enrollments_total,
+                "files": files_total,
+                "print_orders": orders_total,
+                "support_tickets": tickets_total,
+                "verification_history": verifications_total,
+            },
+        }
+        return success_response(data=data, request=request)

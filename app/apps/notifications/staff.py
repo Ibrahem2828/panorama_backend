@@ -26,6 +26,8 @@ STAFF_EVENTS = {
     "support_ticket": ("support.manage", "/dashboard/support"),
     "print_order": ("printing.manage", "/dashboard/printing"),
     "purchase_reminder": ("finance.manage", "/dashboard/finance/purchases"),
+    "student_registration": ("verification.review", "/dashboard/verifications"),
+    "join_request": ("groups.manage", "/dashboard/groups"),
 }
 
 _TYPE_FOR_KIND = {
@@ -35,6 +37,8 @@ _TYPE_FOR_KIND = {
     "support_ticket": NotificationType.SUPPORT,
     "print_order": NotificationType.PRINTING,
     "purchase_reminder": NotificationType.SYSTEM,
+    "student_registration": NotificationType.VERIFICATION,
+    "join_request": NotificationType.GROUP,
 }
 
 
@@ -55,8 +59,13 @@ def notify_staff(
     object_id: int | str,
     actor_id: int | None = None,
     extra: dict | None = None,
+    highlight: int | str | None = None,
 ) -> int:
-    """Create one inbox notification per staff member who can act on ``kind``; returns how many were created."""
+    """Create one inbox notification per staff member who can act on ``kind``; returns how many were created.
+
+    ``object_id`` identifies the event (and is the de-duplication key); ``highlight`` is what the dashboard page should
+    highlight when it differs (a join request opens its group, but every request is its own event).
+    """
 
     capability, page = STAFF_EVENTS[kind]
     sent = 0
@@ -70,7 +79,7 @@ def notify_staff(
                         body,
                         type=_TYPE_FOR_KIND[kind],
                         data={"kind": kind, "object_id": str(object_id), **(extra or {})},
-                        deep_link=f"{page}?highlight={object_id}",
+                        deep_link=f"{page}?highlight={object_id if highlight is None else highlight}",
                         related_object_type=kind,
                         related_object_id=str(object_id),
                         deduplication_key=f"{kind}:{object_id}",

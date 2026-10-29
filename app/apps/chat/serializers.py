@@ -19,10 +19,14 @@ from .titles import chat_title
 
 class MessageSenderSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    #: Same as ``id``; lets clients open the sender's profile without guessing which field is the account.
+    user_id = serializers.IntegerField()
     #: For an administrator this is their position (e.g. "بانوراما أدمن"), never their name.
     full_name = serializers.CharField()
     title = serializers.CharField(allow_null=True)
     is_staff = serializers.BooleanField()
+    #: The sender's own "job title" (المسمى الوظيفي); empty when they set none.
+    job_title = serializers.CharField(allow_blank=True)
     #: Only sent to staff who manage groups: the administrator's real name behind the position.
     real_name = serializers.CharField(required=False)
 
@@ -114,7 +118,14 @@ class MessageSerializer(serializers.ModelSerializer):
     @staticmethod
     def _sender(user, reveal: bool) -> dict:
         title = chat_title(user)
-        data = {"id": user.pk, "full_name": title or user.full_name, "title": title, "is_staff": bool(title)}
+        data = {
+            "id": user.pk,
+            "user_id": user.pk,
+            "full_name": title or user.full_name,
+            "title": title,
+            "is_staff": bool(title),
+            "job_title": user.job_title or "",
+        }
         if title and reveal:
             data["real_name"] = user.full_name
         return data

@@ -41,8 +41,20 @@ def _counters(user) -> dict[str, int]:
         counts["verification_pending"] = VerificationRequest.objects.filter(
             status=VerificationStatus.PENDING, is_deleted=False
         ).count()
+        from apps.accounts.choices import UserRole
+        from apps.accounts.models import User
+
+        # Students who registered in the last 7 days (whether or not they have sent their data yet).
+        counts["registrations_new"] = User.objects.filter(
+            role=UserRole.STUDENT, is_deleted=False, date_joined__gte=timezone.now() - timedelta(days=7)
+        ).count()
     if has("groups.manage"):
         from apps.chat.models import UNRESOLVED_REPORT_STATUSES, MessageReport
+        from apps.groups.models import GroupMembership, GroupMembershipStatus
+
+        counts["join_requests_pending"] = GroupMembership.objects.filter(
+            status=GroupMembershipStatus.PENDING, is_deleted=False, group__is_deleted=False
+        ).count()
 
         counts["chat_reports_open"] = MessageReport.objects.filter(
             status__in=UNRESOLVED_REPORT_STATUSES, is_deleted=False
