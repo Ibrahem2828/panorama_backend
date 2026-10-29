@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import BooleanField, Case, Q, Value, When
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import APIException, ValidationError
@@ -64,10 +64,13 @@ def add_to_group(user, group: Group, reviewer=None) -> bool:
         return True
     if membership.status == GroupMembershipStatus.BLOCKED or membership.status == GroupMembershipStatus.APPROVED:
         return False
+    # pending / rejected / left, and ``term_ended``: a student who takes the subject again in a new term comes back.
     membership.status = GroupMembershipStatus.APPROVED
     membership.reviewed_by = reviewer
     membership.reviewed_at = now
     membership.joined_at = membership.joined_at or now
+    membership.ended_at = None
+    membership.rollover = None
     membership.save()
     return True
 
@@ -96,7 +99,10 @@ class FacultyCommunityService:
 
 
 def search_subjects(user, query: str):
-    """Type-ahead over the student's faculty. Shorter queries return nothing: the full list is never shown."""
+    """Type-ahead over the student's faculty, any year and semester; this term's subjects come first.
+
+    Shorter queries return nothing: the full list is never shown.
+    """
 
     profile = getattr(user, "student_profile", None)
     needle = " ".join((query or "").split())
@@ -108,13 +114,19 @@ def search_subjects(user, query: str):
     pending = EnrollmentItem.objects.filter(
         request__user=user, request__status=EnrollmentStatus.PENDING, request__is_deleted=False
     ).values_list("subject_id", flat=True)
+    from apps.universities.terms import current_semester_id
+
+    this_term = Case(
+        When(semester_id=current_semester_id(), then=Value(True)), default=Value(False), output_field=BooleanField()
+    )
     return (
         Subject.objects.filter(faculty_id=profile.faculty_id, is_active=True, is_deleted=False)
         .filter(Q(name__icontains=needle) | Q(code__icontains=needle))
         .exclude(pk__in=list(enrolled))
         .exclude(pk__in=list(pending))
         .select_related("academic_year", "semester", "major")
-        .order_by("name")[:SEARCH_LIMIT]
+        .annotate(in_current_term=this_term)
+        .order_by("-in_current_term", "name", "id")[:SEARCH_LIMIT]
     )
 
 

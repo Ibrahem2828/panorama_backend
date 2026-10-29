@@ -5,6 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.audit.models import AuditAction
@@ -47,6 +48,7 @@ class StudentProfileSerializer(serializers.ModelSerializer):
     major_detail = MajorSerializer(source="major", read_only=True)
     academic_year_detail = AcademicYearSerializer(source="academic_year", read_only=True)
     semester_detail = SemesterSerializer(source="semester", read_only=True)
+    current_term = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentProfile
@@ -70,11 +72,15 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             "has_card_image",
             "verification_status",
             "verified_at",
+            "needs_term_confirmation",
+            "current_term",
             "created_at",
             "updated_at",
         ]
         read_only_fields = [
             "id",
+            "needs_term_confirmation",
+            "current_term",
             "faculty_code_from_student_number",
             "enrollment_year_code",
             "enrollment_year_full",
@@ -87,6 +93,12 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
     def get_has_card_image(self, obj) -> bool:
         return bool(obj.card_image)
+
+    @extend_schema_field(serializers.DictField())
+    def get_current_term(self, obj) -> dict:
+        from apps.universities.terms import current_term_payload
+
+        return current_term_payload()
 
 
 class StudentAcademicProfileSerializer(StudentProfileSerializer):
@@ -176,6 +188,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "full_name",
             "username",
+            "job_title",
             "email",
             "phone_number",
             "role",
@@ -210,6 +223,15 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value: str | None) -> str | None:
         if value == "":
             return None
+        return value
+
+    def validate_job_title(self, value: str) -> str:
+        return " ".join(str(value or "").split())
+
+    def validate_full_name(self, value: str) -> str:
+        value = " ".join(str(value or "").split())
+        if not value:
+            raise serializers.ValidationError("Name cannot be empty.")
         return value
 
 
@@ -362,7 +384,30 @@ class StudentRegisterSerializer(BaseRegisterSerializer):
             profile.save()
         otp, raw_code = self._send_identity_otp(user, channel)
         self._audit_registration(user, channel)
+        transaction.on_commit(lambda: _notify_student_registered(user.pk))
         return user, raw_code, channel
+
+
+def _notify_student_registered(user_id: int) -> None:
+    """Tell verification reviewers a new student signed up (best effort: never fails the registration)."""
+
+    try:
+        from apps.notifications.staff import notify_staff
+
+        student = User.objects.filter(pk=user_id).first()
+        if student is None:
+            return
+        notify_staff(
+            "student_registration",
+            "طالب جديد سجّل في التطبيق",
+            f"{student.full_name} أنشأ حساباً جديداً وسيرسل بياناته للتحقق.",
+            object_id=student.pk,
+            actor_id=student.pk,
+        )
+    except Exception:  # noqa: BLE001
+        import logging
+
+        logging.getLogger(__name__).exception("student_registration_notification_failed")
 
 
 class LoginSerializer(serializers.Serializer):

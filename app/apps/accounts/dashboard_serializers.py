@@ -22,6 +22,7 @@ class DashboardUserSerializer(serializers.ModelSerializer):
             "id",
             "full_name",
             "username",
+            "job_title",
             "email",
             "phone_number",
             "role",
@@ -68,7 +69,16 @@ class DashboardUserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["full_name", "role"]
+        fields = ["full_name", "role", "job_title"]
+
+    def validate_full_name(self, value):
+        value = " ".join(str(value or "").split())
+        if not value:
+            raise serializers.ValidationError("Name cannot be empty.")
+        return value
+
+    def validate_job_title(self, value):
+        return " ".join(str(value or "").split())
 
     def validate(self, attrs):
         unexpected = set(self.initial_data) - set(self.fields)

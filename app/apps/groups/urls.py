@@ -5,6 +5,7 @@ from .views import (
     ApproveMembershipView,
     AvailableGroupViewSet,
     BlockMembershipView,
+    DashboardGroupMembersExportView,
     DashboardGroupMembershipViewSet,
     DashboardGroupViewSet,
     DashboardWhatsAppChannelView,
@@ -44,6 +45,11 @@ urlpatterns = [
         "dashboard/groups/<int:group_pk>/join-requests/",
         DashboardGroupMembershipViewSet.as_view({"get": "list"}, only_pending=True),
         name="dashboard-group-join-requests",
+    ),
+    path(
+        "dashboard/groups/<int:pk>/members-export/",
+        DashboardGroupMembersExportView.as_view(),
+        name="dashboard-group-members-export",
     ),
     path(
         "dashboard/groups/<int:pk>/whatsapp-channel/",

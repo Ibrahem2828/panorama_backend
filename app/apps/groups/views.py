@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import csv
+import io
+from datetime import datetime
 from typing import cast
 
 from django.db.models import Count, Prefetch, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, status
 from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
@@ -15,6 +19,7 @@ from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.idempotency import run_idempotent
+from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
 from apps.common.throttles import ExternalChannelRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -153,6 +158,73 @@ class DashboardGroupViewSet(StandardModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+
+class DashboardGroupMembersExportView(APIView):
+    """``GET dashboard/groups/<id>/members-export/``: approved members with phone numbers (``?status=all`` for everyone).
+
+    JSON by default, ``?format=csv`` for a UTF-8 (BOM) spreadsheet. Handing out phone numbers is audited.
+    """
+
+    permission_classes = [CanManageGroups]
+    content_negotiation_class = IgnoreClientContentNegotiation
+
+    @extend_schema(
+        tags=["Dashboard"],
+        parameters=[
+            OpenApiParameter("format", str, enum=["json", "csv"], required=False),
+            OpenApiParameter("status", str, enum=["approved", "all"], required=False),
+        ],
+        responses={(200, "application/json"): OpenApiTypes.OBJECT, (200, "text/csv"): OpenApiTypes.BINARY},
+    )
+    def get(self, request, pk: int):
+        from apps.universities.terms import csv_phone, csv_safe
+
+        group = get_object_or_404(Group, pk=pk, is_deleted=False)
+        memberships = GroupMembership.objects.filter(group=group, is_deleted=False).select_related("user")
+        if request.query_params.get("status", "approved") != "all":
+            memberships = memberships.filter(status=GroupMembershipStatus.APPROVED)
+        rows = [
+            {
+                "user_id": m.user_id,
+                "full_name": m.user.full_name,
+                "phone_number": m.user.phone_number,
+                "role": m.role,
+                "status": m.status,
+                "joined_at": m.joined_at,
+            }
+            for m in memberships.order_by("user__full_name", "user_id")
+        ]
+        wants_csv = request.query_params.get("format", "").lower() == "csv"
+        AuditLogService.log(
+            actor=request.user,
+            action=AuditAction.GROUP_MEMBERS_EXPORTED,
+            target=group,
+            new_value={"format": "csv" if wants_csv else "json", "members": len(rows)},
+            request=request,
+        )
+        if not wants_csv:
+            return success_response(
+                data={"group": {"id": group.pk, "name": group.name}, "members": rows}, request=request
+            )
+        buffer = io.StringIO()
+        buffer.write("\ufeff")  # Excel opens UTF-8 (Arabic) correctly only with a BOM
+        writer = csv.writer(buffer)
+        writer.writerow(["group", "name", "phone", "role", "status", "joined_at"])
+        for row in rows:
+            writer.writerow(
+                [
+                    csv_safe(group.name),
+                    csv_safe(row["full_name"]),
+                    csv_phone(row["phone_number"]),
+                    row["role"],
+                    row["status"],
+                    row["joined_at"].isoformat() if isinstance(row["joined_at"], datetime) else "",
+                ]
+            )
+        response = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="group-{group.pk}-members.csv"'
+        return response
 
 
 class GroupJoinView(APIView):

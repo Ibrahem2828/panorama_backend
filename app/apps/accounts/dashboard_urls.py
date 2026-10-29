@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .dashboard_views import (
     DashboardCapabilitiesView,
+    DashboardStudentDetailView,
     DashboardUserPermissionOverrideDetailView,
     DashboardUserPermissionOverridesView,
     DashboardUserViewSet,
@@ -31,6 +32,11 @@ urlpatterns = [
         "dashboard/users/<int:user_id>/revoke-invitation/",
         RevokeInvitationView.as_view(),
         name="dashboard-user-revoke-invitation",
+    ),
+    path(
+        "dashboard/users/<int:user_id>/student-detail/",
+        DashboardStudentDetailView.as_view(),
+        name="dashboard-user-student-detail",
     ),
     path("dashboard/users/<int:user_id>/activity/", UserActivityView.as_view(), name="dashboard-user-activity"),
     path("dashboard/users/<int:user_id>/end-sessions/", EndSessionsView.as_view(), name="dashboard-user-end-sessions"),

@@ -96,6 +96,13 @@ class AuditAction(models.TextChoices):
     POLICY_VERSION_PUBLISHED = "policy_version_published", "Policy Version Published"
     POLICY_VERSION_UPDATED = "policy_version_updated", "Policy Version Updated"
     POLICY_VERSION_UNPUBLISHED = "policy_version_unpublished", "Policy Version Unpublished"
+    CURRENT_TERM_CHANGED = "current_term_changed", "Current Term Changed"
+    TERM_ENDED = "term_ended", "Term Ended"
+    TERM_ROLLOVER_UNDONE = "term_rollover_undone", "Term Rollover Undone"
+    TERM_WHATSAPP_LIST_EXPORTED = "term_whatsapp_list_exported", "Term WhatsApp Removal List Exported"
+    STUDENT_TERM_CONFIRMED = "student_term_confirmed", "Student Term Confirmed"
+    GROUP_MEMBERS_EXPORTED = "group_members_exported", "Group Members Exported"
+    USER_PROFILE_UPDATED = "user_profile_updated", "User Profile Updated"
 
 
 class AuditLogImmutableError(RuntimeError):

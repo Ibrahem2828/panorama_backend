@@ -36,6 +36,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     session_version = models.PositiveIntegerField(default=1)
     #: Set for accounts created with a temporary password: the dashboard sends them to the change-password screen first.
     must_change_password = models.BooleanField(default=False)
+    #: Shown next to the name in the dashboard and in chat ("المسمى الوظيفي"); free text the user edits themselves.
+    job_title = models.CharField(max_length=120, blank=True, default="")
 
     objects = UserManager()
 
@@ -130,6 +132,8 @@ class StudentProfile(BaseModel):
         blank=True,
     )
     verification_reviewed_at = models.DateTimeField(null=True, blank=True)
+    #: Raised for every student when a term ends: the app asks "did you move to the next year?" until answered.
+    needs_term_confirmation = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]
