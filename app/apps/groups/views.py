@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import cast
-
 import csv
 import io
+from typing import cast
 
 from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponse

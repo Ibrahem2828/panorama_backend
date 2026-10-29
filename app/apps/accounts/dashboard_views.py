@@ -30,8 +30,8 @@ from .lockout import LoginLockoutService
 from .models import User, UserPermissionOverride
 from .permissions import (
     CanManageUsers,
-    CapabilityPermission,
     Capability,
+    CapabilityPermission,
     PermissionService,
     actor_outranks,
     can_delegate_capability,
