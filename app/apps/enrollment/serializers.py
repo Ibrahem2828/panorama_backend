@@ -11,11 +11,23 @@ from .models import EnrollmentItem, EnrollmentRequest
 class SubjectBriefSerializer(serializers.ModelSerializer):
     academic_year_name = serializers.CharField(source="academic_year.name", read_only=True)
     semester_name = serializers.CharField(source="semester.name", read_only=True)
+    in_current_term = serializers.SerializerMethodField()
 
     class Meta:
         model = Subject
-        fields = ["id", "name", "code", "academic_year_name", "semester_name"]
+        fields = ["id", "name", "code", "academic_year_name", "semester_name", "in_current_term"]
         read_only_fields = fields
+
+    def get_in_current_term(self, obj) -> bool:
+        annotated = getattr(obj, "in_current_term", None)
+        if annotated is not None:
+            return bool(annotated)
+        from apps.universities.terms import current_semester_id
+
+        cache = self.context if isinstance(self.context, dict) else {}
+        if "_current_semester_id" not in cache:
+            cache["_current_semester_id"] = current_semester_id()
+        return cache["_current_semester_id"] is not None and obj.semester_id == cache["_current_semester_id"]
 
 
 class EnrollmentItemSerializer(serializers.ModelSerializer):

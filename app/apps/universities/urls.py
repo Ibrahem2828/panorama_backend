@@ -3,6 +3,14 @@ from rest_framework.routers import APIRootView, DefaultRouter
 
 from apps.accounts.permissions import CanAccessDashboard
 
+from .term_views import (
+    CurrentTermView,
+    DashboardCurrentTermView,
+    EndTermPreviewView,
+    EndTermView,
+    UndoEndTermView,
+    WhatsAppRemovalListView,
+)
 from .views import (
     DashboardAcademicYearViewSet,
     DashboardFacultyViewSet,
@@ -44,6 +52,20 @@ dashboard_router.register("semesters", DashboardSemesterViewSet, basename="dashb
 dashboard_router.register("subjects", DashboardSubjectViewSet, basename="dashboard-subjects")
 
 urlpatterns = [
+    path("academic/current-term/", CurrentTermView.as_view(), name="academic-current-term"),
+    path("dashboard/academic/current-term/", DashboardCurrentTermView.as_view(), name="dashboard-current-term"),
+    path("dashboard/academic/end-term/preview/", EndTermPreviewView.as_view(), name="dashboard-end-term-preview"),
+    path("dashboard/academic/end-term/", EndTermView.as_view(), name="dashboard-end-term"),
+    path(
+        "dashboard/academic/end-term/<int:rollover_id>/whatsapp-list/",
+        WhatsAppRemovalListView.as_view(),
+        name="dashboard-end-term-whatsapp-list",
+    ),
+    path(
+        "dashboard/academic/end-term/<int:rollover_id>/undo/",
+        UndoEndTermView.as_view(),
+        name="dashboard-end-term-undo",
+    ),
     path("", include(router.urls)),
     path(
         "universities/<int:university_pk>/faculties/",

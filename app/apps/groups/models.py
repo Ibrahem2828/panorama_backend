@@ -77,6 +77,8 @@ class GroupMembershipStatus(models.TextChoices):
     REJECTED = "rejected", "Rejected"
     BLOCKED = "blocked", "Blocked"
     LEFT = "left", "Left"
+    #: Removed from a subject group when the term ended. The row is kept (history); no chat/files/WhatsApp access.
+    TERM_ENDED = "term_ended", "Term ended"
 
 
 class GroupMembership(BaseModel):
@@ -95,6 +97,14 @@ class GroupMembership(BaseModel):
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     joined_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    rollover = models.ForeignKey(
+        "universities.TermRollover",
+        on_delete=models.SET_NULL,
+        related_name="memberships",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -109,6 +119,8 @@ class GroupMembership(BaseModel):
         self.reviewed_by = reviewer
         self.reviewed_at = timezone.now()
         self.joined_at = self.joined_at or timezone.now()
+        self.ended_at = None
+        self.rollover = None
         self.save()
 
     def __str__(self) -> str:

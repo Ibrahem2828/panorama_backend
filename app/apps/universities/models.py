@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from apps.common.models import BaseModel
 
@@ -181,3 +182,43 @@ def validate_academic_hierarchy(
             errors["subject"] = "Subject does not belong to the selected semester."
     if errors:
         raise ValidationError(errors)
+
+
+class CurrentTerm(BaseModel):
+    """The semester the platform is in right now. A single row (pk=1), set by the administrator."""
+
+    SINGLETON_PK = 1
+
+    semester = models.ForeignKey(Semester, on_delete=models.PROTECT, related_name="+")
+    label = models.CharField(max_length=100, blank=True)
+    started_at = models.DateTimeField(default=timezone.now)
+    set_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    def __str__(self) -> str:
+        return self.label or self.semester.name
+
+
+class TermRollover(BaseModel):
+    """One "end semester" run: what it removed, so it can be exported (WhatsApp list) and, if it is the latest, undone."""
+
+    performed_by = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="term_rollovers"
+    )
+    from_semester = models.ForeignKey(Semester, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    to_semester = models.ForeignKey(Semester, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    from_label = models.CharField(max_length=100, blank=True)
+    to_label = models.CharField(max_length=100, blank=True)
+    disable_whatsapp_links = models.BooleanField(default=False)
+    memberships_removed = models.PositiveIntegerField(default=0)
+    students_affected = models.PositiveIntegerField(default=0)
+    #: Per affected group: ``{group_id, name, subject, whatsapp_active, members_to_remove, whatsapp_disabled}``.
+    snapshot = models.JSONField(default=list, blank=True)
+    previous_started_at = models.DateTimeField(null=True, blank=True)
+    undone_at = models.DateTimeField(null=True, blank=True)
+    undone_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self) -> str:
+        return f"rollover {self.pk}: {self.from_label} -> {self.to_label}"

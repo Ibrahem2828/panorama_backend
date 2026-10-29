@@ -111,9 +111,34 @@ class GroupMembershipService:
             membership.joined_at = joined_at
             membership.reviewed_by = None
             membership.reviewed_at = None
+            membership.ended_at = None
+            membership.rollover = None
             membership.save()
-            return membership
-        return GroupMembership.objects.create(group=group, user=user, status=status, joined_at=joined_at)
+        else:
+            membership = GroupMembership.objects.create(group=group, user=user, status=status, joined_at=joined_at)
+        if status == GroupMembershipStatus.PENDING:
+            transaction.on_commit(lambda: GroupMembershipService.notify_join_request(membership.pk))
+        return membership
+
+    @staticmethod
+    def notify_join_request(membership_id: int) -> None:
+        """Tell group managers a student asks to join (best effort; ``notify_staff`` swallows its own failures)."""
+
+        membership = GroupMembership.objects.select_related("group", "user").filter(pk=membership_id).first()
+        if membership is None or membership.status != GroupMembershipStatus.PENDING:
+            return
+        from apps.notifications.staff import notify_staff
+
+        notify_staff(
+            "join_request",
+            "طلب انضمام جديد إلى مجموعة",
+            f"{membership.user.full_name} يطلب الانضمام إلى {membership.group.name}.",
+            # One event per request (a student can ask again after a rejection); the page opens the group.
+            object_id=f"{membership.pk}:{int(membership.updated_at.timestamp())}",
+            highlight=membership.group_id,
+            actor_id=membership.user_id,
+            extra={"group_id": membership.group_id, "membership_id": membership.pk},
+        )
 
     @staticmethod
     @transaction.atomic
