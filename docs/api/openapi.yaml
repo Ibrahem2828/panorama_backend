@@ -1681,11 +1681,58 @@ paths:
     get:
       operationId: v1_dashboard_chat_groups_list
       description: |-
-        The chat console's group list: ``GET /dashboard/chat/groups/`` (``search`` by group or subject, ``reported=1``).
+        The chat console's group list: ``GET /dashboard/chat/groups/``.
+
+        Filters: ``search`` (group, subject or faculty name), ``faculty``, ``major``, ``academic_year``, ``semester``,
+        ``subject``, ``kind`` (subject|faculty|general), ``has_messages``, ``active_after`` (last message on/after
+        YYYY-MM-DD), ``has_open_reports`` (``reported``/``reported_only`` = true are aliases).
+        ``ordering``: ``last_message_at``, ``open_reports``, ``members``, ``name`` (``-`` = descending; nulls last);
+        default: most open reports, then latest activity.
 
         Opening a chat from here uses the ordinary message endpoints: staff with ``groups.manage`` may read and write in
         every group chat, and their messages carry their position title instead of a name.
       parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: integer
+      - in: query
+        name: active_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: faculty
+        schema:
+          type: integer
+      - in: query
+        name: has_messages
+        schema:
+          type: boolean
+      - in: query
+        name: has_open_reports
+        schema:
+          type: boolean
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - faculty
+          - general
+          - subject
+        description: |-
+          * `subject` - subject
+          * `faculty` - faculty
+          * `general` - general
+      - in: query
+        name: major
+        schema:
+          type: integer
+      - in: query
+        name: ordering
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1698,12 +1745,28 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: reported
+        schema:
+          type: boolean
+      - in: query
+        name: reported_only
+        schema:
+          type: boolean
       - name: search
         required: false
         in: query
         description: مصطلح البحث.
         schema:
           type: string
+      - in: query
+        name: semester
+        schema:
+          type: integer
+      - in: query
+        name: subject
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1910,9 +1973,28 @@ paths:
   /api/v1/dashboard/enrollment/requests/:
     get:
       operationId: v1_dashboard_enrollment_requests_list
-      description: '``GET /dashboard/enrollment/requests/``: filter by ``status``,
-        ``faculty``; search name, e-mail or student number.'
+      description: |-
+        ``GET /dashboard/enrollment/requests/``: ``status``, ``faculty``, ``academic_year``, ``semester``,
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD); ``search`` student name, e-mail or student number.
       parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: integer
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: faculty
+        schema:
+          type: integer
       - name: ordering
         required: false
         in: query
@@ -1931,6 +2013,31 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Student name, e-mail or student number
+      - in: query
+        name: semester
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - approved
+          - cancelled
+          - partially_approved
+          - pending
+          - rejected
+        description: |-
+          * `pending` - Pending review
+          * `approved` - Approved
+          * `partially_approved` - Partially approved
+          * `rejected` - Rejected
+          * `cancelled` - Cancelled
       tags:
       - v1
       security:
@@ -1946,8 +2053,9 @@ paths:
   /api/v1/dashboard/enrollment/requests/{id}/:
     get:
       operationId: v1_dashboard_enrollment_requests_retrieve
-      description: '``GET /dashboard/enrollment/requests/``: filter by ``status``,
-        ``faculty``; search name, e-mail or student number.'
+      description: |-
+        ``GET /dashboard/enrollment/requests/``: ``status``, ``faculty``, ``academic_year``, ``semester``,
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD); ``search`` student name, e-mail or student number.
       parameters:
       - in: path
         name: id
@@ -2981,12 +3089,25 @@ paths:
   /api/v1/dashboard/files/:
     get:
       operationId: v1_dashboard_files_list
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       parameters:
       - in: query
         name: academic_year
         schema:
           type: integer
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
       - in: query
         name: faculty
         schema:
@@ -3060,11 +3181,39 @@ paths:
         schema:
           type: integer
       - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - converting
+          - extracting
+          - failed
+          - pending
+          - quarantined
+          - queued
+          - ready
+          - rendering
+          - scanning
+        description: |-
+          * `pending` - Not processed yet
+          * `queued` - Queued
+          * `scanning` - Scanning
+          * `converting` - Converting
+          * `extracting` - Extracting
+          * `rendering` - Rendering
+          * `ready` - Ready
+          * `failed` - Failed
+          * `quarantined` - Quarantined
+      - in: query
         name: subject
         schema:
           type: integer
       - in: query
         name: university
+        schema:
+          type: integer
+      - in: query
+        name: uploaded_by
         schema:
           type: integer
       - in: query
@@ -3099,7 +3248,10 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_files_create
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       tags:
       - v1
       requestBody:
@@ -3127,7 +3279,10 @@ paths:
   /api/v1/dashboard/files/{id}/:
     get:
       operationId: v1_dashboard_files_retrieve
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       parameters:
       - in: path
         name: id
@@ -3149,7 +3304,10 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_files_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       parameters:
       - in: path
         name: id
@@ -3183,7 +3341,10 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_files_partial_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       parameters:
       - in: path
         name: id
@@ -3216,7 +3377,10 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_files_destroy
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       parameters:
       - in: path
         name: id
@@ -3260,7 +3424,10 @@ paths:
   /api/v1/dashboard/files/processing-summary/:
     get:
       operationId: v1_dashboard_files_processing_summary_retrieve
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+        the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+        YYYY-MM-DD); ``search`` title, description or sha256.
       tags:
       - Dashboard
       security:
@@ -4239,22 +4406,67 @@ paths:
   /api/v1/dashboard/groups/:
     get:
       operationId: v1_dashboard_groups_list
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/groups/``.
+
+        Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+        ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+        (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+        ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
       parameters:
       - in: query
         name: academic_year
         schema:
           type: integer
       - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
         name: faculty
         schema:
           type: integer
+      - in: query
+        name: has_pending_requests
+        schema:
+          type: boolean
+      - in: query
+        name: has_whatsapp
+        schema:
+          type: boolean
       - in: query
         name: is_active
         schema:
           type: boolean
       - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - faculty
+          - general
+          - subject
+        description: |-
+          * `subject` - subject
+          * `faculty` - faculty
+          * `general` - general
+      - in: query
         name: major
+        schema:
+          type: integer
+      - in: query
+        name: members_max
+        schema:
+          type: integer
+      - in: query
+        name: members_min
         schema:
           type: integer
       - name: ordering
@@ -4275,6 +4487,10 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: requires_approval
+        schema:
+          type: boolean
       - name: search
         required: false
         in: query
@@ -4285,6 +4501,16 @@ paths:
         name: semester
         schema:
           type: integer
+      - in: query
+        name: send_messages_permission
+        schema:
+          type: string
+          enum:
+          - admins_only
+          - all_members
+        description: |-
+          * `all_members` - All Members
+          * `admins_only` - Admins Only
       - in: query
         name: subject
         schema:
@@ -4307,7 +4533,14 @@ paths:
           description: ''
     post:
       operationId: v1_dashboard_groups_create
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/groups/``.
+
+        Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+        ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+        (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+        ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
       tags:
       - v1
       requestBody:
@@ -4495,7 +4728,14 @@ paths:
   /api/v1/dashboard/groups/{id}/:
     get:
       operationId: v1_dashboard_groups_retrieve
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/groups/``.
+
+        Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+        ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+        (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+        ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -4517,7 +4757,14 @@ paths:
           description: ''
     put:
       operationId: v1_dashboard_groups_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/groups/``.
+
+        Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+        ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+        (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+        ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -4551,7 +4798,14 @@ paths:
           description: ''
     patch:
       operationId: v1_dashboard_groups_partial_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/groups/``.
+
+        Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+        ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+        (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+        ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -4584,7 +4838,14 @@ paths:
           description: ''
     delete:
       operationId: v1_dashboard_groups_destroy
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/groups/``.
+
+        Filters: ``university``, ``faculty``, ``major``, ``academic_year``, ``semester``, ``subject``, ``is_active``,
+        ``kind`` (subject|faculty|general), ``requires_approval``, ``has_whatsapp``, ``send_messages_permission``
+        (all_members|admins_only), ``has_pending_requests``, ``members_min``/``members_max`` (approved members),
+        ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``search`` (name, description).
+        ``ordering``: ``name``, ``created_at``, ``members_count``, ``pending_requests_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -4683,6 +4944,16 @@ paths:
       description: Standard envelopes for the two methods safe for read-only resources.
       parameters:
       - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
         name: faculty
         schema:
           type: integer
@@ -4702,6 +4973,30 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: processing_status
+        schema:
+          type: string
+          enum:
+          - converting
+          - extracting
+          - failed
+          - quarantined
+          - queued
+          - ready
+          - rendering
+          - scanning
+          - uploaded
+        description: |-
+          * `uploaded` - Uploaded
+          * `queued` - Queued
+          * `scanning` - Scanning
+          * `converting` - Converting
+          * `extracting` - Extracting
+          * `rendering` - Rendering
+          * `ready` - Ready
+          * `failed` - Failed
+          * `quarantined` - Quarantined
       - in: query
         name: status
         schema:
@@ -8305,10 +8600,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardStats'
           description: ''
-  /api/v1/dashboard/subjects/:
+  /api/v1/dashboard/students/:
     get:
-      operationId: v1_dashboard_subjects_list
-      description: Standard envelopes for the two methods safe for read-only resources.
+      operationId: v1_dashboard_students_list
+      description: '``GET dashboard/students/`` (list only; the per-student screen
+        is ``dashboard/users/<id>/student-detail/``).'
       parameters:
       - in: query
         name: academic_year
@@ -8318,6 +8614,141 @@ paths:
         name: faculty
         schema:
           type: integer
+      - in: query
+        name: group
+        schema:
+          type: integer
+      - in: query
+        name: has_pending_enrollment
+        schema:
+          type: boolean
+      - in: query
+        name: inactive_days
+        schema:
+          type: integer
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_verified
+        schema:
+          type: boolean
+      - in: query
+        name: major
+        schema:
+          type: integer
+      - in: query
+        name: needs_term_confirmation
+        schema:
+          type: boolean
+      - in: query
+        name: no_groups
+        schema:
+          type: boolean
+      - in: query
+        name: ordering
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: registered_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: registered_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name, e-mail, phone or student number
+      - in: query
+        name: semester
+        schema:
+          type: integer
+      - in: query
+        name: university
+        schema:
+          type: integer
+      - in: query
+        name: verification_status
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardStudentList'
+          description: ''
+  /api/v1/dashboard/students/summary/:
+    get:
+      operationId: v1_dashboard_students_summary_retrieve
+      description: Segment counts for the same filters (``verification_status`` and
+        ``ordering`` are ignored here).
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/subjects/:
+    get:
+      operationId: v1_dashboard_subjects_list
+      description: |-
+        ``GET dashboard/subjects/``.
+
+        Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+        ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+        ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
+      parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: integer
+      - in: query
+        name: faculty
+        schema:
+          type: integer
+      - in: query
+        name: has_files
+        schema:
+          type: boolean
+      - in: query
+        name: has_groups
+        schema:
+          type: boolean
+      - in: query
+        name: has_lectures
+        schema:
+          type: boolean
       - in: query
         name: has_major
         schema:
@@ -8358,6 +8789,10 @@ paths:
         name: semester
         schema:
           type: integer
+      - in: query
+        name: university
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -8368,24 +8803,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedSubjectList'
+                $ref: '#/components/schemas/PaginatedDashboardSubjectList'
           description: ''
     post:
       operationId: v1_dashboard_subjects_create
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/subjects/``.
+
+        Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+        ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+        ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
       tags:
       - v1
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubjectRequest'
+              $ref: '#/components/schemas/DashboardSubjectRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SubjectRequest'
+              $ref: '#/components/schemas/DashboardSubjectRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/SubjectRequest'
+              $ref: '#/components/schemas/DashboardSubjectRequest'
         required: true
       security:
       - jwtAuth: []
@@ -8395,12 +8835,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Subject'
+                $ref: '#/components/schemas/DashboardSubject'
           description: ''
   /api/v1/dashboard/subjects/{id}/:
     get:
       operationId: v1_dashboard_subjects_retrieve
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/subjects/``.
+
+        Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+        ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+        ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -8418,11 +8863,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Subject'
+                $ref: '#/components/schemas/DashboardSubject'
           description: ''
     put:
       operationId: v1_dashboard_subjects_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/subjects/``.
+
+        Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+        ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+        ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -8436,13 +8886,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubjectRequest'
+              $ref: '#/components/schemas/DashboardSubjectRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SubjectRequest'
+              $ref: '#/components/schemas/DashboardSubjectRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/SubjectRequest'
+              $ref: '#/components/schemas/DashboardSubjectRequest'
         required: true
       security:
       - jwtAuth: []
@@ -8452,11 +8902,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Subject'
+                $ref: '#/components/schemas/DashboardSubject'
           description: ''
     patch:
       operationId: v1_dashboard_subjects_partial_update
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/subjects/``.
+
+        Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+        ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+        ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -8470,13 +8925,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedSubjectRequest'
+              $ref: '#/components/schemas/PatchedDashboardSubjectRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedSubjectRequest'
+              $ref: '#/components/schemas/PatchedDashboardSubjectRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedSubjectRequest'
+              $ref: '#/components/schemas/PatchedDashboardSubjectRequest'
       security:
       - jwtAuth: []
       - bearerAuth: []
@@ -8485,11 +8940,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Subject'
+                $ref: '#/components/schemas/DashboardSubject'
           description: ''
     delete:
       operationId: v1_dashboard_subjects_destroy
-      description: Standard envelopes for the two methods safe for read-only resources.
+      description: |-
+        ``GET dashboard/subjects/``.
+
+        Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+        ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+        ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
       parameters:
       - in: path
         name: id
@@ -9603,15 +10063,23 @@ paths:
     get:
       operationId: v1_dashboard_verifications_list
       description: |-
-        List/retrieve only.
-
-        DRF routers discover actions by attribute. Write methods must never be added
-        to this class, otherwise a nominally read-only resource becomes writable.
+        ``GET dashboard/verifications/``: ``status``, ``university``, ``faculty``, ``major``, ``academic_year``,
+        ``semester``, ``reviewed_by``, ``created_after``/``created_before`` (inclusive YYYY-MM-DD); ``search``.
       parameters:
       - in: query
         name: academic_year
         schema:
           type: integer
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
       - in: query
         name: faculty
         schema:
@@ -9638,12 +10106,20 @@ paths:
         description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
+      - in: query
+        name: reviewed_by
+        schema:
+          type: integer
       - name: search
         required: false
         in: query
         description: مصطلح البحث.
         schema:
           type: string
+      - in: query
+        name: semester
+        schema:
+          type: integer
       - in: query
         name: status
         schema:
@@ -9680,10 +10156,8 @@ paths:
     get:
       operationId: v1_dashboard_verifications_retrieve
       description: |-
-        List/retrieve only.
-
-        DRF routers discover actions by attribute. Write methods must never be added
-        to this class, otherwise a nominally read-only resource becomes writable.
+        ``GET dashboard/verifications/``: ``status``, ``university``, ``faculty``, ``major``, ``academic_year``,
+        ``semester``, ``reviewed_by``, ``created_after``/``created_before`` (inclusive YYYY-MM-DD); ``search``.
       parameters:
       - in: path
         name: id
@@ -14976,6 +15450,10 @@ components:
         name:
           type: string
           readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/GroupKindEnum'
+          readOnly: true
         subject_name:
           type: string
           readOnly: true
@@ -15003,6 +15481,7 @@ components:
       - faculty_name
       - id
       - is_active
+      - kind
       - last_message_at
       - last_message_excerpt
       - members
@@ -15512,16 +15991,29 @@ components:
           type: string
           format: date-time
           readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/GroupKindEnum'
+          readOnly: true
+        pending_requests_count:
+          type: integer
+          readOnly: true
+        has_whatsapp:
+          type: boolean
+          readOnly: true
       required:
       - created_at
       - created_by
       - current_user_group_role
       - current_user_membership_status
+      - has_whatsapp
       - has_whatsapp_channel
       - id
+      - kind
       - members_count
       - membership_status
       - name
+      - pending_requests_count
       - university
       - updated_at
     DashboardGroupRequest:
@@ -15980,6 +16472,206 @@ components:
       - printing
       - support
       - users
+    DashboardStudent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        student_number:
+          type: string
+          readOnly: true
+        verification_status:
+          type: string
+          readOnly: true
+        is_verified:
+          type: boolean
+          readOnly: true
+        university:
+          allOf:
+          - $ref: '#/components/schemas/NamedRef'
+          nullable: true
+          readOnly: true
+        faculty:
+          allOf:
+          - $ref: '#/components/schemas/NamedRef'
+          nullable: true
+          readOnly: true
+        major:
+          allOf:
+          - $ref: '#/components/schemas/NamedRef'
+          nullable: true
+          readOnly: true
+        academic_year:
+          allOf:
+          - $ref: '#/components/schemas/NamedRef'
+          nullable: true
+          readOnly: true
+        semester:
+          allOf:
+          - $ref: '#/components/schemas/NamedRef'
+          nullable: true
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        needs_term_confirmation:
+          type: boolean
+          readOnly: true
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        groups_count:
+          type: integer
+          readOnly: true
+        pending_enrollments:
+          type: integer
+          readOnly: true
+      required:
+      - academic_year
+      - created_at
+      - email
+      - faculty
+      - full_name
+      - groups_count
+      - id
+      - is_active
+      - is_verified
+      - last_login
+      - major
+      - needs_term_confirmation
+      - pending_enrollments
+      - phone_number
+      - semester
+      - student_number
+      - university
+      - verification_status
+    DashboardSubject:
+      type: object
+      description: 'The dashboard list row: the subject plus how much content hangs
+        off it (annotated counts, no per-row queries).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        faculty:
+          type: integer
+        faculty_name:
+          type: string
+          readOnly: true
+        faculty_detail:
+          allOf:
+          - $ref: '#/components/schemas/SubjectFaculty'
+          readOnly: true
+        major:
+          type: integer
+          nullable: true
+        major_name:
+          type: string
+          nullable: true
+          readOnly: true
+        major_detail:
+          allOf:
+          - $ref: '#/components/schemas/Major'
+          readOnly: true
+          nullable: true
+        academic_year:
+          type: integer
+        academic_year_name:
+          type: string
+          readOnly: true
+        semester:
+          type: integer
+        semester_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        code:
+          type: string
+          maxLength: 32
+        description:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        groups_count:
+          type: integer
+          readOnly: true
+        lectures_count:
+          type: integer
+          readOnly: true
+        files_count:
+          type: integer
+          readOnly: true
+      required:
+      - academic_year
+      - academic_year_name
+      - created_at
+      - faculty_detail
+      - faculty_name
+      - files_count
+      - groups_count
+      - id
+      - lectures_count
+      - major_detail
+      - major_name
+      - name
+      - semester
+      - semester_name
+      - updated_at
+    DashboardSubjectRequest:
+      type: object
+      description: 'The dashboard list row: the subject plus how much content hangs
+        off it (annotated counts, no per-row queries).'
+      properties:
+        faculty:
+          type: integer
+        major:
+          type: integer
+          nullable: true
+        academic_year:
+          type: integer
+        semester:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          type: string
+          maxLength: 32
+        description:
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - academic_year
+      - name
+      - semester
     DashboardSupportTicket:
       type: object
       properties:
@@ -17223,6 +17915,16 @@ components:
       - name
       - university
       - updated_at
+    GroupKindEnum:
+      enum:
+      - subject
+      - faculty
+      - general
+      type: string
+      description: |-
+        * `subject` - subject
+        * `faculty` - faculty
+        * `general` - general
     GroupMembership:
       type: object
       properties:
@@ -18352,6 +19054,16 @@ components:
       description: |-
         * `ltr` - Left to right
         * `rtl` - Right to left
+    NamedRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     NormalUserRegisterRequest:
       type: object
       properties:
@@ -18919,6 +19631,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardPrintOrder'
+    PaginatedDashboardStudentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardStudent'
+    PaginatedDashboardSubjectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardSubject'
     PaginatedDashboardSupportTicketList:
       type: object
       required:
@@ -19919,6 +20677,31 @@ components:
           writeOnly: true
         is_published:
           type: boolean
+    PatchedDashboardSubjectRequest:
+      type: object
+      description: 'The dashboard list row: the subject plus how much content hangs
+        off it (annotated counts, no per-row queries).'
+      properties:
+        faculty:
+          type: integer
+        major:
+          type: integer
+          nullable: true
+        academic_year:
+          type: integer
+        semester:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        code:
+          type: string
+          maxLength: 32
+        description:
+          type: string
+        is_active:
+          type: boolean
     PatchedDashboardUserUpdateRequest:
       type: object
       description: The narrow PATCH surface for dashboard user administration.
@@ -20677,33 +21460,6 @@ components:
         student_number:
           type: string
           maxLength: 64
-    PatchedSubjectRequest:
-      type: object
-      description: |-
-        A subject belongs to a faculty; ``major`` is an optional specialization tag.
-
-        On write, ``faculty`` is required unless ``major`` is given (the faculty is then derived from the major).
-      properties:
-        faculty:
-          type: integer
-        major:
-          type: integer
-          nullable: true
-        academic_year:
-          type: integer
-        semester:
-          type: integer
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        code:
-          type: string
-          maxLength: 32
-        description:
-          type: string
-        is_active:
-          type: boolean
     PatchedSupportTicketPriorityRequest:
       type: object
       properties:
@@ -23102,37 +23858,6 @@ components:
       - id
       - name
       - university
-    SubjectRequest:
-      type: object
-      description: |-
-        A subject belongs to a faculty; ``major`` is an optional specialization tag.
-
-        On write, ``faculty`` is required unless ``major`` is given (the faculty is then derived from the major).
-      properties:
-        faculty:
-          type: integer
-        major:
-          type: integer
-          nullable: true
-        academic_year:
-          type: integer
-        semester:
-          type: integer
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        code:
-          type: string
-          maxLength: 32
-        description:
-          type: string
-        is_active:
-          type: boolean
-      required:
-      - academic_year
-      - name
-      - semester
     SupportTicketAddMessage:
       type: object
       properties:
