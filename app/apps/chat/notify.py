@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -21,8 +23,16 @@ logger = logging.getLogger(__name__)
 
 PREVIEW_CHARS = 90
 #: At most one push per member per chat in this window, however many messages arrive: the in-app notification keeps
-#: counting, so a busy chat does not turn the phone into a buzzer.
-PUSH_INTERVAL_SECONDS = 60
+#: counting, so a rapid burst folds into one push while spaced messages each ring. Overridable at runtime with the
+#: ``CHAT_PUSH_INTERVAL_SECONDS`` setting (0 pushes every message).
+PUSH_INTERVAL_SECONDS = 8
+
+
+def push_interval_seconds() -> int:
+    try:
+        return max(0, int(getattr(settings, "CHAT_PUSH_INTERVAL_SECONDS", PUSH_INTERVAL_SECONDS)))
+    except (TypeError, ValueError):
+        return PUSH_INTERVAL_SECONDS
 
 
 def _preview(message: Message) -> str:
@@ -57,8 +67,11 @@ class ChatNotificationService:
             return 0
         label = chat_title(message.sender) or message.sender.full_name
         preview = _preview(message)
+        now = timezone.now()
         muted = set(
-            GroupChatPreference.objects.filter(group=message.group, is_muted=True).values_list("user_id", flat=True)
+            GroupChatPreference.objects.filter(group=message.group, is_muted=True)
+            .filter(Q(muted_until__isnull=True) | Q(muted_until__gt=now))  # an expired timed mute is not a mute
+            .values_list("user_id", flat=True)
         )
         sent = 0
         for user in cls.recipients(message):
@@ -77,6 +90,8 @@ class ChatNotificationService:
         preference, _created = NotificationPreference.objects.get_or_create(user=user)
         if not preference.allows(NotificationType.CHAT):
             return False
+        if group.subject_id is None and preference.mute_communities:
+            return False  # communities (no subject) switched off as a whole: same as muting each one, nothing is kept
         key = f"chat:{group.pk}"
         data = {
             "kind": "chat",
@@ -111,7 +126,9 @@ class ChatNotificationService:
             related_object_type="group",
             related_object_id=str(group.pk),
         )
-        cache.set(f"chat:push:{group.pk}:{user.pk}", True, timeout=PUSH_INTERVAL_SECONDS)
+        interval = push_interval_seconds()
+        if interval:
+            cache.set(f"chat:push:{group.pk}:{user.pk}", True, timeout=interval)
         return True
 
     @staticmethod
@@ -121,8 +138,9 @@ class ChatNotificationService:
         channels = push_channels()
         if not channels or push_suppressed_reason(preference, "chat", user.pk) is not None:
             return  # push off, chat channel off or quiet hours: the in-app notification is kept
-        if not cache.add(
-            f"chat:push:{notification.data.get('group_id')}:{user.pk}", True, timeout=PUSH_INTERVAL_SECONDS
+        interval = push_interval_seconds()
+        if interval and not cache.add(
+            f"chat:push:{notification.data.get('group_id')}:{user.pk}", True, timeout=interval
         ):
             return  # a push for this chat went out a moment ago
         from apps.notifications.tasks import deliver_push_notification

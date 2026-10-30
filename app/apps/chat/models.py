@@ -155,6 +155,15 @@ class GroupChatPreference(BaseModel):
     group = models.ForeignKey("groups.Group", on_delete=models.CASCADE, related_name="chat_preferences")
     user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="chat_preferences")
     is_muted = models.BooleanField(default=False)
+    #: When the mute ends. ``None`` together with ``is_muted=True`` means muted until the member unmutes.
+    muted_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["group", "user"], name="chat_preference_unique")]
+
+    def effective_muted(self, now=None) -> bool:
+        """Muted right now: an expired timed mute counts as unmuted everywhere."""
+
+        if not self.is_muted:
+            return False
+        return self.muted_until is None or self.muted_until > (now or timezone.now())

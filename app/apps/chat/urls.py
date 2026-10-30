@@ -6,6 +6,7 @@ from .dashboard_views import (
     DashboardMessageReportViewSet,
 )
 from .views import (
+    ChatPreferenceListView,
     ChatUnreadView,
     GroupChatHandshakeTicketView,
     GroupChatPreferenceView,
@@ -55,6 +56,7 @@ urlpatterns = [
         name="group-message-attachment-ticket",
     ),
     path("groups/<int:group_id>/chat/receipts/", GroupReceiptView.as_view(), name="group-chat-receipts"),
+    path("chat/preferences/", ChatPreferenceListView.as_view(), name="chat-preferences"),
     path("groups/<int:group_id>/chat/preferences/", GroupChatPreferenceView.as_view(), name="group-chat-preferences"),
     path(
         "groups/<int:group_id>/messages/<int:message_id>/reaction/",

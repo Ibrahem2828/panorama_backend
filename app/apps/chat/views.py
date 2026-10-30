@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import mimetypes
+from datetime import timedelta
 from pathlib import Path
 
 from django.db import IntegrityError, transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.http import content_disposition_header
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, serializers, status
@@ -21,7 +23,7 @@ from apps.common.throttles import (
     FileTicketRateThrottle,
 )
 from apps.common.viewsets import StandardExplicitActionViewSet
-from apps.groups.models import Group
+from apps.groups.models import Group, GroupMembershipStatus
 
 from .models import GroupChatPreference, Message, MessageAttachmentAccessTicket, MessageReport
 from .reactions import ChatReactionService
@@ -305,33 +307,95 @@ class MessageReactionView(APIView):
         )
 
 
+MUTE_DURATIONS = {"8h": timedelta(hours=8), "1w": timedelta(weeks=1), "forever": None}
+
+
 class ChatPreferenceSerializer(serializers.Serializer):
     is_muted = serializers.BooleanField()
+    mute_for = serializers.ChoiceField(choices=list(MUTE_DURATIONS), required=False)
+
+
+class ChatPreferenceOutSerializer(serializers.Serializer):
+    is_muted = serializers.BooleanField()
+    muted_until = serializers.DateTimeField(allow_null=True)
+
+
+class ChatPreferenceListItemSerializer(serializers.Serializer):
+    group_id = serializers.IntegerField()
+    name = serializers.CharField()
+    kind = serializers.ChoiceField(choices=["subject", "community"])
+    is_muted = serializers.BooleanField()
+    muted_until = serializers.DateTimeField(allow_null=True)
+
+
+def _mute_payload(preference: GroupChatPreference | None, now=None) -> dict:
+    muted = preference is not None and preference.effective_muted(now)
+    return {"is_muted": muted, "muted_until": preference.muted_until if muted and preference else None}
 
 
 class GroupChatPreferenceView(APIView):
-    @extend_schema(tags=["Chat"], responses={200: ChatPreferenceSerializer})
+    @extend_schema(tags=["Chat"], responses={200: ChatPreferenceOutSerializer})
     def get(self, request, group_id: int):
         group = get_object_or_404(Group, pk=group_id, is_deleted=False)
         ChatPermissionService.enforce_group_chat_access(request.user, group)
-        muted = GroupChatPreference.objects.filter(group=group, user=request.user, is_muted=True).exists()
-        return success_response(data={"is_muted": muted}, message="Chat preferences", request=request)
+        preference = GroupChatPreference.objects.filter(group=group, user=request.user).first()
+        now = timezone.now()
+        if preference is not None and preference.is_muted and not preference.effective_muted(now):
+            # lazily normalise an expired timed mute
+            preference.is_muted = False
+            preference.muted_until = None
+            preference.save(update_fields=["is_muted", "muted_until", "updated_at"])
+        return success_response(data=_mute_payload(preference, now), message="Chat preferences", request=request)
 
-    @extend_schema(tags=["Chat"], request=ChatPreferenceSerializer, responses={200: ChatPreferenceSerializer})
+    @extend_schema(tags=["Chat"], request=ChatPreferenceSerializer, responses={200: ChatPreferenceOutSerializer})
     def put(self, request, group_id: int):
         group = get_object_or_404(Group, pk=group_id, is_deleted=False)
         ChatPermissionService.enforce_group_chat_access(request.user, group)
         serializer = ChatPreferenceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        GroupChatPreference.objects.update_or_create(
-            group=group, user=request.user, defaults={"is_muted": serializer.validated_data["is_muted"]}
+        is_muted = serializer.validated_data["is_muted"]
+        duration = MUTE_DURATIONS[serializer.validated_data.get("mute_for", "forever")] if is_muted else None
+        muted_until = timezone.now() + duration if duration is not None else None
+        preference, _created = GroupChatPreference.objects.update_or_create(
+            group=group, user=request.user, defaults={"is_muted": is_muted, "muted_until": muted_until}
         )
         return success_response(
-            data={"is_muted": serializer.validated_data["is_muted"]},
+            data=_mute_payload(preference),
             message="Chat preferences saved",
             request=request,
             code="CHAT_PREFERENCES_SAVED",
         )
+
+
+class ChatPreferenceListView(APIView):
+    """Every chat the member belongs to with its mute state, for one management screen in the app."""
+
+    @extend_schema(tags=["Chat"], responses={200: ChatPreferenceListItemSerializer(many=True)})
+    def get(self, request):
+        now = timezone.now()
+        memberships = (
+            request.user.group_memberships.filter(
+                status=GroupMembershipStatus.APPROVED, group__is_deleted=False, group__is_active=True
+            )
+            .select_related("group")
+            .order_by("group__name", "group_id")
+        )
+        preferences = {
+            item.group_id: item for item in GroupChatPreference.objects.filter(user=request.user, is_muted=True)
+        }
+        items = []
+        for membership in memberships:
+            group = membership.group
+            payload = _mute_payload(preferences.get(group.pk), now)
+            items.append(
+                {
+                    "group_id": group.pk,
+                    "name": group.name,
+                    "kind": "subject" if group.subject_id else "community",
+                    **payload,
+                }
+            )
+        return success_response(data=items, message="Chat preferences", request=request)
 
 
 class ChatUnreadView(APIView):
