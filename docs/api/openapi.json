@@ -1065,6 +1065,38 @@
                 }
             }
         },
+        "/api/v1/chat/preferences/": {
+            "get": {
+                "operationId": "v1_chat_preferences_list",
+                "description": "Every chat the member belongs to with its mute state, for one management screen in the app.",
+                "tags": [
+                    "Chat"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ChatPreferenceListItem"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/chat/unread/": {
             "get": {
                 "operationId": "v1_chat_unread_retrieve",
@@ -18014,7 +18046,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ChatPreference"
+                                    "$ref": "#/components/schemas/ChatPreferenceOut"
                                 }
                             }
                         },
@@ -18070,7 +18102,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ChatPreference"
+                                    "$ref": "#/components/schemas/ChatPreferenceOut"
                                 }
                             }
                         },
@@ -23559,15 +23591,58 @@
                     "websocket_path"
                 ]
             },
-            "ChatPreference": {
+            "ChatPreferenceListItem": {
+                "type": "object",
+                "properties": {
+                    "group_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "$ref": "#/components/schemas/ChatPreferenceListItemKindEnum"
+                    },
+                    "is_muted": {
+                        "type": "boolean"
+                    },
+                    "muted_until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "group_id",
+                    "is_muted",
+                    "kind",
+                    "muted_until",
+                    "name"
+                ]
+            },
+            "ChatPreferenceListItemKindEnum": {
+                "enum": [
+                    "subject",
+                    "community"
+                ],
+                "type": "string",
+                "description": "* `subject` - subject\n* `community` - community"
+            },
+            "ChatPreferenceOut": {
                 "type": "object",
                 "properties": {
                     "is_muted": {
                         "type": "boolean"
+                    },
+                    "muted_until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
                     }
                 },
                 "required": [
-                    "is_muted"
+                    "is_muted",
+                    "muted_until"
                 ]
             },
             "ChatPreferenceRequest": {
@@ -23575,6 +23650,9 @@
                 "properties": {
                     "is_muted": {
                         "type": "boolean"
+                    },
+                    "mute_for": {
+                        "$ref": "#/components/schemas/MuteForEnum"
                     }
                 },
                 "required": [
@@ -28846,6 +28924,15 @@
                 "type": "string",
                 "description": "* `link` - link\n* `temporary_password` - temporary_password"
             },
+            "MuteForEnum": {
+                "enum": [
+                    "8h",
+                    "1w",
+                    "forever"
+                ],
+                "type": "string",
+                "description": "* `8h` - 8h\n* `1w` - 1w\n* `forever` - forever"
+            },
             "NUpDirectionEnum": {
                 "enum": [
                     "ltr",
@@ -29090,6 +29177,9 @@
                     },
                     "quiet_hours": {
                         "$ref": "#/components/schemas/QuietHours"
+                    },
+                    "mute_communities": {
+                        "type": "boolean"
                     },
                     "updated_at": {
                         "type": "string",
@@ -31634,6 +31724,9 @@
                     },
                     "quiet_hours": {
                         "$ref": "#/components/schemas/QuietHoursRequest"
+                    },
+                    "mute_communities": {
+                        "type": "boolean"
                     }
                 }
             },

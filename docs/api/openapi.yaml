@@ -648,6 +648,25 @@ paths:
       responses:
         '200':
           description: JWT refresh response
+  /api/v1/chat/preferences/:
+    get:
+      operationId: v1_chat_preferences_list
+      description: Every chat the member belongs to with its mute state, for one management
+        screen in the app.
+      tags:
+      - Chat
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatPreferenceListItem'
+          description: ''
   /api/v1/chat/unread/:
     get:
       operationId: v1_chat_unread_retrieve
@@ -11304,7 +11323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChatPreference'
+                $ref: '#/components/schemas/ChatPreferenceOut'
           description: ''
     put:
       operationId: v1_groups_chat_preferences_update
@@ -11336,7 +11355,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChatPreference'
+                $ref: '#/components/schemas/ChatPreferenceOut'
           description: ''
   /api/v1/groups/{group_id}/chat/receipts/:
     post:
@@ -14969,18 +14988,54 @@ components:
       - expires_at
       - ticket
       - websocket_path
-    ChatPreference:
+    ChatPreferenceListItem:
+      type: object
+      properties:
+        group_id:
+          type: integer
+        name:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ChatPreferenceListItemKindEnum'
+        is_muted:
+          type: boolean
+        muted_until:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - group_id
+      - is_muted
+      - kind
+      - muted_until
+      - name
+    ChatPreferenceListItemKindEnum:
+      enum:
+      - subject
+      - community
+      type: string
+      description: |-
+        * `subject` - subject
+        * `community` - community
+    ChatPreferenceOut:
       type: object
       properties:
         is_muted:
           type: boolean
+        muted_until:
+          type: string
+          format: date-time
+          nullable: true
       required:
       - is_muted
+      - muted_until
     ChatPreferenceRequest:
       type: object
       properties:
         is_muted:
           type: boolean
+        mute_for:
+          $ref: '#/components/schemas/MuteForEnum'
       required:
       - is_muted
     ColorModeEnum:
@@ -19046,6 +19101,16 @@ components:
       description: |-
         * `link` - link
         * `temporary_password` - temporary_password
+    MuteForEnum:
+      enum:
+      - 8h
+      - 1w
+      - forever
+      type: string
+      description: |-
+        * `8h` - 8h
+        * `1w` - 1w
+        * `forever` - forever
     NUpDirectionEnum:
       enum:
       - ltr
@@ -19234,6 +19299,8 @@ components:
             type: boolean
         quiet_hours:
           $ref: '#/components/schemas/QuietHours'
+        mute_communities:
+          type: boolean
         updated_at:
           type: string
           format: date-time
@@ -21118,6 +21185,8 @@ components:
             type: boolean
         quiet_hours:
           $ref: '#/components/schemas/QuietHoursRequest'
+        mute_communities:
+          type: boolean
     PatchedPermissionTemplateRequest:
       type: object
       properties:

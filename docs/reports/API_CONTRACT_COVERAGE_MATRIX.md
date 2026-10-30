@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 442
+**Operations:** 443
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -30,6 +30,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_auth_register_student_create | POST | /api/v1/auth/register/student/ | Public | Object/endpoint policy — REVIEW | application/json: #/components/schemas/StudentRegisterRequest; multipart/form-data: #/components/schemas/StudentRegisterRequest; application/x-www-form-urlencoded: #/components/schemas/StudentRegisterRequest | 201 | Envelope/global handling — REVIEW | Required | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_auth_request_password_reset_create | POST | /api/v1/auth/request-password-reset/ | Public | Object/endpoint policy — REVIEW | application/json: #/components/schemas/RequestPasswordResetRequest; application/x-www-form-urlencoded: #/components/schemas/RequestPasswordResetRequest; multipart/form-data: #/components/schemas/RequestPasswordResetRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_auth_token_refresh_create | POST | /api/v1/auth/token/refresh/ | Public | Object/endpoint policy — REVIEW | application/json: #/components/schemas/SessionVersionTokenRefreshRequest; application/x-www-form-urlencoded: #/components/schemas/SessionVersionTokenRefreshRequest; multipart/form-data: #/components/schemas/SessionVersionTokenRefreshRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Dashboard + Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_chat_preferences_list | GET | /api/v1/chat/preferences/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_chat_unread_retrieve | GET | /api/v1/chat/unread/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_academic_years_list | GET | /api/v1/dashboard/academic-years/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Dashboard | REVIEW: map behavioral test | REVIEW |
 | v1_dashboard_academic_years_create | POST | /api/v1/dashboard/academic-years/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/AcademicYearRequest; application/x-www-form-urlencoded: #/components/schemas/AcademicYearRequest; multipart/form-data: #/components/schemas/AcademicYearRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Dashboard | REVIEW: map behavioral test | REVIEW |
