@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import cast
 
+import django_filters
 from django.db import transaction
 from django.db.models import Count
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
@@ -22,6 +23,7 @@ from apps.accounts.models import User
 from apps.accounts.permissions import CanManageFiles
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.filters import DateBoundFilter, StrictBooleanFilter, StrictIntegerFilter
 from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle, LectureViewerRateThrottle
@@ -141,11 +143,30 @@ class GroupFileResourceViewSet(FileResourceViewSet):
         return accessible_files_for_user(user).filter(group_id=group_id)
 
 
+class DashboardFileFilter(django_filters.FilterSet):
+    """The library filters plus ``uploaded_by``, ``status`` (alias of ``processing_status``) and ``created_after/before``."""
+
+    status = django_filters.ChoiceFilter(field_name="processing_status", choices=FileProcessingStatus.choices)
+    uploaded_by = StrictIntegerFilter(field_name="uploaded_by_id")
+    is_active = StrictBooleanFilter(field_name="is_active")
+    is_printable = StrictBooleanFilter(field_name="is_printable")
+    created_after = DateBoundFilter(field_name="created_at", bound="after")
+    created_before = DateBoundFilter(field_name="created_at", bound="before")
+
+    class Meta:
+        model = FileResource
+        fields = [f for f in FileResourceViewSet.filterset_fields if f not in {"is_active", "is_printable"}]
+
+
 class DashboardFileResourceViewSet(StandardModelViewSet):
+    """``GET dashboard/files/``: ``visibility``, ``processing_status``/``status``, ``group``, ``subject``, ``uploaded_by``,
+    the academic hierarchy, ``is_active``, ``is_printable`` and ``created_after``/``created_before`` (inclusive
+    YYYY-MM-DD); ``search`` title, description or sha256."""
+
     permission_classes = [CanManageFiles]
     serializer_class = FileResourceSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = FileResourceViewSet.filterset_fields
+    filterset_class = DashboardFileFilter
     search_fields = ["title", "description", "sha256"]
     ordering_fields = ["created_at", "title", "file_size", "pages_count"]
     ordering = ["-created_at"]

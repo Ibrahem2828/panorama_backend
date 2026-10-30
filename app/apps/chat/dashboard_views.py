@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import django_filters
 from django.db import transaction
-from django.db.models import Count, Max, OuterRef, Q, Subquery
+from django.db.models import OuterRef, Subquery
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import filters, serializers, status
 from rest_framework.exceptions import APIException, NotFound
 from rest_framework.views import APIView
@@ -13,10 +15,17 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import CanManageGroups
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.filters import (
+    DateBoundFilter,
+    MappedOrderingFilter,
+    StrictBooleanFilter,
+    StrictIntegerFilter,
+    count_subquery,
+)
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.viewsets import StandardExplicitActionViewSet
-from apps.groups.models import Group, GroupMembershipStatus
+from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 
 from .models import UNRESOLVED_REPORT_STATUSES, Message, MessageReport, MessageReportStatus
 from .services import ChatMessageService
@@ -180,6 +189,7 @@ class DashboardMessageReportResolveView(APIView):
 class DashboardChatGroupSerializer(serializers.ModelSerializer):
     subject_name = serializers.CharField(source="subject.name", read_only=True, default=None)
     faculty_name = serializers.CharField(source="faculty.name", read_only=True, default=None)
+    kind = serializers.SerializerMethodField()
     members = serializers.IntegerField(read_only=True)
     last_message_at = serializers.DateTimeField(read_only=True)
     last_message_excerpt = serializers.CharField(read_only=True, default="")
@@ -190,6 +200,7 @@ class DashboardChatGroupSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "kind",
             "subject_name",
             "faculty_name",
             "is_active",
@@ -200,9 +211,69 @@ class DashboardChatGroupSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    @extend_schema_field(serializers.ChoiceField(choices=["subject", "faculty", "general"]))
+    def get_kind(self, obj) -> str:
+        if obj.subject_id:
+            return "subject"
+        return "faculty" if obj.faculty_id else "general"
+
+
+class DashboardChatGroupFilter(django_filters.FilterSet):
+    faculty = StrictIntegerFilter(field_name="faculty_id")
+    major = StrictIntegerFilter(field_name="major_id")
+    academic_year = StrictIntegerFilter(field_name="academic_year_id")
+    semester = StrictIntegerFilter(field_name="semester_id")
+    subject = StrictIntegerFilter(field_name="subject_id")
+    kind = django_filters.ChoiceFilter(
+        choices=[(k, k) for k in ("subject", "faculty", "general")], method="filter_kind"
+    )
+    has_messages = StrictBooleanFilter(method="filter_has_messages")
+    active_after = DateBoundFilter(field_name="last_message_at", bound="after")
+    has_open_reports = StrictBooleanFilter(method="filter_has_open_reports")
+    #: Aliases of ``has_open_reports=true`` (``reported`` is what the first dashboard build sent); false = unfiltered.
+    reported = StrictBooleanFilter(method="filter_reported_only")
+    reported_only = StrictBooleanFilter(method="filter_reported_only")
+    ordering = MappedOrderingFilter(
+        mapping={
+            "last_message_at": "last_message_at",
+            "open_reports": "open_reports",
+            "members": "members",
+            "name": "name",
+        },
+        default="-open_reports,-last_message_at,name",
+    )
+
+    class Meta:
+        model = Group
+        fields: list[str] = []
+
+    def filter_kind(self, queryset, name, value):
+        from apps.groups.views import group_kind_q
+
+        return queryset.filter(group_kind_q(value)) if value else queryset
+
+    def filter_has_messages(self, queryset, name, value):
+        if value is None:
+            return queryset
+        return queryset.filter(last_message_at__isnull=not value)
+
+    def filter_has_open_reports(self, queryset, name, value):
+        if value is None:
+            return queryset
+        return queryset.filter(open_reports__gt=0) if value else queryset.filter(open_reports=0)
+
+    def filter_reported_only(self, queryset, name, value):
+        return queryset.filter(open_reports__gt=0) if value else queryset
+
 
 class DashboardChatGroupViewSet(StandardExplicitActionViewSet):
-    """The chat console's group list: ``GET /dashboard/chat/groups/`` (``search`` by group or subject, ``reported=1``).
+    """The chat console's group list: ``GET /dashboard/chat/groups/``.
+
+    Filters: ``search`` (group, subject or faculty name), ``faculty``, ``major``, ``academic_year``, ``semester``,
+    ``subject``, ``kind`` (subject|faculty|general), ``has_messages``, ``active_after`` (last message on/after
+    YYYY-MM-DD), ``has_open_reports`` (``reported``/``reported_only`` = true are aliases).
+    ``ordering``: ``last_message_at``, ``open_reports``, ``members``, ``name`` (``-`` = descending; nulls last);
+    default: most open reports, then latest activity.
 
     Opening a chat from here uses the ordinary message endpoints: staff with ``groups.manage`` may read and write in
     every group chat, and their messages carry their position title instead of a name.
@@ -210,30 +281,28 @@ class DashboardChatGroupViewSet(StandardExplicitActionViewSet):
 
     permission_classes = [CanManageGroups]
     serializer_class = DashboardChatGroupSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = DashboardChatGroupFilter
     search_fields = ["name", "subject__name", "faculty__name"]
 
     def get_queryset(self):
-        latest = Message.objects.filter(group=OuterRef("pk"), is_deleted=False).order_by("-created_at", "-id")
-        queryset = (
+        live_messages = Message.objects.filter(is_deleted=False)
+        latest = live_messages.filter(group=OuterRef("pk")).order_by("-created_at", "-id")
+        return (
             Group.objects.filter(is_deleted=False)
             .select_related("subject", "faculty")
             .annotate(
-                members=Count(
-                    "memberships", filter=Q(memberships__status=GroupMembershipStatus.APPROVED), distinct=True
+                members=count_subquery(
+                    GroupMembership.objects.filter(status=GroupMembershipStatus.APPROVED, is_deleted=False),
+                    "pk",
+                    group_field="group_id",
                 ),
-                last_message_at=Max("messages__created_at", filter=Q(messages__is_deleted=False)),
+                last_message_at=Subquery(latest.values("created_at")[:1]),
                 last_message_excerpt=Subquery(latest.values("content")[:1]),
-                open_reports=Count(
-                    "messages__reports",
-                    filter=Q(
-                        messages__reports__status__in=UNRESOLVED_REPORT_STATUSES, messages__reports__is_deleted=False
-                    ),
-                    distinct=True,
+                open_reports=count_subquery(
+                    MessageReport.objects.filter(status__in=UNRESOLVED_REPORT_STATUSES, is_deleted=False),
+                    "pk",
+                    group_field="message__group_id",
                 ),
             )
-            .order_by("-open_reports", "-last_message_at", "name")
         )
-        if self.request.query_params.get("reported") in {"1", "true"}:
-            queryset = queryset.filter(open_reports__gt=0)
-        return queryset

@@ -3,11 +3,13 @@ from __future__ import annotations
 import mimetypes
 from pathlib import Path
 
+import django_filters
 from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils.http import content_disposition_header
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -16,6 +18,7 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import CanReviewEnrollment, IsStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.filters import DateBoundFilter, StrictIntegerFilter
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.viewsets import StandardReadOnlyModelViewSet
@@ -102,34 +105,47 @@ class CancelEnrollmentView(APIView):
 # -- staff ---------------------------------------------------------------------------------------------------------------
 
 
+class DashboardEnrollmentFilter(django_filters.FilterSet):
+    status = django_filters.ChoiceFilter(choices=EnrollmentStatus.choices)
+    faculty = StrictIntegerFilter(field_name="faculty_id")
+    academic_year = StrictIntegerFilter(field_name="academic_year_id")
+    semester = StrictIntegerFilter(field_name="semester_id")
+    created_after = DateBoundFilter(field_name="created_at", bound="after")
+    created_before = DateBoundFilter(field_name="created_at", bound="before")
+    search = django_filters.CharFilter(method="filter_search", label="Student name, e-mail or student number")
+
+    class Meta:
+        model = EnrollmentRequest
+        fields: list[str] = []
+
+    def filter_search(self, queryset, name, value):
+        term = " ".join((value or "").split())
+        if not term:
+            return queryset
+        return queryset.filter(
+            Q(user__full_name__icontains=term)
+            | Q(user__email__icontains=term)
+            | Q(student_profile__student_number__icontains=term)
+        )
+
+
 class DashboardEnrollmentViewSet(StandardReadOnlyModelViewSet):
-    """``GET /dashboard/enrollment/requests/``: filter by ``status``, ``faculty``; search name, e-mail or student number."""
+    """``GET /dashboard/enrollment/requests/``: ``status``, ``faculty``, ``academic_year``, ``semester``,
+    ``created_after``/``created_before`` (inclusive YYYY-MM-DD); ``search`` student name, e-mail or student number."""
 
     permission_classes = [CanReviewEnrollment]
     serializer_class = DashboardEnrollmentSerializer
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = DashboardEnrollmentFilter
     ordering_fields = ["created_at", "status"]
     ordering = ["-created_at", "-id"]
 
     def get_queryset(self):
-        queryset = (
+        return (
             EnrollmentRequest.objects.filter(is_deleted=False)
             .select_related("user", "student_profile", "faculty", "academic_year", "semester", "reviewed_by")
             .prefetch_related("items__subject__academic_year", "items__subject__semester")
         )
-        params = self.request.query_params
-        if params.get("status") in EnrollmentStatus.values:
-            queryset = queryset.filter(status=params["status"])
-        if params.get("faculty", "").isdigit():
-            queryset = queryset.filter(faculty_id=int(params["faculty"]))
-        term = " ".join(params.get("search", "").split())
-        if term:
-            queryset = queryset.filter(
-                Q(user__full_name__icontains=term)
-                | Q(user__email__icontains=term)
-                | Q(student_profile__student_number__icontains=term)
-            )
-        return queryset
 
 
 class EnrollmentSummaryView(APIView):

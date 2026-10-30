@@ -11,11 +11,13 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts.permissions import CanManageAcademic
 from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
+from apps.common.filters import StrictBooleanFilter, StrictIntegerFilter, count_subquery
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import AcademicYear, Faculty, Major, Semester, Subject, University
 from .serializers import (
     AcademicYearSerializer,
+    DashboardSubjectSerializer,
     FacultySerializer,
     MajorSerializer,
     SemesterSerializer,
@@ -208,16 +210,68 @@ class DashboardSemesterViewSet(DashboardAcademicMixin):
 
 class DashboardSubjectFilter(django_filters.FilterSet):
     has_major = django_filters.BooleanFilter(field_name="major", lookup_expr="isnull", exclude=True)
+    university = StrictIntegerFilter(field_name="faculty__university_id")
+    is_active = StrictBooleanFilter(field_name="is_active")
+    has_groups = StrictBooleanFilter(method="filter_has_groups")
+    has_lectures = StrictBooleanFilter(method="filter_has_lectures")
+    has_files = StrictBooleanFilter(method="filter_has_files")
 
     class Meta:
         model = Subject
-        fields = ["faculty", "major", "has_major", "academic_year", "semester", "is_active"]
+        fields = ["faculty", "major", "has_major", "academic_year", "semester"]
+
+    @staticmethod
+    def _positive(queryset, field, value):
+        if value is None:
+            return queryset
+        return queryset.filter(**{f"{field}__gt": 0}) if value else queryset.filter(**{field: 0})
+
+    def filter_has_groups(self, queryset, name, value):
+        return self._positive(queryset, "groups_count", value)
+
+    def filter_has_lectures(self, queryset, name, value):
+        return self._positive(queryset, "lectures_count", value)
+
+    def filter_has_files(self, queryset, name, value):
+        return self._positive(queryset, "files_count", value)
 
 
 class DashboardSubjectViewSet(DashboardAcademicMixin):
-    queryset = Subject.objects.filter(is_deleted=False).select_related(
-        "faculty", "faculty__university", "major", "major__faculty", "academic_year", "semester"
-    )
-    serializer_class = SubjectSerializer
+    """``GET dashboard/subjects/``.
+
+    Filters: ``faculty``, ``major``, ``has_major``, ``university``, ``academic_year``, ``semester``, ``is_active``,
+    ``has_groups``, ``has_lectures``, ``has_files``, ``search`` (name, code, description).
+    ``ordering``: ``name``, ``code``, ``created_at``, ``groups_count``, ``lectures_count``, ``files_count`` (``-`` = descending).
+    """
+
+    serializer_class = DashboardSubjectSerializer
     filterset_class = DashboardSubjectFilter
     search_fields = ["name", "code", "description"]
+    ordering_fields = [
+        "id",
+        "name",
+        "code",
+        "created_at",
+        "updated_at",
+        "order",
+        "groups_count",
+        "lectures_count",
+        "files_count",
+    ]
+
+    def get_queryset(self):
+        from apps.files.models import FileResource
+        from apps.groups.models import Group
+        from apps.lectures.models import Lecture
+
+        return (
+            Subject.objects.filter(is_deleted=False)
+            .select_related("faculty", "faculty__university", "major", "major__faculty", "academic_year", "semester")
+            .annotate(
+                groups_count=count_subquery(Group.objects.filter(is_deleted=False), "pk", group_field="subject_id"),
+                lectures_count=count_subquery(Lecture.objects.filter(is_deleted=False), "pk", group_field="subject_id"),
+                files_count=count_subquery(
+                    FileResource.objects.filter(is_deleted=False), "pk", group_field="subject_id"
+                ),
+            )
+        )

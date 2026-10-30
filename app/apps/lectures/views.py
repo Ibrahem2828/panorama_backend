@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from uuid import UUID
 
+import django_filters
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -19,6 +20,7 @@ from apps.accounts.permissions import CanManageLectures
 from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.common.filters import DateBoundFilter, StrictBooleanFilter
 from apps.common.idempotency import run_idempotent
 from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
@@ -99,11 +101,24 @@ class LectureViewSet(StandardReadOnlyModelViewSet):
         return accessible_lectures_for_user(self.request.user)
 
 
+class DashboardLectureFilter(django_filters.FilterSet):
+    """``processing_status`` is an alias of ``status``; ``created_after``/``created_before`` are inclusive YYYY-MM-DD."""
+
+    processing_status = django_filters.ChoiceFilter(field_name="status", choices=LectureProcessingStatus.choices)
+    is_published = StrictBooleanFilter(field_name="is_published")
+    created_after = DateBoundFilter(field_name="created_at", bound="after")
+    created_before = DateBoundFilter(field_name="created_at", bound="before")
+
+    class Meta:
+        model = Lecture
+        fields = ["subject", "faculty", "status"]
+
+
 class DashboardLectureViewSet(AuditedModelWriteMixin, StandardModelViewSet):
     permission_classes = [CanManageLectures]
     serializer_class = DashboardLectureSerializer
     ordering = ["-created_at"]
-    filterset_fields = ["subject", "faculty", "status", "is_published"]
+    filterset_class = DashboardLectureFilter
     audit_update_action = AuditAction.LECTURE_UPDATED
     audit_delete_action = AuditAction.LECTURE_DELETED
 

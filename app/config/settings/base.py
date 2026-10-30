@@ -211,6 +211,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "DuplexFlipEnum": "apps.printing.options.DuplexFlip",
         "CounterDuplexFlipEnum": [("long", "long"), ("short", "short")],
+        "GroupKindEnum": [("subject", "subject"), ("faculty", "faculty"), ("general", "general")],
         "EnrollmentStatusEnum": "apps.enrollment.models.EnrollmentStatus",
         "EnrollmentItemStatusEnum": "apps.enrollment.models.EnrollmentItemStatus",
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",

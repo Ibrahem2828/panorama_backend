@@ -146,3 +146,34 @@ class SubjectSerializer(serializers.ModelSerializer):
             )
         if code and others.filter(faculty=faculty, code=code).exists():
             raise serializers.ValidationError({"code": "A subject with this code already exists in this faculty."})
+
+
+class DashboardSubjectSerializer(SubjectSerializer):
+    """The dashboard list row: the subject plus how much content hangs off it (annotated counts, no per-row queries)."""
+
+    groups_count = serializers.SerializerMethodField()
+    lectures_count = serializers.SerializerMethodField()
+    files_count = serializers.SerializerMethodField()
+
+    class Meta(SubjectSerializer.Meta):
+        fields = SubjectSerializer.Meta.fields + ["groups_count", "lectures_count", "files_count"]
+        read_only_fields = SubjectSerializer.Meta.read_only_fields + ["groups_count", "lectures_count", "files_count"]
+
+    @staticmethod
+    def _count(obj, attr: str, related: str) -> int:
+        value = getattr(obj, attr, None)  # annotated on list/retrieve; a freshly created/updated row counts lazily
+        if value is not None:
+            return value
+        return getattr(obj, related).filter(is_deleted=False).count()
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_groups_count(self, obj):
+        return self._count(obj, "groups_count", "groups")
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_lectures_count(self, obj):
+        return self._count(obj, "lectures_count", "lectures")
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_files_count(self, obj):
+        return self._count(obj, "files_count", "files")

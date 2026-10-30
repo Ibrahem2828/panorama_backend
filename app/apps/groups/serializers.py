@@ -135,8 +135,38 @@ class DashboardGroupSerializer(GroupSerializer):
     whatsapp_enabled = serializers.BooleanField(write_only=True, required=False, default=True)
     whatsapp_label = serializers.CharField(write_only=True, required=False, allow_blank=True, max_length=100)
 
+    kind = serializers.SerializerMethodField()
+    pending_requests_count = serializers.SerializerMethodField()
+    has_whatsapp = serializers.SerializerMethodField()
+
     class Meta(GroupSerializer.Meta):
-        fields = GroupSerializer.Meta.fields + ["whatsapp_url", "whatsapp_enabled", "whatsapp_label"]
+        fields = GroupSerializer.Meta.fields + [
+            "kind",
+            "pending_requests_count",
+            "has_whatsapp",
+            "whatsapp_url",
+            "whatsapp_enabled",
+            "whatsapp_label",
+        ]
+        read_only_fields = GroupSerializer.Meta.read_only_fields + ["kind", "pending_requests_count", "has_whatsapp"]
+
+    @extend_schema_field(serializers.ChoiceField(choices=["subject", "faculty", "general"]))
+    def get_kind(self, obj):
+        if obj.subject_id:
+            return "subject"
+        return "faculty" if obj.faculty_id else "general"
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_pending_requests_count(self, obj):
+        value = getattr(obj, "pending_requests_count", None)
+        if value is not None:
+            return value
+        return obj.memberships.filter(status=GroupMembershipStatus.PENDING, is_deleted=False).count()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_has_whatsapp(self, obj):
+        value = getattr(obj, "has_whatsapp", None)
+        return value if value is not None else self.get_has_whatsapp_channel(obj)
 
     def create(self, validated_data):
         whatsapp_url = validated_data.pop("whatsapp_url", "")
