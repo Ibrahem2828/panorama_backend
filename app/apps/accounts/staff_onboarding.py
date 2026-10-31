@@ -303,6 +303,63 @@ class StaffActivityService:
         return AuditLog.objects.filter(actor=user).order_by("-created_at", "-id")[:limit]
 
     @staticmethod
+    def recent_logins(user: User, limit: int = 10) -> list[dict]:
+        """The user's last login successes/failures (with the real failure reason) for the admin activity dialog."""
+
+        from apps.audit.models import SystemActivity, SystemActivityKind
+
+        rows = SystemActivity.objects.filter(
+            user=user, kind__in=[SystemActivityKind.LOGIN_SUCCESS, SystemActivityKind.LOGIN_FAILED]
+        ).order_by("-created_at", "-id")[:limit]
+        return [
+            {
+                "id": row.pk,
+                "kind": row.kind,
+                "created_at": row.created_at,
+                "ip": row.ip,
+                "reason": (row.extra or {}).get("reason", "") if row.kind == SystemActivityKind.LOGIN_FAILED else "",
+                "note": (row.extra or {}).get("note", ""),
+            }
+            for row in rows
+        ]
+
+    @staticmethod
+    def invitation(user: User) -> dict:
+        """``state``: pending | accepted | expired | revoked | none; ``mode`` is read from the invite audit row."""
+
+        latest = user.invitations.order_by("-created_at", "-id").first()
+        invited = (
+            AuditLog.objects.filter(action=AuditAction.USER_INVITED, target_type="User", target_id=str(user.pk))
+            .order_by("-created_at", "-id")
+            .first()
+        )
+        mode = None
+        if invited is not None:
+            recorded = (invited.new_value or {}).get("mode")
+            mode = recorded if recorded in {"temporary_password", "link"} else None
+            if mode is None and (invited.new_value or {}).get("resent"):
+                mode = "link"  # a resend always issues a fresh link
+        if mode is None and latest is not None:
+            mode = "link"
+        if latest is None:
+            state = "none"
+        elif latest.accepted_at is not None:
+            state = "accepted"
+        elif latest.revoked_at is not None:
+            state = "revoked"
+        elif latest.expires_at <= timezone.now():
+            state = "expired"
+        else:
+            state = "pending"
+        last_sent = invited.created_at if invited is not None else (latest.created_at if latest else None)
+        return {
+            "state": state,
+            "mode": mode,
+            "last_sent_at": last_sent,
+            "password_set": user.has_usable_password(),
+        }
+
+    @staticmethod
     @transaction.atomic
     def end_sessions(*, actor, user: User, request=None) -> None:
         user.invalidate_sessions()
