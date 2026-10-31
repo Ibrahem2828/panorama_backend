@@ -3,6 +3,7 @@ from rest_framework.routers import APIRootView, DefaultRouter
 
 from apps.accounts.permissions import CanAccessDashboard
 
+from .student_subjects import StudentSubjectViewSet
 from .term_views import (
     CurrentTermView,
     DashboardCurrentTermView,
@@ -31,6 +32,7 @@ router = DefaultRouter()
 router.register("universities", PublicUniversityViewSet, basename="universities")
 router.register("academic-years", PublicAcademicYearViewSet, basename="academic-years")
 router.register("semesters", PublicSemesterViewSet, basename="semesters")
+router.register("subjects", StudentSubjectViewSet, basename="student-subjects")
 
 
 class DashboardAPIRootView(APIRootView):

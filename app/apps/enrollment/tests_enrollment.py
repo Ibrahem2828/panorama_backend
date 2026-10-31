@@ -273,10 +273,11 @@ def test_screenshot_is_only_reachable_through_a_staff_ticket(world):
     assert _client(world["student"]).get(path).status_code == 403
 
 
-def test_student_cannot_join_a_subject_group_by_hand_but_can_join_others(world):
-    response = _client(world["student"]).post(f"/api/v1/groups/{world['groups']['Dental Anatomy'].pk}/join/")
-    assert response.status_code == 400
-    assert not _is_member(world["student"], world["groups"]["Dental Anatomy"])
+def test_student_cannot_join_any_group_by_hand(world):
+    for group in (world["groups"]["Dental Anatomy"], world["community"]):
+        response = _client(world["student"]).post(f"/api/v1/groups/{group.pk}/join/")
+        assert response.status_code == 403 and response.data["code"] == "GROUP_JOIN_ENROLLMENT_ONLY"
+        assert not _is_member(world["student"], group)
 
 
 def test_verification_approval_joins_the_faculty_community(world):

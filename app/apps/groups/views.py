@@ -16,7 +16,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
-from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups, IsVerifiedStudent
+from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups, IsStudent, IsVerifiedStudent
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.filters import DateBoundFilter, PositiveIntegerFilter, StrictBooleanFilter, count_subquery
@@ -34,6 +34,7 @@ from .models import (
     GroupMembershipStatus,
 )
 from .serializers import (
+    AvailableGroupSerializer,
     DashboardGroupSerializer,
     ExternalChannelAppLinkSerializer,
     ExternalChannelTicketSerializer,
@@ -44,6 +45,7 @@ from .serializers import (
 )
 from .services import (
     ExternalChannelService,
+    GroupJoinEnrollmentOnly,
     GroupMembershipService,
     eligible_groups_filter,
     is_student_eligible_for_group,
@@ -66,8 +68,12 @@ def _group_queryset():
 
 
 class AvailableGroupViewSet(StandardReadOnlyModelViewSet):
+    """Read-only list of the groups that match the student's level. Joining by request no longer exists: every row
+    carries ``can_request_join: false`` and groups are joined automatically after a subject-registration request is
+    approved."""
+
     permission_classes = [IsVerifiedStudent]
-    serializer_class = GroupSerializer
+    serializer_class = AvailableGroupSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["university", "faculty", "major", "academic_year", "semester", "subject"]
     search_fields = ["name", "description"]
@@ -165,14 +171,17 @@ def _whatsapp_channels():
     )
 
 
-def group_kind_q(kind: str) -> Q:
-    """subject = pinned to a subject; faculty = pinned to a faculty but no subject; general = neither."""
+def group_kind_q(kind: str, prefix: str = "") -> Q:
+    """subject = pinned to a subject; faculty = pinned to a faculty but no subject; general = neither.
+
+    ``prefix`` (e.g. ``"group__"``) applies the same rule through a relation.
+    """
 
     if kind == "subject":
-        return Q(subject__isnull=False)
+        return Q(**{f"{prefix}subject__isnull": False})
     if kind == "faculty":
-        return Q(subject__isnull=True, faculty__isnull=False)
-    return Q(subject__isnull=True, faculty__isnull=True)
+        return Q(**{f"{prefix}subject__isnull": True, f"{prefix}faculty__isnull": False})
+    return Q(**{f"{prefix}subject__isnull": True, f"{prefix}faculty__isnull": True})
 
 
 class DashboardGroupFilter(django_filters.FilterSet):
@@ -324,22 +333,24 @@ class DashboardGroupMembersExportView(APIView):
 
 
 class GroupJoinView(APIView):
-    permission_classes = [IsVerifiedStudent]
+    """Retired: groups are joined automatically when a subject-registration request is approved.
+
+    The route stays so old app versions get a clear, stable error (403 ``GROUP_JOIN_ENROLLMENT_ONLY``) instead of 404.
+    """
+
+    permission_classes = [IsStudent]
     serializer_class = GroupMembershipSerializer
 
-    @extend_schema(tags=["Groups"], responses={200: GroupMembershipSerializer})
+    @extend_schema(
+        tags=["Groups"],
+        request=None,
+        deprecated=True,
+        description="Always refused with 403 `GROUP_JOIN_ENROLLMENT_ONLY`: students join groups automatically after "
+        "their subject-registration request is approved.",
+        responses={403: OpenApiResponse(description="GROUP_JOIN_ENROLLMENT_ONLY")},
+    )
     def post(self, request, pk: int):
-        def write():
-            group = get_object_or_404(Group, pk=pk, is_active=True, is_deleted=False)
-            membership = GroupMembershipService.join(request.user, group)
-            return success_response(
-                data=GroupMembershipSerializer(membership).data,
-                message="Group join request submitted",
-                request=request,
-                code="GROUP_JOIN_REQUESTED",
-            )
-
-        return run_idempotent(request, f"group-join:{pk}", write)
+        raise GroupJoinEnrollmentOnly()
 
 
 class GroupLeaveView(APIView):

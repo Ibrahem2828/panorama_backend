@@ -130,6 +130,18 @@ class GroupSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class AvailableGroupSerializer(GroupSerializer):
+    can_request_join = serializers.SerializerMethodField()
+
+    class Meta(GroupSerializer.Meta):
+        fields = GroupSerializer.Meta.fields + ["can_request_join"]
+        read_only_fields = GroupSerializer.Meta.read_only_fields + ["can_request_join"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_can_request_join(self, obj) -> bool:
+        return False  # joining is automatic after an approved subject-registration request
+
+
 class DashboardGroupSerializer(GroupSerializer):
     whatsapp_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
     whatsapp_enabled = serializers.BooleanField(write_only=True, required=False, default=True)

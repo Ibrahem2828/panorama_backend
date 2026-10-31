@@ -298,8 +298,12 @@ def test_group_membership_flow_and_access_rules(api_client, admin_user, student_
     assert available.data["data"]["count"] == 1
 
     join = api_client.post(f"/api/v1/groups/{group_id}/join/")
-    assert join.status_code == status.HTTP_200_OK
-    membership = GroupMembership.objects.get(group_id=group_id, user=student_user)
+    assert join.status_code == status.HTTP_403_FORBIDDEN
+    assert join.data["code"] == "GROUP_JOIN_ENROLLMENT_ONLY"
+    # a legacy pending request (created before joining became enrollment-only) can still be approved by staff
+    membership = GroupMembership.objects.create(
+        group_id=group_id, user=student_user, status=GroupMembershipStatus.PENDING
+    )
 
     authenticate(api_client, admin_user)
     approve = api_client.post(f"/api/v1/dashboard/group-memberships/{membership.id}/approve/")
@@ -323,12 +327,14 @@ def test_unverified_and_unrelated_students_cannot_join_group(api_client, admin_u
     authenticate(api_client, student_user)
     unverified = api_client.post(f"/api/v1/groups/{group.id}/join/")
     assert unverified.status_code == status.HTTP_403_FORBIDDEN
+    assert unverified.data["code"] == "GROUP_JOIN_ENROLLMENT_ONLY"
 
     approve_student(student_user, academic_structure)
     student_user.student_profile.major = academic_structure["other_major"]
     student_user.student_profile.save()
     unrelated = api_client.post(f"/api/v1/groups/{group.id}/join/")
-    assert unrelated.status_code == status.HTTP_400_BAD_REQUEST
+    assert unrelated.status_code == status.HTTP_403_FORBIDDEN
+    assert unrelated.data["code"] == "GROUP_JOIN_ENROLLMENT_ONLY"
 
 
 @pytest.mark.django_db
@@ -340,7 +346,8 @@ def test_blocked_student_cannot_rejoin(api_client, admin_user, student_user, aca
 
     response = api_client.post(f"/api/v1/groups/{group.id}/join/")
 
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert GroupMembership.objects.get(group=group, user=student_user).status == GroupMembershipStatus.BLOCKED
 
 
 @pytest.mark.django_db

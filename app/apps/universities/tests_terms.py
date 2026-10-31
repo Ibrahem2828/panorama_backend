@@ -492,8 +492,8 @@ def test_term_ended_students_lose_chat_files_whatsapp_groups_and_push(populated)
     # push fan-out / receipts do not count them any more
     assert s1 not in ChatNotificationService.recipients(message)
     assert s2 not in ChatNotificationService.recipients(message)
-    # joining a subject group by hand is still impossible (it needs an enrollment)
-    assert _client(s1).post(f"/api/v1/groups/{group.pk}/join/").status_code == 400
+    # joining a group by hand is impossible (it needs an approved enrollment)
+    assert _client(s1).post(f"/api/v1/groups/{group.pk}/join/").status_code == 403
     # non-subject members still have their access
     assert ChatPermissionService.can_access_group_chat(s1, w["community"])
 
