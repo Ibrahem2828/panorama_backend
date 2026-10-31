@@ -7,6 +7,7 @@ from rest_framework import filters, permissions, serializers, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.views import APIView
 
+from apps.audit.activity_registry import action_label
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.responses import success_response
@@ -138,7 +139,7 @@ class InviteUserView(APIView):
         serializer = InviteUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        user, _ = InvitationService.invite(
+        user, delivery = InvitationService.invite(
             actor=request.user,
             full_name=data["full_name"],
             email=data["email"],
@@ -147,13 +148,26 @@ class InviteUserView(APIView):
             mode=data["mode"],
             request=request,
         )
+        sent = delivery["email_sent"]
         return success_response(
-            data={"id": user.pk, "email": user.email, "role": user.role, "mode": data["mode"]},
-            message="Invitation sent",
+            data={
+                "id": user.pk,
+                "email": user.email,
+                "role": user.role,
+                "mode": data["mode"],
+                "email_sent": sent,
+                "email_error": None if sent else delivery["error"],
+            },
+            message="تم إنشاء الحساب وإرسال الدعوة" if sent else EMAIL_FAILED_MESSAGE,
             status_code=status.HTTP_201_CREATED,
             request=request,
-            code="USER_INVITED",
+            code="USER_INVITED" if sent else "INVITATION_EMAIL_FAILED",
         )
+
+
+EMAIL_FAILED_MESSAGE = (
+    "تم حفظ الحساب والرابط لكن تعذّر إرسال البريد الإلكتروني. أعد المحاولة لاحقًا أو تحقق من إعدادات البريد."
+)
 
 
 def _target(request, user_id: int) -> User:
@@ -168,8 +182,24 @@ class ResendInvitationView(APIView):
 
     @extend_schema(tags=["Dashboard"], request=None, responses={200: OpenApiTypes.OBJECT})
     def post(self, request, user_id: int):
-        InvitationService.resend(actor=request.user, user=_target(request, user_id), request=request)
-        return success_response(message="Invitation sent again", request=request, code="USER_INVITATION_RESENT")
+        result = InvitationService.resend(actor=request.user, user=_target(request, user_id), request=request)
+        sent = result["email_sent"]
+        if not sent:
+            message = EMAIL_FAILED_MESSAGE
+        elif result["purpose"] == "reset":
+            message = "تم إرسال رابط لإعادة تعيين كلمة المرور. كلمة المرور الحالية تبقى صالحة حتى تُحدَّد الجديدة."
+        else:
+            message = "تم إرسال رابط دعوة جديد."
+        return success_response(
+            data={
+                "purpose": result["purpose"],
+                "email_sent": sent,
+                "email_error": None if sent else result["error"],
+            },
+            message=message,
+            request=request,
+            code="USER_INVITATION_RESENT" if sent else "INVITATION_EMAIL_FAILED",
+        )
 
 
 class RevokeInvitationView(APIView):
@@ -193,6 +223,7 @@ class UserActivityView(APIView):
             {
                 "id": row.pk,
                 "action": row.action,
+                "action_label": action_label(row.action, row.new_value),
                 "target_type": row.target_type,
                 "target_id": row.target_id,
                 "ip_address": row.ip_address,
@@ -239,14 +270,10 @@ class InvitationInfoView(APIView):
 
     @extend_schema(auth=[], tags=["Auth"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, token: str):
-        invitation = InvitationService.lookup(token)
-        if invitation is None:
-            raise ValidationError({"detail": "This invitation link is invalid or has expired."})
-        return success_response(
-            data={"full_name": invitation.user.full_name, "expires_at": invitation.expires_at},
-            message="Invitation",
-            request=request,
-        )
+        """Always 200: ``data.state`` is valid | accepted | expired | revoked | unknown. ``valid`` adds ``full_name``,
+        ``expires_at`` and ``purpose`` (invite | reset); ``accepted`` adds ``email_masked`` and ``purpose``."""
+
+        return success_response(data=InvitationService.describe(token), message="Invitation", request=request)
 
 
 class AcceptInvitationSerializer(serializers.Serializer):

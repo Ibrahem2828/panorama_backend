@@ -279,6 +279,8 @@ class PermissionTemplate(BaseModel):
 class UserInvitation(BaseModel):
     """One invitation to set up a staff account. Only the SHA-256 of the token is stored; the link is shown once (e-mailed)."""
 
+    PURPOSE_CHOICES = [("invite", "Invite"), ("reset", "Password reset")]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="invitations")
     token_hash = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
@@ -288,10 +290,29 @@ class UserInvitation(BaseModel):
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="sent_invitations"
     )
     template = models.ForeignKey(PermissionTemplate, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    #: "invite" sets the first password of a new account; "reset" lets an already set-up person choose a new one
+    #: (the current password keeps working until the link is used).
+    purpose = models.CharField(max_length=16, choices=PURPOSE_CHOICES, default="invite")
+    #: Outcome of the last e-mail attempt: "" (never attempted), "ok" or "failed".
+    last_send_status = models.CharField(max_length=8, blank=True, default="")
+    last_send_error = models.CharField(max_length=255, blank=True, default="")
+    last_sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
 
     @property
+    def state(self) -> str:
+        """accepted | revoked | expired | pending (a person who accepted is never reported as expired)."""
+
+        if self.accepted_at is not None:
+            return "accepted"
+        if self.revoked_at is not None:
+            return "revoked"
+        if self.expires_at <= timezone.now():
+            return "expired"
+        return "pending"
+
+    @property
     def is_usable(self) -> bool:
-        return self.accepted_at is None and self.revoked_at is None and self.expires_at > timezone.now()
+        return self.state == "pending"

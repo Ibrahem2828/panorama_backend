@@ -6,7 +6,8 @@ import hashlib
 import logging
 import secrets
 import string
-from datetime import timedelta
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
@@ -48,10 +49,56 @@ def template_warnings(capabilities) -> list[str]:
     return sorted(set(capabilities) & DANGEROUS_CAPABILITIES)
 
 
-class InvitationError(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = "This invitation link is invalid or has expired."
-    default_code = "invitation_invalid"
+class CodedError(APIException):
+    """A refusal with a stable machine-readable ``code`` and a readable Arabic message (HTTP 400 by default)."""
+
+    status_code: int = status.HTTP_400_BAD_REQUEST
+
+    def __init__(self, code: str, message: str, status_code: int | None = None):
+        super().__init__(detail=message, code=code.lower())
+        self.api_code = code
+        if status_code is not None:
+            self.status_code = status_code
+
+
+INVITATION_MESSAGES = {
+    "INVITATION_ACCEPTED_ALREADY": "تم تعيين كلمة المرور بالفعل بهذا الرابط. يمكنك تسجيل الدخول مباشرة.",
+    "INVITATION_EXPIRED": "انتهت صلاحية هذا الرابط. اطلب من المسؤول إرسال رابط جديد.",
+    "INVITATION_REVOKED": "أُلغي هذا الرابط أو استُبدل برابط أحدث. استخدم آخر رابط وصلك أو اطلب رابطًا جديدًا.",
+    "INVITATION_INVALID": "رابط الدعوة غير صحيح.",
+}
+STATE_TO_CODE = {
+    "accepted": "INVITATION_ACCEPTED_ALREADY",
+    "expired": "INVITATION_EXPIRED",
+    "revoked": "INVITATION_REVOKED",
+    "unknown": "INVITATION_INVALID",
+}
+
+
+def invitation_error(code: str) -> CodedError:
+    return CodedError(code, INVITATION_MESSAGES[code])
+
+
+class InvitationError(CodedError):
+    """Kept for importers of the old name: an invitation link that cannot be used."""
+
+    def __init__(self, code: str = "INVITATION_INVALID"):
+        super().__init__(code, INVITATION_MESSAGES[code])
+
+
+def mask_email(email: str) -> str:
+    local, _, domain = email.partition("@")
+    return f"{local[:2]}***@{domain}" if domain else "***"
+
+
+@dataclass
+class Outgoing:
+    """An e-mail to send once the database work is committed, plus the invitation to record the outcome on."""
+
+    to: str
+    subject: str
+    body: str
+    invitation: UserInvitation | None = None
 
 
 class TemplateService:
@@ -107,7 +154,9 @@ class InvitationService:
         return f"{settings.DASHBOARD_BASE_URL}/ar/invite/{token}"
 
     @classmethod
-    def _issue(cls, user: User, actor, template: PermissionTemplate | None) -> tuple[UserInvitation, str]:
+    def _issue(
+        cls, user: User, actor, template: PermissionTemplate | None, purpose: str = "invite"
+    ) -> tuple[UserInvitation, str]:
         UserInvitation.objects.filter(user=user, accepted_at__isnull=True, revoked_at__isnull=True).update(
             revoked_at=timezone.now()
         )
@@ -118,24 +167,38 @@ class InvitationService:
             expires_at=timezone.now() + timedelta(hours=settings.INVITATION_TTL_HOURS),
             created_by=actor,
             template=template,
+            purpose=purpose,
         )
         return invitation, token
 
     @staticmethod
-    def _send(email: str, subject: str, body: str) -> None:
+    def _deliver(outgoing: Outgoing) -> dict:
+        """Send now (after the commit), record the outcome on the invitation and return it. Never raises."""
+
+        error = ""
         try:
             send_mail(
-                subject=subject,
-                message=body,
+                subject=outgoing.subject,
+                message=outgoing.body,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
+                recipient_list=[outgoing.to],
                 fail_silently=False,
             )
-        except Exception:  # noqa: BLE001 - the account exists; staff can resend the invitation
+            sent = True
+        except Exception as exc:  # noqa: BLE001 - the account exists; staff can resend the invitation
             logger.exception("invitation_email_failed")
+            sent = False
+            error = f"{type(exc).__name__}: {exc}"[:255]
+        now = timezone.now()
+        if outgoing.invitation is not None:
+            UserInvitation.objects.filter(pk=outgoing.invitation.pk).update(
+                last_send_status="ok" if sent else "failed",
+                last_send_error="" if sent else error,
+                last_sent_at=now,
+            )
+        return {"email_sent": sent, "status": "ok" if sent else "failed", "sent_at": now, "error": error or None}
 
     @classmethod
-    @transaction.atomic
     def invite(
         cls,
         *,
@@ -146,10 +209,26 @@ class InvitationService:
         template: PermissionTemplate,
         mode: str,
         request=None,
-    ) -> tuple[User, str | None]:
-        """Create the staff account and e-mail how to get in. Returns the user and (temporary-password mode only) nothing else:
-        secrets are never returned to the caller, they only travel by e-mail."""
+    ) -> tuple[User, dict]:
+        """Create the staff account, then e-mail how to get in. Returns the user and the delivery outcome
+        (``email_sent``, ``status``, ``sent_at``, ``error``). Secrets are never returned, they only travel by e-mail."""
 
+        user, outgoing = cls._create_account(
+            actor=actor,
+            full_name=full_name,
+            email=email,
+            phone_number=phone_number,
+            template=template,
+            mode=mode,
+            request=request,
+        )
+        return user, cls._deliver(outgoing)
+
+    @classmethod
+    @transaction.atomic
+    def _create_account(
+        cls, *, actor, full_name, email, phone_number, template, mode, request=None
+    ) -> tuple[User, Outgoing]:
         TemplateService.assert_actor_may_use(actor, template)
         if not template.is_active:
             raise ValidationError({"template": "This template is switched off."})
@@ -180,7 +259,7 @@ class InvitationService:
                 f"البريد: {user.email}\nكلمة المرور المؤقتة: {password}\n"
                 f"سجّل الدخول من {settings.DASHBOARD_BASE_URL} وسيُطلب منك اختيار كلمة مرور جديدة فورًا."
             )
-            transaction.on_commit(lambda: cls._send(user.email, subject, body))
+            outgoing = Outgoing(user.email, subject, body)
         else:
             invitation, token = cls._issue(user, actor, template)
             body = (
@@ -188,7 +267,7 @@ class InvitationService:
                 f"افتح الرابط التالي لتحديد كلمة مرورك (صالح {settings.INVITATION_TTL_HOURS} ساعة ولمرة واحدة):\n"
                 f"{cls.link(token)}"
             )
-            transaction.on_commit(lambda: cls._send(user.email, subject, body))
+            outgoing = Outgoing(user.email, subject, body, invitation)
         AuditLogService.log(
             actor=actor,
             action=AuditAction.USER_INVITED,
@@ -197,38 +276,62 @@ class InvitationService:
             request=request,
             critical=True,
         )
-        return user, None
+        return user, outgoing
+
+    @staticmethod
+    def is_set_up(user: User) -> bool:
+        """The person already has a working password of their own (an unused temporary password does not count)."""
+
+        return user.has_usable_password() and not user.must_change_password
+
+    @classmethod
+    def resend(cls, *, actor, user: User, request=None) -> dict:
+        """Send a fresh link in every state. Not set up yet -> a new invitation link (password stays unusable until
+        used). Already set up -> a password-reset link that leaves the current password working until it is used.
+        Returns ``{purpose, email_sent, status, sent_at, error}``."""
+
+        outgoing, purpose = cls._prepare_resend(actor=actor, user=user, request=request)
+        return {"purpose": purpose, **cls._deliver(outgoing)}
 
     @classmethod
     @transaction.atomic
-    def resend(cls, *, actor, user: User, request=None) -> None:
-        if user.has_usable_password() and not user.must_change_password:
-            raise ValidationError({"detail": "This account has already been set up."})
+    def _prepare_resend(cls, *, actor, user: User, request=None) -> tuple[Outgoing, str]:
         if (
             user.role != UserRole.IT_SUPPORT
             and actor.role != UserRole.IT_SUPPORT
             and role_rank(user.role) >= role_rank(actor.role)
         ):
             raise PermissionDenied("You cannot manage an account with an equal or higher role.")
+        if not user.is_active:
+            raise CodedError("USER_INACTIVE", "الحساب معطّل. فعّل الحساب أولًا ثم أعد إرسال الدعوة.")
+        purpose = "reset" if cls.is_set_up(user) else "invite"
         previous = user.invitations.order_by("-created_at").first()
-        invitation, token = cls._issue(user, actor, previous.template if previous else None)
-        user.set_unusable_password()
-        user.must_change_password = False
-        user.save(update_fields=["password", "must_change_password", "updated_at"])
-        body = (
-            f"مرحبًا {user.full_name}،\n\nهذا رابط جديد لتحديد كلمة مرورك في لوحة تحكم بانوراما "
-            f"(صالح {settings.INVITATION_TTL_HOURS} ساعة ولمرة واحدة):\n{cls.link(token)}"
-        )
-        transaction.on_commit(lambda: cls._send(user.email, "رابط جديد للانضمام إلى بانوراما", body))
+        invitation, token = cls._issue(user, actor, previous.template if previous else None, purpose)
+        if purpose == "invite":
+            user.set_unusable_password()
+            user.must_change_password = False
+            user.save(update_fields=["password", "must_change_password", "updated_at"])
+            subject = "رابط جديد للانضمام إلى بانوراما"
+            body = (
+                f"مرحبًا {user.full_name}،\n\nهذا رابط جديد لتحديد كلمة مرورك في لوحة تحكم بانوراما "
+                f"(صالح {settings.INVITATION_TTL_HOURS} ساعة ولمرة واحدة):\n{cls.link(token)}"
+            )
+        else:
+            subject = "رابط لإعادة تعيين كلمة المرور في بانوراما"
+            body = (
+                f"مرحبًا {user.full_name}،\n\nهذا رابط لإعادة تعيين كلمة المرور في لوحة تحكم بانوراما "
+                f"(صالح {settings.INVITATION_TTL_HOURS} ساعة ولمرة واحدة). "
+                f"كلمة مرورك الحالية تبقى صالحة حتى تحدد كلمة مرور جديدة:\n{cls.link(token)}"
+            )
         AuditLogService.log(
             actor=actor,
             action=AuditAction.USER_INVITED,
             target=user,
-            new_value={"resent": True},
+            new_value={"resent": True, "purpose": purpose},
             request=request,
             critical=True,
         )
-        del invitation
+        return Outgoing(user.email, subject, body, invitation), purpose
 
     @staticmethod
     @transaction.atomic
@@ -247,23 +350,57 @@ class InvitationService:
         return count
 
     @staticmethod
-    def lookup(token: str) -> UserInvitation | None:
+    def find(token: str) -> UserInvitation | None:
+        """The invitation behind a token in ANY state (None for garbage / never issued)."""
+
         if not token or len(token) > 128:
             return None
-        invitation = (
-            UserInvitation.objects.select_related("user").filter(token_hash=_hash(token), is_deleted=False).first()
-        )
-        return invitation if invitation and invitation.is_usable and invitation.user.is_active else None
+        return UserInvitation.objects.select_related("user").filter(token_hash=_hash(token), is_deleted=False).first()
+
+    @staticmethod
+    def state_of(invitation: UserInvitation | None) -> str:
+        """valid | accepted | expired | revoked | unknown. A deactivated account's links count as revoked."""
+
+        if invitation is None:
+            return "unknown"
+        state = invitation.state
+        if state == "pending":
+            return "valid" if invitation.user.is_active else "revoked"
+        return state
+
+    @classmethod
+    def lookup(cls, token: str) -> UserInvitation | None:
+        invitation = cls.find(token)
+        return invitation if cls.state_of(invitation) == "valid" else None
+
+    @classmethod
+    def describe(cls, token: str) -> dict:
+        """Public, non-sensitive view of a link: ``state`` always; PII only where it helps the person."""
+
+        invitation = cls.find(token)
+        state = cls.state_of(invitation)
+        data: dict = {"state": state}
+        if invitation is None:
+            return data
+        if state == "valid":
+            data.update(
+                full_name=invitation.user.full_name, expires_at=invitation.expires_at, purpose=invitation.purpose
+            )
+        elif state == "accepted":
+            data.update(email_masked=mask_email(invitation.user.email), purpose=invitation.purpose)
+        return data
 
     @classmethod
     @transaction.atomic
     def accept(cls, token: str, password: str, request=None) -> User:
-        invitation = cls.lookup(token)
-        if invitation is None:
-            raise InvitationError()
-        locked = UserInvitation.objects.select_for_update().get(pk=invitation.pk)
-        if not locked.is_usable:  # lost a race with a second submit of the same link
-            raise InvitationError()
+        invitation = cls.find(token)
+        state = cls.state_of(invitation)
+        if invitation is None or state != "valid":
+            raise invitation_error(STATE_TO_CODE[state])
+        locked = UserInvitation.objects.select_for_update().select_related("user").get(pk=invitation.pk)
+        state = cls.state_of(locked)
+        if state != "valid":  # lost a race with a second submit of the same link
+            raise invitation_error(STATE_TO_CODE[state])
         user = locked.user
         try:
             validate_password(password, user)
@@ -284,8 +421,15 @@ class InvitationService:
         )
         locked.accepted_at = timezone.now()
         locked.save(update_fields=["accepted_at", "updated_at"])
+        if locked.purpose == "reset":
+            user.invalidate_sessions()  # whoever held the old password must not stay signed in
         AuditLogService.log(
-            actor=user, action=AuditAction.USER_INVITATION_ACCEPTED, target=user, request=request, critical=True
+            actor=user,
+            action=AuditAction.USER_INVITATION_ACCEPTED,
+            target=user,
+            new_value={"purpose": locked.purpose},
+            request=request,
+            critical=True,
         )
         return user
 
@@ -341,22 +485,29 @@ class StaffActivityService:
                 mode = "link"  # a resend always issues a fresh link
         if mode is None and latest is not None:
             mode = "link"
-        if latest is None:
-            state = "none"
-        elif latest.accepted_at is not None:
-            state = "accepted"
-        elif latest.revoked_at is not None:
-            state = "revoked"
-        elif latest.expires_at <= timezone.now():
-            state = "expired"
+        state = "none" if latest is None else latest.state
+        accepted = user.invitations.filter(accepted_at__isnull=False).order_by("-accepted_at").first()
+        last_sent: datetime | None
+        if latest is not None and latest.last_sent_at is not None:
+            last_sent = latest.last_sent_at
         else:
-            state = "pending"
-        last_sent = invited.created_at if invited is not None else (latest.created_at if latest else None)
+            last_sent = invited.created_at if invited is not None else (latest.created_at if latest else None)
+        delivery = None
+        if latest is not None and latest.last_send_status:
+            delivery = {
+                "status": latest.last_send_status,
+                "sent_at": latest.last_sent_at,
+                "error": latest.last_send_error or None,
+            }
         return {
             "state": state,
             "mode": mode,
+            "purpose": latest.purpose if latest is not None else None,
             "last_sent_at": last_sent,
+            "expires_at": latest.expires_at if latest is not None and state == "pending" else None,
+            "accepted_at": accepted.accepted_at if accepted is not None else None,
             "password_set": user.has_usable_password(),
+            "delivery": delivery,
         }
 
     @staticmethod
@@ -374,6 +525,7 @@ def can_manage_staff(actor, target: User) -> bool:
 
 __all__ = [
     "DANGEROUS_CAPABILITIES",
+    "CodedError",
     "InvitationError",
     "InvitationService",
     "PermissionService",
