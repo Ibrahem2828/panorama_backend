@@ -118,7 +118,7 @@ def test_accept_sets_the_password_once_and_the_user_can_log_in(admin, django_cap
     good = {"token": token, "password": "Str0ng!Passphrase#42", "password_confirm": "Str0ng!Passphrase#42"}
     assert api.post("/api/v1/auth/invitations/accept/", good, format="json").status_code == 200
     assert api.post("/api/v1/auth/invitations/accept/", good, format="json").status_code == 400  # single use
-    assert api.get(f"/api/v1/auth/invitations/{token}/").status_code == 400
+    assert api.get(f"/api/v1/auth/invitations/{token}/").json()["data"]["state"] == "accepted"
     login = api.post(
         "/api/v1/auth/login/", {"identifier": "officer@example.test", "password": "Str0ng!Passphrase#42"}, format="json"
     )
