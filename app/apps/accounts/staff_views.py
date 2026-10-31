@@ -212,6 +212,8 @@ class UserActivityView(APIView):
                 "invitation_pending": bool(pending and pending.is_usable),
                 "invitation_expires_at": pending.expires_at if pending and pending.is_usable else None,
                 "recent_actions": actions,
+                "recent_logins": StaffActivityService.recent_logins(user),
+                "invitation": StaffActivityService.invitation(user),
             },
             message="User activity",
             request=request,

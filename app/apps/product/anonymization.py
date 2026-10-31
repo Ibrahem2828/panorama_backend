@@ -53,7 +53,7 @@ def _clear_files(queryset: models.QuerySet, field_name: str, *, blank_value: str
 
 def anonymize_user_data(user, *, original_email: str, original_phone: str) -> dict[str, int]:
     from apps.accounts.models import OTPCode, StudentProfile
-    from apps.audit.models import AuditLog
+    from apps.audit.models import AuditLog, SystemActivity
     from apps.chat.models import Message, MessageReport
     from apps.feedback.models import AppFeedback, FeedbackAITriage
     from apps.files.models import FileResource
@@ -160,4 +160,6 @@ def anonymize_user_data(user, *, original_email: str, original_phone: str) -> di
 
     # Audit trail rows stay; network identifiers go.
     counts["audit_logs"] = AuditLog.objects.scrub_network_identifiers_for(user)
+    # The short-retention activity trail carries names, IPs and user agents: erase it with the account.
+    counts["system_activity"] = SystemActivity.objects.filter(user=user).delete()[0]
     return counts

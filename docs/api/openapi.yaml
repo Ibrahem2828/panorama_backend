@@ -9246,6 +9246,149 @@ paths:
               schema:
                 $ref: '#/components/schemas/SupportTicketStatus'
           description: ''
+  /api/v1/dashboard/system-activity/:
+    get:
+      operationId: v1_dashboard_system_activity_list
+      description: 'Who asked the system for what: authenticated writes, logins, logouts
+        and denied calls (read-only).'
+      parameters:
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - denied
+          - login_failed
+          - login_success
+          - logout
+          - request
+        description: |-
+          * `request` - Request
+          * `login_success` - Login succeeded
+          * `login_failed` - Login failed
+          * `logout` - Logout
+          * `denied` - Denied
+      - in: query
+        name: method
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - in: query
+        name: outcome
+        schema:
+          type: string
+          enum:
+          - error
+          - success
+        description: |-
+          * `success` - success
+          * `error` - error
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: role
+        schema:
+          type: string
+      - in: query
+        name: route
+        schema:
+          type: string
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: status_code
+        schema:
+          type: integer
+      - in: query
+        name: user
+        schema:
+          type: number
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSystemActivityList'
+          description: ''
+  /api/v1/dashboard/system-activity/summary/:
+    get:
+      operationId: v1_dashboard_system_activity_summary_retrieve
+      description: Counters for the same filters as the list (ordering and pagination
+        ignored).
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemActivitySummary'
+          description: ''
+  /api/v1/dashboard/system-activity/users/:
+    get:
+      operationId: v1_dashboard_system_activity_users_list
+      description: One row per user with any recorded activity (staff and students),
+        most recently active first.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSystemActivityUserRollupList'
+          description: ''
   /api/v1/dashboard/terms-versions/:
     get:
       operationId: v1_dashboard_terms_versions_list
@@ -14353,6 +14496,25 @@ components:
         * `requested` - Requested
         * `cancelled` - Cancelled
         * `completed` - Completed
+    ActivityUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        full_name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        job_title:
+          type: string
+      required:
+      - email
+      - full_name
+      - id
+      - job_title
+      - role
     Announcement:
       type: object
       properties:
@@ -14665,6 +14827,19 @@ components:
         actor_name:
           type: string
           readOnly: true
+        actor_detail:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            full_name:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+          readOnly: true
         action:
           allOf:
           - $ref: '#/components/schemas/AuditLogActionEnum'
@@ -14673,6 +14848,9 @@ components:
           type: string
           readOnly: true
         target_id:
+          type: string
+          readOnly: true
+        target_label:
           type: string
           readOnly: true
         old_value:
@@ -14695,6 +14873,7 @@ components:
       required:
       - action
       - actor
+      - actor_detail
       - actor_name
       - created_at
       - id
@@ -14702,6 +14881,7 @@ components:
       - new_value
       - old_value
       - target_id
+      - target_label
       - target_type
       - user_agent
     AuditLogActionEnum:
@@ -20480,6 +20660,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Subject'
+    PaginatedSystemActivityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemActivity'
+    PaginatedSystemActivityUserRollupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemActivityUserRollup'
     PaginatedTermsVersionList:
       type: object
       required:
@@ -24082,6 +24308,142 @@ components:
             minLength: 1
             maxLength: 64
           maxItems: 200
+    SystemActivity:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/ActivityUser'
+          nullable: true
+          readOnly: true
+        user_label:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/SystemActivityKindEnum'
+          readOnly: true
+        action_label:
+          type: string
+          readOnly: true
+        method:
+          type: string
+          readOnly: true
+        route:
+          type: string
+          readOnly: true
+        status_code:
+          type: integer
+          readOnly: true
+          nullable: true
+        object_type:
+          type: string
+          readOnly: true
+        object_id:
+          type: string
+          readOnly: true
+        ip:
+          type: string
+          readOnly: true
+        user_agent:
+          type: string
+          readOnly: true
+        duration_ms:
+          type: integer
+          readOnly: true
+          nullable: true
+        extra:
+          readOnly: true
+      required:
+      - action_label
+      - created_at
+      - duration_ms
+      - extra
+      - id
+      - ip
+      - kind
+      - method
+      - object_id
+      - object_type
+      - route
+      - status_code
+      - user
+      - user_agent
+      - user_label
+    SystemActivityKindEnum:
+      enum:
+      - request
+      - login_success
+      - login_failed
+      - logout
+      - denied
+      type: string
+      description: |-
+        * `request` - Request
+        * `login_success` - Login succeeded
+        * `login_failed` - Login failed
+        * `logout` - Logout
+        * `denied` - Denied
+    SystemActivitySummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        errors:
+          type: integer
+        failed_logins:
+          type: integer
+        active_users:
+          type: integer
+        by_kind:
+          type: object
+          additionalProperties:
+            type: integer
+        window:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+      required:
+      - active_users
+      - by_kind
+      - errors
+      - failed_logins
+      - total
+      - window
+    SystemActivityUserRollup:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/ActivityUser'
+        last_activity_at:
+          type: string
+          format: date-time
+        requests_24h:
+          type: integer
+        requests_7d:
+          type: integer
+        failed_logins_24h:
+          type: integer
+        last_action_label:
+          type: string
+        last_ip:
+          type: string
+      required:
+      - failed_logins_24h
+      - last_action_label
+      - last_activity_at
+      - last_ip
+      - requests_24h
+      - requests_7d
+      - user
     TargetUserTypeEnum:
       enum:
       - all

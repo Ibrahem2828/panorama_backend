@@ -183,3 +183,60 @@ class AuditLog(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.action} {self.target_type}:{self.target_id}"
+
+
+class SystemActivityKind(models.TextChoices):
+    REQUEST = "request", "Request"
+    LOGIN_SUCCESS = "login_success", "Login succeeded"
+    LOGIN_FAILED = "login_failed", "Login failed"
+    LOGOUT = "logout", "Logout"
+    DENIED = "denied", "Denied"
+
+
+class LoginFailureReason(models.TextChoices):
+    """Closed set stored in ``SystemActivity.extra["reason"]`` for ``login_failed`` rows."""
+
+    INVALID_CREDENTIALS = "invalid_credentials", "Unknown identifier or wrong password"
+    PASSWORD_NOT_SET = "password_not_set", "Invitation not accepted yet (no password set)"
+    INACTIVE_ACCOUNT = "inactive_account", "Account is deactivated"
+    UNVERIFIED = "unverified", "Account is not verified"
+    LOCKED = "locked", "Account locked after repeated failures"
+
+
+class SystemActivity(models.Model):
+    """One user-facing event: an authenticated write request, a login/logout, or a denied call.
+
+    Unlike ``AuditLog`` (business changes, kept for years) this is an operational "who asked the system for what"
+    trail with a short retention (``SYSTEM_ACTIVITY_RETENTION_DAYS``). It never stores request bodies, passwords,
+    tokens or query strings; ``route`` is the URL *pattern* (``dashboard/users/{user_id}/``), never the raw path.
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=False)
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="system_activities"
+    )
+    user_label = models.CharField(max_length=255, blank=True)
+    role = models.CharField(max_length=32, blank=True)
+    kind = models.CharField(max_length=16, choices=SystemActivityKind.choices)
+    method = models.CharField(max_length=10, blank=True)
+    route = models.CharField(max_length=255, blank=True)
+    status_code = models.PositiveSmallIntegerField(null=True, blank=True)
+    action_label = models.CharField(max_length=255, blank=True)
+    object_type = models.CharField(max_length=64, blank=True)
+    object_id = models.CharField(max_length=64, blank=True)
+    ip = models.CharField(max_length=64, blank=True)
+    user_agent = models.CharField(max_length=200, blank=True)
+    duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    extra = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["created_at"], name="sysact_created_idx"),
+            models.Index(fields=["user", "created_at"], name="sysact_user_created_idx"),
+            models.Index(fields=["kind", "created_at"], name="sysact_kind_created_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.method} {self.route}".strip()

@@ -1,12 +1,14 @@
 from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import permissions, status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.audit.activity import SystemActivityService
+from apps.audit.models import LoginFailureReason
 from apps.common.responses import error_response, success_response
 from apps.common.throttles import (
     LoginRateThrottle,
@@ -33,6 +35,7 @@ from .serializers import (
     StudentRegisterSerializer,
     UserSerializer,
     VerifyOTPSerializer,
+    find_login_user,
 )
 
 
@@ -94,16 +97,35 @@ class LoginView(APIView):
         raw_identifier = request.data.get("identifier") if hasattr(request.data, "get") else None
         has_identifier = isinstance(raw_identifier, str) and bool(raw_identifier.strip())
         if has_identifier:
-            LoginLockoutService.ensure_not_locked(raw_identifier)
+            try:
+                LoginLockoutService.ensure_not_locked(raw_identifier)
+            except Throttled:
+                SystemActivityService.record_login_failure(
+                    request,
+                    identifier=raw_identifier,
+                    reason=LoginFailureReason.LOCKED,
+                    user=find_login_user(str(raw_identifier)),
+                    status_code=429,
+                )
+                raise
         serializer = LoginSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError:
             if has_identifier and serializer.credentials_failed:
                 LoginLockoutService.record_failure(raw_identifier, user=serializer.matched_user, request=request)
+            if serializer.failure_reason:
+                # The client still gets the one generic message; the real reason is only kept for administrators.
+                SystemActivityService.record_login_failure(
+                    request,
+                    identifier=raw_identifier,
+                    reason=serializer.failure_reason,
+                    user=serializer.matched_user,
+                )
             raise
         user = serializer.validated_data["user"]
         LoginLockoutService.record_success(user)
+        SystemActivityService.record_login_success(request, user)
         return success_response(
             data={
                 "access": serializer.validated_data["access"],
@@ -155,6 +177,7 @@ class LogoutView(APIView):
                 request=request,
                 code="INVALID_REFRESH_TOKEN",
             )
+        SystemActivityService.record_logout(request, request.user)
         return success_response(message="Logged out successfully", request=request, code="LOGOUT_SUCCEEDED")
 
 
