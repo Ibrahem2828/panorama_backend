@@ -98,6 +98,8 @@ class NotificationPreference(BaseModel):
     quiet_start = models.TimeField(null=True, blank=True)
     quiet_end = models.TimeField(null=True, blank=True)
     quiet_timezone = models.CharField(max_length=64, default="Asia/Damascus")
+    #: Silence every community chat (a group with no subject: faculty/year communities). Subject groups are unaffected.
+    mute_communities = models.BooleanField(default=False)
 
     def allows(self, notification_type: str) -> bool:
         return self.in_app_enabled and notification_type not in set(self.disabled_types)

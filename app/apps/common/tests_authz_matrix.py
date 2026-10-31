@@ -137,6 +137,7 @@ ROUTE_KINDS: dict[str, str] = {
     "groups/{group_id}/messages/{message_id}/report/": AUTH,
     "groups/{group_id}/messages/{message_id}/attachment-ticket/": AUTH,
     "groups/{group_id}/chat/receipts/": AUTH,
+    "chat/preferences/": AUTH,
     "groups/{group_id}/chat/preferences/": AUTH,
     "groups/{group_id}/messages/{message_id}/reaction/": AUTH,
     "chat/unread/": AUTH,

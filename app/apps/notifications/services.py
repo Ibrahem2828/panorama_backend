@@ -103,7 +103,16 @@ class PushDeliveryTransientError(RuntimeError):
 
 
 #: Seconds during which further pushes of a collapsed (staff inbox) category to one person are folded into the first.
-BURST_WINDOW_SECONDS = 20
+BURST_WINDOW_SECONDS = 5
+
+
+def burst_window_seconds() -> int:
+    """Burst window, tunable without a deploy through the ``PUSH_BURST_WINDOW_SECONDS`` setting (0 disables folding)."""
+
+    try:
+        return max(0, int(getattr(settings, "PUSH_BURST_WINDOW_SECONDS", BURST_WINDOW_SECONDS)))
+    except (TypeError, ValueError):
+        return BURST_WINDOW_SECONDS
 
 
 def push_suppressed_reason(
@@ -123,7 +132,7 @@ def push_suppressed_reason(
         if preference.in_quiet_hours(now):
             return "quiet_hours"
     if collapse:
-        window = int(getattr(settings, "PUSH_BURST_WINDOW_SECONDS", BURST_WINDOW_SECONDS))
+        window = burst_window_seconds()
         if window > 0:
             try:
                 if not cache.add(f"push:burst:{user_id}:{category}", True, timeout=window):

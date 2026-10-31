@@ -514,6 +514,10 @@ ACCOUNT_DELETION_GRACE_DAYS = config("ACCOUNT_DELETION_GRACE_DAYS", default=30, 
 
 
 PUSH_NOTIFICATIONS_ENABLED = get_bool_env("PUSH_NOTIFICATIONS_ENABLED", default=False)
+# Push cadence, tunable from the environment without a deploy. A chat pushes at most once per member per chat in
+# CHAT_PUSH_INTERVAL_SECONDS; staff-inbox categories fold pushes inside PUSH_BURST_WINDOW_SECONDS. 0 disables folding.
+CHAT_PUSH_INTERVAL_SECONDS = config("CHAT_PUSH_INTERVAL_SECONDS", default=8, cast=int)
+PUSH_BURST_WINDOW_SECONDS = config("PUSH_BURST_WINDOW_SECONDS", default=5, cast=int)
 EXPO_PUSH_ENDPOINT = config("EXPO_PUSH_ENDPOINT", default="https://exp.host/--/api/v2/push/send")
 EXPO_ACCESS_TOKEN = config("EXPO_ACCESS_TOKEN", default="")
 EXPO_PUSH_ALLOWED_HOSTS = frozenset(

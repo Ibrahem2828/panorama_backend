@@ -102,7 +102,15 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NotificationPreference
-        fields = ["in_app_enabled", "push_enabled", "disabled_types", "channels", "quiet_hours", "updated_at"]
+        fields = [
+            "in_app_enabled",
+            "push_enabled",
+            "disabled_types",
+            "channels",
+            "quiet_hours",
+            "mute_communities",
+            "updated_at",
+        ]
         read_only_fields = ["updated_at"]
 
     def validate_channels(self, value):
