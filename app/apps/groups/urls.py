@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .join_requests import JoinRequestBulkDecisionView, JoinRequestSummaryView, JoinRequestViewSet
 from .views import (
     ApproveMembershipView,
     AvailableGroupViewSet,
@@ -55,6 +56,21 @@ urlpatterns = [
         "dashboard/groups/<int:pk>/whatsapp-channel/",
         DashboardWhatsAppChannelView.as_view(),
         name="dashboard-group-whatsapp-channel",
+    ),
+    path(
+        "dashboard/group-join-requests/",
+        JoinRequestViewSet.as_view({"get": "list"}),
+        name="dashboard-group-join-requests-all",
+    ),
+    path(
+        "dashboard/group-join-requests/summary/",
+        JoinRequestSummaryView.as_view(),
+        name="dashboard-group-join-requests-summary",
+    ),
+    path(
+        "dashboard/group-join-requests/bulk-decision/",
+        JoinRequestBulkDecisionView.as_view(),
+        name="dashboard-group-join-requests-bulk",
     ),
     path("dashboard/group-memberships/<int:pk>/approve/", ApproveMembershipView.as_view(), name="membership-approve"),
     path("dashboard/group-memberships/<int:pk>/reject/", RejectMembershipView.as_view(), name="membership-reject"),
