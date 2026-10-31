@@ -1,4 +1,5 @@
 from functools import cache
+from typing import NoReturn
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
@@ -8,7 +9,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.audit.models import AuditAction
+from apps.audit.models import AuditAction, LoginFailureReason
 from apps.audit.services import AuditLogService
 from apps.product.models import ConsentKind
 from apps.product.services import PolicyConsentService
@@ -410,29 +411,72 @@ def _notify_student_registered(user_id: int) -> None:
         logging.getLogger(__name__).exception("student_registration_notification_failed")
 
 
+_INVISIBLE_EDGE_CHARS = "​‌‍⁠﻿"
+
+
+def _strip_pasted(password: str) -> str:
+    """Whitespace and zero-width characters that sneak in when a password is copied out of an e-mail or a chat."""
+
+    return password.strip().strip(_INVISIBLE_EDGE_CHARS).strip()
+
+
+def find_login_user(identifier: str) -> User | None:
+    identifier = (identifier or "").strip()
+    if not identifier:
+        return None
+    return User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=identifier)).first()
+
+
 class LoginSerializer(serializers.Serializer):
     identifier = serializers.CharField()
-    password = serializers.CharField(write_only=True)
+    # Not trimmed by DRF: the exact value is tried first, then once more with pasted edge whitespace removed.
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
 
     # Set during validation so the view can feed the per-account lockout without re-checking credentials.
     credentials_failed = False
     matched_user: User | None = None
+    # Why the login failed (a ``LoginFailureReason`` value). Recorded in the admin activity log only; the HTTP
+    # response stays one generic message so the endpoint cannot be used to enumerate accounts.
+    failure_reason: str = ""
+
+    def _fail(self, reason: str, message: str, *, credentials: bool) -> NoReturn:
+        self.failure_reason = reason
+        self.credentials_failed = credentials
+        raise serializers.ValidationError({"identifier": message})
 
     def validate(self, attrs):
         identifier = attrs["identifier"].strip()
         password = attrs["password"]
 
-        user = User.objects.filter(Q(email__iexact=identifier) | Q(phone_number=identifier)).first()
+        user = find_login_user(identifier)
         self.matched_user = user
+        candidates = [password]
+        stripped = _strip_pasted(password)
+        if stripped and stripped != password:
+            candidates.append(stripped)
+        password_ok = False
+        for candidate in candidates:
+            if user is None:
+                # Spend the same hashing time as a real check so response timing does not reveal accounts.
+                check_password(candidate, _dummy_password_hash())
+            elif not password_ok:
+                password_ok = user.check_password(candidate)
+        # Use one generic failure response to prevent account enumeration; the true reason is kept for admins.
         if user is None:
-            # Spend the same hashing time as a real check so response timing does not reveal accounts.
-            check_password(password, _dummy_password_hash())
-        # Use one generic failure response to prevent account enumeration.
-        if user is None or not user.check_password(password) or not user.is_active:
-            self.credentials_failed = True
-            raise serializers.ValidationError({"identifier": "Invalid credentials."})
+            self._fail(LoginFailureReason.INVALID_CREDENTIALS, "Invalid credentials.", credentials=True)
+        if not password_ok:
+            reason = (
+                LoginFailureReason.INVALID_CREDENTIALS
+                if user.has_usable_password()
+                else LoginFailureReason.PASSWORD_NOT_SET
+            )
+            self._fail(reason, "Invalid credentials.", credentials=True)
+        if not user.is_active:
+            self._fail(LoginFailureReason.INACTIVE_ACCOUNT, "Invalid credentials.", credentials=True)
         if not (user.is_email_verified or user.is_phone_verified):
-            raise serializers.ValidationError({"identifier": "Account verification is required before login."})
+            self._fail(
+                LoginFailureReason.UNVERIFIED, "Account verification is required before login.", credentials=False
+            )
 
         refresh = SessionVersionRefreshToken.for_user(user)
         attrs["user"] = user

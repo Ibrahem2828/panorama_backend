@@ -77,6 +77,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.common.middleware.APISecurityHeadersMiddleware",
     "apps.product.middleware.ProductLifecycleMiddleware",
+    "apps.audit.middleware.SystemActivityMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -406,6 +407,8 @@ FEEDBACK_AI_TRIAGE_ENABLED = get_bool_env("FEEDBACK_AI_TRIAGE_ENABLED", default=
 FEEDBACK_AI_PROVIDER = config("FEEDBACK_AI_PROVIDER", default="local_safe_heuristic")
 FEEDBACK_AI_CIRCUIT_SECONDS = config("FEEDBACK_AI_CIRCUIT_SECONDS", default=300, cast=int)
 AUDIT_LOG_RETENTION_DAYS = config("AUDIT_LOG_RETENTION_DAYS", default=730, cast=int)
+# Operational "who asked the system for what" trail (apps.audit.SystemActivity); <= 0 keeps it forever.
+SYSTEM_ACTIVITY_RETENTION_DAYS = config("SYSTEM_ACTIVITY_RETENTION_DAYS", default=90, cast=int)
 MAX_DOCUMENT_UPLOAD_SIZE = config("MAX_DOCUMENT_UPLOAD_SIZE", default=25 * 1024 * 1024, cast=int)
 MAX_IMAGE_UPLOAD_SIZE = config("MAX_IMAGE_UPLOAD_SIZE", default=8 * 1024 * 1024, cast=int)
 LECTURE_MAX_UPLOAD_SIZE = config("LECTURE_MAX_UPLOAD_SIZE", default=50 * 1024 * 1024, cast=int)

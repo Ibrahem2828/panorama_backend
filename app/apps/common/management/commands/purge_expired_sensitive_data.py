@@ -10,6 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import OTPCode, StudentProfile, UserPermissionOverride
+from apps.audit.models import SystemActivity
 from apps.chat.models import MessageAttachmentAccessTicket
 from apps.feedback.models import FeedbackPromptEvent
 from apps.files.models import FileAccessTicket
@@ -60,6 +61,15 @@ class Command(BaseCommand):
         counts["feedback_prompt_events"] = self._purge_queryset(
             FeedbackPromptEvent.objects.filter(created_at__lt=feedback_before),
             dry_run,
+        )
+
+        activity_days = int(getattr(settings, "SYSTEM_ACTIVITY_RETENTION_DAYS", 90) or 0)
+        counts["system_activity"] = (
+            self._purge_queryset(
+                SystemActivity.objects.filter(created_at__lt=now - timedelta(days=activity_days)), dry_run
+            )
+            if activity_days > 0
+            else 0
         )
 
         card_before = now - timedelta(days=getattr(settings, "VERIFICATION_CARD_RETENTION_DAYS", 90))
