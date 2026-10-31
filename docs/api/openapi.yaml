@@ -4327,6 +4327,154 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/dashboard/group-join-requests/:
+    get:
+      operationId: v1_dashboard_group_join_requests_list
+      description: |-
+        ``GET dashboard/group-join-requests/``.
+
+        Filters: ``status`` (pending|approved|rejected|blocked|left, default pending), ``group``, ``faculty``,
+        ``academic_year``, ``semester``, ``subject``, ``kind`` (subject|faculty|general), ``search`` (student name, e-mail,
+        student number, group name), ``created_after``/``created_before`` (inclusive YYYY-MM-DD), ``ordering``
+        (``created_at`` or ``-created_at``, default ``-created_at``).
+      parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: integer
+      - in: query
+        name: created_after
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: created_before
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: faculty
+        schema:
+          type: integer
+      - in: query
+        name: group
+        schema:
+          type: integer
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - faculty
+          - general
+          - subject
+        description: |-
+          * `subject` - subject
+          * `faculty` - faculty
+          * `general` - general
+      - in: query
+        name: ordering
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: semester
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - approved
+          - blocked
+          - left
+          - pending
+          - rejected
+        description: |-
+          * `pending` - Pending
+          * `approved` - Approved
+          * `rejected` - Rejected
+          * `blocked` - Blocked
+          * `left` - Left
+      - in: query
+        name: subject
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJoinRequestList'
+          description: ''
+  /api/v1/dashboard/group-join-requests/bulk-decision/:
+    post:
+      operationId: v1_dashboard_group_join_requests_bulk_decision_create
+      description: |-
+        Approve or reject many pending requests. Every item is its own transaction through the same service as the
+        single approve/reject actions, so one failing item never rolls back the others.
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinRequestBulkDecisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JoinRequestBulkDecisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JoinRequestBulkDecisionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkDecisionResponse'
+          description: ''
+  /api/v1/dashboard/group-join-requests/summary/:
+    get:
+      operationId: v1_dashboard_group_join_requests_summary_retrieve
+      description: '``GET dashboard/group-join-requests/summary/``: counts under the
+        same filters as the list except ``status``.'
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinRequestSummary'
+          description: ''
   /api/v1/dashboard/group-memberships/{id}/approve/:
     post:
       operationId: v1_dashboard_group_memberships_approve_create
@@ -11969,6 +12117,8 @@ paths:
   /api/v1/groups/{id}/join/:
     post:
       operationId: v1_groups_join_create
+      description: 'Always refused with 403 `GROUP_JOIN_ENROLLMENT_ONLY`: students
+        join groups automatically after their subject-registration request is approved.'
       parameters:
       - in: path
         name: id
@@ -11980,13 +12130,10 @@ paths:
       security:
       - jwtAuth: []
       - bearerAuth: []
+      deprecated: true
       responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupMembership'
-          description: ''
+        '403':
+          description: GROUP_JOIN_ENROLLMENT_ONLY
   /api/v1/groups/{id}/leave/:
     post:
       operationId: v1_groups_leave_create
@@ -12056,10 +12203,9 @@ paths:
     get:
       operationId: v1_groups_available_list
       description: |-
-        List/retrieve only.
-
-        DRF routers discover actions by attribute. Write methods must never be added
-        to this class, otherwise a nominally read-only resource becomes writable.
+        Read-only list of the groups that match the student's level. Joining by request no longer exists: every row
+        carries ``can_request_join: false`` and groups are joined automatically after a subject-registration request is
+        approved.
       parameters:
       - in: query
         name: academic_year
@@ -12119,16 +12265,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedGroupList'
+                $ref: '#/components/schemas/PaginatedAvailableGroupList'
           description: ''
   /api/v1/groups/available/{id}/:
     get:
       operationId: v1_groups_available_retrieve
       description: |-
-        List/retrieve only.
-
-        DRF routers discover actions by attribute. Write methods must never be added
-        to this class, otherwise a nominally read-only resource becomes writable.
+        Read-only list of the groups that match the student's level. Joining by request no longer exists: every row
+        carries ``can_request_join: false`` and groups are joined automatically after a subject-registration request is
+        approved.
       parameters:
       - in: path
         name: id
@@ -12146,7 +12291,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Group'
+                $ref: '#/components/schemas/AvailableGroup'
           description: ''
   /api/v1/groups/my/:
     get:
@@ -13834,6 +13979,86 @@ paths:
               schema:
                 $ref: '#/components/schemas/StudentAcademicProfile'
           description: ''
+  /api/v1/subjects/:
+    get:
+      operationId: v1_subjects_list
+      description: 'All active subjects of the student''s faculty. Filters: `academic_year`,
+        `semester`, `search` (name or code), `enrolled` (has an approved subject registration),
+        `in_current_term`. Default order: current-term subjects first, then year,
+        semester, name. Informational only: no group or join data.'
+      parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: integer
+      - in: query
+        name: enrolled
+        schema:
+          type: boolean
+      - in: query
+        name: in_current_term
+        schema:
+          type: boolean
+      - in: query
+        name: ordering
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name or code
+      - in: query
+        name: semester
+        schema:
+          type: integer
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudentSubjectListList'
+          description: ''
+  /api/v1/subjects/{id}/:
+    get:
+      operationId: v1_subjects_retrieve
+      description: One subject with its full description.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا subject.
+        required: true
+      tags:
+      - Subjects
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentSubjectDetail'
+          description: ''
   /api/v1/support/attachments/{token}/:
     get:
       operationId: v1_support_attachments_retrieve
@@ -15084,6 +15309,89 @@ components:
         * `student_term_confirmed` - Student Term Confirmed
         * `group_members_exported` - Group Members Exported
         * `user_profile_updated` - User Profile Updated
+    AvailableGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        image:
+          type: string
+          format: uri
+          nullable: true
+        university:
+          type: integer
+        faculty:
+          type: integer
+          nullable: true
+        major:
+          type: integer
+          nullable: true
+        academic_year:
+          type: integer
+          nullable: true
+        semester:
+          type: integer
+          nullable: true
+        subject:
+          type: integer
+          nullable: true
+        created_by:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+        requires_approval:
+          type: boolean
+        send_messages_permission:
+          $ref: '#/components/schemas/GroupSendMessagesPermissionEnum'
+        membership_status:
+          type: string
+          nullable: true
+          readOnly: true
+        current_user_membership_status:
+          type: string
+          nullable: true
+          readOnly: true
+        current_user_group_role:
+          type: string
+          nullable: true
+          readOnly: true
+        members_count:
+          type: integer
+          readOnly: true
+        has_whatsapp_channel:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        can_request_join:
+          type: boolean
+          readOnly: true
+      required:
+      - can_request_join
+      - created_at
+      - created_by
+      - current_user_group_role
+      - current_user_membership_status
+      - has_whatsapp_channel
+      - id
+      - members_count
+      - membership_status
+      - name
+      - university
+      - updated_at
     BlankEnum:
       enum:
       - ''
@@ -15111,6 +15419,33 @@ components:
       required:
       - action
       - ids
+    BulkDecisionResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkItemResult'
+        succeeded:
+          type: integer
+        failed:
+          type: integer
+      required:
+      - failed
+      - results
+      - succeeded
+    BulkItemResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        ok:
+          type: boolean
+        error:
+          type: string
+      required:
+      - id
+      - ok
     CategoryEnum:
       enum:
       - account
@@ -17089,6 +17424,14 @@ components:
         * `approve_all` - approve_all
         * `reject_all` - reject_all
         * `approve_selected` - approve_selected
+    DecisionEnum:
+      enum:
+      - approve
+      - reject
+      type: string
+      description: |-
+        * `approve` - approve
+        * `reject` - reject
     DecisionRequest:
       type: object
       properties:
@@ -18431,6 +18774,81 @@ components:
       - full_name
       - phone_number
       - template
+    JoinRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/GroupMembershipStatusEnum'
+          readOnly: true
+        user:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        group:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        reviewed_by:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        reviewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        note:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - created_at
+      - group
+      - id
+      - note
+      - reviewed_at
+      - reviewed_by
+      - status
+      - user
+    JoinRequestBulkDecisionRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          maxItems: 100
+        decision:
+          $ref: '#/components/schemas/DecisionEnum'
+        note:
+          type: string
+          maxLength: 500
+      required:
+      - decision
+      - ids
+    JoinRequestSummary:
+      type: object
+      properties:
+        pending:
+          type: integer
+        approved_today:
+          type: integer
+        rejected_today:
+          type: integer
+      required:
+      - approved_today
+      - pending
+      - rejected_today
     Lecture:
       type: object
       properties:
@@ -19671,6 +20089,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditLog'
+    PaginatedAvailableGroupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableGroup'
     PaginatedDashboardAccountDeletionList:
       type: object
       required:
@@ -20177,6 +20618,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InventoryItem'
+    PaginatedJoinRequestList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/JoinRequest'
     PaginatedLectureList:
       type: object
       required:
@@ -20637,6 +21101,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StockMovement'
+    PaginatedStudentSubjectListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentSubjectList'
     PaginatedSubjectList:
       type: object
       required:
@@ -24015,6 +24502,108 @@ components:
       - password
       - password_confirm
       - phone_number
+    StudentSubjectDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        academic_year:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        semester:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        major:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        faculty:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        in_current_term:
+          type: boolean
+          readOnly: true
+        is_enrolled:
+          type: boolean
+          readOnly: true
+        has_description:
+          type: boolean
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+      required:
+      - academic_year
+      - code
+      - description
+      - faculty
+      - has_description
+      - id
+      - in_current_term
+      - is_enrolled
+      - major
+      - name
+      - semester
+    StudentSubjectList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        academic_year:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        semester:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        major:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+        faculty:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        in_current_term:
+          type: boolean
+          readOnly: true
+        is_enrolled:
+          type: boolean
+          readOnly: true
+        has_description:
+          type: boolean
+          readOnly: true
+      required:
+      - academic_year
+      - code
+      - faculty
+      - has_description
+      - id
+      - in_current_term
+      - is_enrolled
+      - major
+      - name
+      - semester
     StudentVerificationStatusEnum:
       enum:
       - incomplete
