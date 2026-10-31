@@ -6,7 +6,8 @@ from urllib.parse import parse_qs, urlparse
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework import status as http_status
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.permissions import Capability, PermissionService
@@ -25,6 +26,19 @@ from .models import (
 )
 
 WHATSAPP_HOSTS = {"wa.me", "www.wa.me", "api.whatsapp.com", "chat.whatsapp.com", "www.whatsapp.com"}
+
+
+ENROLLMENT_ONLY_MESSAGE = "الانضمام إلى المجموعات يتم تلقائيًا بعد قبول طلب تسجيل المواد."
+
+
+class GroupJoinEnrollmentOnly(APIException):
+    """A student asked to join a group by hand. Groups are filled only from approved subject-registration requests
+    (and the faculty community on verification), never by a join request (HTTP 403, stable code)."""
+
+    status_code = http_status.HTTP_403_FORBIDDEN
+    default_detail = ENROLLMENT_ONLY_MESSAGE
+    default_code = "group_join_enrollment_only"
+    api_code = "GROUP_JOIN_ENROLLMENT_ONLY"
 
 
 def is_student_eligible_for_group(user, group: Group) -> bool:
@@ -86,7 +100,16 @@ def visible_groups_for_student(user):
 class GroupMembershipService:
     @staticmethod
     @transaction.atomic
-    def join(user, group: Group) -> GroupMembership:
+    def join(user, group: Group, *, initiated_by=None) -> GroupMembership:
+        """Open a membership (pending or approved per ``requires_approval``) on behalf of someone else.
+
+        A student can never join a group by asking: when ``initiated_by`` is missing or is ``user`` themselves this
+        refuses. Legitimate additions use ``enrollment.services.add_to_group`` (approved enrollment, faculty community)
+        or this method with a staff ``initiated_by``.
+        """
+
+        if initiated_by is None or initiated_by.pk == user.pk:
+            raise GroupJoinEnrollmentOnly()
         group = Group.objects.select_for_update().get(pk=group.pk)
         if not group.is_active or group.is_deleted:
             raise ValidationError("Group is not active.")
@@ -154,8 +177,19 @@ class GroupMembershipService:
 
     @staticmethod
     @transaction.atomic
-    def review(membership: GroupMembership, reviewer, status: str, request=None) -> GroupMembership:
+    def review(
+        membership: GroupMembership,
+        reviewer,
+        status: str,
+        request=None,
+        *,
+        note: str = "",
+        only_if_pending: bool = False,
+    ) -> GroupMembership:
         membership = GroupMembership.objects.select_for_update().select_related("group", "user").get(pk=membership.pk)
+        if only_if_pending and membership.status != GroupMembershipStatus.PENDING:
+            raise ValidationError({"detail": "This request is no longer pending.", "code": "NOT_PENDING"})
+        note = (note or "").strip()
         if status == GroupMembershipStatus.APPROVED:
             membership.approve(reviewer)
             title = "تم قبول طلب الانضمام"
@@ -168,6 +202,8 @@ class GroupMembershipService:
             membership.save()
             title = "تم تحديث عضوية الغروب"
             body = f"تم تحديث حالة عضويتك في {membership.group.name}."
+            if note:
+                body = f"{body} {note}"
             action = (
                 AuditAction.GROUP_MEMBERSHIP_BLOCKED
                 if status == GroupMembershipStatus.BLOCKED
@@ -184,7 +220,7 @@ class GroupMembershipService:
             actor=reviewer,
             action=action,
             target=membership,
-            new_value={"status": status, "group_id": membership.group_id},
+            new_value={"status": status, "group_id": membership.group_id, **({"note": note} if note else {})},
             request=request,
         )
         return membership

@@ -6,6 +6,7 @@ from datetime import timedelta
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -225,10 +226,18 @@ def test_normal_user_registration_does_not_notify(world, django_capture_on_commi
     assert not Notification.objects.filter(related_object_type="student_registration").exists()
 
 
+def _legacy_pending_request(user, group):
+    """Students can no longer ask to join; a pending row (legacy data) still notifies managers when it is announced."""
+
+    membership = GroupMembership.objects.create(group=group, user=user, status=GroupMembershipStatus.PENDING)
+    transaction.on_commit(lambda: GroupMembershipService.notify_join_request(membership.pk))
+    return membership
+
+
 def test_group_join_request_notifies_group_managers_and_opens_the_group(world, django_capture_on_commit_callbacks):
     w = world
     with django_capture_on_commit_callbacks(execute=True):
-        membership = GroupMembershipService.join(w["student"], w["group"])
+        membership = _legacy_pending_request(w["student"], w["group"])
     assert membership.status == GroupMembershipStatus.PENDING
     for staff in (w["admin"], w["it"]):
         note = Notification.objects.get(user=staff, related_object_type="join_request")
@@ -250,17 +259,19 @@ def test_each_join_request_is_its_own_notification_even_in_the_same_group(world,
         verification_status=StudentVerificationStatus.APPROVED,
     )
     with django_capture_on_commit_callbacks(execute=True):
-        GroupMembershipService.join(w["student"], w["group"])
-        GroupMembershipService.join(second, w["group"])
+        _legacy_pending_request(w["student"], w["group"])
+        _legacy_pending_request(second, w["group"])
     assert Notification.objects.filter(user=w["admin"], related_object_type="join_request").count() == 2
 
 
-def test_auto_approved_group_does_not_raise_a_join_request(world, django_capture_on_commit_callbacks):
+def test_staff_added_membership_of_an_auto_approved_group_does_not_raise_a_join_request(
+    world, django_capture_on_commit_callbacks
+):
     w = world
     w["group"].requires_approval = False
     w["group"].save()
     with django_capture_on_commit_callbacks(execute=True):
-        membership = GroupMembershipService.join(w["student"], w["group"])
+        membership = GroupMembershipService.join(w["student"], w["group"], initiated_by=w["admin"])
     assert membership.status == GroupMembershipStatus.APPROVED
     assert not Notification.objects.filter(related_object_type="join_request").exists()
 

@@ -46,25 +46,13 @@ def _post(client, url, data, key=None):
 # --- group join / leave -------------------------------------------------------------------------------------------
 
 
-def test_group_join_replays_and_works_without_header(world):
+def test_group_join_is_always_refused_even_with_an_idempotency_key(world):
     client, group, student = world["client"], world["group"], world["student"]
     url = f"/api/v1/groups/{group.pk}/join/"
-    first = _post(client, url, {}, key="join-1")
-    assert first.status_code == 200, first.data
-    again = _post(client, url, {}, key="join-1")
-    assert again.status_code == 200 and again.data == first.data
-    assert GroupMembership.objects.filter(group=group, user=student).count() == 1
-    # Without a key the second join is the normal business-rule rejection (not a replay).
-    assert _post(client, url, {}).status_code == 400
-
-
-def test_group_join_key_reuse_on_another_group_is_isolated(world):
-    client, group = world["client"], world["group"]
-    other = Group.objects.create(
-        name="Other", university=world["university"], created_by=world["admin"], requires_approval=False
-    )
-    assert _post(client, f"/api/v1/groups/{group.pk}/join/", {}, key="same").status_code == 200
-    assert _post(client, f"/api/v1/groups/{other.pk}/join/", {}, key="same").status_code == 200
+    for key in ("join-1", "join-1", None):
+        response = _post(client, url, {}, key=key)
+        assert response.status_code == 403 and response.data["code"] == "GROUP_JOIN_ENROLLMENT_ONLY"
+    assert not GroupMembership.objects.filter(group=group, user=student).exists()
 
 
 def test_group_leave_replays(world):
