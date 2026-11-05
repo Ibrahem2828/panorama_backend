@@ -6,6 +6,7 @@ from .views import (
     DashboardCounterOrderCreateView,
     DashboardCounterQuoteView,
     DashboardCoverOptionViewSet,
+    DashboardExtraOptionViewSet,
     DashboardPickupLocationViewSet,
     DashboardPrintAssignView,
     DashboardPrinterViewSet,
@@ -40,6 +41,9 @@ router.register("printing/orders/my", MyPrintOrderViewSet, basename="my-print-or
 router.register("printing/pickup-locations", PrintPickupLocationViewSet, basename="print-pickup-locations")
 router.register("printing/products", PrintProductViewSet, basename="print-products")
 router.register("dashboard/printing/covers", DashboardCoverOptionViewSet, basename="dashboard-print-covers")
+router.register(
+    "dashboard/printing/extra-options", DashboardExtraOptionViewSet, basename="dashboard-print-extra-options"
+)
 router.register("dashboard/printing/wire-specs", DashboardWireSpecViewSet, basename="dashboard-print-wire-specs")
 router.register("dashboard/printing/products", DashboardReadyProductViewSet, basename="dashboard-print-products")
 router.register("dashboard/printing/printers", DashboardPrinterViewSet, basename="dashboard-printers")

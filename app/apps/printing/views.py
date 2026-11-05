@@ -39,6 +39,8 @@ from .models import (
     PrintConversionStatus,
     PrintCoverOption,
     Printer,
+    PrintExtraOption,
+    PrintExtraSection,
     PrintItemAccessTicket,
     PrintJob,
     PrintOrder,
@@ -61,6 +63,7 @@ from .serializers import (
     PrintCoverOptionSerializer,
     PrinterHeartbeatSerializer,
     PrinterSerializer,
+    PrintExtraOptionSerializer,
     PrintJobCancelSerializer,
     PrintJobStatusSerializer,
     PrintOrderAssignSerializer,
@@ -551,8 +554,25 @@ class PrintOptionsView(APIView):
         currency = request.query_params.get("currency") or default_currency()
         bindings = PrintBindingPrice.objects.filter(currency=currency, is_active=True, is_deleted=False)
         covers = PrintCoverOption.objects.filter(currency=currency, is_active=True, is_deleted=False)
+        extras = PrintExtraOption.objects.filter(currency=currency, is_active=True, is_deleted=False)
+        by_section: dict[str, list] = {value: [] for value in PrintExtraSection.values}
+        for row in extras:
+            by_section[row.section].append(
+                {
+                    "code": row.code,
+                    "name": row.name,
+                    "description": row.description,
+                    "price": row.price,
+                    "price_unit": row.price_unit,
+                    "color_hex": row.color_hex,
+                }
+            )
         data = {
             "currency": currency,
+            "extras": [
+                {"section": value, "label": label, "options": by_section[value]}
+                for value, label in PrintExtraSection.choices
+            ],
             "pages_per_sheet": list(PAGES_PER_SHEET_CHOICES),
             "orientations": [value for value, _label in PrintOrientation.choices],
             "duplex_flips": [value for value, _label in DuplexFlip.choices],
@@ -597,6 +617,21 @@ class DashboardCoverOptionViewSet(AuditedPrintConfigurationViewSet):
 
     def get_queryset(self):
         return PrintCoverOption.objects.filter(is_deleted=False)
+
+
+class DashboardExtraOptionViewSet(AuditedPrintConfigurationViewSet):
+    """Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters)."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintExtraOptionSerializer
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["section", "currency", "is_active"]
+    ordering_fields = ["section", "sort_order", "price", "name"]
+    ordering = ["section", "sort_order", "name"]
+
+    def get_queryset(self):
+        return PrintExtraOption.objects.filter(is_deleted=False)
 
 
 class DashboardWireSpecViewSet(AuditedPrintConfigurationViewSet):

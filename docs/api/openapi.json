@@ -10283,6 +10283,315 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/extra-options/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_extra_options_list",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "currency",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "is_active",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "section",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "back_cover",
+                                "back_transparency_optional",
+                                "back_transparency_required",
+                                "design_paper",
+                                "final_delivery",
+                                "finishing",
+                                "front_cover",
+                                "front_transparency_optional",
+                                "front_transparency_required"
+                            ]
+                        },
+                        "description": "* `front_cover` - نوع الغلاف الأمامي\n* `back_cover` - نوع الغلاف الخلفي\n* `front_transparency_required` - الشفافية الأمامية - مطلوب\n* `front_transparency_optional` - الشفافية الأمامية - غير مطلوبة\n* `back_transparency_required` - الشفافية الخلفية - مطلوب\n* `back_transparency_optional` - الشفافية الخلفية - غير مطلوبة\n* `final_delivery` - التسليم النهائي\n* `finishing` - الإخراج الفني\n* `design_paper` - خدمات أخرى: نوع الورق"
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PrintExtraOption"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_extra_options_create",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/extra-options/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_extra_options_retrieve",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_extra_options_update",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_extra_options_partial_update",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintExtraOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintExtraOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintExtraOptionRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_extra_options_destroy",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/jobs/": {
             "get": {
                 "operationId": "v1_dashboard_printing_jobs_list",
@@ -24607,6 +24916,9 @@
                         "type": "string",
                         "maxLength": 32
                     },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
+                    },
                     "pages_per_sheet": {
                         "allOf": [
                             {
@@ -24683,6 +24995,9 @@
                     "cover": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
                     },
                     "pages_per_sheet": {
                         "allOf": [
@@ -32894,6 +33209,56 @@
                     }
                 }
             },
+            "PatchedPrintExtraOptionRequest": {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "$ref": "#/components/schemas/SectionEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 48
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_unit": {
+                        "$ref": "#/components/schemas/PriceUnitEnum"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Optional colour swatch, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
             "PatchedPrintJobStatusRequest": {
                 "type": "object",
                 "properties": {
@@ -33494,6 +33859,15 @@
                 "type": "string",
                 "description": "* `per_copy` - A fixed price for every bound copy\n* `per_wire_kg` - By the weight of the wire used"
             },
+            "PriceUnitEnum": {
+                "enum": [
+                    "per_copy",
+                    "per_50_sheets",
+                    "per_sheet"
+                ],
+                "type": "string",
+                "description": "* `per_copy` - Per copy\n* `per_50_sheets` - Per 50 sheets of a copy (rounded up)\n* `per_sheet` - Per printed sheet"
+            },
             "PrintBindingPrice": {
                 "type": "object",
                 "properties": {
@@ -33770,6 +34144,142 @@
                     "name"
                 ]
             },
+            "PrintExtraOption": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "section": {
+                        "$ref": "#/components/schemas/SectionEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 48
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_unit": {
+                        "$ref": "#/components/schemas/PriceUnitEnum"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Optional colour swatch, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "created_at",
+                    "deleted_at",
+                    "id",
+                    "is_deleted",
+                    "name",
+                    "section",
+                    "updated_at"
+                ]
+            },
+            "PrintExtraOptionRequest": {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "$ref": "#/components/schemas/SectionEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 48
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_unit": {
+                        "$ref": "#/components/schemas/PriceUnitEnum"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Optional colour swatch, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "name",
+                    "section"
+                ]
+            },
             "PrintJob": {
                 "type": "object",
                 "description": "One finished print order as the cashier sees it.",
@@ -34007,6 +34517,17 @@
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
                         "readOnly": true
                     },
+                    "extras": {
+                        "readOnly": true,
+                        "description": "Chosen paper option per section: {section: code}."
+                    },
+                    "extras_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "description": "Total of the chosen paper options for the whole item."
+                    },
                     "product": {
                         "type": "integer",
                         "readOnly": true,
@@ -34054,6 +34575,8 @@
                     "cover_price",
                     "created_at",
                     "duplex_flip",
+                    "extras",
+                    "extras_price",
                     "file_size",
                     "file_type",
                     "has_uploaded_file",
@@ -34111,6 +34634,9 @@
                     "cover": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
                     },
                     "pages_per_sheet": {
                         "allOf": [
@@ -34201,6 +34727,9 @@
                     "cover": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
                     },
                     "pages_per_sheet": {
                         "allOf": [
@@ -35570,6 +36099,21 @@
                     "item",
                     "quantity"
                 ]
+            },
+            "SectionEnum": {
+                "enum": [
+                    "front_cover",
+                    "back_cover",
+                    "front_transparency_required",
+                    "front_transparency_optional",
+                    "back_transparency_required",
+                    "back_transparency_optional",
+                    "final_delivery",
+                    "finishing",
+                    "design_paper"
+                ],
+                "type": "string",
+                "description": "* `front_cover` - نوع الغلاف الأمامي\n* `back_cover` - نوع الغلاف الخلفي\n* `front_transparency_required` - الشفافية الأمامية - مطلوب\n* `front_transparency_optional` - الشفافية الأمامية - غير مطلوبة\n* `back_transparency_required` - الشفافية الخلفية - مطلوب\n* `back_transparency_optional` - الشفافية الخلفية - غير مطلوبة\n* `final_delivery` - التسليم النهائي\n* `finishing` - الإخراج الفني\n* `design_paper` - خدمات أخرى: نوع الورق"
             },
             "SellableItem": {
                 "type": "object",
