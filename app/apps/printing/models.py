@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from pathlib import Path
 
@@ -508,3 +509,65 @@ class PrintJob(BaseModel):
     class Meta:
         ordering = ["-created_at", "-id"]
         indexes = [models.Index(fields=["status", "created_at"], name="printing_job_status_idx")]
+
+
+class PrintOptionHelpTopic(models.TextChoices):
+    """Fixed topics; the sectioned extras use the free form ``extra:<section>`` (see ``validate_help_topic``)."""
+
+    PRINT_SIZE = "print_size", "Paper size"
+    PRINT_COLOUR = "print_colour", "Colour"
+    PRINT_SIDES = "print_sides", "Sides"
+    BINDING = "binding", "Binding"
+    COVER = "cover", "Cover"
+    SPIRAL_WIRE = "spiral_wire", "Spiral wire"
+
+
+EXTRA_HELP_TOPIC_PREFIX = "extra:"
+_EXTRA_SECTION_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
+_HELP_KEY_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+
+
+def validate_help_topic(value: str) -> None:
+    if value in PrintOptionHelpTopic.values:
+        return
+    if value.startswith(EXTRA_HELP_TOPIC_PREFIX) and _EXTRA_SECTION_RE.match(value[len(EXTRA_HELP_TOPIC_PREFIX) :]):
+        return
+    raise ValidationError("Unknown help topic. Use a built-in topic or extra:<section> with a lowercase slug.")
+
+
+def validate_help_key(value: str) -> None:
+    if value and not _HELP_KEY_RE.match(value):
+        raise ValidationError("The key must be an option code: letters, digits, dot, dash or underscore.")
+
+
+class PrintOptionHelp(BaseModel):
+    """Staff-written, illustrated explanation of one print option (or of a whole topic when ``key`` is empty)."""
+
+    topic = models.CharField(max_length=64, validators=[validate_help_topic])
+    key = models.CharField(
+        max_length=64, blank=True, validators=[validate_help_key], help_text="Option code; empty = the whole topic."
+    )
+    title = models.CharField(max_length=150)
+    body = models.TextField(help_text="Plain text; line breaks are kept.")
+    image = models.ImageField(upload_to="print_option_help/", null=True, blank=True)
+    image_caption = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["topic", "sort_order", "key"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["topic", "key"],
+                condition=models.Q(is_deleted=False),
+                name="printing_option_help_topic_key_uniq",
+            )
+        ]
+        indexes = [models.Index(fields=["topic", "is_active"], name="printing_opthelp_topic_idx")]
+
+    def clean(self):
+        validate_help_topic(self.topic)
+        validate_help_key(self.key)
+
+    def __str__(self):
+        return f"{self.topic}:{self.key or '*'}"

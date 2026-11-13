@@ -10402,6 +10402,303 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/option-help/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_option_help_list",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "is_active",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "topic",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PrintOptionHelp"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_option_help_create",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/option-help/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_option_help_retrieve",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_option_help_update",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_option_help_partial_update",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintOptionHelpRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintOptionHelpRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintOptionHelpRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_option_help_destroy",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/orders/": {
             "get": {
                 "operationId": "v1_dashboard_printing_orders_list",
@@ -21498,6 +21795,52 @@
                 ],
                 "responses": {
                     "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/printing/option-help/": {
+            "get": {
+                "operationId": "v1_printing_option_help_retrieve",
+                "description": "Active explanations for the print options. ``?topic=`` and ``?key=`` narrow the list; ``If-None-Match`` is honoured.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "topic",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Printing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -32910,6 +33253,50 @@
                     }
                 }
             },
+            "PatchedPrintOptionHelpRequest": {
+                "type": "object",
+                "description": "Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it).",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Option code; empty = the whole topic.",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "body": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Plain text; line breaks are kept."
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "image_caption": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
             "PatchedPrintOrderAssignRequest": {
                 "type": "object",
                 "properties": {
@@ -33847,6 +34234,124 @@
                 ],
                 "type": "string",
                 "description": "* `printing` - printing\n* `done` - done\n* `failed` - failed"
+            },
+            "PrintOptionHelp": {
+                "type": "object",
+                "description": "Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "topic": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Option code; empty = the whole topic.",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Plain text; line breaks are kept."
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "image_caption": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "body",
+                    "created_at",
+                    "id",
+                    "image_url",
+                    "title",
+                    "topic",
+                    "updated_at"
+                ]
+            },
+            "PrintOptionHelpRequest": {
+                "type": "object",
+                "description": "Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it).",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Option code; empty = the whole topic.",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "body": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Plain text; line breaks are kept."
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "image_caption": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "body",
+                    "title",
+                    "topic"
+                ]
             },
             "PrintOrderCreateRequest": {
                 "type": "object",
