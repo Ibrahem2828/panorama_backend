@@ -430,3 +430,79 @@ def test_device_endpoints_require_user_management(enforced, student, admin):
         .status_code
         == 403
     )
+
+
+# -- why an old session ended -----------------------------------------------------------------------------------------
+
+
+def _refresh(refresh_token, device_id=DEVICE_A):
+    return APIClient().post(reverse("token-refresh"), {"refresh": refresh_token}, format="json", **_headers(device_id))
+
+
+def test_replaced_device_gets_device_mismatch_on_request_and_refresh(enforced, student):
+    old = _login(student, DEVICE_A).data["data"]
+    _switch(_mismatch_token(student))
+    request = _authed(old["access"], DEVICE_A).get(reverse("current-user"))
+    assert request.status_code == 401 and request.data["code"] == "DEVICE_MISMATCH"
+    assert request.data["message"] == "تم تسجيل الدخول من جهاز آخر"
+    refresh = _refresh(old["refresh"])  # blacklisted by the switch
+    assert refresh.status_code == 401 and refresh.data["code"] == "DEVICE_MISMATCH"
+    # the same without the grace-mode switch on (the session history does not depend on enforcement)
+    enforced.DEVICE_BINDING_ENFORCED = False
+    assert _refresh(old["refresh"]).data["code"] == "DEVICE_MISMATCH"
+
+
+def test_admin_reset_gets_its_own_code(enforced, student, admin):
+    old = _login(student, DEVICE_A).data["data"]
+    _staff_client(admin).post(f"/api/v1/dashboard/users/{student.pk}/account-devices/reset/", {}, format="json")
+    request = _authed(old["access"], DEVICE_A).get(reverse("current-user"))
+    assert request.status_code == 401 and request.data["code"] == "SESSION_REVOKED_BY_ADMIN"
+    assert _refresh(old["refresh"]).data["code"] == "SESSION_REVOKED_BY_ADMIN"
+
+
+def test_other_invalidations_keep_the_generic_401(enforced, student):
+    from apps.accounts.authentication import SessionVersionRefreshToken
+
+    tokens = _login(student, DEVICE_A).data["data"]
+    student.refresh_from_db()
+    student.invalidate_sessions()  # e.g. password change / logout-all: device unchanged
+    request = _authed(tokens["access"], DEVICE_A).get(reverse("current-user"))
+    assert request.status_code == 401 and request.data["code"] == "AUTHENTICATION_FAILED"
+    assert _refresh(tokens["refresh"]).data["code"] != "DEVICE_MISMATCH"
+    # a token without a device claim, or naming a device the account never had, learns nothing
+    student.refresh_from_db()
+    plain = SessionVersionRefreshToken.for_user(student)
+    student.invalidate_sessions()
+    assert _refresh(str(plain)).data["code"] != "DEVICE_MISMATCH"
+    foreign = SessionVersionRefreshToken.for_user(student, device_hash=hash_device_id(DEVICE_C))
+    student.invalidate_sessions()
+    assert _refresh(str(foreign)).data["code"] != "DEVICE_MISMATCH"
+
+
+def test_forged_or_other_users_tokens_get_no_device_answer(enforced, student):
+    other = User.objects.create_user(
+        full_name="Other",
+        email="other.dev@example.test",
+        phone_number="+963955100050",
+        password=PASSWORD,
+        role=UserRole.STUDENT,
+        is_email_verified=True,
+    )
+    _login(other, DEVICE_A)
+    _login(student, DEVICE_B)
+    assert _refresh("garbage").data["code"] != "DEVICE_MISMATCH"
+    # a token of `student` naming a device that only `other` has: not a replaced device of `student`
+    from apps.accounts.authentication import SessionVersionRefreshToken
+
+    token = SessionVersionRefreshToken.for_user(student, device_hash=hash_device_id(DEVICE_A))
+    student.invalidate_sessions()
+    assert _refresh(str(token)).data["code"] != "DEVICE_MISMATCH"
+
+
+def test_device_that_switched_back_is_not_called_replaced(enforced, student):
+    enforced.DEVICE_SWITCH_LIMIT_PER_TERM = 5
+    old = _login(student, DEVICE_A).data["data"]
+    _switch(_mismatch_token(student, DEVICE_B), DEVICE_B)
+    _switch(_mismatch_token(student, DEVICE_A), DEVICE_A)  # A is bound again
+    request = _authed(old["access"], DEVICE_A).get(reverse("current-user"))
+    assert request.status_code == 401 and request.data["code"] != "DEVICE_MISMATCH"

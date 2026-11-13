@@ -63,6 +63,12 @@ anonymizes the account while preserving a minimal audit trail.
    switch answers `403 DEVICE_SWITCH_LIMIT_REACHED`, tell the student to contact support (an admin resets the binding).
 3. Refresh `409 DEVICE_MISMATCH` or `401 DEVICE_MISMATCH`: clear tokens and show the login screen. `400/401 DEVICE_ID_REQUIRED`:
    the header is missing (update the app).
+   Sessions ended by a device event also answer `401` on requests AND on `token/refresh` (a refresh token blacklisted by the
+   switch/reset still gets the specific code): `DEVICE_MISMATCH` ("تم تسجيل الدخول من جهاز آخر") when this phone was replaced by a
+   self-service switch, `SESSION_REVOKED_BY_ADMIN` when support reset the binding. Only a genuine token whose `dh` device claim names
+   a no-longer-bound device of that account gets these codes; password change, logout-all, unknown or forged tokens keep the
+   generic 401. A phone that was replaced and later switched back is not reported as replaced. Chat WebSocket tickets simply
+   stop validating (the socket closes); the next REST call returns the code above.
 4. Phone verification: `POST auth/phone-verification/` (phone + password), then poll `GET .../current/` (status `pending_staff`,
    `code_sent` with `expires_at`), then `POST .../confirm/` `{code}`; `POST .../cancel/` to start over. A notification
    (`data.kind = phone_verification`) arrives when the code was sent, on success, rejection and expiry.

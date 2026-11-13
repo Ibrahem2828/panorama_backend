@@ -82,9 +82,34 @@ class _LimitReached(Exception):
 class DeviceAuthenticationFailed(AuthenticationFailed):
     """Raised from the JWT authenticator when an access token is used from a device other than the bound one."""
 
-    def __init__(self, detail: str, api_code: str):
+    def __init__(self, detail: str, api_code: str, message: str | None = None):
         super().__init__(detail)
         self.api_code = api_code
+        self.api_message = message or detail
+
+
+MISMATCH_MESSAGE = "تم تسجيل الدخول من جهاز آخر"
+ADMIN_REVOKED_MESSAGE = "أنهى فريق الدعم جلستك. سجّل الدخول من جديد."
+
+
+def invalidated_session_error(user_id, device_hash: str | None) -> DeviceAuthenticationFailed | None:
+    """Why a session that fails the session-version / blacklist check was ended, when that is a device event.
+
+    Only a token that names (``dh``) a device of THIS user that is no longer bound gets a specific answer, so the code
+    reveals nothing the holder of that device's own token did not already know:
+    * the device was replaced by a self-service switch (and is not bound again) -> ``DEVICE_MISMATCH``;
+    * the binding was revoked by staff (reset) -> ``SESSION_REVOKED_BY_ADMIN``.
+    Every other invalidation (password change, logout-all, no device claim) returns None: the generic 401 stays."""
+
+    if not device_hash or not user_id:
+        return None
+    rows = AccountDevice.objects.filter(user_id=user_id, device_hash=device_hash).values_list("status", flat=True)
+    statuses = set(rows)
+    if not statuses or AccountDeviceStatus.ACTIVE in statuses:
+        return None
+    if AccountDeviceStatus.REPLACED in statuses:
+        return DeviceAuthenticationFailed(MISMATCH_MESSAGE, "DEVICE_MISMATCH")
+    return DeviceAuthenticationFailed(ADMIN_REVOKED_MESSAGE, "SESSION_REVOKED_BY_ADMIN")
 
 
 def device_refusal_response(refusal: DeviceBindingRefused, request):
@@ -274,12 +299,12 @@ class DeviceBindingService:
         claim = validated_token.get(DEVICE_HASH_CLAIM)
         if claim:
             if claim != info.device_hash:
-                raise DeviceAuthenticationFailed("This session belongs to another device.", "DEVICE_MISMATCH")
+                raise DeviceAuthenticationFailed(MISMATCH_MESSAGE, "DEVICE_MISMATCH")
             return
         # A session issued before the feature existed: the first request with the header binds (or is refused).
         outcome, _active = cls._resolve(user, info, via=AccountDeviceBoundVia.LEGACY_SESSION, request=request)
         if outcome == "mismatch":
-            raise DeviceAuthenticationFailed("This account is bound to another device.", "DEVICE_MISMATCH")
+            raise DeviceAuthenticationFailed(MISMATCH_MESSAGE, "DEVICE_MISMATCH")
 
     # -- mismatch handling ----------------------------------------------------------------------------------------
 

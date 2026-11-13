@@ -54,6 +54,9 @@ becoming paid). Implemented in `apps/accounts/devices.py`; staff and normal user
 - Refresh from another device: `409 DEVICE_MISMATCH` with `device_switch_token: null` (a refresh token does not prove the
   password); the app must send the user to the login screen. An access token used with another device id: `401
   DEVICE_MISMATCH`; no header while enforced: `401/400 DEVICE_ID_REQUIRED`.
+- Ended sessions: a request or refresh with a token of a device that was replaced by a switch returns `401 DEVICE_MISMATCH`
+  (message "تم تسجيل الدخول من جهاز آخر"); after a staff reset it returns `401 SESSION_REVOKED_BY_ADMIN`. Only tokens whose
+  `dh` claim matches a replaced/revoked device of that same user get these codes (`invalidated_session_error`).
 - Logout keeps the binding (so logging out never frees the account). Account deletion revokes it.
 - Mismatch attempts are audited (`account_device_mismatch`) and limited to `DEVICE_MISMATCH_MAX_PER_HOUR` per account (429).
   Switch endpoint: `THROTTLE_DEVICE_SWITCH` (10/hour per IP).
