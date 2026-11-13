@@ -48,6 +48,7 @@ from .services import (
     GroupJoinEnrollmentOnly,
     GroupMembershipService,
     eligible_groups_filter,
+    is_level_group,
     is_student_eligible_for_group,
 )
 
@@ -96,6 +97,8 @@ class AvailableGroupViewSet(StandardReadOnlyModelViewSet):
             group._current_membership = membership
             if membership and membership.status in {GroupMembershipStatus.APPROVED, GroupMembershipStatus.BLOCKED}:
                 continue
+            if is_level_group(group):
+                continue  # year/major/semester groups are not offered any more
             if is_student_eligible_for_group(user, group):
                 eligible_ids.append(group.id)
         return queryset.filter(id__in=eligible_ids).order_by("name")
@@ -148,6 +151,15 @@ class GroupDetailViewSet(StandardReadOnlyModelViewSet):
     def get_object(self):
         group = super().get_object()
         if not is_student_eligible_for_group(self.request.user, group):
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("You are not eligible to view this group.")
+        if (
+            is_level_group(group)
+            and not GroupMembership.objects.filter(
+                group=group, user=cast(User, self.request.user), status=GroupMembershipStatus.APPROVED, is_deleted=False
+            ).exists()
+        ):
             from rest_framework.exceptions import PermissionDenied
 
             raise PermissionDenied("You are not eligible to view this group.")

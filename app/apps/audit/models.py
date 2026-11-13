@@ -105,6 +105,20 @@ class AuditAction(models.TextChoices):
     STUDENT_TERM_CONFIRMED = "student_term_confirmed", "Student Term Confirmed"
     GROUP_MEMBERS_EXPORTED = "group_members_exported", "Group Members Exported"
     USER_PROFILE_UPDATED = "user_profile_updated", "User Profile Updated"
+    ACCOUNT_DEVICE_BOUND = "account_device_bound", "Account Device Bound"
+    ACCOUNT_DEVICE_MISMATCH = "account_device_mismatch", "Account Device Mismatch"
+    ACCOUNT_DEVICE_SWITCHED = "account_device_switched", "Account Device Switched"
+    ACCOUNT_DEVICE_SWITCH_REFUSED = "account_device_switch_refused", "Account Device Switch Refused"
+    ACCOUNT_DEVICE_RESET = "account_device_reset", "Account Device Reset"
+    PHONE_VERIFICATION_REQUESTED = "phone_verification_requested", "Phone Verification Requested"
+    PHONE_VERIFICATION_CODE_ISSUED = "phone_verification_code_issued", "Phone Verification Code Issued"
+    PHONE_VERIFICATION_CODE_SENT = "phone_verification_code_sent", "Phone Verification Code Sent"
+    PHONE_VERIFICATION_VERIFIED = "phone_verification_verified", "Phone Verification Verified"
+    PHONE_VERIFICATION_FAILED = "phone_verification_failed", "Phone Verification Failed"
+    PHONE_VERIFICATION_REJECTED = "phone_verification_rejected", "Phone Verification Rejected"
+    PHONE_VERIFICATION_CANCELLED = "phone_verification_cancelled", "Phone Verification Cancelled"
+    PHONE_VERIFICATION_EXPIRED = "phone_verification_expired", "Phone Verification Expired"
+    COMMUNITY_AUTO_JOINED = "community_auto_joined", "Community Auto Joined"
 
 
 class AuditLogImmutableError(RuntimeError):

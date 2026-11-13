@@ -378,6 +378,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ConfirmPasswordReset'
           description: ''
+  /api/v1/auth/device/switch/:
+    post:
+      operationId: v1_auth_device_switch_create
+      description: Take an account over on a new device using the ``device_switch_token``
+        a ``DEVICE_MISMATCH`` login returned.
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceSwitchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeviceSwitchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeviceSwitchRequest'
+        required: true
+      responses:
+        '200':
+          description: JWT login response for the new device
   /api/v1/auth/invitations/{token}/:
     get:
       operationId: v1_auth_invitations_retrieve
@@ -559,6 +581,99 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VerifyOTP'
+          description: ''
+  /api/v1/auth/phone-verification/:
+    post:
+      operationId: v1_auth_phone_verification_create
+      description: '``POST auth/phone-verification/``: ask to verify a phone number
+        (phone + the account password).'
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyPhoneVerification'
+          description: ''
+        '409':
+          description: Conflict
+  /api/v1/auth/phone-verification/cancel/:
+    post:
+      operationId: v1_auth_phone_verification_cancel_create
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyPhoneVerification'
+          description: ''
+  /api/v1/auth/phone-verification/confirm/:
+    post:
+      operationId: v1_auth_phone_verification_confirm_create
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationConfirmRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyPhoneVerification'
+          description: ''
+        '400':
+          description: Wrong or expired code
+  /api/v1/auth/phone-verification/current/:
+    get:
+      operationId: v1_auth_phone_verification_current_retrieve
+      description: '``GET auth/phone-verification/current/``: the latest request (``data.request``
+        is null when there never was one).'
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/auth/register/normal/:
     post:
@@ -1417,11 +1532,17 @@ paths:
           - account_deletion_cancelled
           - account_deletion_completed
           - account_deletion_requested
+          - account_device_bound
+          - account_device_mismatch
+          - account_device_reset
+          - account_device_switch_refused
+          - account_device_switched
           - account_locked
           - account_login_unlocked
           - announcement_created
           - announcement_deleted
           - announcement_updated
+          - community_auto_joined
           - current_term_changed
           - device_installation_registered
           - device_installation_revoked
@@ -1470,6 +1591,14 @@ paths:
           - payment_recorded
           - payment_voided
           - permission_template_changed
+          - phone_verification_cancelled
+          - phone_verification_code_issued
+          - phone_verification_code_sent
+          - phone_verification_expired
+          - phone_verification_failed
+          - phone_verification_rejected
+          - phone_verification_requested
+          - phone_verification_verified
           - policy_accepted
           - policy_version_published
           - policy_version_unpublished
@@ -1608,6 +1737,20 @@ paths:
           * `student_term_confirmed` - Student Term Confirmed
           * `group_members_exported` - Group Members Exported
           * `user_profile_updated` - User Profile Updated
+          * `account_device_bound` - Account Device Bound
+          * `account_device_mismatch` - Account Device Mismatch
+          * `account_device_switched` - Account Device Switched
+          * `account_device_switch_refused` - Account Device Switch Refused
+          * `account_device_reset` - Account Device Reset
+          * `phone_verification_requested` - Phone Verification Requested
+          * `phone_verification_code_issued` - Phone Verification Code Issued
+          * `phone_verification_code_sent` - Phone Verification Code Sent
+          * `phone_verification_verified` - Phone Verification Verified
+          * `phone_verification_failed` - Phone Verification Failed
+          * `phone_verification_rejected` - Phone Verification Rejected
+          * `phone_verification_cancelled` - Phone Verification Cancelled
+          * `phone_verification_expired` - Phone Verification Expired
+          * `community_auto_joined` - Community Auto Joined
       - in: query
         name: actor
         schema:
@@ -6126,6 +6269,170 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/dashboard/phone-verifications/:
+    get:
+      operationId: v1_dashboard_phone_verifications_list
+      description: |-
+        ``GET dashboard/phone-verifications/``: the staff queue. ``status`` filter, ``search`` on name, e-mail or phone;
+        oldest first by default so nobody waits behind newer requests.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - code_sent
+          - expired
+          - pending_staff
+          - rejected
+          - verified
+        description: |-
+          * `pending_staff` - Waiting for staff
+          * `code_sent` - Code sent
+          * `verified` - Verified
+          * `expired` - Expired
+          * `cancelled` - Cancelled
+          * `rejected` - Rejected
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardPhoneVerificationList'
+          description: ''
+  /api/v1/dashboard/phone-verifications/{id}/:
+    get:
+      operationId: v1_dashboard_phone_verifications_retrieve
+      description: |-
+        ``GET dashboard/phone-verifications/``: the staff queue. ``status`` filter, ``search`` on name, e-mail or phone;
+        oldest first by default so nobody waits behind newer requests.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا phone verification request.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPhoneVerification'
+          description: ''
+  /api/v1/dashboard/phone-verifications/{id}/claim/:
+    post:
+      operationId: v1_dashboard_phone_verifications_claim_create
+      description: |-
+        ``POST dashboard/phone-verifications/{id}/claim/``: generates the code and returns it ONCE (``data.code``). Send it
+        to the student by WhatsApp, then call ``mark-sent``. Calling it again issues a new code.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPhoneVerificationClaim'
+          description: ''
+  /api/v1/dashboard/phone-verifications/{id}/mark-sent/:
+    post:
+      operationId: v1_dashboard_phone_verifications_mark_sent_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPhoneVerification'
+          description: ''
+  /api/v1/dashboard/phone-verifications/{id}/reject/:
+    post:
+      operationId: v1_dashboard_phone_verifications_reject_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationRejectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationRejectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationRejectRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardPhoneVerification'
+          description: ''
   /api/v1/dashboard/printing/binding-prices/:
     get:
       operationId: v1_dashboard_printing_binding_prices_list
@@ -10123,6 +10430,66 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DashboardUser'
+          description: ''
+  /api/v1/dashboard/users/{user_id}/account-devices/:
+    get:
+      operationId: v1_dashboard_users_account_devices_retrieve
+      description: '``GET dashboard/users/{user_id}/account-devices/``: the binding
+        history and the self-service switch counter.'
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/users/{user_id}/account-devices/reset/:
+    post:
+      operationId: v1_dashboard_users_account_devices_reset_create
+      description: |-
+        ``POST dashboard/users/{user_id}/account-devices/reset/``: clears the binding and the switch counter and ends the
+        student's sessions; the next login binds the device they use then.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountDeviceResetRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountDeviceResetRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountDeviceResetRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/dashboard/users/{user_id}/activity/:
     get:
@@ -14724,6 +15091,13 @@ components:
         * `requested` - Requested
         * `cancelled` - Cancelled
         * `completed` - Completed
+    AccountDeviceResetRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 255
     ActivityUser:
       type: object
       properties:
@@ -15212,6 +15586,20 @@ components:
       - student_term_confirmed
       - group_members_exported
       - user_profile_updated
+      - account_device_bound
+      - account_device_mismatch
+      - account_device_switched
+      - account_device_switch_refused
+      - account_device_reset
+      - phone_verification_requested
+      - phone_verification_code_issued
+      - phone_verification_code_sent
+      - phone_verification_verified
+      - phone_verification_failed
+      - phone_verification_rejected
+      - phone_verification_cancelled
+      - phone_verification_expired
+      - community_auto_joined
       type: string
       description: |-
         * `user_registered` - User Registered
@@ -15312,6 +15700,20 @@ components:
         * `student_term_confirmed` - Student Term Confirmed
         * `group_members_exported` - Group Members Exported
         * `user_profile_updated` - User Profile Updated
+        * `account_device_bound` - Account Device Bound
+        * `account_device_mismatch` - Account Device Mismatch
+        * `account_device_switched` - Account Device Switched
+        * `account_device_switch_refused` - Account Device Switch Refused
+        * `account_device_reset` - Account Device Reset
+        * `phone_verification_requested` - Phone Verification Requested
+        * `phone_verification_code_issued` - Phone Verification Code Issued
+        * `phone_verification_code_sent` - Phone Verification Code Sent
+        * `phone_verification_verified` - Phone Verification Verified
+        * `phone_verification_failed` - Phone Verification Failed
+        * `phone_verification_rejected` - Phone Verification Rejected
+        * `phone_verification_cancelled` - Phone Verification Cancelled
+        * `phone_verification_expired` - Phone Verification Expired
+        * `community_auto_joined` - Community Auto Joined
     AvailableGroup:
       type: object
       properties:
@@ -16819,6 +17221,152 @@ components:
       - resolved_at
       - resolved_by_id
       - status
+    DashboardPhoneVerification:
+      type: object
+      description: 'What staff see. The code is NOT here: it is returned once by ``claim``.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PhoneVerificationStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        claimed_by_name:
+          type: string
+          readOnly: true
+        claimed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        code_generated:
+          type: boolean
+          readOnly: true
+        code_sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        attempts:
+          type: integer
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - attempts
+      - claimed_at
+      - claimed_by_name
+      - code_generated
+      - code_sent_at
+      - created_at
+      - expires_at
+      - id
+      - phone_number
+      - rejection_reason
+      - status
+      - user_id
+      - user_name
+      - verified_at
+    DashboardPhoneVerificationClaim:
+      type: object
+      description: 'What staff see. The code is NOT here: it is returned once by ``claim``.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: integer
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PhoneVerificationStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        claimed_by_name:
+          type: string
+          readOnly: true
+        claimed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        code_generated:
+          type: boolean
+          readOnly: true
+        code_sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        attempts:
+          type: integer
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        code:
+          type: string
+          readOnly: true
+      required:
+      - attempts
+      - claimed_at
+      - claimed_by_name
+      - code
+      - code_generated
+      - code_sent_at
+      - created_at
+      - expires_at
+      - id
+      - phone_number
+      - rejection_reason
+      - status
+      - user_id
+      - user_name
+      - verified_at
     DashboardPrintOrder:
       type: object
       properties:
@@ -17539,6 +18087,15 @@ components:
       required:
       - installation_id
       - platform
+    DeviceSwitchRequest:
+      type: object
+      properties:
+        device_switch_token:
+          type: string
+          minLength: 1
+          maxLength: 2048
+      required:
+      - device_switch_token
     DeviceToken:
       type: object
       properties:
@@ -19712,6 +20269,54 @@ components:
         * `8h` - 8h
         * `1w` - 1w
         * `forever` - forever
+    MyPhoneVerification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        phone_number:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PhoneVerificationStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        code_sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        attempts_remaining:
+          type: integer
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - attempts_remaining
+      - code_sent_at
+      - created_at
+      - expires_at
+      - id
+      - phone_number
+      - rejection_reason
+      - status
+      - verified_at
     NUpDirectionEnum:
       enum:
       - ltr
@@ -20299,6 +20904,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardMessageReport'
+    PaginatedDashboardPhoneVerificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardPhoneVerification'
     PaginatedDashboardPrintOrderList:
       type: object
       required:
@@ -22418,6 +23046,56 @@ components:
       - name_ar
       - name_en
       - role
+    PhoneVerificationConfirmRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 6
+          pattern: ^\d{6}$
+      required:
+      - code
+    PhoneVerificationCreateRequest:
+      type: object
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 32
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - phone_number
+    PhoneVerificationRejectRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - reason
+    PhoneVerificationStatusEnum:
+      enum:
+      - pending_staff
+      - code_sent
+      - verified
+      - expired
+      - cancelled
+      - rejected
+      type: string
+      description: |-
+        * `pending_staff` - Waiting for staff
+        * `code_sent` - Code sent
+        * `verified` - Verified
+        * `expired` - Expired
+        * `cancelled` - Cancelled
+        * `rejected` - Rejected
     PolicyAcceptanceRequest:
       type: object
       properties:
@@ -24148,7 +24826,10 @@ components:
       - purpose
     SessionVersionTokenRefreshRequest:
       type: object
-      description: Reject old refresh tokens before SimpleJWT rotates them.
+      description: |-
+        Reject old refresh tokens before SimpleJWT rotates them; students must refresh from their bound device.
+
+        ``DeviceBindingRefused`` is raised for a device mismatch; the view renders it (see ``TokenRefreshView``).
       properties:
         refresh:
           type: string

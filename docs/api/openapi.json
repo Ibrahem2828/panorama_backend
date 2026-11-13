@@ -607,6 +607,40 @@
                 }
             }
         },
+        "/api/v1/auth/device/switch/": {
+            "post": {
+                "operationId": "v1_auth_device_switch_create",
+                "description": "Take an account over on a new device using the ``device_switch_token`` a ``DEVICE_MISMATCH`` login returned.",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceSwitchRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceSwitchRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceSwitchRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "JWT login response for the new device"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/invitations/{token}/": {
             "get": {
                 "operationId": "v1_auth_invitations_retrieve",
@@ -906,6 +940,167 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/VerifyOTP"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/": {
+            "post": {
+                "operationId": "v1_auth_phone_verification_create",
+                "description": "``POST auth/phone-verification/``: ask to verify a phone number (phone + the account password).",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationCreateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationCreateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/cancel/": {
+            "post": {
+                "operationId": "v1_auth_phone_verification_cancel_create",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/confirm/": {
+            "post": {
+                "operationId": "v1_auth_phone_verification_confirm_create",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationConfirmRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationConfirmRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationConfirmRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Wrong or expired code"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/current/": {
+            "get": {
+                "operationId": "v1_auth_phone_verification_current_retrieve",
+                "description": "``GET auth/phone-verification/current/``: the latest request (``data.request`` is null when there never was one).",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
@@ -2337,11 +2532,17 @@
                                 "account_deletion_cancelled",
                                 "account_deletion_completed",
                                 "account_deletion_requested",
+                                "account_device_bound",
+                                "account_device_mismatch",
+                                "account_device_reset",
+                                "account_device_switch_refused",
+                                "account_device_switched",
                                 "account_locked",
                                 "account_login_unlocked",
                                 "announcement_created",
                                 "announcement_deleted",
                                 "announcement_updated",
+                                "community_auto_joined",
                                 "current_term_changed",
                                 "device_installation_registered",
                                 "device_installation_revoked",
@@ -2390,6 +2591,14 @@
                                 "payment_recorded",
                                 "payment_voided",
                                 "permission_template_changed",
+                                "phone_verification_cancelled",
+                                "phone_verification_code_issued",
+                                "phone_verification_code_sent",
+                                "phone_verification_expired",
+                                "phone_verification_failed",
+                                "phone_verification_rejected",
+                                "phone_verification_requested",
+                                "phone_verification_verified",
                                 "policy_accepted",
                                 "policy_version_published",
                                 "policy_version_unpublished",
@@ -2431,7 +2640,7 @@
                                 "verification_submitted"
                             ]
                         },
-                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
+                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated\n* `account_device_bound` - Account Device Bound\n* `account_device_mismatch` - Account Device Mismatch\n* `account_device_switched` - Account Device Switched\n* `account_device_switch_refused` - Account Device Switch Refused\n* `account_device_reset` - Account Device Reset\n* `phone_verification_requested` - Phone Verification Requested\n* `phone_verification_code_issued` - Phone Verification Code Issued\n* `phone_verification_code_sent` - Phone Verification Code Sent\n* `phone_verification_verified` - Phone Verification Verified\n* `phone_verification_failed` - Phone Verification Failed\n* `phone_verification_rejected` - Phone Verification Rejected\n* `phone_verification_cancelled` - Phone Verification Cancelled\n* `phone_verification_expired` - Phone Verification Expired\n* `community_auto_joined` - Community Auto Joined"
                     },
                     {
                         "in": "query",
@@ -9655,6 +9864,264 @@
                 }
             }
         },
+        "/api/v1/dashboard/phone-verifications/": {
+            "get": {
+                "operationId": "v1_dashboard_phone_verifications_list",
+                "description": "``GET dashboard/phone-verifications/``: the staff queue. ``status`` filter, ``search`` on name, e-mail or phone;\noldest first by default so nobody waits behind newer requests.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "cancelled",
+                                "code_sent",
+                                "expired",
+                                "pending_staff",
+                                "rejected",
+                                "verified"
+                            ]
+                        },
+                        "description": "* `pending_staff` - Waiting for staff\n* `code_sent` - Code sent\n* `verified` - Verified\n* `expired` - Expired\n* `cancelled` - Cancelled\n* `rejected` - Rejected"
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDashboardPhoneVerificationList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_phone_verifications_retrieve",
+                "description": "``GET dashboard/phone-verifications/``: the staff queue. ``status`` filter, ``search`` on name, e-mail or phone;\noldest first by default so nobody waits behind newer requests.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا phone verification request.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/claim/": {
+            "post": {
+                "operationId": "v1_dashboard_phone_verifications_claim_create",
+                "description": "``POST dashboard/phone-verifications/{id}/claim/``: generates the code and returns it ONCE (``data.code``). Send it\nto the student by WhatsApp, then call ``mark-sent``. Calling it again issues a new code.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerificationClaim"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/mark-sent/": {
+            "post": {
+                "operationId": "v1_dashboard_phone_verifications_mark_sent_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/reject/": {
+            "post": {
+                "operationId": "v1_dashboard_phone_verifications_reject_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationRejectRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationRejectRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationRejectRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/binding-prices/": {
             "get": {
                 "operationId": "v1_dashboard_printing_binding_prices_list",
@@ -16167,6 +16634,105 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/DashboardUser"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/users/{user_id}/account-devices/": {
+            "get": {
+                "operationId": "v1_dashboard_users_account_devices_retrieve",
+                "description": "``GET dashboard/users/{user_id}/account-devices/``: the binding history and the self-service switch counter.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/users/{user_id}/account-devices/reset/": {
+            "post": {
+                "operationId": "v1_dashboard_users_account_devices_reset_create",
+                "description": "``POST dashboard/users/{user_id}/account-devices/reset/``: clears the binding and the switch counter and ends the\nstudent's sessions; the next login binds the device they use then.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountDeviceResetRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountDeviceResetRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountDeviceResetRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
@@ -23474,6 +24040,16 @@
                 "type": "string",
                 "description": "* `requested` - Requested\n* `cancelled` - Cancelled\n* `completed` - Completed"
             },
+            "AccountDeviceResetRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 255
+                    }
+                }
+            },
             "ActivityUser": {
                 "type": "object",
                 "properties": {
@@ -24108,10 +24684,24 @@
                     "term_whatsapp_list_exported",
                     "student_term_confirmed",
                     "group_members_exported",
-                    "user_profile_updated"
+                    "user_profile_updated",
+                    "account_device_bound",
+                    "account_device_mismatch",
+                    "account_device_switched",
+                    "account_device_switch_refused",
+                    "account_device_reset",
+                    "phone_verification_requested",
+                    "phone_verification_code_issued",
+                    "phone_verification_code_sent",
+                    "phone_verification_verified",
+                    "phone_verification_failed",
+                    "phone_verification_rejected",
+                    "phone_verification_cancelled",
+                    "phone_verification_expired",
+                    "community_auto_joined"
                 ],
                 "type": "string",
-                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
+                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated\n* `account_device_bound` - Account Device Bound\n* `account_device_mismatch` - Account Device Mismatch\n* `account_device_switched` - Account Device Switched\n* `account_device_switch_refused` - Account Device Switch Refused\n* `account_device_reset` - Account Device Reset\n* `phone_verification_requested` - Phone Verification Requested\n* `phone_verification_code_issued` - Phone Verification Code Issued\n* `phone_verification_code_sent` - Phone Verification Code Sent\n* `phone_verification_verified` - Phone Verification Verified\n* `phone_verification_failed` - Phone Verification Failed\n* `phone_verification_rejected` - Phone Verification Rejected\n* `phone_verification_cancelled` - Phone Verification Cancelled\n* `phone_verification_expired` - Phone Verification Expired\n* `community_auto_joined` - Community Auto Joined"
             },
             "AvailableGroup": {
                 "type": "object",
@@ -26042,6 +26632,193 @@
                     "status"
                 ]
             },
+            "DashboardPhoneVerification": {
+                "type": "object",
+                "description": "What staff see. The code is NOT here: it is returned once by ``claim``.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PhoneVerificationStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "claimed_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "claimed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code_generated": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "code_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "attempts": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "attempts",
+                    "claimed_at",
+                    "claimed_by_name",
+                    "code_generated",
+                    "code_sent_at",
+                    "created_at",
+                    "expires_at",
+                    "id",
+                    "phone_number",
+                    "rejection_reason",
+                    "status",
+                    "user_id",
+                    "user_name",
+                    "verified_at"
+                ]
+            },
+            "DashboardPhoneVerificationClaim": {
+                "type": "object",
+                "description": "What staff see. The code is NOT here: it is returned once by ``claim``.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PhoneVerificationStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "claimed_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "claimed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code_generated": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "code_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "attempts": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "attempts",
+                    "claimed_at",
+                    "claimed_by_name",
+                    "code",
+                    "code_generated",
+                    "code_sent_at",
+                    "created_at",
+                    "expires_at",
+                    "id",
+                    "phone_number",
+                    "rejection_reason",
+                    "status",
+                    "user_id",
+                    "user_name",
+                    "verified_at"
+                ]
+            },
             "DashboardPrintOrder": {
                 "type": "object",
                 "properties": {
@@ -27004,6 +27781,19 @@
                 "required": [
                     "installation_id",
                     "platform"
+                ]
+            },
+            "DeviceSwitchRequest": {
+                "type": "object",
+                "properties": {
+                    "device_switch_token": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                    }
+                },
+                "required": [
+                    "device_switch_token"
                 ]
             },
             "DeviceToken": {
@@ -29812,6 +30602,69 @@
                 "type": "string",
                 "description": "* `8h` - 8h\n* `1w` - 1w\n* `forever` - forever"
             },
+            "MyPhoneVerification": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PhoneVerificationStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "code_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "attempts_remaining": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "attempts_remaining",
+                    "code_sent_at",
+                    "created_at",
+                    "expires_at",
+                    "id",
+                    "phone_number",
+                    "rejection_reason",
+                    "status",
+                    "verified_at"
+                ]
+            },
             "NUpDirectionEnum": {
                 "enum": [
                     "ltr",
@@ -30578,6 +31431,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/DashboardMessageReport"
+                        }
+                    }
+                }
+            },
+            "PaginatedDashboardPhoneVerificationList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DashboardPhoneVerification"
                         }
                     }
                 }
@@ -33463,6 +34347,65 @@
                     "role"
                 ]
             },
+            "PhoneVerificationConfirmRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 6,
+                        "pattern": "^\\d{6}$"
+                    }
+                },
+                "required": [
+                    "code"
+                ]
+            },
+            "PhoneVerificationCreateRequest": {
+                "type": "object",
+                "properties": {
+                    "phone_number": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 1,
+                        "maxLength": 128
+                    }
+                },
+                "required": [
+                    "password",
+                    "phone_number"
+                ]
+            },
+            "PhoneVerificationRejectRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "PhoneVerificationStatusEnum": {
+                "enum": [
+                    "pending_staff",
+                    "code_sent",
+                    "verified",
+                    "expired",
+                    "cancelled",
+                    "rejected"
+                ],
+                "type": "string",
+                "description": "* `pending_staff` - Waiting for staff\n* `code_sent` - Code sent\n* `verified` - Verified\n* `expired` - Expired\n* `cancelled` - Cancelled\n* `rejected` - Rejected"
+            },
             "PolicyAcceptanceRequest": {
                 "type": "object",
                 "properties": {
@@ -35744,7 +36687,7 @@
             },
             "SessionVersionTokenRefreshRequest": {
                 "type": "object",
-                "description": "Reject old refresh tokens before SimpleJWT rotates them.",
+                "description": "Reject old refresh tokens before SimpleJWT rotates them; students must refresh from their bound device.\n\n``DeviceBindingRefused`` is raised for a device mismatch; the view renders it (see ``TokenRefreshView``).",
                 "properties": {
                     "refresh": {
                         "type": "string",

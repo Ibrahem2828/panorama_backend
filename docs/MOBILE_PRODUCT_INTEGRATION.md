@@ -54,6 +54,21 @@ anonymizes the account while preserving a minimal audit trail.
 5. Read the canonical collection and OpenAPI rather than guessing payloads.
 6. Send `X-Request-ID` and an `Idempotency-Key` for retryable writes.
 
+## Account device and phone verification (students)
+
+1. Generate one device UUID (secure storage; separate from the installation id) and send `X-Panorama-Device-Id`,
+   `X-Panorama-Device-Name` and `X-Panorama-Platform` on login, `token/refresh` and every authenticated request.
+2. Login `409 DEVICE_MISMATCH`: show the bound device (`errors.bound_device`) and, if `errors.can_switch`, offer "use this
+   phone"; that calls `POST auth/device/switch/` with `errors.device_switch_token` and stores the returned tokens. When the
+   switch answers `403 DEVICE_SWITCH_LIMIT_REACHED`, tell the student to contact support (an admin resets the binding).
+3. Refresh `409 DEVICE_MISMATCH` or `401 DEVICE_MISMATCH`: clear tokens and show the login screen. `400/401 DEVICE_ID_REQUIRED`:
+   the header is missing (update the app).
+4. Phone verification: `POST auth/phone-verification/` (phone + password), then poll `GET .../current/` (status `pending_staff`,
+   `code_sent` with `expires_at`), then `POST .../confirm/` `{code}`; `POST .../cancel/` to start over. A notification
+   (`data.kind = phone_verification`) arrives when the code was sent, on success, rejection and expiry.
+5. Groups: do not offer year groups; join groups only through enrollment; open WhatsApp with
+   `POST groups/{id}/whatsapp-launch/` (members only).
+
 ## Group chat WebSocket
 
 1. With a valid REST bearer token, call

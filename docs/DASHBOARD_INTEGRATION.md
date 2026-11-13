@@ -27,6 +27,18 @@ Each modification is audit logged without credentials, tokens, or message
 content. Release policy, maintenance, and flag caches are invalidated as part of
 the same model-change path; no dashboard action relies on a client-side cache.
 
+## Phone verification queue and account devices
+
+- Phone verification (capability `verification.review`): list `GET dashboard/phone-verifications/` (phone shown, code never),
+  open a row with `POST .../{id}/claim/` (the 6-digit code appears once in `data.code`: show it with a copy button), the
+  staff member sends it on WhatsApp and presses the "code sent" button (`POST .../{id}/mark-sent/`, starts the 10-minute window).
+  `POST .../{id}/reject/` needs a reason. Error codes: `PHONE_VERIFICATION_CLAIMED_BY_OTHER`, `PHONE_VERIFICATION_NOT_CLAIMED`,
+  `PHONE_VERIFICATION_NOT_PENDING`, `PHONE_NUMBER_IN_USE`.
+- Student devices (capability `users.manage`): on the student detail page `GET dashboard/users/{id}/account-devices/` shows
+  the bound device, the history and the switch counter; "reset device" is `POST .../account-devices/reset/` `{reason}`
+  (ends the student's sessions; the next login binds the new phone). This is different from the existing
+  `dashboard/devices` push-installation screen.
+
 ## Integration requirements
 
 Use the exact paths, methods, response envelopes, pagination, and error codes

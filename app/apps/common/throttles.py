@@ -123,6 +123,30 @@ class InvitationAcceptThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": _request_ip(request)}
 
 
+class DeviceSwitchRateThrottle(SimpleRateThrottle):
+    """The switch token is unguessable (signed) but the endpoint is anonymous: one budget per source IP."""
+
+    scope = "device_switch"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": _request_ip(request)}
+
+
+class PhoneVerificationCreateThrottle(SimpleRateThrottle):
+    """Requests to verify a phone number, per signed-in student (a rotating IP never resets the budget)."""
+
+    scope = "phone_verification_create"
+
+    def get_cache_key(self, request, view):
+        user = getattr(request, "user", None)
+        ident = str(user.pk) if user is not None and user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class PhoneVerificationConfirmThrottle(PhoneVerificationCreateThrottle):
+    scope = "phone_verification_confirm"
+
+
 class LoginRateThrottle(IdentifierRateThrottle):
     scope = "auth_login"
 
