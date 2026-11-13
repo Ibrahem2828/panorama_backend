@@ -40,6 +40,10 @@ def _preview(message: Message) -> str:
         return "أرسل صورة"
     if message.message_type == MessageType.FILE:
         return "أرسل ملفًا"
+    if message.message_type == MessageType.VOICE:
+        return "أرسل رسالة صوتية"
+    if message.message_type == MessageType.AUDIO:
+        return "أرسل ملفًا صوتيًا"
     text = " ".join(message.content.split())
     return text if len(text) <= PREVIEW_CHARS else text[: PREVIEW_CHARS - 1] + "…"
 

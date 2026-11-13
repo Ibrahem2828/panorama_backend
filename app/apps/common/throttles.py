@@ -193,6 +193,22 @@ class ChatTicketRateThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": ident}
 
 
+class ChatAttachmentTicketRateThrottle(SimpleRateThrottle):
+    scope = "chat_attachment_ticket"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class ChatAttachmentTicketBatchRateThrottle(SimpleRateThrottle):
+    scope = "chat_attachment_ticket_batch"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
 class ChatReportRateThrottle(SimpleRateThrottle):
     scope = "chat_report"
 

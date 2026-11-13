@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import filters, serializers, status
 from rest_framework.exceptions import APIException, NotFound
@@ -28,6 +29,7 @@ from apps.common.viewsets import StandardExplicitActionViewSet
 from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 
 from .models import UNRESOLVED_REPORT_STATUSES, Message, MessageReport, MessageReportStatus
+from .serializers import MessageSerializer
 from .services import ChatMessageService
 
 EXCERPT_LENGTH = 200
@@ -40,6 +42,11 @@ class DashboardMessageReportSerializer(serializers.ModelSerializer):
     message_id = serializers.IntegerField(read_only=True)
     message_sender_id = serializers.IntegerField(source="message.sender_id", read_only=True)
     message_excerpt = serializers.SerializerMethodField()
+    message_type = serializers.CharField(source="message.message_type", read_only=True)
+    #: Same shape as ``attachment_meta`` in the chat API (kind, mime, size, duration_ms, waveform, ...).
+    attachment_meta = serializers.SerializerMethodField()
+    #: Staff open voice/audio/image attachments through this ticket endpoint (POST) like any chat member.
+    attachment_ticket_endpoint = serializers.SerializerMethodField()
     message_is_deleted = serializers.BooleanField(source="message.is_deleted", read_only=True)
     resolved_by_id = serializers.IntegerField(read_only=True)
 
@@ -55,6 +62,9 @@ class DashboardMessageReportSerializer(serializers.ModelSerializer):
             "message_id",
             "message_sender_id",
             "message_excerpt",
+            "message_type",
+            "attachment_meta",
+            "attachment_ticket_endpoint",
             "message_is_deleted",
             "resolved_by_id",
             "resolved_at",
@@ -62,6 +72,13 @@ class DashboardMessageReportSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_attachment_meta(self, report: MessageReport):
+        return MessageSerializer().get_attachment_meta(report.message)
+
+    def get_attachment_ticket_endpoint(self, report: MessageReport) -> str | None:
+        return MessageSerializer().get_attachment_ticket_endpoint(report.message)
 
     def get_message_excerpt(self, report: MessageReport) -> str:
         content = report.message.content or ""

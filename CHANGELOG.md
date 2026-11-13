@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Chat media:** voice notes (server-verified <= 5 min) and uploaded audio files, image dimensions and WebP thumbnails, batch attachment tickets, Range/ETag delivery, new settings `CHAT_*` (see `.env.example`), migration `chat.0006`.
+
 ## 2026-10-05 — Final hardening pass
 
 - **Security:** admins can no longer escalate privileges through permission overrides or act on IT Support / peer

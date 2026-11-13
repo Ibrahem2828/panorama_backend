@@ -13,6 +13,10 @@ class MessageType(models.TextChoices):
     TEXT = "text", "Text"
     IMAGE = "image", "Image"
     FILE = "file", "File"
+    #: A voice note recorded in the app (duration enforced server side).
+    VOICE = "voice", "Voice note"
+    #: An uploaded audio file, e.g. a lecture recording (limited by size, not duration).
+    AUDIO = "audio", "Audio file"
     SYSTEM = "system", "System"
 
 
@@ -22,6 +26,18 @@ class Message(BaseModel):
     content = models.TextField(blank=True)
     message_type = models.CharField(max_length=32, choices=MessageType.choices, default=MessageType.TEXT)
     attachment = models.FileField(upload_to="chat/", null=True, blank=True)
+    # Facts about the attachment, all measured by the server from the stored bytes (never taken from the client).
+    attachment_name = models.CharField(max_length=255, blank=True)
+    attachment_mime = models.CharField(max_length=100, blank=True)
+    attachment_size = models.PositiveBigIntegerField(null=True, blank=True)
+    attachment_sha256 = models.CharField(max_length=64, blank=True)
+    attachment_duration_ms = models.PositiveIntegerField(null=True, blank=True)
+    #: Small list of 0-255 bar heights supplied by the client for the voice-note UI (validated, display only).
+    attachment_waveform = models.JSONField(null=True, blank=True)
+    attachment_width = models.PositiveIntegerField(null=True, blank=True)
+    attachment_height = models.PositiveIntegerField(null=True, blank=True)
+    #: Small preview (<= 480 px WebP) so chat lists open instantly; the original stays for the viewer.
+    attachment_thumb = models.FileField(upload_to="chat/thumbs/", null=True, blank=True)
     reply_to = models.ForeignKey("self", on_delete=models.SET_NULL, related_name="replies", null=True, blank=True)
     deleted_by = models.ForeignKey(
         "accounts.User",
@@ -38,6 +54,14 @@ class Message(BaseModel):
             models.Index(fields=["group", "created_at"]),
             models.Index(fields=["sender", "created_at"]),
         ]
+
+    @property
+    def attachment_is_image(self) -> bool:
+        """Image by measured type; messages stored before the metadata existed fall back to the file extension."""
+
+        if self.attachment_mime:
+            return self.attachment_mime.startswith("image/")
+        return bool(self.attachment) and self.attachment.name.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
 
     def soft_delete(self, user):
         self.is_deleted = True
@@ -77,11 +101,15 @@ class MessageAttachmentAccessTicket(BaseModel):
     def issue(cls, message, requested_by):
         from datetime import timedelta
 
+        # Audio is played with many Range requests (every seek is one), so it gets a longer, larger allowance.
+        is_audio = message.message_type in {MessageType.VOICE, MessageType.AUDIO}
+        ttl = settings.CHAT_MEDIA_TICKET_TTL_SECONDS if is_audio else settings.FILE_ACCESS_TICKET_TTL_SECONDS
+        max_uses = settings.CHAT_MEDIA_TICKET_MAX_USES if is_audio else settings.FILE_ACCESS_TICKET_MAX_USES
         return cls.objects.create(
             message=message,
             requested_by=requested_by,
-            expires_at=timezone.now() + timedelta(seconds=settings.FILE_ACCESS_TICKET_TTL_SECONDS),
-            max_uses=settings.FILE_ACCESS_TICKET_MAX_USES,
+            expires_at=timezone.now() + timedelta(seconds=ttl),
+            max_uses=max_uses,
         )
 
 

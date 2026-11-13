@@ -2,7 +2,7 @@
 
 Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW means that OpenAPI cannot prove runtime authorization, object-level ownership, or behavioral test coverage.
 
-**Operations:** 451
+**Operations:** 452
 
 | operationId | method | path | authentication | required capability | request schema | success response | error responses | idempotency requirement | consumer | test file | status |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -362,6 +362,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_groups_chat_receipts_create | POST | /api/v1/groups/{group_id}/chat/receipts/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/ReceiptRequest; application/x-www-form-urlencoded: #/components/schemas/ReceiptRequest; multipart/form-data: #/components/schemas/ReceiptRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_list | GET | /api/v1/groups/{group_id}/messages/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_create | POST | /api/v1/groups/{group_id}/messages/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/MessageCreateRequest; multipart/form-data: #/components/schemas/MessageCreateRequest; application/x-www-form-urlencoded: #/components/schemas/MessageCreateRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_groups_messages_attachment_tickets_create | POST | /api/v1/groups/{group_id}/messages/attachment-tickets/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/AttachmentTicketBatchRequest; application/x-www-form-urlencoded: #/components/schemas/AttachmentTicketBatchRequest; multipart/form-data: #/components/schemas/AttachmentTicketBatchRequest | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_destroy | DELETE | /api/v1/groups/{group_id}/messages/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 204 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_retrieve | GET | /api/v1/groups/{group_id}/messages/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_groups_messages_attachment_ticket_create | POST | /api/v1/groups/{group_id}/messages/{message_id}/attachment-ticket/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 201 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
@@ -430,7 +431,7 @@ Generated from docs/api/openapi.json; do not manually mark a row PASS. REVIEW me
 | v1_printing_products_list | GET | /api/v1/printing/products/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_printing_products_retrieve | GET | /api/v1/printing/products/{id}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_printing_quote_create | POST | /api/v1/printing/quote/ | Bearer JWT | Object/endpoint policy — REVIEW | application/json: #/components/schemas/PrintQuoteRequest; multipart/form-data: #/components/schemas/PrintQuoteRequest; application/x-www-form-urlencoded: #/components/schemas/PrintQuoteRequest | 200 | Envelope/global handling — REVIEW | Review write semantics | Mobile | REVIEW: map behavioral test | REVIEW |
-| v1_protected_chat_attachments_retrieve | GET | /api/v1/protected-chat-attachments/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
+| v1_protected_chat_attachments_retrieve | GET | /api/v1/protected-chat-attachments/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200, 206 | 304, 416 | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_protected_files_retrieve | GET | /api/v1/protected-files/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200, 206 | 416 | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_protected_print_items_retrieve | GET | /api/v1/protected-print-items/{token}/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |
 | v1_search_retrieve | GET | /api/v1/search/ | Bearer JWT | Object/endpoint policy — REVIEW | — | 200 | Envelope/global handling — REVIEW | Not applicable | Mobile | REVIEW: map behavioral test | REVIEW |

@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.accounts.permissions import Capability, PermissionService
-from apps.common.file_validation import validate_document_upload
 
+from .media import ChatMediaError, inspect_attachment, parse_waveform
 from .models import Message, MessageReport, MessageType
 from .reactions import ChatReactionService
 from .receipts import ChatReceiptService
 from .services import ChatMessageService
 from .titles import chat_title
+
+ATTACHMENT_TYPES = {MessageType.IMAGE, MessageType.FILE, MessageType.VOICE, MessageType.AUDIO}
 
 
 class MessageSenderSerializer(serializers.Serializer):
@@ -148,7 +150,18 @@ class MessageSerializer(serializers.ModelSerializer):
             size = obj.attachment.size
         except Exception:
             size = None
-        return {"name": Path(obj.attachment.name).name, "size": size}
+        return {
+            "name": obj.attachment_name or Path(obj.attachment.name).name,
+            "size": obj.attachment_size if obj.attachment_size is not None else size,
+            "mime": obj.attachment_mime or None,
+            "kind": obj.message_type,
+            "duration_ms": obj.attachment_duration_ms,
+            "waveform": obj.attachment_waveform,
+            "width": obj.attachment_width,
+            "height": obj.attachment_height,
+            "has_thumbnail": bool(obj.attachment_thumb) or obj.attachment_is_image,
+            "etag": obj.attachment_sha256 or None,
+        }
 
     @extend_schema_field(OpenApiTypes.OBJECT)
     def get_reply_to_detail(self, obj):
@@ -158,13 +171,13 @@ class MessageSerializer(serializers.ModelSerializer):
         if target.is_deleted:
             return {"id": target.pk, "is_deleted": True}
         label = chat_title(target.sender) or target.sender.full_name
-        preview = (
-            "صورة"
-            if target.message_type == MessageType.IMAGE
-            else "ملف"
-            if target.message_type == MessageType.FILE
-            else (" ".join(target.content.split())[:80])
-        )
+        previews = {
+            MessageType.IMAGE: "صورة",
+            MessageType.FILE: "ملف",
+            MessageType.VOICE: "رسالة صوتية",
+            MessageType.AUDIO: "ملف صوتي",
+        }
+        preview = previews.get(target.message_type) or " ".join(target.content.split())[:80]
         return {"id": target.pk, "is_deleted": False, "sender_name": label, "preview": preview}
 
     @extend_schema_field(OpenApiTypes.OBJECT)
@@ -184,11 +197,40 @@ class MessageSerializer(serializers.ModelSerializer):
         return ChatReceiptService.delivery_for(obj.pk, obj.sender_id, state["cursors"], state["recipients"]).as_dict()
 
 
+@extend_schema_field(
+    {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255}, "maxItems": 128, "nullable": True}
+)
+class WaveformField(serializers.Field):
+    """Optional list of 0-255 bar heights. In multipart send a JSON array string (``"[3,40,...]"``)."""
+
+    def get_value(self, dictionary):
+        if hasattr(dictionary, "getlist"):
+            values = dictionary.getlist(self.field_name)
+            return values if len(values) > 1 else (values[0] if values else serializers.empty)
+        return dictionary.get(self.field_name, serializers.empty)
+
+    def to_internal_value(self, data):
+        try:
+            return parse_waveform(data)
+        except ChatMediaError as exc:
+            cast(
+                Any, self.parent
+            )._media_error = exc  # surfaced with its own code by MessageCreateSerializer.run_validation
+            raise
+
+    def to_representation(self, value):
+        return value
+
+
 class MessageCreateSerializer(serializers.Serializer):
     content = serializers.CharField(required=False, allow_blank=True, max_length=4000)
     message_type = serializers.ChoiceField(choices=MessageType.choices, default=MessageType.TEXT)
     attachment = serializers.FileField(required=False, allow_null=True, write_only=True)
     reply_to = serializers.PrimaryKeyRelatedField(queryset=Message.objects.none(), required=False, allow_null=True)
+    #: Client's own measured length of a voice note. Only a hint: the server measures the file itself.
+    duration_ms = serializers.IntegerField(required=False, allow_null=True, min_value=0, max_value=86_400_000)
+    #: Optional bar heights (<= 128 ints, 0-255) for the voice/audio UI.
+    waveform = WaveformField(required=False, allow_null=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -197,20 +239,42 @@ class MessageCreateSerializer(serializers.Serializer):
             reply_to = cast(serializers.PrimaryKeyRelatedField, self.fields["reply_to"])
             reply_to.queryset = Message.objects.filter(group=group, is_deleted=False)
 
-    def validate_attachment(self, value):
-        return validate_document_upload(value, "attachment") if value else value
-
     def validate(self, attrs):
         message_type = attrs.get("message_type", MessageType.TEXT)
         content = str(attrs.get("content", "")).strip()
         attachment = attrs.get("attachment")
         if message_type == MessageType.TEXT and not content:
             raise serializers.ValidationError({"content": "Content is required for text messages."})
-        if message_type in {MessageType.IMAGE, MessageType.FILE} and not attachment:
+        if message_type in ATTACHMENT_TYPES and not attachment:
             raise serializers.ValidationError({"attachment": "Attachment is required for this message type."})
         if message_type == MessageType.SYSTEM:
             raise serializers.ValidationError({"message_type": "System messages cannot be created by clients."})
+        if attachment and message_type not in ATTACHMENT_TYPES:
+            raise serializers.ValidationError({"attachment": "Text messages cannot carry an attachment."})
+        if attachment:
+            try:
+                attrs["media"] = inspect_attachment(
+                    attachment,
+                    message_type,
+                    duration_ms=attrs.get("duration_ms"),
+                    waveform=attrs.get("waveform"),
+                )
+            except ChatMediaError as exc:
+                self._media_error = exc
+                raise
         return attrs
+
+    _media_error: ChatMediaError | None = None
+
+    def is_valid(self, *, raise_exception=False):
+        # DRF re-wraps validation errors; keep the media error so its stable ``code`` reaches the client.
+        self._media_error = None
+        try:
+            return super().is_valid(raise_exception=raise_exception)
+        except serializers.ValidationError:
+            if self._media_error is not None:
+                raise self._media_error from None
+            raise
 
     def save(self, **kwargs):
         return ChatMessageService.create_and_announce(
@@ -220,6 +284,7 @@ class MessageCreateSerializer(serializers.Serializer):
             message_type=self.validated_data.get("message_type", MessageType.TEXT),
             attachment=self.validated_data.get("attachment"),
             reply_to=self.validated_data.get("reply_to"),
+            media=self.validated_data.get("media"),
         )
 
 

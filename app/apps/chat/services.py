@@ -9,6 +9,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 from redis.exceptions import RedisError
@@ -25,6 +26,8 @@ from apps.groups.models import Group, GroupMembershipRole, GroupMembershipStatus
 from .models import Message, MessageType
 
 logger = logging.getLogger(__name__)
+
+ATTACHMENT_TYPES = {MessageType.IMAGE, MessageType.FILE, MessageType.VOICE, MessageType.AUDIO}
 
 
 class ChatPermissionService:
@@ -292,6 +295,7 @@ class ChatMessageService:
         message_type: str = MessageType.TEXT,
         attachment=None,
         reply_to=None,
+        media=None,
     ) -> Message:
         ChatPermissionService.enforce_group_chat_access(sender, group)
         ChatPermissionService.enforce_can_send_message(sender, group)
@@ -300,12 +304,30 @@ class ChatMessageService:
             raise ValidationError({"content": "Messages cannot exceed 4000 characters."})
         if message_type == MessageType.TEXT and not content:
             raise ValidationError({"content": "Content is required for text messages."})
-        if message_type in {MessageType.IMAGE, MessageType.FILE} and not attachment:
-            raise ValidationError({"attachment": "Attachment is required for file or image messages."})
+        if message_type in ATTACHMENT_TYPES and not attachment:
+            raise ValidationError({"attachment": "Attachment is required for this message type."})
         if message_type == MessageType.SYSTEM:
             raise ValidationError({"message_type": "System messages are server generated."})
         if reply_to and (reply_to.group_id != group.id or reply_to.is_deleted):
             raise ValidationError({"reply_to": "The referenced message is not available in this group."})
+        extra: dict = {}
+        if attachment:
+            if media is None:  # programmatic callers: measure here exactly as the REST serializer does
+                from .media import inspect_attachment
+
+                media = inspect_attachment(attachment, message_type)
+            extra = {
+                "attachment_name": media.name,
+                "attachment_mime": media.mime,
+                "attachment_size": media.size,
+                "attachment_sha256": media.sha256,
+                "attachment_duration_ms": media.duration_ms,
+                "attachment_waveform": media.waveform,
+                "attachment_width": media.width,
+                "attachment_height": media.height,
+            }
+            if media.thumb:
+                extra["attachment_thumb"] = ContentFile(media.thumb, name="thumb.webp")
         message = Message.objects.create(
             group=group,
             sender=sender,
@@ -313,6 +335,7 @@ class ChatMessageService:
             message_type=message_type,
             attachment=attachment,
             reply_to=reply_to,
+            **extra,
         )
         # Every path that creates a message (REST and WebSocket) tells the other members once it is committed.
         transaction.on_commit(lambda: ChatMessageService.queue_notification(message.pk))

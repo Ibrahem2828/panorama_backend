@@ -112,3 +112,33 @@ range requests; never treat a protected `preview_url` as a public URL.
 The import-ready canonical collection is
 `integrations/api/panorama-mobile-api.postman_collection.json`. It is generated
 from OpenAPI; regenerate it after a deliberate contract change.
+
+## Chat media (images, files, voice notes, audio files)
+
+Send with `POST /api/v1/groups/{id}/messages/` as `multipart/form-data`:
+
+| field | notes |
+|---|---|
+| `message_type` | `image`, `file` (pdf/image), `voice`, `audio` |
+| `attachment` | the file (random server-side name; client name kept only as `attachment_meta.name`) |
+| `content` | optional caption |
+| `duration_ms` | voice only, optional hint. The server measures the real length and ignores the hint (except to fail fast above the limit) |
+| `waveform` | optional, JSON array string of <= 128 ints 0-255, e.g. `[3,40,...]` (UI bars only) |
+
+Limits (settings, defaults in `.env.example`): voice <= `CHAT_VOICE_MAX_SECONDS` (300 s, +`CHAT_VOICE_DURATION_TOLERANCE_MS` 1000) and
+`CHAT_VOICE_MAX_BYTES` (5 MB); uploaded audio `CHAT_AUDIO_FILE_MAX_BYTES` (25 MB), no duration cap; images
+`CHAT_IMAGE_MAX_BYTES` (10 MB) / `CHAT_IMAGE_MAX_PIXELS`; documents 25 MB. Audio formats: m4a/mp4 (AAC), aac (ADTS), mp3,
+ogg/opus, wav, detected from magic bytes and parsed (webm is not accepted: its duration cannot be verified).
+Errors use the usual envelope with `code`: `VOICE_TOO_LONG`, `AUDIO_INVALID`, `AUDIO_TOO_LARGE`, `IMAGE_INVALID`,
+`IMAGE_TOO_LARGE`, `WAVEFORM_INVALID` (Arabic `errors.attachment[0]`).
+
+`attachment_meta` on every message: `name, size, mime, kind, duration_ms, waveform, width, height, has_thumbnail, etag`.
+
+Opening an attachment: `POST .../messages/{id}/attachment-ticket/` (or `POST .../messages/attachment-tickets/` with
+`{"message_ids": [...]}` for up to 20 at once, one request per screenful) returns `preview_url`, `thumb_url`
+(`?variant=thumb`, <= 480 px WebP, images only), `etag`, `mime`, `size`, `supports_range`, `download_allowed: false`.
+The stream is `Content-Disposition: inline`, `nosniff`, `Cache-Control: private, no-store`, supports `Range`
+(206/416), `If-Range` and `If-None-Match` (304 on the content hash ETag), so an app-side encrypted cache can revalidate
+with a fresh ticket without re-downloading. Tickets are bound to the requesting member and re-check membership on every
+use. "No download" is enforced by the app (no share/save intents, screen-capture protection, encrypted app-private cache);
+the server can only keep links short-lived, member-bound and non-enumerable.

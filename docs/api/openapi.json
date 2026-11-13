@@ -19084,6 +19084,66 @@
                 }
             }
         },
+        "/api/v1/groups/{group_id}/messages/attachment-tickets/": {
+            "post": {
+                "operationId": "v1_groups_messages_attachment_tickets_create",
+                "description": "Tickets for up to ``BATCH_TICKET_LIMIT`` messages at once, so a screen of thumbnails costs one request.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachmentTicketBatchRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachmentTicketBatchRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachmentTicketBatchRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/groups/{group_pk}/files/": {
             "get": {
                 "operationId": "v1_groups_files_list",
@@ -21969,6 +22029,14 @@
                             "format": "uuid"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "variant",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "`thumb` for the <=480px WebP preview of an image."
                     }
                 ],
                 "tags": [
@@ -21985,6 +22053,15 @@
                 "responses": {
                     "200": {
                         "description": "Inline chat attachment"
+                    },
+                    "206": {
+                        "description": "Byte range of the attachment (audio seeking)"
+                    },
+                    "304": {
+                        "description": "Unchanged (If-None-Match)"
+                    },
+                    "416": {
+                        "description": "Range not satisfiable"
                     }
                 }
             }
@@ -23913,6 +23990,22 @@
                 "required": [
                     "context",
                     "kind"
+                ]
+            },
+            "AttachmentTicketBatchRequest": {
+                "type": "object",
+                "properties": {
+                    "message_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 20
+                    }
+                },
+                "required": [
+                    "message_ids"
                 ]
             },
             "AuditLog": {
@@ -26001,6 +26094,20 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "message_type": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "attachment_meta": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "attachment_ticket_endpoint": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
                     "message_is_deleted": {
                         "type": "boolean",
                         "readOnly": true
@@ -26026,6 +26133,8 @@
                     }
                 },
                 "required": [
+                    "attachment_meta",
+                    "attachment_ticket_endpoint",
                     "created_at",
                     "group_id",
                     "group_name",
@@ -26034,6 +26143,7 @@
                     "message_id",
                     "message_is_deleted",
                     "message_sender_id",
+                    "message_type",
                     "reason",
                     "reporter_id",
                     "resolution_note",
@@ -29285,6 +29395,22 @@
                     "reply_to": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "duration_ms": {
+                        "type": "integer",
+                        "maximum": 86400000,
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "waveform": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 255
+                        },
+                        "maxItems": 128,
+                        "nullable": true
                     }
                 }
             },
@@ -29393,10 +29519,12 @@
                     "text",
                     "image",
                     "file",
+                    "voice",
+                    "audio",
                     "system"
                 ],
                 "type": "string",
-                "description": "* `text` - Text\n* `image` - Image\n* `file` - File\n* `system` - System"
+                "description": "* `text` - Text\n* `image` - Image\n* `file` - File\n* `voice` - Voice note\n* `audio` - Audio file\n* `system` - System"
             },
             "MetricTypeEnum": {
                 "enum": [
