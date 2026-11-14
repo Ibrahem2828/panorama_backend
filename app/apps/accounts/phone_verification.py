@@ -35,7 +35,7 @@ OPEN_STATUSES = (Status.PENDING_STAFF, Status.CODE_SENT)
 #: Another staff member may take over a claimed request after this long.
 CLAIM_HOLD = timedelta(minutes=15)
 _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
-_SEPARATORS = re.compile(r"[\s\-().‎‏]")
+_SEPARATORS = re.compile(r"[\s\-().\u200e\u200f]")
 _CODE_RE = re.compile(r"\d{6}")
 
 
