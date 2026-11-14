@@ -93,7 +93,24 @@ jobs:
         # GHSA-8pqf-f4m5-798g (CVE-2026-106454): ReDoS in twisted.mail.imap4 (the IMAP server). Panorama only uses Twisted
         # through daphne (HTTP/WebSocket) and never imports twisted.mail; no fixed release exists. Remove the ignore once
         # Twisted ships a fix.
-        run: pip-audit -r requirements.lock --ignore-vuln GHSA-8pqf-f4m5-798g
+        #
+        # Time-boxed ignores for Twisted 26.4.0 (fixed only in 26.10.0rc1; no stable release yet; twisted 26.10.0 final
+        # is the fix version): GHSA-vpp8-g58w-m8mp, CVE-2026-115778, CVE-2026-115774, CVE-2026-115775, CVE-2026-115776,
+        # CVE-2026-115877, CVE-2026-83813. Reason: daphne only serves HTTP/1.1 + WebSocket; no telnet/IMAP/XMPP/IRC/
+        # names (DNS) and no h2 (HTTP/2) in the lock. CVE-2026-115877 (request smuggling via bare CR/LF in header values)
+        # depends on the reverse proxy rejecting bare CR/LF in headers - UNVERIFIED. Re-check when Twisted 26.10.0 is
+        # released; REVIEW DATE 2026-12-15, then bump the lock and delete these ignores. Only these ids are ignored,
+        # any new vulnerability still fails the gate. See docs/QUALITY_TESTING_AND_RELEASE.md.
+        run: >-
+          pip-audit -r requirements.lock
+          --ignore-vuln GHSA-8pqf-f4m5-798g
+          --ignore-vuln GHSA-vpp8-g58w-m8mp
+          --ignore-vuln CVE-2026-115778
+          --ignore-vuln CVE-2026-115774
+          --ignore-vuln CVE-2026-115775
+          --ignore-vuln CVE-2026-115776
+          --ignore-vuln CVE-2026-115877
+          --ignore-vuln CVE-2026-83813
       - name: Build production image
         run: |
           docker build --pull \
@@ -141,7 +158,12 @@ jobs:
           format: sarif
           output: trivy-image.sarif
           severity: CRITICAL,HIGH
+          # trivy-action ignores `severity` for SARIF output unless this is set; without it the gate failed on
+          # LOW/MEDIUM findings too.
+          limit-severities-for-sarif: true
           ignore-unfixed: true
+          # Time-boxed ignores for the Twisted advisories (see .trivyignore, expire 2026-12-15).
+          trivyignores: .trivyignore
           exit-code: "1"
       - name: Upload image scan
         uses: github/codeql-action/upload-sarif@v3

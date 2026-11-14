@@ -28,6 +28,7 @@ STAFF_EVENTS = {
     "purchase_reminder": ("finance.manage", "/dashboard/finance/purchases"),
     "student_registration": ("verification.review", "/dashboard/verifications"),
     "join_request": ("groups.manage", "/dashboard/groups"),
+    "phone_verification_request": ("verification.review", "/dashboard/phone-verifications"),
 }
 
 _TYPE_FOR_KIND = {
@@ -39,6 +40,7 @@ _TYPE_FOR_KIND = {
     "purchase_reminder": NotificationType.SYSTEM,
     "student_registration": NotificationType.VERIFICATION,
     "join_request": NotificationType.GROUP,
+    "phone_verification_request": NotificationType.VERIFICATION,
 }
 
 

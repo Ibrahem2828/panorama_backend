@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from django.db import transaction
 from django.db.models import BooleanField, Case, Q, Value, When
@@ -38,13 +39,65 @@ class EnrollmentConflict(APIException):
 
 
 def faculty_community_groups(faculty_id: int | None):
-    """The faculty-wide community group(s): active groups of the faculty that are not tied to one subject."""
+    """The faculty-wide community group(s): active groups of the faculty with no subject, major, year or semester.
+
+    Year/major/semester groups ("level groups") are deliberately excluded: students are no longer put into them."""
 
     if not faculty_id:
         return Group.objects.none()
-    return Group.objects.filter(faculty_id=faculty_id, subject__isnull=True, is_active=True, is_deleted=False).order_by(
-        "id"
+    return Group.objects.filter(
+        faculty_id=faculty_id,
+        subject__isnull=True,
+        major__isnull=True,
+        academic_year__isnull=True,
+        semester__isnull=True,
+        is_active=True,
+        is_deleted=False,
+    ).order_by("id")
+
+
+_ARABIC_NORMALIZE = str.maketrans(
+    {"أ": "ا", "إ": "ا", "آ": "ا", "ى": "ي", "ة": "ه", "ـ": "", "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4",
+     "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9"}
+)  # fmt: skip
+_DIACRITICS = re.compile("[\u064b-\u065f\u0670]")
+DENTAL_FACULTY_CODES = frozenset({"DEN", "DENT", "DDS", "DENTAL"})
+#: «السريرية 1» after normalization: any spelling with/without the article, spaces, hamza, ordinal marks or a digit form.
+_CLINICAL_ONE = re.compile(r"(?:^|\s)(?:ال)?سريريه\s*[-:]?\s*(?:1|الاولي|الاول|i)(?:\s|$)")
+
+
+#: Any numbered clinical-track group («السريرية 2», «سريرية ٣» ...). In a dental faculty these are NOT part of the generic
+#: community: only «السريرية 1» is joined automatically, the others are handled by hand.
+_CLINICAL_ANY = re.compile(r"(?:^|\s)(?:ال)?سريريه(?:\s|$|\d|-|:)")
+
+
+def normalize_arabic(value: str) -> str:
+    text = _DIACRITICS.sub("", str(value or "")).translate(_ARABIC_NORMALIZE)
+    return " ".join(text.lower().replace("\u200f", " ").replace("\u200e", " ").split())
+
+
+def is_dental_faculty(faculty) -> bool:
+    """Dentistry is recognised by its Arabic name (كلية طب الأسنان), an English "dent" name or a DEN/DENT/DDS code."""
+
+    if faculty is None:
+        return False
+    name = normalize_arabic(faculty.name)
+    return (
+        "طب الاسنان" in name
+        or "الاسنان" in name
+        or "dent" in name
+        or (faculty.code or "").upper() in DENTAL_FACULTY_CODES
     )
+
+
+def dental_clinical_groups(faculty):
+    """Groups of a dental faculty named «السريرية 1» (matched on the normalized name, so أ/ا, ة/ه, diacritics, the optional
+    «ال», Arabic-Indic digits and «الأولى» all match). Unlike the community, such a group may be pinned to a year."""
+
+    if not is_dental_faculty(faculty):
+        return []
+    candidates = Group.objects.filter(faculty=faculty, is_active=True, is_deleted=False).order_by("id")
+    return [group for group in candidates if _CLINICAL_ONE.search(normalize_arabic(group.name))]
 
 
 def add_to_group(user, group: Group, reviewer=None) -> bool:
@@ -77,22 +130,55 @@ def add_to_group(user, group: Group, reviewer=None) -> bool:
 
 class FacultyCommunityService:
     @staticmethod
-    def join(user) -> int:
-        """Add a verified student to their faculty community. Called when their verification is approved."""
+    def groups_for(user) -> list[Group]:
+        """Groups a verified student joins automatically, without approval: the faculty community and, for dentistry,
+        the «السريرية 1» group when the faculty has one."""
 
         profile = getattr(user, "student_profile", None)
         if (
             user.role != UserRole.STUDENT
             or profile is None
             or profile.verification_status != StudentVerificationStatus.APPROVED
+            or not profile.faculty_id
         ):
-            return 0
-        # A faculty group pinned to a year, semester or major is only for students of that exact level.
-        return sum(
-            1
+            return []
+        dental = is_dental_faculty(profile.faculty)
+        groups = [
+            group
             for group in faculty_community_groups(profile.faculty_id)
-            if is_student_eligible_for_group(user, group) and add_to_group(user, group)
-        )
+            if is_student_eligible_for_group(user, group)
+            and not (dental and _CLINICAL_ANY.search(normalize_arabic(group.name)))
+        ]
+        if dental:
+            university_id = profile.university_id
+            clinical = [
+                g
+                for g in dental_clinical_groups(profile.faculty)
+                if not university_id or g.university_id == university_id
+            ]
+            if not clinical:
+                logger.info("dental_clinical_group_missing", extra={"faculty_id": profile.faculty_id})
+            groups += [g for g in clinical if g.pk not in {x.pk for x in groups}]
+        return groups
+
+    @classmethod
+    def join(cls, user, request=None) -> int:
+        """Add a verified student to their faculty community (and the dental «السريرية 1» group). Idempotent: calling it
+        again changes nothing; a blocked member stays blocked. Called when verification is approved and by the backfill
+        command. Returns how many memberships were created or restored."""
+
+        added = 0
+        for group in cls.groups_for(user):
+            if add_to_group(user, group):
+                added += 1
+                AuditLogService.log(
+                    actor=None,
+                    action=AuditAction.COMMUNITY_AUTO_JOINED,
+                    target=group,
+                    new_value={"user_id": user.pk, "group_id": group.pk, "auto": True},
+                    request=request,
+                )
+        return added
 
 
 # -- subject search -----------------------------------------------------------------------------------------------------

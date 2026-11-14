@@ -6,6 +6,7 @@ from .views import (
     DashboardCounterOrderCreateView,
     DashboardCounterQuoteView,
     DashboardCoverOptionViewSet,
+    DashboardExtraOptionViewSet,
     DashboardPickupLocationViewSet,
     DashboardPrintAssignView,
     DashboardPrinterViewSet,
@@ -15,6 +16,7 @@ from .views import (
     DashboardPrintJobStatusView,
     DashboardPrintJobViewSet,
     DashboardPrintNoteView,
+    DashboardPrintOptionHelpViewSet,
     DashboardPrintOrderJobsView,
     DashboardPrintOrderViewSet,
     DashboardPrintPricingRuleViewSet,
@@ -26,6 +28,8 @@ from .views import (
     PrintConvertDetailView,
     PrintConvertView,
     PrintItemAccessTicketView,
+    PrintOptionHelpImageView,
+    PrintOptionHelpListView,
     PrintOptionsView,
     PrintOrderCancelView,
     PrintOrderCreateView,
@@ -40,7 +44,13 @@ router.register("printing/orders/my", MyPrintOrderViewSet, basename="my-print-or
 router.register("printing/pickup-locations", PrintPickupLocationViewSet, basename="print-pickup-locations")
 router.register("printing/products", PrintProductViewSet, basename="print-products")
 router.register("dashboard/printing/covers", DashboardCoverOptionViewSet, basename="dashboard-print-covers")
+router.register(
+    "dashboard/printing/extra-options", DashboardExtraOptionViewSet, basename="dashboard-print-extra-options"
+)
 router.register("dashboard/printing/wire-specs", DashboardWireSpecViewSet, basename="dashboard-print-wire-specs")
+router.register(
+    "dashboard/printing/option-help", DashboardPrintOptionHelpViewSet, basename="dashboard-print-option-help"
+)
 router.register("dashboard/printing/products", DashboardReadyProductViewSet, basename="dashboard-print-products")
 router.register("dashboard/printing/printers", DashboardPrinterViewSet, basename="dashboard-printers")
 router.register("dashboard/printing/print-jobs", DashboardPrintJobViewSet, basename="dashboard-print-jobs")
@@ -55,6 +65,8 @@ router.register(
 
 urlpatterns = [
     path("printing/options/", PrintOptionsView.as_view(), name="print-options"),
+    path("printing/option-help/", PrintOptionHelpListView.as_view(), name="print-option-help"),
+    path("printing/option-help/<int:pk>/image/", PrintOptionHelpImageView.as_view(), name="print-option-help-image"),
     path("printing/quote/", PrintQuoteView.as_view(), name="print-quote"),
     path(
         "dashboard/printing/orders/<int:pk>/print-jobs/",

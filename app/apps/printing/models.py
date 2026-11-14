@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from pathlib import Path
 
@@ -204,6 +205,58 @@ class PrintCoverOption(BaseModel):
         return self.name
 
 
+class PrintExtraSection(models.TextChoices):
+    """The sections of the paper/material options on the print shop's order form."""
+
+    FRONT_COVER = "front_cover", "نوع الغلاف الأمامي"
+    BACK_COVER = "back_cover", "نوع الغلاف الخلفي"
+    FRONT_TRANSPARENCY_REQUIRED = "front_transparency_required", "الشفافية الأمامية - مطلوب"
+    FRONT_TRANSPARENCY_OPTIONAL = "front_transparency_optional", "الشفافية الأمامية - غير مطلوبة"
+    BACK_TRANSPARENCY_REQUIRED = "back_transparency_required", "الشفافية الخلفية - مطلوب"
+    BACK_TRANSPARENCY_OPTIONAL = "back_transparency_optional", "الشفافية الخلفية - غير مطلوبة"
+    FINAL_DELIVERY = "final_delivery", "التسليم النهائي"
+    FINISHING = "finishing", "الإخراج الفني"
+    DESIGN_PAPER = "design_paper", "خدمات أخرى: نوع الورق"
+
+
+class PrintExtraPriceUnit(models.TextChoices):
+    PER_COPY = "per_copy", "Per copy"
+    PER_50_SHEETS = "per_50_sheets", "Per 50 sheets of a copy (rounded up)"
+    PER_SHEET = "per_sheet", "Per printed sheet"
+
+
+class PrintExtraOption(BaseModel):
+    """One choice inside a section of the order form (cover paper, transparency, delivery, finishing, design paper)."""
+
+    section = models.CharField(max_length=40, choices=PrintExtraSection.choices)
+    code = models.CharField(max_length=48)
+    name = models.CharField(max_length=150)
+    description = models.CharField(max_length=500, blank=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    price_unit = models.CharField(
+        max_length=16, choices=PrintExtraPriceUnit.choices, default=PrintExtraPriceUnit.PER_COPY
+    )
+    currency = models.CharField(max_length=8, default="SYP")
+    color_hex = models.CharField(max_length=7, blank=True, help_text="Optional colour swatch, e.g. #1E3A8A.")
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["section", "sort_order", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["section", "code", "currency"], name="printing_extra_section_code_cur_uniq")
+        ]
+
+    def clean(self):
+        if self.price < 0:
+            raise ValidationError({"price": "Price cannot be negative."})
+        if self.color_hex and (len(self.color_hex) != 7 or not self.color_hex.startswith("#")):
+            raise ValidationError({"color_hex": "Use a colour like #1E3A8A."})
+
+    def __str__(self):
+        return f"{self.section}: {self.name}"
+
+
 class PrintOrderSource(models.TextChoices):
     APP = "app", "Mobile or web app"
     COUNTER = "counter", "Print shop counter"
@@ -305,6 +358,10 @@ class PrintOrderItem(BaseModel):
     collate = models.BooleanField(default=True)
     cover = models.CharField(max_length=32, blank=True)
     cover_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    extras = models.JSONField(default=dict, blank=True, help_text="Chosen paper option per section: {section: code}.")
+    extras_price = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, help_text="Total of the chosen paper options for the whole item."
+    )
     product = models.ForeignKey(
         "printing.ReadyProduct", on_delete=models.SET_NULL, related_name="order_items", null=True, blank=True
     )
@@ -508,3 +565,65 @@ class PrintJob(BaseModel):
     class Meta:
         ordering = ["-created_at", "-id"]
         indexes = [models.Index(fields=["status", "created_at"], name="printing_job_status_idx")]
+
+
+class PrintOptionHelpTopic(models.TextChoices):
+    """Fixed topics; the sectioned extras use the free form ``extra:<section>`` (see ``validate_help_topic``)."""
+
+    PRINT_SIZE = "print_size", "Paper size"
+    PRINT_COLOUR = "print_colour", "Colour"
+    PRINT_SIDES = "print_sides", "Sides"
+    BINDING = "binding", "Binding"
+    COVER = "cover", "Cover"
+    SPIRAL_WIRE = "spiral_wire", "Spiral wire"
+
+
+EXTRA_HELP_TOPIC_PREFIX = "extra:"
+_EXTRA_SECTION_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
+_HELP_KEY_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+
+
+def validate_help_topic(value: str) -> None:
+    if value in PrintOptionHelpTopic.values:
+        return
+    if value.startswith(EXTRA_HELP_TOPIC_PREFIX) and _EXTRA_SECTION_RE.match(value[len(EXTRA_HELP_TOPIC_PREFIX) :]):
+        return
+    raise ValidationError("Unknown help topic. Use a built-in topic or extra:<section> with a lowercase slug.")
+
+
+def validate_help_key(value: str) -> None:
+    if value and not _HELP_KEY_RE.match(value):
+        raise ValidationError("The key must be an option code: letters, digits, dot, dash or underscore.")
+
+
+class PrintOptionHelp(BaseModel):
+    """Staff-written, illustrated explanation of one print option (or of a whole topic when ``key`` is empty)."""
+
+    topic = models.CharField(max_length=64, validators=[validate_help_topic])
+    key = models.CharField(
+        max_length=64, blank=True, validators=[validate_help_key], help_text="Option code; empty = the whole topic."
+    )
+    title = models.CharField(max_length=150)
+    body = models.TextField(help_text="Plain text; line breaks are kept.")
+    image = models.ImageField(upload_to="print_option_help/", null=True, blank=True)
+    image_caption = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["topic", "sort_order", "key"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["topic", "key"],
+                condition=models.Q(is_deleted=False),
+                name="printing_option_help_topic_key_uniq",
+            )
+        ]
+        indexes = [models.Index(fields=["topic", "is_active"], name="printing_opthelp_topic_idx")]
+
+    def clean(self):
+        validate_help_topic(self.topic)
+        validate_help_key(self.key)
+
+    def __str__(self):
+        return f"{self.topic}:{self.key or '*'}"

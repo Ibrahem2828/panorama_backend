@@ -123,6 +123,30 @@ class InvitationAcceptThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": _request_ip(request)}
 
 
+class DeviceSwitchRateThrottle(SimpleRateThrottle):
+    """The switch token is unguessable (signed) but the endpoint is anonymous: one budget per source IP."""
+
+    scope = "device_switch"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": _request_ip(request)}
+
+
+class PhoneVerificationCreateThrottle(SimpleRateThrottle):
+    """Requests to verify a phone number, per signed-in student (a rotating IP never resets the budget)."""
+
+    scope = "phone_verification_create"
+
+    def get_cache_key(self, request, view):
+        user = getattr(request, "user", None)
+        ident = str(user.pk) if user is not None and user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class PhoneVerificationConfirmThrottle(PhoneVerificationCreateThrottle):
+    scope = "phone_verification_confirm"
+
+
 class LoginRateThrottle(IdentifierRateThrottle):
     scope = "auth_login"
 
@@ -193,6 +217,22 @@ class ChatTicketRateThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": ident}
 
 
+class ChatAttachmentTicketRateThrottle(SimpleRateThrottle):
+    scope = "chat_attachment_ticket"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class ChatAttachmentTicketBatchRateThrottle(SimpleRateThrottle):
+    scope = "chat_attachment_ticket_batch"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
 class ChatReportRateThrottle(SimpleRateThrottle):
     scope = "chat_report"
 
@@ -227,6 +267,22 @@ class LectureViewerRateThrottle(SimpleRateThrottle):
 
 class LectureNotesRateThrottle(SimpleRateThrottle):
     scope = "lecture_notes"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class LectureOfflineLicenseRateThrottle(SimpleRateThrottle):
+    scope = "lecture_offline_license"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class LectureOfflinePackageRateThrottle(SimpleRateThrottle):
+    scope = "lecture_offline_package"
 
     def get_cache_key(self, request, view):
         ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)

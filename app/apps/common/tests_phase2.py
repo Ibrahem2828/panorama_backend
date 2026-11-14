@@ -295,7 +295,8 @@ def test_group_membership_flow_and_access_rules(api_client, admin_user, student_
 
     authenticate(api_client, student_user)
     available = api_client.get("/api/v1/groups/available/")
-    assert available.data["data"]["count"] == 1
+    # a major-pinned group without a subject is a "level group": no longer offered to students
+    assert available.data["data"]["count"] == 0
 
     join = api_client.post(f"/api/v1/groups/{group_id}/join/")
     assert join.status_code == status.HTTP_403_FORBIDDEN

@@ -12,9 +12,12 @@ from django.utils import timezone
 from apps.common.models import BaseModel
 
 from .choices import (
+    AccountDeviceBoundVia,
+    AccountDeviceStatus,
     OTPDeliveryChannel,
     OTPPurpose,
     PermissionEffect,
+    PhoneVerificationStatus,
     StudentVerificationStatus,
     UserRole,
 )
@@ -316,3 +319,85 @@ class UserInvitation(BaseModel):
     @property
     def is_usable(self) -> bool:
         return self.state == "pending"
+
+
+class AccountDevice(BaseModel):
+    """The phone/tablet a student account is bound to (one ``active`` row per student).
+
+    This is the ACCOUNT binding that stops credential sharing. It is unrelated to ``notifications.DeviceToken`` /
+    ``product.DeviceInstallation`` (push tokens). Only a hash of the app-generated device id is stored.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="account_devices")
+    device_hash = models.CharField(max_length=64, db_index=True)
+    name = models.CharField(max_length=80, blank=True, default="")
+    platform = models.CharField(max_length=16, blank=True, default="")
+    status = models.CharField(max_length=16, choices=AccountDeviceStatus.choices, default=AccountDeviceStatus.ACTIVE)
+    bound_via = models.CharField(
+        max_length=16, choices=AccountDeviceBoundVia.choices, default=AccountDeviceBoundVia.FIRST_LOGIN
+    )
+    first_seen_at = models.DateTimeField(default=timezone.now)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+    bound_at = models.DateTimeField(default=timezone.now)
+    replaced_at = models.DateTimeField(null=True, blank=True)
+    #: Cleared by a staff reset so earlier self-service switches stop counting against the limit.
+    counts_toward_limit = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-bound_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status="active"),
+                name="unique_active_account_device_per_user",
+            )
+        ]
+        indexes = [models.Index(fields=["user", "status"], name="accounts_device_user_status")]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.status}:{self.device_hash[:8]}"
+
+
+class PhoneVerificationRequest(BaseModel):
+    """A student's request to verify a phone number with a code a staff member sends by WhatsApp."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="phone_verification_requests")
+    phone_number = models.CharField(max_length=32)
+    status = models.CharField(
+        max_length=16, choices=PhoneVerificationStatus.choices, default=PhoneVerificationStatus.PENDING_STAFF
+    )
+    #: Keyed HMAC of the 6-digit code (see ``phone_verification.hash_code``); the plain code is never stored or logged.
+    code_hash = models.CharField(max_length=64, blank=True, default="")
+    code_generated_at = models.DateTimeField(null=True, blank=True)
+    code_sent_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    claimed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="claimed_phone_verifications"
+    )
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    sent_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="sent_phone_verifications"
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.CharField(max_length=255, blank=True, default="")
+    decided_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="decided_phone_verifications"
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status__in=["pending_staff", "code_sent"]),
+                name="unique_open_phone_verification_per_user",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["status", "created_at"], name="accounts_phoneverif_status"),
+            models.Index(fields=["phone_number", "status"], name="accounts_phoneverif_phone"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id}:{self.status}"

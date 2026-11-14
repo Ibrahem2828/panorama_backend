@@ -2,7 +2,9 @@ from django.contrib import admin
 
 from .models import (
     PrintBindingPrice,
+    PrintExtraOption,
     PrintItemAccessTicket,
+    PrintOptionHelp,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatusHistory,
@@ -56,5 +58,8 @@ class PrintOrderStatusHistoryAdmin(admin.ModelAdmin):
 
 admin.site.register(PrintPricingRule)
 admin.site.register(PrintBindingPrice)
+admin.site.register(PrintExtraOption)
 admin.site.register(PrintPickupLocation)
 admin.site.register(PrintItemAccessTicket)
+
+admin.site.register(PrintOptionHelp)

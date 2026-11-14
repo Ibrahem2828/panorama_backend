@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from celery.schedules import crontab
+from corsheaders.defaults import default_headers
 from decouple import config
 
 from .env import get_bool_env, get_csv_env
@@ -148,6 +149,8 @@ CORS_ALLOWED_ORIGINS = get_csv_env(
     default=["http://localhost:3000", "http://localhost:5173"],
 )
 CORS_ALLOW_CREDENTIALS = True
+# Browser clients (student PWA) send the account-device headers; see apps/accounts/devices.py.
+CORS_ALLOW_HEADERS = (*default_headers, "x-panorama-device-id", "x-panorama-device-name", "x-panorama-platform")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("apps.accounts.authentication.SessionVersionJWTAuthentication",),
@@ -180,16 +183,23 @@ REST_FRAMEWORK = {
         "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),
         "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/min"),
         "chat_ticket": config("THROTTLE_CHAT_TICKET", default="30/min"),
+        "chat_attachment_ticket": config("THROTTLE_CHAT_ATTACHMENT_TICKET", default="90/min"),
+        "chat_attachment_ticket_batch": config("THROTTLE_CHAT_ATTACHMENT_TICKET_BATCH", default="20/min"),
         "chat_report": config("THROTTLE_CHAT_REPORT", default="10/day"),
         "support_ticket": config("THROTTLE_SUPPORT_TICKET", default="5/hour"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
         "lecture_viewer": config("THROTTLE_LECTURE_VIEWER", default="240/min"),
         "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
+        "lecture_offline_license": config("THROTTLE_LECTURE_OFFLINE_LICENSE", default="60/hour"),
+        "lecture_offline_package": config("THROTTLE_LECTURE_OFFLINE_PACKAGE", default="600/hour"),
         "search": config("THROTTLE_SEARCH", default="60/min"),
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
         "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
         "print_convert": config("THROTTLE_PRINT_CONVERT", default="20/hour"),
         "print_agent": config("THROTTLE_PRINT_AGENT", default="120/min"),
+        "device_switch": config("THROTTLE_DEVICE_SWITCH", default="10/hour"),
+        "phone_verification_create": config("THROTTLE_PHONE_VERIFICATION_CREATE", default="3/day"),
+        "phone_verification_confirm": config("THROTTLE_PHONE_VERIFICATION_CONFIRM", default="20/hour"),
     },
 }
 
@@ -216,6 +226,8 @@ SPECTACULAR_SETTINGS = {
         "EnrollmentStatusEnum": "apps.enrollment.models.EnrollmentStatus",
         "EnrollmentItemStatusEnum": "apps.enrollment.models.EnrollmentItemStatus",
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",
+        "PhoneVerificationStatusEnum": "apps.accounts.choices.PhoneVerificationStatus",
+        "AccountDeviceStatusEnum": "apps.accounts.choices.AccountDeviceStatus",
         "CategoryEnum": "apps.support.models.SupportTicketCategory",
         "FinanceCurrencyEnum": "apps.finance.models.FinanceCurrency",
         "InventoryCategoryEnum": "apps.finance.models.InventoryCategory",
@@ -379,6 +391,24 @@ LOGIN_LOCKOUT_THRESHOLD = config("LOGIN_LOCKOUT_THRESHOLD", default=10, cast=int
 LOGIN_LOCKOUT_WINDOW_MINUTES = config("LOGIN_LOCKOUT_WINDOW_MINUTES", default=15, cast=int)
 LOGIN_LOCKOUT_MINUTES = config("LOGIN_LOCKOUT_MINUTES", default=15, cast=int)
 
+# Account device binding (students only; see docs/API_SECURITY_AND_AUTH.md). While DEVICE_BINDING_ENFORCED is false the
+# backend only RECORDS bindings when the client sends X-Panorama-Device-Id and never blocks anyone, so the backend can be
+# deployed before the new app ships. Flip it on once the app sends the header.
+DEVICE_BINDING_ENFORCED = get_bool_env("DEVICE_BINDING_ENFORCED", default=False)
+# Self-service device switches allowed per rolling window; afterwards the student must contact an administrator.
+DEVICE_SWITCH_LIMIT_PER_TERM = config("DEVICE_SWITCH_LIMIT_PER_TERM", default=1, cast=int)
+# No academic-term dates exist in the data model, so a "term" is a rolling window of this many days.
+DEVICE_SWITCH_WINDOW_DAYS = config("DEVICE_SWITCH_WINDOW_DAYS", default=120, cast=int)
+DEVICE_SWITCH_TOKEN_TTL_SECONDS = config("DEVICE_SWITCH_TOKEN_TTL_SECONDS", default=300, cast=int)
+# Mismatching (right password, wrong device) logins allowed per account per hour before HTTP 429.
+DEVICE_MISMATCH_MAX_PER_HOUR = config("DEVICE_MISMATCH_MAX_PER_HOUR", default=10, cast=int)
+
+# Phone verification by a staff-sent WhatsApp code.
+PHONE_VERIFICATION_CODE_TTL_MINUTES = config("PHONE_VERIFICATION_CODE_TTL_MINUTES", default=10, cast=int)
+PHONE_VERIFICATION_MAX_ATTEMPTS = config("PHONE_VERIFICATION_MAX_ATTEMPTS", default=5, cast=int)
+# A request staff never handled expires after this many hours.
+PHONE_VERIFICATION_PENDING_TTL_HOURS = config("PHONE_VERIFICATION_PENDING_TTL_HOURS", default=48, cast=int)
+
 OTP_DEFAULT_CHANNEL = config("OTP_DEFAULT_CHANNEL", default="email")
 OTP_EXPIRY_MINUTES = config("OTP_EXPIRY_MINUTES", default=10, cast=int)
 OTP_RESEND_COOLDOWN_SECONDS = config("OTP_RESEND_COOLDOWN_SECONDS", default=60, cast=int)
@@ -395,6 +425,18 @@ DASHBOARD_BASE_URL = config("DASHBOARD_BASE_URL", default="http://localhost:3100
 INVITATION_TTL_HOURS = config("INVITATION_TTL_HOURS", default=48, cast=int)
 FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
 FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
+# Chat media. Voice notes are capped by real (server-measured) duration; uploaded audio files only by size.
+CHAT_VOICE_MAX_SECONDS = config("CHAT_VOICE_MAX_SECONDS", default=300, cast=int)
+# Container rounding slack: a recording the app stopped at exactly 5:00 can measure a fraction over.
+CHAT_VOICE_DURATION_TOLERANCE_MS = config("CHAT_VOICE_DURATION_TOLERANCE_MS", default=1000, cast=int)
+CHAT_VOICE_MAX_BYTES = config("CHAT_VOICE_MAX_BYTES", default=5 * 1024 * 1024, cast=int)
+CHAT_AUDIO_FILE_MAX_BYTES = config("CHAT_AUDIO_FILE_MAX_BYTES", default=25 * 1024 * 1024, cast=int)
+CHAT_IMAGE_MAX_BYTES = config("CHAT_IMAGE_MAX_BYTES", default=10 * 1024 * 1024, cast=int)
+CHAT_IMAGE_MAX_PIXELS = config("CHAT_IMAGE_MAX_PIXELS", default=40_000_000, cast=int)
+CHAT_THUMBNAIL_MAX_PX = config("CHAT_THUMBNAIL_MAX_PX", default=480, cast=int)
+# Audio is seeked with many Range requests, so its tickets live longer and allow more requests than an image's.
+CHAT_MEDIA_TICKET_TTL_SECONDS = config("CHAT_MEDIA_TICKET_TTL_SECONDS", default=600, cast=int)
+CHAT_MEDIA_TICKET_MAX_USES = config("CHAT_MEDIA_TICKET_MAX_USES", default=128, cast=int)
 EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
 WEBSOCKET_CHAT_TICKET_TTL_SECONDS = config("WEBSOCKET_CHAT_TICKET_TTL_SECONDS", default=45, cast=int)
 WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED = get_bool_env("WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED", default=False)
@@ -418,6 +460,11 @@ PRINT_CONVERSION_TTL_SECONDS = config("PRINT_CONVERSION_TTL_SECONDS", default=72
 PRINT_CONVERSION_WAIT_SECONDS = config("PRINT_CONVERSION_WAIT_SECONDS", default=60, cast=int)
 LECTURE_VIEWER_SESSION_TTL_SECONDS = config("LECTURE_VIEWER_SESSION_TTL_SECONDS", default=900, cast=int)
 LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS = config("LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS", default=1200, cast=int)
+# Offline protected lecture packages (see docs/OFFLINE_LECTURE_PACKAGES.md).
+LECTURE_OFFLINE_LICENSE_DAYS = config("LECTURE_OFFLINE_LICENSE_DAYS", default=14, cast=int)
+LECTURE_OFFLINE_MAX_PER_DEVICE = config("LECTURE_OFFLINE_MAX_PER_DEVICE", default=40, cast=int)
+LECTURE_OFFLINE_MAX_PER_USER = config("LECTURE_OFFLINE_MAX_PER_USER", default=120, cast=int)
+LECTURE_OFFLINE_CHUNK_SIZE = config("LECTURE_OFFLINE_CHUNK_SIZE", default=64 * 1024, cast=int)
 DOCUMENT_CONVERSION_TIME_LIMIT = config("DOCUMENT_CONVERSION_TIME_LIMIT", default=180, cast=int)
 DOCUMENT_CONVERSION_SOFT_TIME_LIMIT = config("DOCUMENT_CONVERSION_SOFT_TIME_LIMIT", default=150, cast=int)
 DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=30 * 1024 * 1024, cast=int)

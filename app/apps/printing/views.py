@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import mimetypes
 import time
 from datetime import timedelta
@@ -10,7 +11,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -19,6 +20,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
@@ -39,8 +41,11 @@ from .models import (
     PrintConversionStatus,
     PrintCoverOption,
     Printer,
+    PrintExtraOption,
+    PrintExtraSection,
     PrintItemAccessTicket,
     PrintJob,
+    PrintOptionHelp,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
@@ -61,8 +66,10 @@ from .serializers import (
     PrintCoverOptionSerializer,
     PrinterHeartbeatSerializer,
     PrinterSerializer,
+    PrintExtraOptionSerializer,
     PrintJobCancelSerializer,
     PrintJobStatusSerializer,
+    PrintOptionHelpSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
     PrintOrderNoteSerializer,
@@ -71,6 +78,7 @@ from .serializers import (
     PrintQueueJobSerializer,
     PrintQuoteSerializer,
     PrintStatusUpdateSerializer,
+    PublicPrintOptionHelpSerializer,
     PublicReadyProductSerializer,
     ReadyProductSerializer,
     SpiralWireSpecSerializer,
@@ -551,8 +559,25 @@ class PrintOptionsView(APIView):
         currency = request.query_params.get("currency") or default_currency()
         bindings = PrintBindingPrice.objects.filter(currency=currency, is_active=True, is_deleted=False)
         covers = PrintCoverOption.objects.filter(currency=currency, is_active=True, is_deleted=False)
+        extras = PrintExtraOption.objects.filter(currency=currency, is_active=True, is_deleted=False)
+        by_section: dict[str, list] = {value: [] for value in PrintExtraSection.values}
+        for row in extras:
+            by_section[row.section].append(
+                {
+                    "code": row.code,
+                    "name": row.name,
+                    "description": row.description,
+                    "price": row.price,
+                    "price_unit": row.price_unit,
+                    "color_hex": row.color_hex,
+                }
+            )
         data = {
             "currency": currency,
+            "extras": [
+                {"section": value, "label": label, "options": by_section[value]}
+                for value, label in PrintExtraSection.choices
+            ],
             "pages_per_sheet": list(PAGES_PER_SHEET_CHOICES),
             "orientations": [value for value, _label in PrintOrientation.choices],
             "duplex_flips": [value for value, _label in DuplexFlip.choices],
@@ -597,6 +622,21 @@ class DashboardCoverOptionViewSet(AuditedPrintConfigurationViewSet):
 
     def get_queryset(self):
         return PrintCoverOption.objects.filter(is_deleted=False)
+
+
+class DashboardExtraOptionViewSet(AuditedPrintConfigurationViewSet):
+    """Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters)."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintExtraOptionSerializer
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["section", "currency", "is_active"]
+    ordering_fields = ["section", "sort_order", "price", "name"]
+    ordering = ["section", "sort_order", "name"]
+
+    def get_queryset(self):
+        return PrintExtraOption.objects.filter(is_deleted=False)
 
 
 class DashboardWireSpecViewSet(AuditedPrintConfigurationViewSet):
@@ -811,3 +851,109 @@ class PrintAgentHeartbeatView(APIView):
             request=request,
             code="PRINTER_HEARTBEAT",
         )
+
+
+# ---- option help ("توضيح") ---------------------------------------------------------------------------------------------------------
+
+
+class PrintOptionHelpListView(APIView):
+    """Active explanations for the print options. ``?topic=`` and ``?key=`` narrow the list; ``If-None-Match`` is honoured."""
+
+    @extend_schema(
+        tags=["Printing"],
+        parameters=[
+            OpenApiParameter("topic", OpenApiTypes.STR, required=False),
+            OpenApiParameter("key", OpenApiTypes.STR, required=False),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        rows = PrintOptionHelp.objects.filter(is_active=True, is_deleted=False)
+        topic = request.query_params.get("topic")
+        if topic:
+            rows = rows.filter(topic=topic)
+        if "key" in request.query_params:
+            rows = rows.filter(key=request.query_params["key"])
+        ordered = list(rows.order_by("topic", "sort_order", "key", "id"))
+        latest = max((row.updated_at for row in ordered), default=None)
+        fingerprint = hashlib.sha256(
+            "|".join(f"{row.pk}:{row.updated_at.isoformat()}" for row in ordered).encode()
+        ).hexdigest()[:32]
+        etag = f'"{fingerprint}"'
+        if request.headers.get("If-None-Match") == etag:
+            response = Response(status=status.HTTP_304_NOT_MODIFIED)
+        else:
+            items = PublicPrintOptionHelpSerializer(ordered, many=True, context={"request": request}).data
+            grouped: dict[str, list] = {}
+            for item in items:
+                grouped.setdefault(item["topic"], []).append(item)
+            response = success_response(
+                data={"updated_at": latest, "count": len(ordered), "items": items, "by_topic": grouped},
+                message="Print option help",
+                request=request,
+                code="PRINT_OPTION_HELP",
+            )
+        response["ETag"] = etag
+        response["Cache-Control"] = "private, max-age=300"
+        return response
+
+
+PNG_MAGIC = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+JPEG_MAGIC = bytes([0xFF, 0xD8, 0xFF])
+
+
+def _sniff_image_type(handle) -> str:
+    head = handle.read(16)
+    handle.seek(0)
+    if head.startswith(PNG_MAGIC):
+        return "image/png"
+    if head[:3] == JPEG_MAGIC:
+        return "image/jpeg"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    raise Http404
+
+
+class PrintOptionHelpImageView(APIView):
+    """The help image of one option, behind authentication (``/media/`` is not published). Staff may also see inactive rows."""
+
+    @extend_schema(tags=["Printing"], responses={(200, "image/*"): OpenApiTypes.BINARY, 304: None})
+    def get(self, request, pk: int):
+        rows = PrintOptionHelp.objects.filter(pk=pk, is_deleted=False).exclude(image="")
+        if not PermissionService.has(request.user, Capability.PRINTING_MANAGE):
+            rows = rows.filter(is_active=True)
+        row = rows.first()
+        if row is None or not row.image:
+            raise Http404
+        etag = (
+            '"'
+            + hashlib.sha256(f"{row.pk}:{row.image.name}:{row.updated_at.isoformat()}".encode()).hexdigest()[:32]
+            + '"'
+        )
+        if request.headers.get("If-None-Match") == etag:
+            response: HttpResponse | FileResponse = HttpResponse(status=status.HTTP_304_NOT_MODIFIED)
+        else:
+            try:
+                handle = row.image.open("rb")
+            except (FileNotFoundError, ValueError) as exc:
+                raise Http404 from exc
+            response = FileResponse(handle, content_type=_sniff_image_type(handle))
+        response["ETag"] = etag
+        response["Cache-Control"] = "private, max-age=3600"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
+class DashboardPrintOptionHelpViewSet(AuditedPrintConfigurationViewSet):
+    """Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintOptionHelpSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["topic", "key", "is_active"]
+    ordering_fields = ["topic", "sort_order", "updated_at"]
+
+    def get_queryset(self):
+        return PrintOptionHelp.objects.filter(is_deleted=False)

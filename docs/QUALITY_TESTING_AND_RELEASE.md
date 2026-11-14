@@ -55,3 +55,18 @@ Before production approval, retain evidence for:
 **BACKEND CLOSED — READY FOR DASHBOARD INTEGRATION.** This is not a production
 approval: the external gates above remain required before any production
 promotion.
+
+## Accepted dependency advisories (time-boxed)
+
+Twisted 26.4.0 has seven advisories whose fix exists only in 26.10.0rc1 (no release candidate goes into production
+locks): GHSA-vpp8-g58w-m8mp, CVE-2026-115778, CVE-2026-115774, CVE-2026-115775, CVE-2026-115776, CVE-2026-115877,
+CVE-2026-83813. They are ignored by id in the CI `pip-audit` step (plus the older GHSA-8pqf-f4m5-798g), so any new
+vulnerability still fails the gate.
+
+- Not exposed: telnet/conch, IMAP4, words (XMPP, IRC) and names (DNS) are never used; Panorama runs Twisted only through
+  daphne (HTTP/1.1 and WebSocket); the `h2` package is not installed, so HTTP/2 rapid reset does not apply.
+- Possibly exposed: CVE-2026-115877 (HTTP request smuggling through a bare CR or LF in a header value) depends on the
+  reverse proxy rejecting such headers. This has not been verified.
+- Fix version: Twisted 26.10.0 final. Review date: 2026-12-15 (or when 26.10.0 is released); then bump the lock and remove
+  the ignores.
+

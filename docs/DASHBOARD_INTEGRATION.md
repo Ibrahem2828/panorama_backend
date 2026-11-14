@@ -27,6 +27,18 @@ Each modification is audit logged without credentials, tokens, or message
 content. Release policy, maintenance, and flag caches are invalidated as part of
 the same model-change path; no dashboard action relies on a client-side cache.
 
+## Phone verification queue and account devices
+
+- Phone verification (capability `verification.review`): list `GET dashboard/phone-verifications/` (phone shown, code never),
+  open a row with `POST .../{id}/claim/` (the 6-digit code appears once in `data.code`: show it with a copy button), the
+  staff member sends it on WhatsApp and presses the "code sent" button (`POST .../{id}/mark-sent/`, starts the 10-minute window).
+  `POST .../{id}/reject/` needs a reason. Error codes: `PHONE_VERIFICATION_CLAIMED_BY_OTHER`, `PHONE_VERIFICATION_NOT_CLAIMED`,
+  `PHONE_VERIFICATION_NOT_PENDING`, `PHONE_NUMBER_IN_USE`.
+- Student devices (capability `users.manage`): on the student detail page `GET dashboard/users/{id}/account-devices/` shows
+  the bound device, the history and the switch counter; "reset device" is `POST .../account-devices/reset/` `{reason}`
+  (ends the student's sessions; the next login binds the new phone). This is different from the existing
+  `dashboard/devices` push-installation screen.
+
 ## Integration requirements
 
 Use the exact paths, methods, response envelopes, pagination, and error codes
@@ -67,3 +79,12 @@ mapping and are preserved.
 - The additive chat handshake endpoint is Mobile-facing:
   `POST /api/v1/groups/{group_id}/chat-ticket/`. Dashboard clients should not
   send an access JWT in a WebSocket query string.
+
+## Print option help images
+
+`image_url` of `/dashboard/printing/option-help/` and `/printing/option-help/` is now
+`/api/v1/printing/option-help/{id}/image/?v=<updated_at epoch>` (authenticated, not `/media/`). A browser `<img src>` cannot
+send the Bearer token and the dashboard CSP must allow the origin, so load it through the dashboard BFF (a route that
+forwards the call with the session token and streams the bytes) or fetch it with the token and show a blob URL. Staff
+(`printing.manage`) may also read inactive entries. Note: a multipart create without `is_active` stores `false`; send
+`is_active=true` explicitly when uploading an image with the form.

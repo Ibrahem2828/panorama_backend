@@ -46,7 +46,12 @@ class APIErrorEnvelopeMiddleware:
                 raise
             return self._exception_response(request, exc)
 
-        if request.path.startswith("/api/") and response.status_code >= 400 and not self._is_json(response):
+        if (
+            request.path.startswith("/api/")
+            and response.status_code >= 400
+            and not self._is_json(response)
+            and not response.has_header("Content-Range")
+        ):
             return self._status_response(request, response.status_code)
         return response
 

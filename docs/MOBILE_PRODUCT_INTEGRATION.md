@@ -54,6 +54,27 @@ anonymizes the account while preserving a minimal audit trail.
 5. Read the canonical collection and OpenAPI rather than guessing payloads.
 6. Send `X-Request-ID` and an `Idempotency-Key` for retryable writes.
 
+## Account device and phone verification (students)
+
+1. Generate one device UUID (secure storage; separate from the installation id) and send `X-Panorama-Device-Id`,
+   `X-Panorama-Device-Name` and `X-Panorama-Platform` on login, `token/refresh` and every authenticated request.
+2. Login `409 DEVICE_MISMATCH`: show the bound device (`errors.bound_device`) and, if `errors.can_switch`, offer "use this
+   phone"; that calls `POST auth/device/switch/` with `errors.device_switch_token` and stores the returned tokens. When the
+   switch answers `403 DEVICE_SWITCH_LIMIT_REACHED`, tell the student to contact support (an admin resets the binding).
+3. Refresh `409 DEVICE_MISMATCH` or `401 DEVICE_MISMATCH`: clear tokens and show the login screen. `400/401 DEVICE_ID_REQUIRED`:
+   the header is missing (update the app).
+   Sessions ended by a device event also answer `401` on requests AND on `token/refresh` (a refresh token blacklisted by the
+   switch/reset still gets the specific code): `DEVICE_MISMATCH` ("تم تسجيل الدخول من جهاز آخر") when this phone was replaced by a
+   self-service switch, `SESSION_REVOKED_BY_ADMIN` when support reset the binding. Only a genuine token whose `dh` device claim names
+   a no-longer-bound device of that account gets these codes; password change, logout-all, unknown or forged tokens keep the
+   generic 401. A phone that was replaced and later switched back is not reported as replaced. Chat WebSocket tickets simply
+   stop validating (the socket closes); the next REST call returns the code above.
+4. Phone verification: `POST auth/phone-verification/` (phone + password), then poll `GET .../current/` (status `pending_staff`,
+   `code_sent` with `expires_at`), then `POST .../confirm/` `{code}`; `POST .../cancel/` to start over. A notification
+   (`data.kind = phone_verification`) arrives when the code was sent, on success, rejection and expiry.
+5. Groups: do not offer year groups; join groups only through enrollment; open WhatsApp with
+   `POST groups/{id}/whatsapp-launch/` (members only).
+
 ## Group chat WebSocket
 
 1. With a valid REST bearer token, call
@@ -112,3 +133,42 @@ range requests; never treat a protected `preview_url` as a public URL.
 The import-ready canonical collection is
 `integrations/api/panorama-mobile-api.postman_collection.json`. It is generated
 from OpenAPI; regenerate it after a deliberate contract change.
+
+## Chat media (images, files, voice notes, audio files)
+
+Send with `POST /api/v1/groups/{id}/messages/` as `multipart/form-data`:
+
+| field | notes |
+|---|---|
+| `message_type` | `image`, `file` (pdf/image), `voice`, `audio` |
+| `attachment` | the file (random server-side name; client name kept only as `attachment_meta.name`) |
+| `content` | optional caption |
+| `duration_ms` | voice only, optional hint. The server measures the real length and ignores the hint (except to fail fast above the limit) |
+| `waveform` | optional, JSON array string of <= 128 ints 0-255, e.g. `[3,40,...]` (UI bars only) |
+
+Limits (settings, defaults in `.env.example`): voice <= `CHAT_VOICE_MAX_SECONDS` (300 s, +`CHAT_VOICE_DURATION_TOLERANCE_MS` 1000) and
+`CHAT_VOICE_MAX_BYTES` (5 MB); uploaded audio `CHAT_AUDIO_FILE_MAX_BYTES` (25 MB), no duration cap; images
+`CHAT_IMAGE_MAX_BYTES` (10 MB) / `CHAT_IMAGE_MAX_PIXELS`; documents 25 MB. Audio formats: m4a/mp4 (AAC), aac (ADTS), mp3,
+ogg/opus, wav, detected from magic bytes and parsed (webm is not accepted: its duration cannot be verified).
+Errors use the usual envelope with `code`: `VOICE_TOO_LONG`, `AUDIO_INVALID`, `AUDIO_TOO_LARGE`, `IMAGE_INVALID`,
+`IMAGE_TOO_LARGE`, `WAVEFORM_INVALID` (Arabic `errors.attachment[0]`).
+
+`attachment_meta` on every message: `name, size, mime, kind, duration_ms, waveform, width, height, has_thumbnail, etag`.
+
+Opening an attachment: `POST .../messages/{id}/attachment-ticket/` (or `POST .../messages/attachment-tickets/` with
+`{"message_ids": [...]}` for up to 20 at once, one request per screenful) returns `preview_url`, `thumb_url`
+(`?variant=thumb`, <= 480 px WebP, images only), `etag`, `mime`, `size`, `supports_range`, `download_allowed: false`.
+The stream is `Content-Disposition: inline`, `nosniff`, `Cache-Control: private, no-store`, supports `Range`
+(206/416), `If-Range` and `If-None-Match` (304 on the content hash ETag), so an app-side encrypted cache can revalidate
+with a fresh ticket without re-downloading. Tickets are bound to the requesting member and re-check membership on every
+use. "No download" is enforced by the app (no share/save intents, screen-capture protection, encrypted app-private cache);
+the server can only keep links short-lived, member-bound and non-enumerable.
+
+## Print option help images
+
+`GET /api/v1/printing/option-help/` returns `image_url` per entry: an absolute URL of
+`GET /api/v1/printing/option-help/{id}/image/?v=<updated_at epoch>`. The `/media/` path is not published in production, so
+the image must be fetched **with the `Authorization: Bearer` header** (a plain image widget without headers gets 401).
+The response is inline with the real image type, `ETag` (send `If-None-Match` to receive 304), `Cache-Control: private,
+max-age=3600` and `X-Content-Type-Options: nosniff`. Inactive or deleted entries answer 404 to students. `?v=` changes
+whenever the entry changes, so an HTTP cache keyed by URL stays correct.

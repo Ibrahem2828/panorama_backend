@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from apps.accounts.choices import StudentVerificationStatus, UserRole
 from apps.accounts.models import StudentProfile, User
 from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
-from apps.groups.services import eligible_groups_filter, is_student_eligible_for_group
+from apps.groups.services import eligible_groups_filter, is_level_group, is_student_eligible_for_group
 from apps.universities.models import AcademicYear, Faculty, Major, Semester, University
 
 
@@ -80,7 +80,8 @@ def test_list_contains_only_own_university_eligible_groups(world):
     g = world["groups"]
     response = world["client"].get("/api/v1/groups/")
     assert response.status_code == 200
-    assert _ids(response) == {g["uni_wide"].id, g["faculty"].id, g["major"].id}
+    # "Major A" is a level group (pinned to a major, no subject): no longer offered to students.
+    assert _ids(response) == {g["uni_wide"].id, g["faculty"].id}
 
 
 def test_list_matches_the_python_eligibility_rule(world):
@@ -88,14 +89,18 @@ def test_list_matches_the_python_eligibility_rule(world):
     for group in g.values():
         group.refresh_from_db()
     visible = set(Group.objects.filter(eligible_groups_filter(world["me"])).values_list("id", flat=True))
-    expected = {grp.id for grp in Group.objects.all() if is_student_eligible_for_group(world["me"], grp)}
+    expected = {
+        grp.id
+        for grp in Group.objects.all()
+        if is_student_eligible_for_group(world["me"], grp) and not is_level_group(grp)
+    }
     assert visible == expected
 
 
 def test_list_never_leaks_other_universities_via_search_filter_or_ordering_params(world):
     """Query params must never widen the collection beyond what the student may see (whether or not they filter)."""
     g = world["groups"]
-    visible = {g["uni_wide"].id, g["faculty"].id, g["major"].id}
+    visible = {g["uni_wide"].id, g["faculty"].id}
     client = world["client"]
     probes = [
         {"search": "Secret"},
@@ -119,6 +124,10 @@ def test_retrieve_other_university_group_is_forbidden_and_own_is_allowed(world):
     assert client.get(f"/api/v1/groups/{g['other_uni'].id}/").status_code == 403
     assert client.get(f"/api/v1/groups/{g['other_faculty'].id}/").status_code == 403
     assert client.get(f"/api/v1/groups/{g['inactive'].id}/").status_code == 404
+    assert client.get(f"/api/v1/groups/{g['faculty'].id}/").status_code == 200
+    # level groups (major/year/semester, no subject) are hidden from non-members, even when the hierarchy matches
+    assert client.get(f"/api/v1/groups/{g['major'].id}/").status_code == 403
+    GroupMembership.objects.create(group=g["major"], user=world["me"], status=GroupMembershipStatus.APPROVED)
     assert client.get(f"/api/v1/groups/{g['major'].id}/").status_code == 200
 
 

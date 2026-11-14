@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased - device lock, phone verification, community auto-join
+
+- **Accounts:** student accounts are bound to one device (`X-Panorama-Device-Id`); `DEVICE_MISMATCH`, one self-service
+  switch per 120 days, staff reset, off by default (`DEVICE_BINDING_ENFORCED=false`).
+- **Phone verification:** student request + staff-sent WhatsApp code (6 digits, 10 minutes, 5 attempts), staff queue.
+- **Groups:** verification approval also joins dental students to the "السريرية 1" group; year/major/semester groups are no
+  longer offered to students; WhatsApp exposure audited (members only).
+
+## Unreleased - chat media
+
+- **Chat media:** voice notes (server-verified <= 5 min) and uploaded audio files, image dimensions and WebP thumbnails, batch attachment tickets, Range/ETag delivery, new settings `CHAT_*` (see `.env.example`), migration `chat.0006`.
+
 ## 2026-10-05 — Final hardening pass
 
 - **Security:** admins can no longer escalate privileges through permission overrides or act on IT Support / peer

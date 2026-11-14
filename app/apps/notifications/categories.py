@@ -22,7 +22,15 @@ PREFERENCE_CHANNELS = (CHAT, GROUPS, PRINTING, VERIFICATION, SUPPORT)
 
 #: ``data["kind"]`` values of staff inbox events: a burst of them is folded into one push (members' own notices never are).
 STAFF_KINDS = frozenset(
-    {"enrollment", "chat_report", "purchase_reminder", "support_ticket", "print_order", "verification_request"}
+    {
+        "enrollment",
+        "chat_report",
+        "purchase_reminder",
+        "support_ticket",
+        "print_order",
+        "verification_request",
+        "phone_verification_request",
+    }
 )
 
 _KIND_TO_CATEGORY = {
@@ -32,6 +40,7 @@ _KIND_TO_CATEGORY = {
     "support_ticket": SUPPORT,
     "print_order": PRINTING,
     "verification_request": VERIFICATION,
+    "phone_verification_request": VERIFICATION,
     "chat": CHAT,
 }
 

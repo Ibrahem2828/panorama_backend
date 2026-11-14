@@ -10,6 +10,7 @@ djangorestframework-simplejwt>=5.3,<6.0
 djangorestframework>=3.15,<4.0
 drf-spectacular>=0.27,<1.0
 filetype>=1.2,<2.0
+mutagen>=1.47,<2.0
 psycopg2-binary>=2.9,<3.0
 pyOpenSSL>=26.0,<27.0
 pypdf>=6.15.0,<7.0

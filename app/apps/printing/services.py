@@ -28,6 +28,9 @@ from .models import (
     PrintBinding,
     PrintBindingPrice,
     PrintCoverOption,
+    PrintExtraOption,
+    PrintExtraPriceUnit,
+    PrintExtraSection,
     PrintOrder,
     PrintOrderItem,
     PrintOrderPriority,
@@ -133,6 +136,7 @@ def _request_fingerprint(items_data: list[dict], user_notes: str, pickup_locatio
             str(item.get("orientation", "auto")),
             bool(item.get("collate", True)),
             str(item.get("cover") or ""),
+            sorted((item.get("extras") or {}).items()),
             getattr(item.get("product"), "pk", None),
         ]
         for item in items_data
@@ -171,6 +175,7 @@ ORDER_ITEM_INPUT_FIELDS = (
     "page_range",
     "collate",
     "cover",
+    "extras",
     "product",
 )
 
@@ -234,6 +239,32 @@ class PrintPricingService:
         if not cover:
             raise PrintBindingUnavailable("The selected cover is currently unavailable.")
         return cover
+
+    @staticmethod
+    def _extras(selection: dict | None, currency: str) -> list[PrintExtraOption]:
+        """The chosen option of every section; an unknown section or an unknown/inactive code is rejected in Arabic."""
+
+        rows: list[PrintExtraOption] = []
+        for section, code in (selection or {}).items():
+            if not code:
+                continue
+            if section not in PrintExtraSection.values:
+                raise ValidationError({"extras": f"القسم غير معروف: {section}"})
+            option = PrintExtraOption.objects.filter(
+                section=section, code=code, currency=currency, is_active=True, is_deleted=False
+            ).first()
+            if not option:
+                raise ValidationError({"extras": f"الخيار المحدد غير متاح في هذا القسم: {code}"})
+            rows.append(option)
+        return rows
+
+    @staticmethod
+    def extra_cost(option: PrintExtraOption, copies: int, sheets_in_copy: int) -> Decimal:
+        if option.price_unit == PrintExtraPriceUnit.PER_50_SHEETS:
+            return option.price * ceil(sheets_in_copy / 50) * copies
+        if option.price_unit == PrintExtraPriceUnit.PER_SHEET:
+            return option.price * sheets_in_copy * copies
+        return option.price * copies
 
     @staticmethod
     def wire_grams(sheets_in_copy: int) -> Decimal | None:
@@ -356,7 +387,20 @@ class PrintPricingService:
         binding_cost = binding_price * copies
         cover_price = cover_rule.price_per_copy if cover_rule else Decimal("0")
         cover_cost = cover_price * copies
-        subtotal = print_cost + binding_cost + cover_cost
+        extra_rows = cls._extras(item_data.get("extras"), currency)
+        extra_lines = [
+            {
+                "section": row.section,
+                "code": row.code,
+                "name": row.name,
+                "price": str(row.price),
+                "price_unit": row.price_unit,
+                "cost": str(cls.extra_cost(row, copies, sheets_in_copy)),
+            }
+            for row in extra_rows
+        ]
+        extras_cost = sum((Decimal(line["cost"]) for line in extra_lines), Decimal("0"))
+        subtotal = print_cost + binding_cost + cover_cost + extras_cost
         snapshot = {
             "pricing_rule_id": rule.id,
             "pricing_rule_name": rule.name,
@@ -368,6 +412,8 @@ class PrintPricingService:
             "wire_grams_per_copy": str(wire_grams) if wire_grams is not None else None,
             "cover": cover_rule.code if cover_rule else "",
             "cover_price_per_copy": str(cover_price),
+            "extras": extra_lines,
+            "extras_price": str(extras_cost),
             "pages_count": pages_count,
             "selected_pages": selected_pages,
             "page_range": item_data.get("page_range") or "",
@@ -485,6 +531,7 @@ class PrintOrderService:
                 **data,
                 selected_pages=snapshot.get("selected_pages"),
                 cover_price=Decimal(snapshot.get("cover_price_per_copy") or 0),
+                extras_price=Decimal(snapshot.get("extras_price") or 0),
                 pages_count=priced.pages_count,
                 sheets_count=priced.sheets_count,
                 unit_price=priced.unit_price,
@@ -743,6 +790,8 @@ class CounterOrderService:
                 binding=spec["binding"],
                 cover=spec.get("cover") or "",
                 cover_price=Decimal(snapshot.get("cover_price_per_copy") or 0),
+                extras={row["section"]: row["code"] for row in snapshot.get("extras") or []},
+                extras_price=Decimal(snapshot.get("extras_price") or 0),
                 pages_per_sheet=item.get("pages_per_sheet") or 1,
                 duplex_flip=item.get("duplex_flip") or DuplexFlip.LONG_EDGE,
                 page_range=item.get("page_range") or "",

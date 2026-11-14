@@ -1,0 +1,13 @@
+# Time-boxed Trivy ignores (owner decision, 2026-11-14). Same advisories already accepted in the CI pip-audit step.
+#
+# Twisted 26.4.0 has no stable fixed release (fix is only in 26.10.0rc1; final 26.10.0 is the fix version).
+# Panorama serves HTTP/1.1 + WebSocket through daphne only: no telnet/IMAP/XMPP/IRC/names (DNS) and no h2 (HTTP/2)
+# in the lock, so these code paths are not reachable.
+#
+# Each entry expires on 2026-12-15 (exp:), after which the scan fails again until the lock is bumped to
+# twisted 26.10.0 final and these lines are deleted. Only these ids are ignored; any other finding still fails the gate.
+# See docs/QUALITY_TESTING_AND_RELEASE.md ("Accepted dependency advisories (time-boxed)").
+CVE-2026-115775 exp:2026-12-15
+CVE-2026-115776 exp:2026-12-15
+CVE-2026-115778 exp:2026-12-15
+GHSA-vpp8-g58w-m8mp exp:2026-12-15

@@ -607,6 +607,40 @@
                 }
             }
         },
+        "/api/v1/auth/device/switch/": {
+            "post": {
+                "operationId": "v1_auth_device_switch_create",
+                "description": "Take an account over on a new device using the ``device_switch_token`` a ``DEVICE_MISMATCH`` login returned.",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceSwitchRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceSwitchRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeviceSwitchRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "JWT login response for the new device"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/invitations/{token}/": {
             "get": {
                 "operationId": "v1_auth_invitations_retrieve",
@@ -906,6 +940,167 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/VerifyOTP"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/": {
+            "post": {
+                "operationId": "v1_auth_phone_verification_create",
+                "description": "``POST auth/phone-verification/``: ask to verify a phone number (phone + the account password).",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationCreateRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationCreateRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/cancel/": {
+            "post": {
+                "operationId": "v1_auth_phone_verification_cancel_create",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/confirm/": {
+            "post": {
+                "operationId": "v1_auth_phone_verification_confirm_create",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationConfirmRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationConfirmRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationConfirmRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "description": "Wrong or expired code"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/phone-verification/current/": {
+            "get": {
+                "operationId": "v1_auth_phone_verification_current_retrieve",
+                "description": "``GET auth/phone-verification/current/``: the latest request (``data.request`` is null when there never was one).",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
                                 }
                             }
                         },
@@ -2337,11 +2532,17 @@
                                 "account_deletion_cancelled",
                                 "account_deletion_completed",
                                 "account_deletion_requested",
+                                "account_device_bound",
+                                "account_device_mismatch",
+                                "account_device_reset",
+                                "account_device_switch_refused",
+                                "account_device_switched",
                                 "account_locked",
                                 "account_login_unlocked",
                                 "announcement_created",
                                 "announcement_deleted",
                                 "announcement_updated",
+                                "community_auto_joined",
                                 "current_term_changed",
                                 "device_installation_registered",
                                 "device_installation_revoked",
@@ -2372,6 +2573,9 @@
                                 "inventory_item_changed",
                                 "lecture_deleted",
                                 "lecture_note_updated",
+                                "lecture_offline_license_issued",
+                                "lecture_offline_license_renewed",
+                                "lecture_offline_license_revoked",
                                 "lecture_processing_retried",
                                 "lecture_processing_updated",
                                 "lecture_updated",
@@ -2390,6 +2594,14 @@
                                 "payment_recorded",
                                 "payment_voided",
                                 "permission_template_changed",
+                                "phone_verification_cancelled",
+                                "phone_verification_code_issued",
+                                "phone_verification_code_sent",
+                                "phone_verification_expired",
+                                "phone_verification_failed",
+                                "phone_verification_rejected",
+                                "phone_verification_requested",
+                                "phone_verification_verified",
                                 "policy_accepted",
                                 "policy_version_published",
                                 "policy_version_unpublished",
@@ -2431,7 +2643,7 @@
                                 "verification_submitted"
                             ]
                         },
-                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
+                        "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `lecture_offline_license_issued` - Lecture Offline License Issued\n* `lecture_offline_license_renewed` - Lecture Offline License Renewed\n* `lecture_offline_license_revoked` - Lecture Offline License Revoked\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated\n* `account_device_bound` - Account Device Bound\n* `account_device_mismatch` - Account Device Mismatch\n* `account_device_switched` - Account Device Switched\n* `account_device_switch_refused` - Account Device Switch Refused\n* `account_device_reset` - Account Device Reset\n* `phone_verification_requested` - Phone Verification Requested\n* `phone_verification_code_issued` - Phone Verification Code Issued\n* `phone_verification_code_sent` - Phone Verification Code Sent\n* `phone_verification_verified` - Phone Verification Verified\n* `phone_verification_failed` - Phone Verification Failed\n* `phone_verification_rejected` - Phone Verification Rejected\n* `phone_verification_cancelled` - Phone Verification Cancelled\n* `phone_verification_expired` - Phone Verification Expired\n* `community_auto_joined` - Community Auto Joined"
                     },
                     {
                         "in": "query",
@@ -8389,6 +8601,85 @@
                 }
             }
         },
+        "/api/v1/dashboard/lectures/offline-licenses/": {
+            "get": {
+                "operationId": "v1_dashboard_lectures_offline_licenses_retrieve",
+                "description": "Staff view of one student's (or one lecture's) offline licenses. Capability: ``lectures.manage``.",
+                "tags": [
+                    "Dashboard lectures"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/lectures/offline-licenses/revoke/": {
+            "post": {
+                "operationId": "v1_dashboard_lectures_offline_licenses_revoke_create",
+                "tags": [
+                    "Dashboard lectures"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffRevokeRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffRevokeRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StaffRevokeRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/maintenance-modes/": {
             "get": {
                 "operationId": "v1_dashboard_maintenance_modes_list",
@@ -9655,6 +9946,264 @@
                 }
             }
         },
+        "/api/v1/dashboard/phone-verifications/": {
+            "get": {
+                "operationId": "v1_dashboard_phone_verifications_list",
+                "description": "``GET dashboard/phone-verifications/``: the staff queue. ``status`` filter, ``search`` on name, e-mail or phone;\noldest first by default so nobody waits behind newer requests.",
+                "parameters": [
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "رقم الصفحة ضمن النتائج المقسمة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page_size",
+                        "required": false,
+                        "in": "query",
+                        "description": "عدد النتائج التي يجب إرجاعها في كل صفحة.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "مصطلح البحث.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "cancelled",
+                                "code_sent",
+                                "expired",
+                                "pending_staff",
+                                "rejected",
+                                "verified"
+                            ]
+                        },
+                        "description": "* `pending_staff` - Waiting for staff\n* `code_sent` - Code sent\n* `verified` - Verified\n* `expired` - Expired\n* `cancelled` - Cancelled\n* `rejected` - Rejected"
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedDashboardPhoneVerificationList"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_phone_verifications_retrieve",
+                "description": "``GET dashboard/phone-verifications/``: the staff queue. ``status`` filter, ``search`` on name, e-mail or phone;\noldest first by default so nobody waits behind newer requests.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا phone verification request.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/claim/": {
+            "post": {
+                "operationId": "v1_dashboard_phone_verifications_claim_create",
+                "description": "``POST dashboard/phone-verifications/{id}/claim/``: generates the code and returns it ONCE (``data.code``). Send it\nto the student by WhatsApp, then call ``mark-sent``. Calling it again issues a new code.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerificationClaim"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/mark-sent/": {
+            "post": {
+                "operationId": "v1_dashboard_phone_verifications_mark_sent_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/phone-verifications/{id}/reject/": {
+            "post": {
+                "operationId": "v1_dashboard_phone_verifications_reject_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationRejectRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationRejectRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneVerificationRejectRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DashboardPhoneVerification"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/binding-prices/": {
             "get": {
                 "operationId": "v1_dashboard_printing_binding_prices_list",
@@ -10283,6 +10832,315 @@
                 }
             }
         },
+        "/api/v1/dashboard/printing/extra-options/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_extra_options_list",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "currency",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "is_active",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "section",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "back_cover",
+                                "back_transparency_optional",
+                                "back_transparency_required",
+                                "design_paper",
+                                "final_delivery",
+                                "finishing",
+                                "front_cover",
+                                "front_transparency_optional",
+                                "front_transparency_required"
+                            ]
+                        },
+                        "description": "* `front_cover` - نوع الغلاف الأمامي\n* `back_cover` - نوع الغلاف الخلفي\n* `front_transparency_required` - الشفافية الأمامية - مطلوب\n* `front_transparency_optional` - الشفافية الأمامية - غير مطلوبة\n* `back_transparency_required` - الشفافية الخلفية - مطلوب\n* `back_transparency_optional` - الشفافية الخلفية - غير مطلوبة\n* `final_delivery` - التسليم النهائي\n* `finishing` - الإخراج الفني\n* `design_paper` - خدمات أخرى: نوع الورق"
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PrintExtraOption"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_extra_options_create",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/extra-options/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_extra_options_retrieve",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_extra_options_update",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintExtraOptionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_extra_options_partial_update",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintExtraOptionRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintExtraOptionRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintExtraOptionRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintExtraOption"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_extra_options_destroy",
+                "description": "Paper/material options per section of the order form (``?section=``, ``?currency=``, ``?is_active=`` filters).",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print extra option.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/printing/jobs/": {
             "get": {
                 "operationId": "v1_dashboard_printing_jobs_list",
@@ -10398,6 +11256,303 @@
                             }
                         },
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/option-help/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_option_help_list",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "is_active",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ordering",
+                        "required": false,
+                        "in": "query",
+                        "description": "أي حقل يجب استخدامه عند ترتيب النتائج.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "topic",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PrintOptionHelp"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_dashboard_printing_option_help_create",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/printing/option-help/{id}/": {
+            "get": {
+                "operationId": "v1_dashboard_printing_option_help_retrieve",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_dashboard_printing_option_help_update",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrintOptionHelpRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "v1_dashboard_printing_option_help_partial_update",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintOptionHelpRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintOptionHelpRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchedPrintOptionHelpRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrintOptionHelp"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_dashboard_printing_option_help_destroy",
+                "description": "Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "description": "نوع رقم صحيح فريد يحدد هذا print option help.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "v1"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
                     }
                 }
             }
@@ -16175,6 +17330,105 @@
                 }
             }
         },
+        "/api/v1/dashboard/users/{user_id}/account-devices/": {
+            "get": {
+                "operationId": "v1_dashboard_users_account_devices_retrieve",
+                "description": "``GET dashboard/users/{user_id}/account-devices/``: the binding history and the self-service switch counter.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard/users/{user_id}/account-devices/reset/": {
+            "post": {
+                "operationId": "v1_dashboard_users_account_devices_reset_create",
+                "description": "``POST dashboard/users/{user_id}/account-devices/reset/``: clears the binding and the switch counter and ends the\nstudent's sessions; the next login binds the device they use then.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountDeviceResetRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountDeviceResetRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AccountDeviceResetRequest"
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/dashboard/users/{user_id}/activity/": {
             "get": {
                 "operationId": "v1_dashboard_users_activity_retrieve",
@@ -19084,6 +20338,66 @@
                 }
             }
         },
+        "/api/v1/groups/{group_id}/messages/attachment-tickets/": {
+            "post": {
+                "operationId": "v1_groups_messages_attachment_tickets_create",
+                "description": "Tickets for up to ``BATCH_TICKET_LIMIT`` messages at once, so a screen of thumbnails costs one request.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "group_id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachmentTicketBatchRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachmentTicketBatchRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AttachmentTicketBatchRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/api/v1/groups/{group_pk}/files/": {
             "get": {
                 "operationId": "v1_groups_files_list",
@@ -20107,6 +21421,169 @@
                 }
             }
         },
+        "/api/v1/lectures/{id}/offline-license/": {
+            "post": {
+                "operationId": "v1_lectures_offline_license_create",
+                "description": "``POST`` issues or refreshes the license for this device and returns the content key; ``DELETE`` releases it.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Lecture offline"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "v1_lectures_offline_license_destroy",
+                "description": "``POST`` issues or refreshes the license for this device and returns the content key; ``DELETE`` releases it.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Lecture offline"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/lectures/{id}/offline-license/renew/": {
+            "post": {
+                "operationId": "v1_lectures_offline_license_renew_create",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Lecture offline"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/lectures/{id}/offline-package/": {
+            "get": {
+                "operationId": "v1_lectures_offline_package_retrieve",
+                "description": "Streams the AES-GCM *ciphertext* package. Plaintext never leaves the server on this route.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Lecture offline"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Encrypted package"
+                    },
+                    "206": {
+                        "description": "Range"
+                    }
+                }
+            }
+        },
         "/api/v1/lectures/{id}/processing-status/": {
             "get": {
                 "operationId": "v1_lectures_processing_status_retrieve",
@@ -20336,6 +21813,85 @@
                 ],
                 "responses": {
                     "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/lectures/offline-licenses/": {
+            "get": {
+                "operationId": "v1_lectures_offline_licenses_retrieve",
+                "description": "The caller's licenses on this device (state included) so the app can see what must be purged.",
+                "tags": [
+                    "Lecture offline"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/lectures/offline-licenses/sync/": {
+            "post": {
+                "operationId": "v1_lectures_offline_licenses_sync_create",
+                "tags": [
+                    "Lecture offline"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OfflineSyncRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OfflineSyncRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OfflineSyncRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -21511,6 +23067,95 @@
                 }
             }
         },
+        "/api/v1/printing/option-help/": {
+            "get": {
+                "operationId": "v1_printing_option_help_retrieve",
+                "description": "Active explanations for the print options. ``?topic=`` and ``?key=`` narrow the list; ``If-None-Match`` is honoured.",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "topic",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Printing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/printing/option-help/{id}/image/": {
+            "get": {
+                "operationId": "v1_printing_option_help_image_retrieve",
+                "description": "The help image of one option, behind authentication (``/media/`` is not published). Staff may also see inactive rows.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Printing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/*": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "304": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/printing/options/": {
             "get": {
                 "operationId": "v1_printing_options_retrieve",
@@ -21969,6 +23614,14 @@
                             "format": "uuid"
                         },
                         "required": true
+                    },
+                    {
+                        "in": "query",
+                        "name": "variant",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "`thumb` for the <=480px WebP preview of an image."
                     }
                 ],
                 "tags": [
@@ -21985,6 +23638,15 @@
                 "responses": {
                     "200": {
                         "description": "Inline chat attachment"
+                    },
+                    "206": {
+                        "description": "Byte range of the attachment (audio seeking)"
+                    },
+                    "304": {
+                        "description": "Unchanged (If-None-Match)"
+                    },
+                    "416": {
+                        "description": "Range not satisfiable"
                     }
                 }
             }
@@ -23474,6 +25136,16 @@
                 "type": "string",
                 "description": "* `requested` - Requested\n* `cancelled` - Cancelled\n* `completed` - Completed"
             },
+            "AccountDeviceResetRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 255
+                    }
+                }
+            },
             "ActivityUser": {
                 "type": "object",
                 "properties": {
@@ -23915,6 +25587,22 @@
                     "kind"
                 ]
             },
+            "AttachmentTicketBatchRequest": {
+                "type": "object",
+                "properties": {
+                    "message_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "maxItems": 20
+                    }
+                },
+                "required": [
+                    "message_ids"
+                ]
+            },
             "AuditLog": {
                 "type": "object",
                 "properties": {
@@ -24057,6 +25745,9 @@
                     "lecture_updated",
                     "lecture_deleted",
                     "lecture_processing_retried",
+                    "lecture_offline_license_issued",
+                    "lecture_offline_license_renewed",
+                    "lecture_offline_license_revoked",
                     "announcement_created",
                     "announcement_updated",
                     "announcement_deleted",
@@ -24108,10 +25799,24 @@
                     "term_whatsapp_list_exported",
                     "student_term_confirmed",
                     "group_members_exported",
-                    "user_profile_updated"
+                    "user_profile_updated",
+                    "account_device_bound",
+                    "account_device_mismatch",
+                    "account_device_switched",
+                    "account_device_switch_refused",
+                    "account_device_reset",
+                    "phone_verification_requested",
+                    "phone_verification_code_issued",
+                    "phone_verification_code_sent",
+                    "phone_verification_verified",
+                    "phone_verification_failed",
+                    "phone_verification_rejected",
+                    "phone_verification_cancelled",
+                    "phone_verification_expired",
+                    "community_auto_joined"
                 ],
                 "type": "string",
-                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated"
+                "description": "* `user_registered` - User Registered\n* `user_invited` - User Invited\n* `user_invitation_accepted` - User Invitation Accepted\n* `user_invitation_revoked` - User Invitation Revoked\n* `user_sessions_ended` - User Sessions Ended\n* `permission_template_changed` - Permission Template Changed\n* `enrollment_submitted` - Enrollment Submitted\n* `enrollment_reviewed` - Enrollment Reviewed\n* `enrollment_cancelled` - Enrollment Cancelled\n* `enrollment_screenshot_accessed` - Enrollment Screenshot Accessed\n* `user_role_changed` - User Role Changed\n* `user_status_changed` - User Status Changed\n* `user_permission_override_changed` - User Permission Override Changed\n* `student_profile_updated` - Student Profile Updated\n* `account_locked` - Account Locked After Failed Logins\n* `account_login_unlocked` - Account Login Unlocked\n* `password_changed` - Password Changed\n* `password_reset_completed` - Password Reset Completed\n* `otp_sent` - OTP Sent\n* `otp_verified` - OTP Verified\n* `otp_failed` - OTP Failed\n* `verification_submitted` - Verification Submitted\n* `verification_approved` - Verification Approved\n* `verification_rejected` - Verification Rejected\n* `verification_needs_update` - Verification Needs Update\n* `verification_card_accessed` - Verification Card Accessed\n* `group_created` - Group Created\n* `group_updated` - Group Updated\n* `group_deleted` - Group Deleted\n* `group_membership_approved` - Group Membership Approved\n* `group_membership_rejected` - Group Membership Rejected\n* `group_membership_blocked` - Group Membership Blocked\n* `group_external_channel_updated` - External Channel Updated\n* `group_external_channel_ticket_issued` - External Channel Ticket Issued\n* `group_external_channel_opened` - External Channel Opened\n* `file_uploaded` - File Uploaded\n* `file_updated` - File Updated\n* `file_deleted` - File Deleted\n* `file_access_ticket_issued` - File Access Ticket Issued\n* `lecture_uploaded` - Lecture Uploaded\n* `lecture_processing_updated` - Lecture Processing Updated\n* `lecture_viewed` - Lecture Viewed\n* `lecture_note_updated` - Lecture Note Updated\n* `lecture_updated` - Lecture Updated\n* `lecture_deleted` - Lecture Deleted\n* `lecture_processing_retried` - Lecture Processing Retried\n* `lecture_offline_license_issued` - Lecture Offline License Issued\n* `lecture_offline_license_renewed` - Lecture Offline License Renewed\n* `lecture_offline_license_revoked` - Lecture Offline License Revoked\n* `announcement_created` - Announcement Created\n* `announcement_updated` - Announcement Updated\n* `announcement_deleted` - Announcement Deleted\n* `print_order_created` - Print Order Created\n* `print_order_status_changed` - Print Order Status Changed\n* `print_order_assigned` - Print Order Assigned\n* `print_order_note_updated` - Print Order Note Updated\n* `print_pricing_changed` - Print Pricing Changed\n* `print_job_created` - Print Job Created\n* `print_job_status_changed` - Print Job Status Changed\n* `print_job_cancelled` - Print Job Cancelled\n* `printer_changed` - Printer Changed\n* `print_file_prepared` - Print-ready File Prepared\n* `stationery_sale_recorded` - Stationery Sale Recorded\n* `finance_rate_changed` - Exchange Rate Changed\n* `finance_expense_changed` - Expense Changed\n* `inventory_item_changed` - Inventory Item Changed\n* `stock_movement_recorded` - Stock Movement Recorded\n* `payment_recorded` - Payment Recorded\n* `payment_voided` - Payment Voided\n* `support_ticket_created` - Support Ticket Created\n* `support_ticket_status_changed` - Support Ticket Status Changed\n* `support_ticket_assigned` - Support Ticket Assigned\n* `support_ticket_priority_changed` - Support Ticket Priority Changed\n* `message_deleted` - Message Deleted\n* `message_report_resolved` - Message Report Resolved\n* `feedback_submitted` - Feedback Submitted\n* `feedback_workflow_updated` - Feedback Workflow Updated\n* `feedback_privacy_requested` - Feedback Privacy Requested\n* `mobile_release_policy_updated` - Mobile Release Policy Updated\n* `maintenance_mode_updated` - Maintenance Mode Updated\n* `feature_flag_updated` - Feature Flag Updated\n* `device_installation_registered` - Device Installation Registered\n* `device_installation_revoked` - Device Installation Revoked\n* `policy_accepted` - Policy Accepted\n* `account_deletion_requested` - Account Deletion Requested\n* `account_deletion_cancelled` - Account Deletion Cancelled\n* `account_deletion_completed` - Account Deletion Completed\n* `notification_campaign_created` - Notification Campaign Created\n* `academic_entity_created` - Academic Entity Created\n* `academic_entity_updated` - Academic Entity Updated\n* `academic_entity_deleted` - Academic Entity Deleted\n* `policy_version_published` - Policy Version Published\n* `policy_version_updated` - Policy Version Updated\n* `policy_version_unpublished` - Policy Version Unpublished\n* `current_term_changed` - Current Term Changed\n* `term_ended` - Term Ended\n* `term_rollover_undone` - Term Rollover Undone\n* `term_whatsapp_list_exported` - Term WhatsApp Removal List Exported\n* `student_term_confirmed` - Student Term Confirmed\n* `group_members_exported` - Group Members Exported\n* `user_profile_updated` - User Profile Updated\n* `account_device_bound` - Account Device Bound\n* `account_device_mismatch` - Account Device Mismatch\n* `account_device_switched` - Account Device Switched\n* `account_device_switch_refused` - Account Device Switch Refused\n* `account_device_reset` - Account Device Reset\n* `phone_verification_requested` - Phone Verification Requested\n* `phone_verification_code_issued` - Phone Verification Code Issued\n* `phone_verification_code_sent` - Phone Verification Code Sent\n* `phone_verification_verified` - Phone Verification Verified\n* `phone_verification_failed` - Phone Verification Failed\n* `phone_verification_rejected` - Phone Verification Rejected\n* `phone_verification_cancelled` - Phone Verification Cancelled\n* `phone_verification_expired` - Phone Verification Expired\n* `community_auto_joined` - Community Auto Joined"
             },
             "AvailableGroup": {
                 "type": "object",
@@ -24607,6 +26312,9 @@
                         "type": "string",
                         "maxLength": 32
                     },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
+                    },
                     "pages_per_sheet": {
                         "allOf": [
                             {
@@ -24683,6 +26391,9 @@
                     "cover": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
                     },
                     "pages_per_sheet": {
                         "allOf": [
@@ -25464,6 +27175,7 @@
                     },
                     "action_key": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -25530,7 +27242,6 @@
                     }
                 },
                 "required": [
-                    "action_key",
                     "context",
                     "created_at",
                     "id",
@@ -25547,6 +27258,7 @@
                     },
                     "action_key": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -25605,7 +27317,6 @@
                     "verification_statuses": {}
                 },
                 "required": [
-                    "action_key",
                     "context",
                     "question",
                     "title"
@@ -26001,6 +27712,20 @@
                         "type": "string",
                         "readOnly": true
                     },
+                    "message_type": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "attachment_meta": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "attachment_ticket_endpoint": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
                     "message_is_deleted": {
                         "type": "boolean",
                         "readOnly": true
@@ -26026,6 +27751,8 @@
                     }
                 },
                 "required": [
+                    "attachment_meta",
+                    "attachment_ticket_endpoint",
                     "created_at",
                     "group_id",
                     "group_name",
@@ -26034,12 +27761,200 @@
                     "message_id",
                     "message_is_deleted",
                     "message_sender_id",
+                    "message_type",
                     "reason",
                     "reporter_id",
                     "resolution_note",
                     "resolved_at",
                     "resolved_by_id",
                     "status"
+                ]
+            },
+            "DashboardPhoneVerification": {
+                "type": "object",
+                "description": "What staff see. The code is NOT here: it is returned once by ``claim``.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PhoneVerificationStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "claimed_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "claimed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code_generated": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "code_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "attempts": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "attempts",
+                    "claimed_at",
+                    "claimed_by_name",
+                    "code_generated",
+                    "code_sent_at",
+                    "created_at",
+                    "expires_at",
+                    "id",
+                    "phone_number",
+                    "rejection_reason",
+                    "status",
+                    "user_id",
+                    "user_name",
+                    "verified_at"
+                ]
+            },
+            "DashboardPhoneVerificationClaim": {
+                "type": "object",
+                "description": "What staff see. The code is NOT here: it is returned once by ``claim``.",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "user_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PhoneVerificationStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "claimed_by_name": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "claimed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code_generated": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "code_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "attempts": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "attempts",
+                    "claimed_at",
+                    "claimed_by_name",
+                    "code",
+                    "code_generated",
+                    "code_sent_at",
+                    "created_at",
+                    "expires_at",
+                    "id",
+                    "phone_number",
+                    "rejection_reason",
+                    "status",
+                    "user_id",
+                    "user_name",
+                    "verified_at"
                 ]
             },
             "DashboardPrintOrder": {
@@ -27006,6 +28921,19 @@
                     "platform"
                 ]
             },
+            "DeviceSwitchRequest": {
+                "type": "object",
+                "properties": {
+                    "device_switch_token": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048
+                    }
+                },
+                "required": [
+                    "device_switch_token"
+                ]
+            },
             "DeviceToken": {
                 "type": "object",
                 "properties": {
@@ -27479,6 +29407,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -27496,7 +29425,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "created_at",
                     "id",
                     "name",
@@ -27518,6 +29446,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -27525,7 +29454,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "name",
                     "university"
                 ]
@@ -27546,6 +29474,7 @@
                         "type": "boolean"
                     },
                     "platform": {
+                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -27557,6 +29486,7 @@
                     },
                     "role": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -27575,8 +29505,6 @@
                 "required": [
                     "id",
                     "key",
-                    "platform",
-                    "role",
                     "updated_at"
                 ]
             },
@@ -27593,6 +29521,7 @@
                         "type": "boolean"
                     },
                     "platform": {
+                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -27604,6 +29533,7 @@
                     },
                     "role": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -27615,9 +29545,7 @@
                     }
                 },
                 "required": [
-                    "key",
-                    "platform",
-                    "role"
+                    "key"
                 ]
             },
             "FeedbackKindEnum": {
@@ -27715,7 +29643,8 @@
                     },
                     "action_key": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "default": ""
                     },
                     "title": {
                         "type": "string",
@@ -29093,6 +31022,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -29110,7 +31040,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "created_at",
                     "faculty",
                     "faculty_name",
@@ -29133,6 +31062,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -29140,7 +31070,6 @@
                     }
                 },
                 "required": [
-                    "code",
                     "faculty",
                     "name"
                 ]
@@ -29285,6 +31214,22 @@
                     "reply_to": {
                         "type": "integer",
                         "nullable": true
+                    },
+                    "duration_ms": {
+                        "type": "integer",
+                        "maximum": 86400000,
+                        "minimum": 0,
+                        "nullable": true
+                    },
+                    "waveform": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 255
+                        },
+                        "maxItems": 128,
+                        "nullable": true
                     }
                 }
             },
@@ -29393,10 +31338,12 @@
                     "text",
                     "image",
                     "file",
+                    "voice",
+                    "audio",
                     "system"
                 ],
                 "type": "string",
-                "description": "* `text` - Text\n* `image` - Image\n* `file` - File\n* `system` - System"
+                "description": "* `text` - Text\n* `image` - Image\n* `file` - File\n* `voice` - Voice note\n* `audio` - Audio file\n* `system` - System"
             },
             "MetricTypeEnum": {
                 "enum": [
@@ -29467,7 +31414,8 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": true
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -29540,7 +31488,8 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": true
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -29812,6 +31761,69 @@
                 "type": "string",
                 "description": "* `8h` - 8h\n* `1w` - 1w\n* `forever` - forever"
             },
+            "MyPhoneVerification": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "phone_number": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/PhoneVerificationStatusEnum"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "code_sent_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "attempts_remaining": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "rejection_reason": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "attempts_remaining",
+                    "code_sent_at",
+                    "created_at",
+                    "expires_at",
+                    "id",
+                    "phone_number",
+                    "rejection_reason",
+                    "status",
+                    "verified_at"
+                ]
+            },
             "NUpDirectionEnum": {
                 "enum": [
                     "ltr",
@@ -30068,6 +32080,23 @@
                 },
                 "required": [
                     "updated_at"
+                ]
+            },
+            "OfflineSyncRequest": {
+                "type": "object",
+                "properties": {
+                    "license_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                        },
+                        "maxItems": 500
+                    }
+                },
+                "required": [
+                    "license_ids"
                 ]
             },
             "OrderPayment": {
@@ -30578,6 +32607,37 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/DashboardMessageReport"
+                        }
+                    }
+                }
+            },
+            "PaginatedDashboardPhoneVerificationList": {
+                "type": "object",
+                "required": [
+                    "count",
+                    "results"
+                ],
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "example": 123
+                    },
+                    "next": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=4"
+                    },
+                    "previous": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "uri",
+                        "example": "http://api.example.org/accounts/?page=2"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DashboardPhoneVerification"
                         }
                     }
                 }
@@ -31988,6 +34048,7 @@
                     },
                     "action_key": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 100
                     },
                     "title": {
@@ -32319,6 +34380,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -32339,6 +34401,7 @@
                         "type": "boolean"
                     },
                     "platform": {
+                        "default": "",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/MobilePlatformEnum"
@@ -32350,6 +34413,7 @@
                     },
                     "role": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "expose_to_mobile": {
@@ -32670,6 +34734,7 @@
                     },
                     "code": {
                         "type": "string",
+                        "default": "",
                         "maxLength": 32
                     },
                     "is_active": {
@@ -32732,7 +34797,8 @@
                         "nullable": true
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": true
                     },
                     "emergency_update_bypass": {
                         "type": "boolean"
@@ -32894,6 +34960,56 @@
                     }
                 }
             },
+            "PatchedPrintExtraOptionRequest": {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "$ref": "#/components/schemas/SectionEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 48
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_unit": {
+                        "$ref": "#/components/schemas/PriceUnitEnum"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Optional colour swatch, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                }
+            },
             "PatchedPrintJobStatusRequest": {
                 "type": "object",
                 "properties": {
@@ -32907,6 +35023,50 @@
                     "error": {
                         "type": "string",
                         "maxLength": 255
+                    }
+                }
+            },
+            "PatchedPrintOptionHelpRequest": {
+                "type": "object",
+                "description": "Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it).",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Option code; empty = the whole topic.",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "body": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Plain text; line breaks are kept."
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "image_caption": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -33463,6 +35623,65 @@
                     "role"
                 ]
             },
+            "PhoneVerificationConfirmRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 6,
+                        "pattern": "^\\d{6}$"
+                    }
+                },
+                "required": [
+                    "code"
+                ]
+            },
+            "PhoneVerificationCreateRequest": {
+                "type": "object",
+                "properties": {
+                    "phone_number": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 32
+                    },
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true,
+                        "minLength": 1,
+                        "maxLength": 128
+                    }
+                },
+                "required": [
+                    "password",
+                    "phone_number"
+                ]
+            },
+            "PhoneVerificationRejectRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "reason"
+                ]
+            },
+            "PhoneVerificationStatusEnum": {
+                "enum": [
+                    "pending_staff",
+                    "code_sent",
+                    "verified",
+                    "expired",
+                    "cancelled",
+                    "rejected"
+                ],
+                "type": "string",
+                "description": "* `pending_staff` - Waiting for staff\n* `code_sent` - Code sent\n* `verified` - Verified\n* `expired` - Expired\n* `cancelled` - Cancelled\n* `rejected` - Rejected"
+            },
             "PolicyAcceptanceRequest": {
                 "type": "object",
                 "properties": {
@@ -33493,6 +35712,15 @@
                 ],
                 "type": "string",
                 "description": "* `per_copy` - A fixed price for every bound copy\n* `per_wire_kg` - By the weight of the wire used"
+            },
+            "PriceUnitEnum": {
+                "enum": [
+                    "per_copy",
+                    "per_50_sheets",
+                    "per_sheet"
+                ],
+                "type": "string",
+                "description": "* `per_copy` - Per copy\n* `per_50_sheets` - Per 50 sheets of a copy (rounded up)\n* `per_sheet` - Per printed sheet"
             },
             "PrintBindingPrice": {
                 "type": "object",
@@ -33770,6 +35998,142 @@
                     "name"
                 ]
             },
+            "PrintExtraOption": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "is_deleted": {
+                        "type": "boolean",
+                        "readOnly": true
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "section": {
+                        "$ref": "#/components/schemas/SectionEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 48
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_unit": {
+                        "$ref": "#/components/schemas/PriceUnitEnum"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Optional colour swatch, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "created_at",
+                    "deleted_at",
+                    "id",
+                    "is_deleted",
+                    "name",
+                    "section",
+                    "updated_at"
+                ]
+            },
+            "PrintExtraOptionRequest": {
+                "type": "object",
+                "properties": {
+                    "section": {
+                        "$ref": "#/components/schemas/SectionEnum"
+                    },
+                    "code": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 48
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$"
+                    },
+                    "price_unit": {
+                        "$ref": "#/components/schemas/PriceUnitEnum"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "default": "SYP",
+                        "maxLength": 8
+                    },
+                    "color_hex": {
+                        "type": "string",
+                        "description": "Optional colour swatch, e.g. #1E3A8A.",
+                        "maxLength": 7
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "code",
+                    "name",
+                    "section"
+                ]
+            },
             "PrintJob": {
                 "type": "object",
                 "description": "One finished print order as the cashier sees it.",
@@ -33847,6 +36211,124 @@
                 ],
                 "type": "string",
                 "description": "* `printing` - printing\n* `done` - done\n* `failed` - failed"
+            },
+            "PrintOptionHelp": {
+                "type": "object",
+                "description": "Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it).",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "topic": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Option code; empty = the whole topic.",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Plain text; line breaks are kept."
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "image_url": {
+                        "type": "string",
+                        "nullable": true,
+                        "readOnly": true
+                    },
+                    "image_caption": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "body",
+                    "created_at",
+                    "id",
+                    "image_url",
+                    "title",
+                    "topic",
+                    "updated_at"
+                ]
+            },
+            "PrintOptionHelpRequest": {
+                "type": "object",
+                "description": "Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it).",
+                "properties": {
+                    "topic": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                    },
+                    "key": {
+                        "type": "string",
+                        "description": "Option code; empty = the whole topic.",
+                        "maxLength": 64
+                    },
+                    "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150
+                    },
+                    "body": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Plain text; line breaks are kept."
+                    },
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "image_caption": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "sort_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "body",
+                    "title",
+                    "topic"
+                ]
             },
             "PrintOrderCreateRequest": {
                 "type": "object",
@@ -34007,6 +36489,17 @@
                         "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
                         "readOnly": true
                     },
+                    "extras": {
+                        "readOnly": true,
+                        "description": "Chosen paper option per section: {section: code}."
+                    },
+                    "extras_price": {
+                        "type": "string",
+                        "format": "decimal",
+                        "pattern": "^-?\\d{0,10}(?:\\.\\d{0,2})?$",
+                        "readOnly": true,
+                        "description": "Total of the chosen paper options for the whole item."
+                    },
                     "product": {
                         "type": "integer",
                         "readOnly": true,
@@ -34054,6 +36547,8 @@
                     "cover_price",
                     "created_at",
                     "duplex_flip",
+                    "extras",
+                    "extras_price",
                     "file_size",
                     "file_type",
                     "has_uploaded_file",
@@ -34111,6 +36606,9 @@
                     "cover": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
                     },
                     "pages_per_sheet": {
                         "allOf": [
@@ -34201,6 +36699,9 @@
                     "cover": {
                         "type": "string",
                         "maxLength": 32
+                    },
+                    "extras": {
+                        "description": "Chosen paper option per section: {section: code} (see /printing/options/ extras)."
                     },
                     "pages_per_sheet": {
                         "allOf": [
@@ -35571,6 +38072,21 @@
                     "quantity"
                 ]
             },
+            "SectionEnum": {
+                "enum": [
+                    "front_cover",
+                    "back_cover",
+                    "front_transparency_required",
+                    "front_transparency_optional",
+                    "back_transparency_required",
+                    "back_transparency_optional",
+                    "final_delivery",
+                    "finishing",
+                    "design_paper"
+                ],
+                "type": "string",
+                "description": "* `front_cover` - نوع الغلاف الأمامي\n* `back_cover` - نوع الغلاف الخلفي\n* `front_transparency_required` - الشفافية الأمامية - مطلوب\n* `front_transparency_optional` - الشفافية الأمامية - غير مطلوبة\n* `back_transparency_required` - الشفافية الخلفية - مطلوب\n* `back_transparency_optional` - الشفافية الخلفية - غير مطلوبة\n* `final_delivery` - التسليم النهائي\n* `finishing` - الإخراج الفني\n* `design_paper` - خدمات أخرى: نوع الورق"
+            },
             "SellableItem": {
                 "type": "object",
                 "properties": {
@@ -35744,7 +38260,7 @@
             },
             "SessionVersionTokenRefreshRequest": {
                 "type": "object",
-                "description": "Reject old refresh tokens before SimpleJWT rotates them.",
+                "description": "Reject old refresh tokens before SimpleJWT rotates them; students must refresh from their bound device.\n\n``DeviceBindingRefused`` is raised for a device mismatch; the view renders it (see ``TokenRefreshView``).",
                 "properties": {
                     "refresh": {
                         "type": "string",
@@ -35866,6 +38382,26 @@
                     "max_sheets",
                     "min_sheets",
                     "weight_grams"
+                ]
+            },
+            "StaffRevokeRequest": {
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "lecture_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "note": {
+                        "type": "string",
+                        "maxLength": 200
+                    }
+                },
+                "required": [
+                    "user_id"
                 ]
             },
             "StockMovement": {
@@ -36504,7 +39040,8 @@
                     },
                     "code": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "default": ""
                     },
                     "university": {
                         "allOf": [
