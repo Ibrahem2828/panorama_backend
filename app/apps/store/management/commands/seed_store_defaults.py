@@ -35,8 +35,6 @@ class Command(BaseCommand):
             )
             made_categories += int(created)
         for order, name in enumerate(BRANDS, start=1):
-            _, created = StoreBrand.objects.get_or_create(
-                name=name, is_deleted=False, defaults={"sort_order": order}
-            )
+            _, created = StoreBrand.objects.get_or_create(name=name, is_deleted=False, defaults={"sort_order": order})
             made_brands += int(created)
         self.stdout.write(f"store defaults: {made_categories} categories and {made_brands} brands created")

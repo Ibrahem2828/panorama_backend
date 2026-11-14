@@ -33,8 +33,16 @@ urlpatterns = [
         dash.DashboardVariantViewSet.as_view({"post": "stock"}),
         name="dashboard-store-variant-stock",
     ),
-    path("dashboard/store/orders/<int:pk>/status/", dash.DashboardOrderStatusView.as_view(), name="dashboard-store-order-status"),
+    path(
+        "dashboard/store/orders/<int:pk>/status/",
+        dash.DashboardOrderStatusView.as_view(),
+        name="dashboard-store-order-status",
+    ),
     path("dashboard/store/reviews/<int:pk>/hide/", dash.HideReviewView.as_view(), name="dashboard-store-review-hide"),
-    path("dashboard/store/reviews/<int:pk>/unhide/", dash.UnhideReviewView.as_view(), name="dashboard-store-review-unhide"),
+    path(
+        "dashboard/store/reviews/<int:pk>/unhide/",
+        dash.UnhideReviewView.as_view(),
+        name="dashboard-store-review-unhide",
+    ),
     *router.urls,
 ]

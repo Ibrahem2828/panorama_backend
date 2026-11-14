@@ -42,7 +42,14 @@ def logo_url(brand: StoreBrand, request) -> str | None:
 
 
 def price_map(obj) -> dict:
-    return {currency: (None if getattr(obj, f"price_{currency.lower()}") is None else str(getattr(obj, f"price_{currency.lower()}"))) for currency in CURRENCIES}
+    return {
+        currency: (
+            None
+            if getattr(obj, f"price_{currency.lower()}") is None
+            else str(getattr(obj, f"price_{currency.lower()}"))
+        )
+        for currency in CURRENCIES
+    }
 
 
 def validate_specs(value):
@@ -199,7 +206,15 @@ class ProductDetailSerializer(ProductListSerializer):
     can_review = serializers.SerializerMethodField()
 
     class Meta(ProductListSerializer.Meta):
-        fields = [*ProductListSerializer.Meta.fields, "description", "specs", "prices", "variants", "images", "can_review"]
+        fields = [
+            *ProductListSerializer.Meta.fields,
+            "description",
+            "specs",
+            "prices",
+            "variants",
+            "images",
+            "can_review",
+        ]
 
     @extend_schema_field(VariantSerializer(many=True))
     def get_variants(self, obj):
@@ -280,7 +295,19 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StoreOrderItem
-        fields = ["id", "product", "variant", "name", "brand_name", "variant_label", "sku", "unit_price", "quantity", "line_total", "thumb_url"]
+        fields = [
+            "id",
+            "product",
+            "variant",
+            "name",
+            "brand_name",
+            "variant_label",
+            "sku",
+            "unit_price",
+            "quantity",
+            "line_total",
+            "thumb_url",
+        ]
 
     def get_thumb_url(self, obj) -> str | None:
         image = _primary_image(obj.product)
@@ -352,7 +379,13 @@ class CartItemSerializer(serializers.Serializer):
 
     def get_variant(self, obj) -> dict:
         v = obj.variant
-        return {"id": v.pk, "sku": v.sku, "colour_name": v.colour_name, "colour_hex": v.colour_hex, "size_label": v.size_label}
+        return {
+            "id": v.pk,
+            "sku": v.sku,
+            "colour_name": v.colour_name,
+            "colour_hex": v.colour_hex,
+            "size_label": v.size_label,
+        }
 
     def get_product(self, obj) -> dict:
         p = obj.variant.product
@@ -472,7 +505,6 @@ class DashboardVariantSerializer(serializers.ModelSerializer):
     initial_stock = serializers.IntegerField(write_only=True, required=False, min_value=0, max_value=100000)
     stock = serializers.SerializerMethodField()
     reorder_level = serializers.IntegerField(required=False, min_value=0, max_value=100000)
-    inventory_item = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = StoreVariant
@@ -493,6 +525,7 @@ class DashboardVariantSerializer(serializers.ModelSerializer):
             "reorder_level",
             "initial_stock",
         ]
+        read_only_fields = ["inventory_item"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -595,6 +628,21 @@ class DashboardImageSerializer(serializers.ModelSerializer):
     def validate_image(self, value):
         return _checked_image(value, "image")
 
+    @staticmethod
+    def _demote_other_primaries(product_id, keep_pk, wants_primary) -> None:
+        if wants_primary:  # the unique "one primary per product" rule must hold at every step
+            StoreProductImage.objects.filter(product_id=product_id, is_primary=True, is_deleted=False).exclude(
+                pk=keep_pk
+            ).update(is_primary=False)
+
+    def create(self, validated_data):
+        self._demote_other_primaries(validated_data["product"].pk, None, validated_data.get("is_primary"))
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        self._demote_other_primaries(instance.product_id, instance.pk, validated_data.get("is_primary"))
+        return super().update(instance, validated_data)
+
     def validate(self, attrs):
         product = attrs.get("product") or (self.instance.product if self.instance else None)
         variant = attrs.get("variant")
@@ -608,7 +656,18 @@ class DashboardImageSerializer(serializers.ModelSerializer):
 class DashboardOrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoreOrderItem
-        fields = ["id", "product", "variant", "name", "brand_name", "variant_label", "sku", "unit_price", "quantity", "line_total"]
+        fields = [
+            "id",
+            "product",
+            "variant",
+            "name",
+            "brand_name",
+            "variant_label",
+            "sku",
+            "unit_price",
+            "quantity",
+            "line_total",
+        ]
 
 
 class DashboardOrderSerializer(serializers.ModelSerializer):

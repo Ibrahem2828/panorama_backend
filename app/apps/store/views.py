@@ -77,7 +77,9 @@ class BrandListView(APIView):
         rows = StoreBrand.objects.filter(is_deleted=False, is_active=True).filter(
             Exists(visible_products().filter(brand=OuterRef("pk")))
         )
-        return success_response(data=BrandSerializer(rows, many=True, context={"request": request}).data, request=request)
+        return success_response(
+            data=BrandSerializer(rows, many=True, context={"request": request}).data, request=request
+        )
 
 
 class CategoryListView(APIView):
@@ -247,7 +249,10 @@ def _cart_payload(cart, request) -> dict:
         "items": CartItemSerializer(items, many=True, context={"request": request}).data,
         "items_count": sum(item.quantity for item in items),
         "max_lines": services.MAX_CART_LINES,
-        "totals": services.cart_totals(items),
+        "totals": {
+            currency: None if totals is None else {key: str(value) for key, value in totals.items()}
+            for currency, totals in services.cart_totals(items).items()
+        },
         "payment": "cash_on_pickup",
     }
 
@@ -272,7 +277,9 @@ class CartItemsView(APIView):
     def post(self, request):
         serializer = CartAddSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        cart = services.cart_add(request.user, serializer.validated_data["variant"], serializer.validated_data["quantity"])
+        cart = services.cart_add(
+            request.user, serializer.validated_data["variant"], serializer.validated_data["quantity"]
+        )
         return success_response(
             data=_cart_payload(cart, request),
             message="Added to cart",
@@ -329,9 +336,7 @@ class CheckoutView(APIView):
 
 
 def _order_queryset():
-    return StoreOrder.objects.filter(is_deleted=False).prefetch_related(
-        "items__product__images", "history"
-    )
+    return StoreOrder.objects.filter(is_deleted=False).prefetch_related("items__product__images", "history")
 
 
 class MyOrderViewSet(StandardExplicitActionViewSet):
@@ -427,4 +432,6 @@ class BrandLogoView(APIView):
         row = rows.first()
         if row is None:
             raise Http404
-        return serve_stored_image(request, row.logo, image_etag("brand", row.pk, row.logo.name, row.updated_at.isoformat()))
+        return serve_stored_image(
+            request, row.logo, image_etag("brand", row.pk, row.logo.name, row.updated_at.isoformat())
+        )

@@ -16,6 +16,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.common.models import BaseModel
+from apps.finance.models import InventoryItem
 
 CURRENCIES = ("SYP", "USD")
 _HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -140,6 +141,14 @@ class StoreVariant(BaseModel):
         field = f"price_{currency.lower()}"
         own = getattr(self, field)
         return own if own is not None else getattr(self.product, field)
+
+    @property
+    def shelf(self) -> InventoryItem:
+        """The inventory row holding this variant's stock; every variant made through the API has one."""
+
+        if self.inventory_item is None:
+            raise ValueError("This variant has no stock row.")
+        return self.inventory_item
 
     @property
     def available(self) -> int:

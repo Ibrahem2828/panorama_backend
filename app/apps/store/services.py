@@ -50,10 +50,12 @@ MAX_REVIEW_EDITS = 1
 class StoreError(APIException):
     """A refusal with a stable machine ``code`` (HTTP 400 unless said otherwise) and extra fields in ``errors``."""
 
-    status_code = http_status.HTTP_400_BAD_REQUEST
+    status_code: int = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, code: str, message: str, status_code: int | None = None, **extra):
-        super().__init__(detail={"detail": message, **extra}, code=code.lower())
+        super().__init__(detail=message, code=code.lower())
+        # Plain values: DRF would turn the numbers into strings.
+        self.detail = {"detail": message, **extra}  # type: ignore[dict-item]
         self.api_code = code
         self.api_message = message
         if status_code is not None:
@@ -148,6 +150,7 @@ def ensure_inventory_item(variant: StoreVariant, *, initial_stock: int = 0, acto
         InventoryService.record_movement(
             item, StockMovementType.PURCHASE, Decimal(initial_stock), actor=actor, note="رصيد افتتاحي لمتجر القرطاسية"
         )
+        item.refresh_from_db()
     return item
 
 
@@ -248,9 +251,7 @@ def price_lines(lines: list[tuple[StoreVariant, int]], currency: str) -> dict:
     for variant, quantity in lines:
         unit = variant.price_for(currency)
         if unit is None:
-            raise StoreError(
-                "PRICE_UNAVAILABLE", f"An item in the cart has no {currency} price.", variant=variant.pk
-            )
+            raise StoreError("PRICE_UNAVAILABLE", f"An item in the cart has no {currency} price.", variant=variant.pk)
         line_total = money(unit * quantity)
         subtotal += line_total
         priced.append((variant, quantity, unit, line_total))
@@ -289,7 +290,9 @@ def cart_totals(items: list[StoreCartItem]) -> dict[str, dict | None]:
 
 
 def _note(order: StoreOrder, old: str, new: str, actor, note: str = "") -> None:
-    StoreOrderStatusHistory.objects.create(order=order, old_status=old, new_status=new, changed_by=actor, note=note[:255])
+    StoreOrderStatusHistory.objects.create(
+        order=order, old_status=old, new_status=new, changed_by=actor, note=note[:255]
+    )
 
 
 @transaction.atomic
@@ -341,7 +344,9 @@ def checkout(user, currency: str, notes: str = "", request=None) -> StoreOrder:
             line_total=line_total,
         )
         if variant.inventory_item is None:
-            raise StoreError("INSUFFICIENT_STOCK", "Not enough stock.", http_status.HTTP_409_CONFLICT, variant=variant.pk)
+            raise StoreError(
+                "INSUFFICIENT_STOCK", "Not enough stock.", http_status.HTTP_409_CONFLICT, variant=variant.pk
+            )
         try:
             InventoryService.record_movement(
                 variant.inventory_item,
@@ -418,7 +423,9 @@ def _release_stock(order: StoreOrder, actor) -> None:
 
 
 @transaction.atomic
-def change_status(order: StoreOrder, new_status: str, actor, *, reason: str = "", note: str = "", customer=False, request=None):
+def change_status(
+    order: StoreOrder, new_status: str, actor, *, reason: str = "", note: str = "", customer=False, request=None
+):
     """Move an order along ``STORE_TRANSITIONS``. Cancelling needs a reason (staff) and returns the stock."""
 
     locked = StoreOrder.objects.select_for_update().get(pk=order.pk, is_deleted=False)
@@ -511,7 +518,9 @@ def post_review(user, product: StoreProduct, rating: int, text: str) -> StoreRev
             http_status.HTTP_403_FORBIDDEN,
         )
     if StoreReview.objects.filter(user=user, product=product, is_deleted=False).exists():
-        raise StoreError("REVIEW_EXISTS", "You already reviewed this product; edit your review.", http_status.HTTP_409_CONFLICT)
+        raise StoreError(
+            "REVIEW_EXISTS", "You already reviewed this product; edit your review.", http_status.HTTP_409_CONFLICT
+        )
     review = StoreReview.objects.create(user=user, product=product, rating=rating, text=text.strip())
     recompute_rating(product.pk)
     return review
@@ -519,9 +528,7 @@ def post_review(user, product: StoreProduct, rating: int, text: str) -> StoreRev
 
 @transaction.atomic
 def edit_review(user, product: StoreProduct, rating: int | None, text: str | None) -> StoreReview:
-    review = (
-        StoreReview.objects.select_for_update().filter(user=user, product=product, is_deleted=False).first()
-    )
+    review = StoreReview.objects.select_for_update().filter(user=user, product=product, is_deleted=False).first()
     if review is None:
         raise StoreError("REVIEW_NOT_FOUND", "You have not reviewed this product.", http_status.HTTP_404_NOT_FOUND)
     if review.edit_count >= MAX_REVIEW_EDITS:
@@ -554,4 +561,3 @@ def moderate_review(review: StoreReview, actor, *, hide: bool, reason: str = "",
         critical=True,
     )
     return review
-

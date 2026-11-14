@@ -751,7 +751,6 @@ class DashboardPrintJobFileView(APIView):
 
     @extend_schema(tags=["Dashboard"], responses={200: OpenApiResponse(description="Print-ready PDF")})
     def get(self, request, pk: int):
-        from django.http import HttpResponse
 
         job = get_object_or_404(PrintJob.objects.select_related("item"), pk=pk, is_deleted=False)
         data, _summary = render_item(job.item)

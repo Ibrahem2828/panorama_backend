@@ -75,7 +75,9 @@ def _counters(user) -> dict[str, int]:
     if has("store.manage"):
         from apps.store.models import StoreOrder, StoreOrderStatus
 
-        counts["store_orders_new"] = StoreOrder.objects.filter(status=StoreOrderStatus.PENDING, is_deleted=False).count()
+        counts["store_orders_new"] = StoreOrder.objects.filter(
+            status=StoreOrderStatus.PENDING, is_deleted=False
+        ).count()
     if has("support.manage"):
         from apps.support.models import SupportTicket, SupportTicketStatus
 

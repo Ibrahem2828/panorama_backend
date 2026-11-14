@@ -63,7 +63,8 @@ class _CatalogViewSet(AuditedModelWriteMixin, StandardModelViewSet):
     audit_delete_action = AuditAction.STORE_CATALOG_CHANGED
 
     def resolve_update_action(self, old, new):
-        return AuditAction.STORE_PRICE_CHANGED if _PRICE_FIELDS & (set(old) | set(new)) else self.audit_update_action
+        priced = any(old.get(field) != new.get(field) for field in _PRICE_FIELDS)
+        return AuditAction.STORE_PRICE_CHANGED if priced else self.audit_update_action
 
     def refuse_when_in_use(self, queryset) -> None:
         if queryset.filter(is_deleted=False).exists():
@@ -128,6 +129,7 @@ class DashboardVariantViewSet(_CatalogViewSet):
     def destroy(self, request, *args, **kwargs):
         variant = self.get_object()
         response = super().destroy(request, *args, **kwargs)
+        variant.refresh_from_db()
         services.sync_inventory_item(variant)  # off the counter's quick-sale list too
         return response
 
@@ -265,7 +267,9 @@ class DashboardOrderStatusView(APIView):
         serializer.is_valid(raise_exception=True)
         order = get_object_or_404(StoreOrder, pk=pk, is_deleted=False)
         data = serializer.validated_data
-        services.change_status(order, data["status"], request.user, reason=data["reason"], note=data["note"], request=request)
+        services.change_status(
+            order, data["status"], request.user, reason=data["reason"], note=data["note"], request=request
+        )
         order = StoreOrder.objects.select_related("user").prefetch_related("items", "history").get(pk=pk)
         return success_response(
             data=DashboardOrderSerializer(order).data,
@@ -303,7 +307,9 @@ class _ModerateView(APIView):
         review = services.moderate_review(
             review, request.user, hide=self.hide, reason=serializer.validated_data["reason"], request=request
         )
-        return success_response(data=DashboardReviewSerializer(review).data, request=request, code="STORE_REVIEW_MODERATED")
+        return success_response(
+            data=DashboardReviewSerializer(review).data, request=request, code="STORE_REVIEW_MODERATED"
+        )
 
 
 class HideReviewView(_ModerateView):
@@ -336,7 +342,10 @@ class DashboardSummaryView(APIView):
             )
             .filter(
                 Q(inventory_item__quantity__lte=0)
-                | Q(inventory_item__reorder_level__gt=0, inventory_item__quantity__lte=F("inventory_item__reorder_level"))
+                | Q(
+                    inventory_item__reorder_level__gt=0,
+                    inventory_item__quantity__lte=F("inventory_item__reorder_level"),
+                )
             )
             .select_related("product", "inventory_item")
             .order_by("inventory_item__quantity", "id")[:20]
@@ -353,7 +362,7 @@ class DashboardSummaryView(APIView):
                         "product": variant.product.name,
                         "label": variant.label,
                         "available": variant.available,
-                        "reorder_level": int(variant.inventory_item.reorder_level),
+                        "reorder_level": int(variant.shelf.reorder_level),
                     }
                     for variant in low
                 ],
