@@ -169,6 +169,9 @@ jobs:
           format: sarif
           output: trivy-image.sarif
           severity: CRITICAL,HIGH
+          # trivy-action ignores `severity` for SARIF output unless this is set; without it the gate failed on
+          # LOW/MEDIUM findings too.
+          limit-severities-for-sarif: true
           ignore-unfixed: true
           # Time-boxed ignores for the Twisted advisories (see .trivyignore, expire 2026-12-15).
           trivyignores: .trivyignore
