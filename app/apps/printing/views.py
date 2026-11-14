@@ -29,6 +29,7 @@ from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.idempotency import run_idempotent
+from apps.common.image_delivery import image_etag, serve_stored_image
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle, PrintAgentRateThrottle, PrintConvertRateThrottle
 from apps.common.viewsets import StandardExplicitActionViewSet, StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -898,22 +899,6 @@ class PrintOptionHelpListView(APIView):
         return response
 
 
-PNG_MAGIC = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
-JPEG_MAGIC = bytes([0xFF, 0xD8, 0xFF])
-
-
-def _sniff_image_type(handle) -> str:
-    head = handle.read(16)
-    handle.seek(0)
-    if head.startswith(PNG_MAGIC):
-        return "image/png"
-    if head[:3] == JPEG_MAGIC:
-        return "image/jpeg"
-    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
-        return "image/webp"
-    raise Http404
-
-
 class PrintOptionHelpImageView(APIView):
     """The help image of one option, behind authentication (``/media/`` is not published). Staff may also see inactive rows."""
 
@@ -925,23 +910,8 @@ class PrintOptionHelpImageView(APIView):
         row = rows.first()
         if row is None or not row.image:
             raise Http404
-        etag = (
-            '"'
-            + hashlib.sha256(f"{row.pk}:{row.image.name}:{row.updated_at.isoformat()}".encode()).hexdigest()[:32]
-            + '"'
-        )
-        if request.headers.get("If-None-Match") == etag:
-            response: HttpResponse | FileResponse = HttpResponse(status=status.HTTP_304_NOT_MODIFIED)
-        else:
-            try:
-                handle = row.image.open("rb")
-            except (FileNotFoundError, ValueError) as exc:
-                raise Http404 from exc
-            response = FileResponse(handle, content_type=_sniff_image_type(handle))
-        response["ETag"] = etag
-        response["Cache-Control"] = "private, max-age=3600"
-        response["X-Content-Type-Options"] = "nosniff"
-        return response
+        etag = image_etag(row.pk, row.image.name, row.updated_at.isoformat())
+        return serve_stored_image(request, row.image, etag)
 
 
 class DashboardPrintOptionHelpViewSet(AuditedPrintConfigurationViewSet):

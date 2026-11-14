@@ -26,6 +26,7 @@ class Capability:
     FEEDBACK_MANAGE = "feedback.manage"
     PRODUCT_MANAGE = "product.manage"
     FINANCE_MANAGE = "finance.manage"
+    STORE_MANAGE = "store.manage"
 
 
 ROLE_CAPABILITIES = {
@@ -47,8 +48,9 @@ ROLE_CAPABILITIES = {
         Capability.FEEDBACK_MANAGE,
         Capability.PRODUCT_MANAGE,
         Capability.FINANCE_MANAGE,
+        Capability.STORE_MANAGE,
     },
-    UserRole.PRINT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.PRINTING_MANAGE},
+    UserRole.PRINT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.PRINTING_MANAGE, Capability.STORE_MANAGE},
     UserRole.SUPPORT_STAFF: {Capability.DASHBOARD_ACCESS, Capability.SUPPORT_MANAGE, Capability.FEEDBACK_MANAGE},
     UserRole.CONTENT_MANAGER: {
         Capability.DASHBOARD_ACCESS,
@@ -218,6 +220,10 @@ class CanManageLectures(CapabilityPermission):
 
 class CanManagePrinting(CapabilityPermission):
     capability = Capability.PRINTING_MANAGE
+
+
+class CanManageStore(CapabilityPermission):
+    capability = Capability.STORE_MANAGE
 
 
 class CanManageSupport(CapabilityPermission):
