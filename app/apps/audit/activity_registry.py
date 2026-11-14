@@ -61,6 +61,7 @@ RESOURCE_NOUNS: dict[str, str] = {
     "dashboard/permission-templates": "قالب صلاحيات",
     "dashboard/printing/binding-prices": "سعر تجليد",
     "dashboard/printing/covers": "غلاف",
+    "dashboard/printing/extra-options": "خيار ورق",
     "dashboard/printing/pickup-locations": "موقع استلام",
     "dashboard/printing/pricing-rules": "قاعدة تسعير",
     "dashboard/printing/printers": "طابعة",

@@ -28,6 +28,8 @@ from .models import (
     PrintConversionStatus,
     PrintCoverOption,
     Printer,
+    PrintExtraOption,
+    PrintExtraSection,
     PrintJob,
     PrintOrder,
     PrintOrderItem,
@@ -73,6 +75,32 @@ def available_binding_codes() -> set[str]:
     return configured | set(PrintBinding.values)
 
 
+class ExtrasSelectionField(serializers.JSONField):
+    """``{section: code}``: the chosen paper option per section (a JSON object, or a JSON string in multipart forms)."""
+
+    default_error_messages = {"invalid": "الخيارات المحددة غير صالحة."}
+
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data)
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                self.fail("invalid")
+        if not isinstance(value, dict):
+            self.fail("invalid")
+        clean: dict[str, str] = {}
+        for section, code in value.items():
+            if section not in PrintExtraSection.values:
+                raise serializers.ValidationError(f"القسم غير معروف: {section}")
+            if code in (None, ""):
+                continue
+            if not isinstance(code, str) or len(code) > 48:
+                raise serializers.ValidationError(f"رمز الخيار غير صالح في القسم: {section}")
+            clean[section] = code
+        return clean
+
+
 class PrintOrderItemInputSerializer(serializers.Serializer):
     source_file = serializers.PrimaryKeyRelatedField(
         queryset=FileResource.objects.none(), required=False, allow_null=True
@@ -97,6 +125,9 @@ class PrintOrderItemInputSerializer(serializers.Serializer):
     )
     binding = serializers.CharField(max_length=32, required=False)
     cover = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    extras = ExtrasSelectionField(
+        required=False, help_text="Chosen paper option per section: {section: code} (see /printing/options/ extras)."
+    )
     pages_per_sheet = serializers.ChoiceField(choices=PAGES_PER_SHEET_CHOICES, default=1)
     n_up_direction = serializers.ChoiceField(choices=NUpDirection.choices, default=NUpDirection.LTR)
     duplex_flip = serializers.ChoiceField(choices=DuplexFlip.choices, default=DuplexFlip.LONG_EDGE)
@@ -188,6 +219,8 @@ class PrintOrderItemSerializer(serializers.ModelSerializer):
             "collate",
             "cover",
             "cover_price",
+            "extras",
+            "extras_price",
             "product",
             "sheets_count",
             "unit_price",
@@ -527,6 +560,9 @@ class CounterItemSerializer(serializers.Serializer):
     sides = serializers.ChoiceField(choices=PrintSides.choices, required=False)
     binding = serializers.CharField(max_length=32, default=PrintBinding.NONE)
     cover = serializers.CharField(max_length=32, required=False, allow_blank=True)
+    extras = ExtrasSelectionField(
+        required=False, help_text="Chosen paper option per section: {section: code} (see /printing/options/ extras)."
+    )
     pages_per_sheet = serializers.ChoiceField(choices=PAGES_PER_SHEET_CHOICES, default=1)
     binding_note = serializers.CharField(max_length=120, required=False, allow_blank=True)
     duplex_flip = serializers.ChoiceField(
@@ -656,6 +692,20 @@ class PrintCoverOptionSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = self.instance or PrintCoverOption()
+        for key, value in attrs.items():
+            setattr(instance, key, value)
+        instance.clean()
+        return attrs
+
+
+class PrintExtraOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrintExtraOption
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
+
+    def validate(self, attrs):
+        instance = self.instance or PrintExtraOption()
         for key, value in attrs.items():
             setattr(instance, key, value)
         instance.clean()

@@ -204,6 +204,58 @@ class PrintCoverOption(BaseModel):
         return self.name
 
 
+class PrintExtraSection(models.TextChoices):
+    """The sections of the paper/material options on the print shop's order form."""
+
+    FRONT_COVER = "front_cover", "نوع الغلاف الأمامي"
+    BACK_COVER = "back_cover", "نوع الغلاف الخلفي"
+    FRONT_TRANSPARENCY_REQUIRED = "front_transparency_required", "الشفافية الأمامية - مطلوب"
+    FRONT_TRANSPARENCY_OPTIONAL = "front_transparency_optional", "الشفافية الأمامية - غير مطلوبة"
+    BACK_TRANSPARENCY_REQUIRED = "back_transparency_required", "الشفافية الخلفية - مطلوب"
+    BACK_TRANSPARENCY_OPTIONAL = "back_transparency_optional", "الشفافية الخلفية - غير مطلوبة"
+    FINAL_DELIVERY = "final_delivery", "التسليم النهائي"
+    FINISHING = "finishing", "الإخراج الفني"
+    DESIGN_PAPER = "design_paper", "خدمات أخرى: نوع الورق"
+
+
+class PrintExtraPriceUnit(models.TextChoices):
+    PER_COPY = "per_copy", "Per copy"
+    PER_50_SHEETS = "per_50_sheets", "Per 50 sheets of a copy (rounded up)"
+    PER_SHEET = "per_sheet", "Per printed sheet"
+
+
+class PrintExtraOption(BaseModel):
+    """One choice inside a section of the order form (cover paper, transparency, delivery, finishing, design paper)."""
+
+    section = models.CharField(max_length=40, choices=PrintExtraSection.choices)
+    code = models.CharField(max_length=48)
+    name = models.CharField(max_length=150)
+    description = models.CharField(max_length=500, blank=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    price_unit = models.CharField(
+        max_length=16, choices=PrintExtraPriceUnit.choices, default=PrintExtraPriceUnit.PER_COPY
+    )
+    currency = models.CharField(max_length=8, default="SYP")
+    color_hex = models.CharField(max_length=7, blank=True, help_text="Optional colour swatch, e.g. #1E3A8A.")
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["section", "sort_order", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["section", "code", "currency"], name="printing_extra_section_code_cur_uniq")
+        ]
+
+    def clean(self):
+        if self.price < 0:
+            raise ValidationError({"price": "Price cannot be negative."})
+        if self.color_hex and (len(self.color_hex) != 7 or not self.color_hex.startswith("#")):
+            raise ValidationError({"color_hex": "Use a colour like #1E3A8A."})
+
+    def __str__(self):
+        return f"{self.section}: {self.name}"
+
+
 class PrintOrderSource(models.TextChoices):
     APP = "app", "Mobile or web app"
     COUNTER = "counter", "Print shop counter"
@@ -305,6 +357,10 @@ class PrintOrderItem(BaseModel):
     collate = models.BooleanField(default=True)
     cover = models.CharField(max_length=32, blank=True)
     cover_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    extras = models.JSONField(default=dict, blank=True, help_text="Chosen paper option per section: {section: code}.")
+    extras_price = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, help_text="Total of the chosen paper options for the whole item."
+    )
     product = models.ForeignKey(
         "printing.ReadyProduct", on_delete=models.SET_NULL, related_name="order_items", null=True, blank=True
     )
