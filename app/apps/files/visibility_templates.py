@@ -31,6 +31,15 @@ class FileVisibilityTemplateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at"]
 
+    def validate_name(self, value):
+        # DRF >= 3.18 no longer derives a validator from the conditional UniqueConstraint; enforce it here.
+        duplicates = FileVisibilityTemplate.objects.filter(name=value, is_deleted=False)
+        if self.instance is not None:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if duplicates.exists():
+            raise serializers.ValidationError("A template with this name already exists.")
+        return value
+
     def validate(self, attrs):
         merged = {**{f: getattr(self.instance, f, None) for f in self.Meta.fields if f != "id"}, **attrs}
         probe = FileVisibilityTemplate(**{key: value for key, value in merged.items() if key not in {"created_at"}})
