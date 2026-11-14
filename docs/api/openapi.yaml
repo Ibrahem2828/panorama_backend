@@ -1618,6 +1618,11 @@ paths:
           - printer_changed
           - stationery_sale_recorded
           - stock_movement_recorded
+          - store_catalog_changed
+          - store_order_created
+          - store_order_status_changed
+          - store_price_changed
+          - store_review_moderated
           - student_profile_updated
           - student_term_confirmed
           - support_ticket_assigned
@@ -1705,6 +1710,11 @@ paths:
           * `printer_changed` - Printer Changed
           * `print_file_prepared` - Print-ready File Prepared
           * `stationery_sale_recorded` - Stationery Sale Recorded
+          * `store_catalog_changed` - Store Catalogue Changed
+          * `store_price_changed` - Store Price Changed
+          * `store_order_created` - Store Order Created
+          * `store_order_status_changed` - Store Order Status Changed
+          * `store_review_moderated` - Store Review Moderated
           * `finance_rate_changed` - Exchange Rate Changed
           * `finance_expense_changed` - Expense Changed
           * `inventory_item_changed` - Inventory Item Changed
@@ -9505,6 +9515,1228 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardStats'
           description: ''
+  /api/v1/dashboard/store/brands/:
+    get:
+      operationId: v1_dashboard_store_brands_list
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardBrandList'
+          description: ''
+    post:
+      operationId: v1_dashboard_store_brands_create
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardBrandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardBrandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardBrandRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardBrand'
+          description: ''
+  /api/v1/dashboard/store/brands/{id}/:
+    get:
+      operationId: v1_dashboard_store_brands_retrieve
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store brand.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardBrand'
+          description: ''
+    put:
+      operationId: v1_dashboard_store_brands_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store brand.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardBrandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardBrandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardBrandRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardBrand'
+          description: ''
+    patch:
+      operationId: v1_dashboard_store_brands_partial_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store brand.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardBrandRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardBrandRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardBrandRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardBrand'
+          description: ''
+    delete:
+      operationId: v1_dashboard_store_brands_destroy
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store brand.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/store/categories/:
+    get:
+      operationId: v1_dashboard_store_categories_list
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardCategory'
+          description: ''
+    post:
+      operationId: v1_dashboard_store_categories_create
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardCategory'
+          description: ''
+  /api/v1/dashboard/store/categories/{id}/:
+    get:
+      operationId: v1_dashboard_store_categories_retrieve
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store category.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardCategory'
+          description: ''
+    put:
+      operationId: v1_dashboard_store_categories_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store category.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardCategory'
+          description: ''
+    patch:
+      operationId: v1_dashboard_store_categories_partial_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store category.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardCategoryRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardCategory'
+          description: ''
+    delete:
+      operationId: v1_dashboard_store_categories_destroy
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store category.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/store/images/:
+    get:
+      operationId: v1_dashboard_store_images_list
+      description: Product pictures. Send ``multipart/form-data`` with ``image``;
+        the original is kept and a <=480 px WebP is made.
+      parameters:
+      - in: query
+        name: is_primary
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - in: query
+        name: variant
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardImage'
+          description: ''
+    post:
+      operationId: v1_dashboard_store_images_create
+      description: Product pictures. Send ``multipart/form-data`` with ``image``;
+        the original is kept and a <=480 px WebP is made.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardImageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardImageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardImage'
+          description: ''
+  /api/v1/dashboard/store/images/{id}/:
+    get:
+      operationId: v1_dashboard_store_images_retrieve
+      description: Product pictures. Send ``multipart/form-data`` with ``image``;
+        the original is kept and a <=480 px WebP is made.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product image.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardImage'
+          description: ''
+    put:
+      operationId: v1_dashboard_store_images_update
+      description: Product pictures. Send ``multipart/form-data`` with ``image``;
+        the original is kept and a <=480 px WebP is made.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product image.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardImageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardImageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardImage'
+          description: ''
+    patch:
+      operationId: v1_dashboard_store_images_partial_update
+      description: Product pictures. Send ``multipart/form-data`` with ``image``;
+        the original is kept and a <=480 px WebP is made.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product image.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardImageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardImageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardImageRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardImage'
+          description: ''
+    delete:
+      operationId: v1_dashboard_store_images_destroy
+      description: Product pictures. Send ``multipart/form-data`` with ``image``;
+        the original is kept and a <=480 px WebP is made.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product image.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/store/orders/:
+    get:
+      operationId: v1_dashboard_store_orders_list
+      description: 'Orders, newest first. Filters: ``status``, ``q`` (order number,
+        customer name or phone), ``from``/``to`` (date).'
+      parameters:
+      - in: query
+        name: from
+        schema:
+          type: string
+          format: date
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - confirmed
+          - pending
+          - picked_up
+          - ready_for_pickup
+      - in: query
+        name: to
+        schema:
+          type: string
+          format: date
+      tags:
+      - Dashboard store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardOrderListList'
+          description: ''
+  /api/v1/dashboard/store/orders/{id}/:
+    get:
+      operationId: v1_dashboard_store_orders_retrieve
+      description: 'Orders, newest first. Filters: ``status``, ``q`` (order number,
+        customer name or phone), ``from``/``to`` (date).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store order.
+        required: true
+      tags:
+      - Dashboard store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardOrder'
+          description: ''
+  /api/v1/dashboard/store/orders/{id}/status/:
+    patch:
+      operationId: v1_dashboard_store_orders_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardOrder'
+          description: ''
+  /api/v1/dashboard/store/products/:
+    get:
+      operationId: v1_dashboard_store_products_list
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: query
+        name: brand
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardProductList'
+          description: ''
+    post:
+      operationId: v1_dashboard_store_products_create
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardProduct'
+          description: ''
+  /api/v1/dashboard/store/products/{id}/:
+    get:
+      operationId: v1_dashboard_store_products_retrieve
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardProduct'
+          description: ''
+    put:
+      operationId: v1_dashboard_store_products_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardProductRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardProduct'
+          description: ''
+    patch:
+      operationId: v1_dashboard_store_products_partial_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardProductRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardProductRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardProductRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardProduct'
+          description: ''
+    delete:
+      operationId: v1_dashboard_store_products_destroy
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/store/reviews/:
+    get:
+      operationId: v1_dashboard_store_reviews_list
+      description: Base for a deliberately small set of custom, documented write actions.
+      parameters:
+      - in: query
+        name: is_hidden
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - in: query
+        name: rating
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardReviewList'
+          description: ''
+  /api/v1/dashboard/store/reviews/{id}/:
+    get:
+      operationId: v1_dashboard_store_reviews_retrieve
+      description: Base for a deliberately small set of custom, documented write actions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store review.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardReview'
+          description: ''
+  /api/v1/dashboard/store/reviews/{id}/hide/:
+    post:
+      operationId: v1_dashboard_store_reviews_hide_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HideReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HideReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HideReviewRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardReview'
+          description: ''
+  /api/v1/dashboard/store/reviews/{id}/unhide/:
+    post:
+      operationId: v1_dashboard_store_reviews_unhide_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HideReviewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HideReviewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HideReviewRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardReview'
+          description: ''
+  /api/v1/dashboard/store/summary/:
+    get:
+      operationId: v1_dashboard_store_summary_retrieve
+      description: Order counts by status, today's orders and the variants that are
+        out of stock or at their reorder level.
+      tags:
+      - Dashboard store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/store/variants/:
+    get:
+      operationId: v1_dashboard_store_variants_list
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: مصطلح البحث.
+        schema:
+          type: string
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDashboardVariantList'
+          description: ''
+    post:
+      operationId: v1_dashboard_store_variants_create
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardVariantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardVariantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardVariantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardVariant'
+          description: ''
+  /api/v1/dashboard/store/variants/{id}/:
+    get:
+      operationId: v1_dashboard_store_variants_retrieve
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store variant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardVariant'
+          description: ''
+    put:
+      operationId: v1_dashboard_store_variants_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store variant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardVariantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DashboardVariantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DashboardVariantRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardVariant'
+          description: ''
+    patch:
+      operationId: v1_dashboard_store_variants_partial_update
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store variant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardVariantRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardVariantRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDashboardVariantRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardVariant'
+          description: ''
+    delete:
+      operationId: v1_dashboard_store_variants_destroy
+      description: CRUD with one audit row per write; a write that touches a price
+        is logged as a price change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store variant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/dashboard/store/variants/{id}/stock/:
+    post:
+      operationId: v1_dashboard_store_variants_stock_create
+      description: Book a stock movement on the variant's shelf row (the same log
+        the inventory screens use).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Dashboard store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdjustRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdjustRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdjustRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/dashboard/students/:
     get:
       operationId: v1_dashboard_students_list
@@ -14936,6 +16168,536 @@ paths:
               schema:
                 $ref: '#/components/schemas/Semester'
           description: ''
+  /api/v1/store/brands/:
+    get:
+      operationId: v1_store_brands_list
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brand'
+          description: ''
+  /api/v1/store/brands/{id}/logo/:
+    get:
+      operationId: v1_store_brands_logo_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '304':
+          description: No response body
+  /api/v1/store/cart/:
+    get:
+      operationId: v1_store_cart_retrieve
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: v1_store_cart_destroy
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/store/cart/items/:
+    post:
+      operationId: v1_store_cart_items_create
+      tags:
+      - Store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartAddRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CartAddRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CartAddRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/store/cart/items/{id}/:
+    patch:
+      operationId: v1_store_cart_items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCartQuantityRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCartQuantityRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCartQuantityRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: v1_store_cart_items_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/store/categories/:
+    get:
+      operationId: v1_store_categories_list
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/store/checkout/:
+    post:
+      operationId: v1_store_checkout_create
+      tags:
+      - Store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/v1/store/images/{id}/:
+    get:
+      operationId: v1_store_images_retrieve
+      description: A product picture, behind authentication. ``?variant=thumb`` is
+        the <=480 px WebP preview.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: variant
+        schema:
+          type: string
+          enum:
+          - thumb
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '304':
+          description: No response body
+  /api/v1/store/orders/:
+    get:
+      operationId: v1_store_orders_list
+      description: Your orders, newest first. Filter with ``?status=``.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: أي حقل يجب استخدامه عند ترتيب النتائج.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - confirmed
+          - pending
+          - picked_up
+          - ready_for_pickup
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderListList'
+          description: ''
+  /api/v1/store/orders/{id}/:
+    get:
+      operationId: v1_store_orders_retrieve
+      description: Your orders, newest first. Filter with ``?status=``.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store order.
+        required: true
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/v1/store/orders/{id}/cancel/:
+    post:
+      operationId: v1_store_orders_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/v1/store/products/:
+    get:
+      operationId: v1_store_products_list
+      description: 'Product grid and detail. ``ordering``: popular (default), newest,
+        rating, price_asc, price_desc (by ``currency``).'
+      parameters:
+      - in: query
+        name: brand
+        schema:
+          type: integer
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: currency
+        schema:
+          type: string
+          enum:
+          - SYP
+          - USD
+      - in: query
+        name: in_stock
+        schema:
+          type: boolean
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          enum:
+          - newest
+          - popular
+          - price_asc
+          - price_desc
+          - rating
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductListList'
+          description: ''
+  /api/v1/store/products/{id}/:
+    get:
+      operationId: v1_store_products_retrieve
+      description: 'Product grid and detail. ``ordering``: popular (default), newest,
+        rating, price_asc, price_desc (by ``currency``).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: نوع رقم صحيح فريد يحدد هذا store product.
+        required: true
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+          description: ''
+  /api/v1/store/products/{id}/reviews/:
+    get:
+      operationId: v1_store_products_reviews_list
+      description: '``GET`` the visible reviews (paginated); ``POST`` your own review
+        of a product you picked up.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+          description: ''
+    post:
+      operationId: v1_store_products_reviews_create
+      description: '``GET`` the visible reviews (paginated); ``POST`` your own review
+        of a product you picked up.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReviewWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReviewWriteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/v1/store/products/{id}/reviews/mine/:
+    get:
+      operationId: v1_store_products_reviews_mine_retrieve
+      description: 'Your own review: ``GET`` it, ``PATCH`` it (allowed once).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+    patch:
+      operationId: v1_store_products_reviews_mine_partial_update
+      description: 'Your own review: ``GET`` it, ``PATCH`` it (allowed once).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Store
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewEditRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewEditRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReviewEditRequest'
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
   /api/v1/students/me/profile/:
     get:
       operationId: v1_students_me_profile_retrieve
@@ -16233,6 +17995,11 @@ components:
       - printer_changed
       - print_file_prepared
       - stationery_sale_recorded
+      - store_catalog_changed
+      - store_price_changed
+      - store_order_created
+      - store_order_status_changed
+      - store_review_moderated
       - finance_rate_changed
       - finance_expense_changed
       - inventory_item_changed
@@ -16350,6 +18117,11 @@ components:
         * `printer_changed` - Printer Changed
         * `print_file_prepared` - Print-ready File Prepared
         * `stationery_sale_recorded` - Stationery Sale Recorded
+        * `store_catalog_changed` - Store Catalogue Changed
+        * `store_price_changed` - Store Price Changed
+        * `store_order_created` - Store Order Created
+        * `store_order_status_changed` - Store Order Status Changed
+        * `store_review_moderated` - Store Review Moderated
         * `finance_rate_changed` - Exchange Rate Changed
         * `finance_expense_changed` - Expense Changed
         * `inventory_item_changed` - Inventory Item Changed
@@ -16488,6 +18260,35 @@ components:
     BlankEnum:
       enum:
       - ''
+    Brand:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        logo_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - id
+      - logo_url
+      - name
+    BrandRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name
     BulkDecisionActionEnum:
       enum:
       - approve_all
@@ -16539,6 +18340,43 @@ components:
       required:
       - id
       - ok
+    CancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 255
+    CartAddRequest:
+      type: object
+      properties:
+        variant:
+          type: integer
+          minimum: 1
+        quantity:
+          type: integer
+          maximum: 99
+          minimum: 1
+          default: 1
+      required:
+      - variant
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+      - slug
     CategoryEnum:
       enum:
       - account
@@ -16646,6 +18484,25 @@ components:
           $ref: '#/components/schemas/MuteForEnum'
       required:
       - is_muted
+    CheckoutCurrencyEnum:
+      enum:
+      - SYP
+      - USD
+      type: string
+      description: |-
+        * `SYP` - SYP
+        * `USD` - USD
+    CheckoutRequest:
+      type: object
+      properties:
+        currency:
+          $ref: '#/components/schemas/CheckoutCurrencyEnum'
+        notes:
+          type: string
+          default: ''
+          maxLength: 500
+      required:
+      - currency
     ColorModeEnum:
       enum:
       - black_white
@@ -17110,6 +18967,106 @@ components:
       - status
       - timeline
       - user
+    DashboardBrand:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        logo_url:
+          type: string
+          nullable: true
+          readOnly: true
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        products_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - logo_url
+      - name
+      - products_count
+    DashboardBrandRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        logo:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+      required:
+      - name
+    DashboardCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+      required:
+      - id
+      - name
+      - slug
+    DashboardCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+      required:
+      - name
+      - slug
     DashboardChatGroup:
       type: object
       properties:
@@ -17739,6 +19696,63 @@ components:
       required:
       - name
       - university
+    DashboardImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        variant:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          readOnly: true
+        thumb_url:
+          type: string
+          readOnly: true
+        alt_text:
+          type: string
+          maxLength: 150
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_primary:
+          type: boolean
+      required:
+      - id
+      - product
+      - thumb_url
+      - url
+    DashboardImageRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        variant:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          format: binary
+          writeOnly: true
+        alt_text:
+          type: string
+          maxLength: 150
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_primary:
+          type: boolean
+      required:
+      - image
+      - product
     DashboardLecture:
       type: object
       properties:
@@ -17929,6 +19943,203 @@ components:
       - resolved_at
       - resolved_by_id
       - status
+    DashboardOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StoreOrderStatusEnum'
+        customer:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        currency:
+          type: string
+          maxLength: 3
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rounding_adjustment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        notes:
+          type: string
+          maxLength: 500
+        internal_notes:
+          type: string
+          maxLength: 500
+        cancel_reason:
+          type: string
+          maxLength: 255
+        cancelled_by_customer:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        ready_at:
+          type: string
+          format: date-time
+          nullable: true
+        picked_up_at:
+          type: string
+          format: date-time
+          nullable: true
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardOrderItem'
+          readOnly: true
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+          readOnly: true
+      required:
+      - code
+      - created_at
+      - currency
+      - customer
+      - history
+      - id
+      - items
+      - subtotal
+      - total
+    DashboardOrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        variant:
+          type: integer
+        name:
+          type: string
+          maxLength: 150
+        brand_name:
+          type: string
+          maxLength: 100
+        variant_label:
+          type: string
+          maxLength: 110
+        sku:
+          type: string
+          maxLength: 64
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - id
+      - line_total
+      - name
+      - product
+      - quantity
+      - unit_price
+      - variant
+    DashboardOrderList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StoreOrderStatusEnum'
+        customer:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        currency:
+          type: string
+          maxLength: 3
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rounding_adjustment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        notes:
+          type: string
+          maxLength: 500
+        internal_notes:
+          type: string
+          maxLength: 500
+        cancel_reason:
+          type: string
+          maxLength: 255
+        cancelled_by_customer:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        ready_at:
+          type: string
+          format: date-time
+          nullable: true
+        picked_up_at:
+          type: string
+          format: date-time
+          nullable: true
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+        items_count:
+          type: integer
+          readOnly: true
+      required:
+      - code
+      - created_at
+      - currency
+      - customer
+      - id
+      - items_count
+      - subtotal
+      - total
     DashboardPhoneVerification:
       type: object
       description: 'What staff see. The code is NOT here: it is returned once by ``claim``.'
@@ -18273,6 +20484,151 @@ components:
       - new_status
       - old_status
       - public_note
+    DashboardProduct:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        brand:
+          type: integer
+          nullable: true
+        category:
+          type: integer
+        specs:
+          description: 'List of {"label": "...", "value": "..."}.'
+        price_syp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        price_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        rating_avg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          readOnly: true
+        rating_count:
+          type: integer
+          readOnly: true
+        sold_count:
+          type: integer
+          readOnly: true
+        variants_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - created_at
+      - id
+      - name
+      - rating_avg
+      - rating_count
+      - sold_count
+      - variants_count
+    DashboardProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        brand:
+          type: integer
+          nullable: true
+        category:
+          type: integer
+        specs:
+          description: 'List of {"label": "...", "value": "..."}.'
+        price_syp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        price_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - category
+      - name
+    DashboardReview:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        product_name:
+          type: string
+          readOnly: true
+        author:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        text:
+          type: string
+          maxLength: 1000
+        edit_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_hidden:
+          type: boolean
+        hidden_reason:
+          type: string
+          maxLength: 255
+        moderated_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - created_at
+      - id
+      - product
+      - product_name
+      - rating
     DashboardStats:
       type: object
       properties:
@@ -18673,6 +21029,118 @@ components:
           maxLength: 120
       required:
       - full_name
+    DashboardVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        sku:
+          type: string
+          maxLength: 64
+        colour_name:
+          type: string
+          maxLength: 50
+        colour_hex:
+          type: string
+          maxLength: 7
+        size_label:
+          type: string
+          maxLength: 50
+        price_syp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        price_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        max_per_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+          nullable: true
+          description: Per-order cap; empty = the store default.
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        inventory_item:
+          type: integer
+          readOnly: true
+          nullable: true
+        stock:
+          type: integer
+          readOnly: true
+        reorder_level:
+          type: integer
+          maximum: 100000
+          minimum: 0
+      required:
+      - id
+      - inventory_item
+      - product
+      - stock
+    DashboardVariantRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        sku:
+          type: string
+          maxLength: 64
+        colour_name:
+          type: string
+          maxLength: 50
+        colour_hex:
+          type: string
+          maxLength: 7
+        size_label:
+          type: string
+          maxLength: 50
+        price_syp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        price_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        max_per_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+          nullable: true
+          description: Per-order cap; empty = the store default.
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reorder_level:
+          type: integer
+          maximum: 100000
+          minimum: 0
+        initial_stock:
+          type: integer
+          maximum: 100000
+          minimum: 0
+          writeOnly: true
+      required:
+      - product
     DecisionActionEnum:
       enum:
       - approve_all
@@ -19862,6 +22330,32 @@ components:
       description: |-
         * `all_members` - All Members
         * `admins_only` - Admins Only
+    HideReviewRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 255
+    History:
+      type: object
+      properties:
+        old_status:
+          type: string
+          maxLength: 24
+        new_status:
+          type: string
+          maxLength: 24
+        note:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - new_status
     InventoryCategoryEnum:
       enum:
       - paper
@@ -21253,6 +23747,171 @@ components:
           maxItems: 500
       required:
       - license_ids
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StoreOrderStatusEnum'
+        currency:
+          type: string
+          maxLength: 3
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        items_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        rounding_adjustment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        notes:
+          type: string
+          maxLength: 500
+        cancel_reason:
+          type: string
+          maxLength: 255
+        cancelled_by_customer:
+          type: boolean
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+        ready_at:
+          type: string
+          format: date-time
+          nullable: true
+        picked_up_at:
+          type: string
+          format: date-time
+          nullable: true
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+        can_cancel:
+          type: boolean
+          readOnly: true
+        payment:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+          readOnly: true
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/History'
+          readOnly: true
+      required:
+      - can_cancel
+      - code
+      - created_at
+      - currency
+      - history
+      - id
+      - items
+      - items_count
+      - payment
+      - subtotal
+      - total
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        product:
+          type: integer
+        variant:
+          type: integer
+        name:
+          type: string
+          maxLength: 150
+        brand_name:
+          type: string
+          maxLength: 100
+        variant_label:
+          type: string
+          maxLength: 110
+        sku:
+          type: string
+          maxLength: 64
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+        line_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        thumb_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - id
+      - line_total
+      - name
+      - product
+      - quantity
+      - thumb_url
+      - unit_price
+      - variant
+    OrderList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StoreOrderStatusEnum'
+        currency:
+          type: string
+          maxLength: 3
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        items_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - code
+      - created_at
+      - currency
+      - id
+      - items_count
+      - total
     OrderPayment:
       type: object
       properties:
@@ -21483,6 +24142,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardAccountDeletion'
+    PaginatedDashboardBrandList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardBrand'
     PaginatedDashboardChatGroupList:
       type: object
       required:
@@ -21644,6 +24326,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardMessageReport'
+    PaginatedDashboardOrderListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardOrderList'
     PaginatedDashboardPhoneVerificationList:
       type: object
       required:
@@ -21690,6 +24395,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardPrintOrder'
+    PaginatedDashboardProductList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardProduct'
+    PaginatedDashboardReviewList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardReview'
     PaginatedDashboardStudentList:
       type: object
       required:
@@ -21782,6 +24533,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DashboardUser'
+    PaginatedDashboardVariantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardVariant'
     PaginatedExchangeRateList:
       type: object
       required:
@@ -22196,6 +24970,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Notification'
+    PaginatedOrderListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderList'
     PaginatedOrderPaymentList:
       type: object
       required:
@@ -22334,6 +25131,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PrivacyPolicyVersion'
+    PaginatedProductListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductList'
     PaginatedPublicSuggestionList:
       type: object
       required:
@@ -22705,6 +25525,51 @@ components:
           nullable: true
         is_active:
           type: boolean
+    PatchedCartQuantityRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          maximum: 99
+          minimum: 1
+    PatchedDashboardBrandRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        logo:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+    PatchedDashboardCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 60
+          pattern: ^[-a-zA-Z0-9_]+$
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
     PatchedDashboardFeedbackPromptPolicyRequest:
       type: object
       properties:
@@ -22808,6 +25673,28 @@ components:
           type: string
           writeOnly: true
           maxLength: 100
+    PatchedDashboardImageRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        variant:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          format: binary
+          writeOnly: true
+        alt_text:
+          type: string
+          maxLength: 150
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_primary:
+          type: boolean
     PatchedDashboardLectureRequest:
       type: object
       properties:
@@ -22829,6 +25716,39 @@ components:
           writeOnly: true
         is_published:
           type: boolean
+    PatchedDashboardProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        brand:
+          type: integer
+          nullable: true
+        category:
+          type: integer
+        specs:
+          description: 'List of {"label": "...", "value": "..."}.'
+        price_syp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        price_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
     PatchedDashboardSubjectRequest:
       type: object
       description: 'The dashboard list row: the subject plus how much content hangs
@@ -22867,6 +25787,56 @@ components:
         job_title:
           type: string
           maxLength: 120
+    PatchedDashboardVariantRequest:
+      type: object
+      properties:
+        product:
+          type: integer
+        sku:
+          type: string
+          maxLength: 64
+        colour_name:
+          type: string
+          maxLength: 50
+        colour_hex:
+          type: string
+          maxLength: 7
+        size_label:
+          type: string
+          maxLength: 50
+        price_syp:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        price_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        max_per_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 1
+          format: int64
+          nullable: true
+          description: Per-order cap; empty = the store default.
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reorder_level:
+          type: integer
+          maximum: 100000
+          minimum: 0
+        initial_stock:
+          type: integer
+          maximum: 100000
+          minimum: 0
+          writeOnly: true
     PatchedDeviceInstallationRequest:
       type: object
       properties:
@@ -23277,6 +26247,19 @@ components:
           $ref: '#/components/schemas/QuietHoursRequest'
         mute_communities:
           type: boolean
+    PatchedOrderStatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StoreOrderStatusEnum'
+        reason:
+          type: string
+          default: ''
+          maxLength: 255
+        note:
+          type: string
+          default: ''
+          maxLength: 500
     PatchedPermissionTemplateRequest:
       type: object
       properties:
@@ -23635,6 +26618,16 @@ components:
         source_file:
           type: integer
           nullable: true
+    PatchedReviewEditRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        text:
+          type: string
+          maxLength: 1000
     PatchedSemesterRequest:
       type: object
       properties:
@@ -25206,6 +28199,169 @@ components:
         * `ready` - Ready
         * `failed` - Failed
         * `quarantined` - Quarantined
+    ProductDetail:
+      type: object
+      description: 'Card of the product grid: picture, name, rating and the lowest
+        price per currency.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        brand:
+          allOf:
+          - $ref: '#/components/schemas/BrandRef'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        thumb_url:
+          type: string
+          nullable: true
+          readOnly: true
+        rating_avg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          readOnly: true
+        rating_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        price_from:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+          readOnly: true
+        in_stock:
+          type: boolean
+          readOnly: true
+        description:
+          type: string
+        specs:
+          description: 'List of {"label": "...", "value": "..."}.'
+        prices:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+          readOnly: true
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variant'
+          readOnly: true
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+          readOnly: true
+        can_review:
+          type: boolean
+          readOnly: true
+      required:
+      - brand
+      - can_review
+      - category
+      - id
+      - image_url
+      - images
+      - in_stock
+      - name
+      - price_from
+      - prices
+      - rating_avg
+      - thumb_url
+      - variants
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        thumb_url:
+          type: string
+          readOnly: true
+        alt_text:
+          type: string
+          maxLength: 150
+        is_primary:
+          type: boolean
+        variant:
+          type: integer
+          nullable: true
+      required:
+      - id
+      - thumb_url
+      - url
+    ProductList:
+      type: object
+      description: 'Card of the product grid: picture, name, rating and the lowest
+        price per currency.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        brand:
+          allOf:
+          - $ref: '#/components/schemas/BrandRef'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        image_url:
+          type: string
+          nullable: true
+          readOnly: true
+        thumb_url:
+          type: string
+          nullable: true
+          readOnly: true
+        rating_avg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          readOnly: true
+        rating_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        price_from:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+          readOnly: true
+        in_stock:
+          type: boolean
+          readOnly: true
+      required:
+      - brand
+      - category
+      - id
+      - image_url
+      - in_stock
+      - name
+      - price_from
+      - rating_avg
+      - thumb_url
     PublicReadyProduct:
       type: object
       description: What a customer sees of a product (no internal fields).
@@ -25628,6 +28784,54 @@ components:
           maxLength: 500
       required:
       - action
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        text:
+          type: string
+          maxLength: 1000
+        author:
+          type: string
+          description: 'First name only: reviews are public to every logged-in user.'
+          readOnly: true
+        edited:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - created_at
+      - edited
+      - id
+      - rating
+      - updated_at
+    ReviewWriteRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        text:
+          type: string
+          default: ''
+          maxLength: 1000
+      required:
+      - rating
     Sale:
       type: object
       properties:
@@ -26009,6 +29213,31 @@ components:
           maxLength: 200
       required:
       - user_id
+    StockAdjustMovementTypeEnum:
+      enum:
+      - purchase
+      - adjustment
+      - waste
+      type: string
+      description: |-
+        * `purchase` - purchase
+        * `adjustment` - adjustment
+        * `waste` - waste
+    StockAdjustRequest:
+      type: object
+      properties:
+        movement_type:
+          $ref: '#/components/schemas/StockAdjustMovementTypeEnum'
+        quantity:
+          type: integer
+          description: Positive; SIGNED for an adjustment.
+        note:
+          type: string
+          default: ''
+          maxLength: 255
+      required:
+      - movement_type
+      - quantity
     StockMovement:
       type: object
       properties:
@@ -26119,6 +29348,20 @@ components:
         * `usage` - Usage (consumes stock)
         * `waste` - Waste or damage (removes stock)
         * `adjustment` - Count adjustment (signed)
+    StoreOrderStatusEnum:
+      enum:
+      - pending
+      - confirmed
+      - ready_for_pickup
+      - picked_up
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `confirmed` - Confirmed
+        * `ready_for_pickup` - Ready for pickup
+        * `picked_up` - Picked up
+        * `cancelled` - Cancelled
     StudentAcademicProfile:
       type: object
       properties:
@@ -27063,6 +30306,50 @@ components:
         * `content_manager` - Content Manager
         * `student` - Student
         * `normal_user` - Normal User
+    Variant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        sku:
+          type: string
+          maxLength: 64
+        colour_name:
+          type: string
+          maxLength: 50
+        colour_hex:
+          type: string
+          maxLength: 7
+        size_label:
+          type: string
+          maxLength: 50
+        prices:
+          type: object
+          additionalProperties:
+            type: string
+            nullable: true
+          readOnly: true
+        available:
+          type: integer
+          readOnly: true
+        in_stock:
+          type: boolean
+          readOnly: true
+        max_per_order:
+          type: integer
+          readOnly: true
+        image_id:
+          type: integer
+          nullable: true
+          readOnly: true
+      required:
+      - available
+      - id
+      - image_id
+      - in_stock
+      - max_per_order
+      - prices
     VerificationRequest:
       type: object
       properties:

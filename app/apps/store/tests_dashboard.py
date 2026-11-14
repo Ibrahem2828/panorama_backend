@@ -325,7 +325,7 @@ def test_invalid_transitions_are_refused(staff, student, variant):
     for target in ("ready_for_pickup", "picked_up"):
         refused = _move(client, order_id, target)
         assert refused.status_code == 409 and refused.json()["code"] == "INVALID_TRANSITION"
-    assert _move(client, order_id, "pending").status_code == 400  # not an offered status
+    assert _move(client, order_id, "pending").status_code == 409  # nothing moves back to pending
     _move(client, order_id, "confirmed")
     assert _move(client, order_id, "confirmed").status_code == 409
     _move(client, order_id, "ready_for_pickup")

@@ -235,6 +235,7 @@ SPECTACULAR_SETTINGS = {
         "AccountDeviceStatusEnum": "apps.accounts.choices.AccountDeviceStatus",
         "CategoryEnum": "apps.support.models.SupportTicketCategory",
         "FinanceCurrencyEnum": "apps.finance.models.FinanceCurrency",
+        "StoreOrderStatusEnum": "apps.store.models.StoreOrderStatus",
         "InventoryCategoryEnum": "apps.finance.models.InventoryCategory",
         "ExpenseCategoryEnum": "apps.finance.models.ExpenseCategory",
         "StockMovementTypeEnum": "apps.finance.models.StockMovementType",

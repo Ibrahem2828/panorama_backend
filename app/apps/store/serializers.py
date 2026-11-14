@@ -12,6 +12,7 @@ from .models import (
     StoreCategory,
     StoreOrder,
     StoreOrderItem,
+    StoreOrderStatus,
     StoreOrderStatusHistory,
     StoreProduct,
     StoreProductImage,
@@ -719,7 +720,7 @@ class DashboardOrderListSerializer(DashboardOrderSerializer):
 
 
 class OrderStatusSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=["confirmed", "ready_for_pickup", "picked_up", "cancelled"])
+    status = serializers.ChoiceField(choices=StoreOrderStatus.choices)
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
 
