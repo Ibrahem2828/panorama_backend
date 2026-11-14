@@ -72,6 +72,12 @@ def _counters(user) -> dict[str, int]:
             reorder_level__gt=0,
             quantity__lte=models.F("reorder_level"),
         ).count()
+    if has("store.manage"):
+        from apps.store.models import StoreOrder, StoreOrderStatus
+
+        counts["store_orders_new"] = StoreOrder.objects.filter(
+            status=StoreOrderStatus.PENDING, is_deleted=False
+        ).count()
     if has("support.manage"):
         from apps.support.models import SupportTicket, SupportTicketStatus
 

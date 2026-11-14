@@ -408,6 +408,6 @@ def test_quick_access_only_counts_what_the_caller_may_act_on(admin, student):
     ):
         assert key in admin_counts
     printer_counts = _client(printer).get("/api/v1/dashboard/quick-access/").data["data"]["counts"]
-    assert set(printer_counts) == {"print_orders_new", "low_stock", "notifications_unread"}
+    assert set(printer_counts) == {"print_orders_new", "low_stock", "store_orders_new", "notifications_unread"}
     assert printer_counts["notifications_unread"] == 1
     assert _client(student).get("/api/v1/dashboard/quick-access/").status_code == 403

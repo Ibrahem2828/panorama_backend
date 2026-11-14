@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased - stationery store
+
+- **Store:** new `apps.store` (additive): brands, categories, products with colour/size variants, pictures (authenticated
+  delivery + thumbnails), reviews limited to picked-up buyers, server-side cart, in-store-pickup checkout (SYP/USD, SYP
+  rounding, cash at pickup), student endpoints under `/api/v1/store/`, dashboard under `/api/v1/dashboard/store/`
+  (capability `store.manage`), `seed_store_defaults`, migrations `store.0001`, `audit.0021`. See `docs/STORE.md`.
+- **Shared:** `apps.common.image_delivery` (private image responses) now also serves the print option help images.
+
 ## Unreleased - device lock, phone verification, community auto-join
 
 - **Accounts:** student accounts are bound to one device (`X-Panorama-Device-Id`); `DEVICE_MISMATCH`, one self-service
