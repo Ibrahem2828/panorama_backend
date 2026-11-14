@@ -150,16 +150,6 @@ jobs:
           RELEASE_VERSION: ci
           BUILD_DATE: 2026-01-01T00:00:00Z
         run: docker compose -f docker-compose.coolify.yml config --quiet
-      - name: TEMP DEBUG trivy table
-        uses: aquasecurity/trivy-action@v0.33.1
-        continue-on-error: true
-        with:
-          version: v0.75.0
-          image-ref: panorama-backend:${{ github.sha }}
-          format: table
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "0"
       - name: Scan image for critical and high vulnerabilities
         uses: aquasecurity/trivy-action@v0.33.1
         with:
