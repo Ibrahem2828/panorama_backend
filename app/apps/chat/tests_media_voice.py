@@ -132,7 +132,11 @@ def make_android_m4a() -> bytes:
 def test_android_media_recorder_m4a_is_accepted_as_a_voice_note(chat):
     _admin, student, group = chat
     response = post_message(
-        student, group, message_type="voice", attachment=upload("voice-1.m4a", make_android_m4a(), "audio/mp4"), duration_ms=6000
+        student,
+        group,
+        message_type="voice",
+        attachment=upload("voice-1.m4a", make_android_m4a(), "audio/mp4"),
+        duration_ms=6000,
     )
     assert response.status_code == 201, response.data
     meta = response.data["data"]["attachment_meta"]
