@@ -62,13 +62,15 @@ _ARABIC_NORMALIZE = str.maketrans(
 )  # fmt: skip
 _DIACRITICS = re.compile("[\u064b-\u065f\u0670]")
 DENTAL_FACULTY_CODES = frozenset({"DEN", "DENT", "DDS", "DENTAL"})
-#: «السريرية 1» after normalization: any spelling with/without the article, spaces, hamza, ordinal marks or a digit form.
-_CLINICAL_ONE = re.compile(r"(?:^|\s)(?:ال)?سريريه\s*[-:]?\s*(?:1|الاولي|الاول|i)(?:\s|$)")
+#: «السريرية 1» after normalization (ة->ه, digits to ASCII): any spelling with/without the article, the production prefix
+#: «حالات», spaces, a dash/colon, parentheses around the number, hamza, ordinal words or a roman numeral.
+_CLINICAL_ONE = re.compile(
+    r"(?:^|[\s(])(?:حالات\s*)?(?:ال)?سريريه\s*[-:]?\s*\(?\s*(?:1|الاولي|الاول|i)\s*\)?(?=\s|$|[-:])"
+)
 
-
-#: Any numbered clinical-track group («السريرية 2», «سريرية ٣» ...). In a dental faculty these are NOT part of the generic
-#: community: only «السريرية 1» is joined automatically, the others are handled by hand.
-_CLINICAL_ANY = re.compile(r"(?:^|\s)(?:ال)?سريريه(?:\s|$|\d|-|:)")
+#: Any clinical-track group («السريرية 2», «حالات سريرية (2)», «سريرية ٣» ...). In a dental faculty these are NOT part of the
+#: generic community: only the clinical-1 group is joined automatically, the others are handled by hand.
+_CLINICAL_ANY = re.compile(r"(?:^|[\s(])(?:ال)?سريريه(?:\s|$|\d|-|:|\()")
 
 
 def normalize_arabic(value: str) -> str:
