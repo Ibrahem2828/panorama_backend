@@ -233,6 +233,22 @@ class LectureNotesRateThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": ident}
 
 
+class LectureOfflineLicenseRateThrottle(SimpleRateThrottle):
+    scope = "lecture_offline_license"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
+class LectureOfflinePackageRateThrottle(SimpleRateThrottle):
+    scope = "lecture_offline_package"
+
+    def get_cache_key(self, request, view):
+        ident = str(request.user.pk) if request.user and request.user.is_authenticated else _request_ip(request)
+        return self.cache_format % {"scope": self.scope, "ident": ident}
+
+
 class SearchRateThrottle(SimpleRateThrottle):
     scope = "search"
 

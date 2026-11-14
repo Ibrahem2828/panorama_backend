@@ -31,6 +31,7 @@ from apps.groups.models import (
     GroupMembershipRole,
     GroupMembershipStatus,
 )
+from apps.lectures.offline_services import revoke_memberships_licenses
 
 from .models import AcademicYear, CurrentTerm, Semester, TermRollover
 
@@ -229,6 +230,8 @@ def _end_term_locked(*, actor, next_semester_id, label, disable_whatsapp_links: 
         GroupMembership.objects.filter(pk__in=ids[start : start + CHUNK]).update(
             status=GroupMembershipStatus.TERM_ENDED, ended_at=now, rollover=rollover, updated_at=now
         )
+        # ``update`` bypasses signals: offline lecture licenses of the ended memberships die with them.
+        revoke_memberships_licenses(ids[start : start + CHUNK])
     if disable_whatsapp_links and whatsapp_ids:
         channels = GroupExternalChannel.objects.filter(
             group_id__in=whatsapp_ids, channel_type=ExternalChannelType.WHATSAPP, is_active=True, is_deleted=False

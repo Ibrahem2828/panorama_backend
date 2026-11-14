@@ -36,6 +36,7 @@ FEATURE_DEFAULTS = {
     "lecture_upload_enabled": True,
     "lecture_processing_enabled": True,
     "lecture_viewer_enabled": True,
+    "lecture_offline_enabled": True,
     "lecture_notes_enabled": True,
     "chat_enabled": True,
     "notifications_enabled": True,
