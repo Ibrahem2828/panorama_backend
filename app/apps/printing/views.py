@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import mimetypes
 import time
 from datetime import timedelta
@@ -19,6 +20,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
@@ -43,6 +45,7 @@ from .models import (
     PrintExtraSection,
     PrintItemAccessTicket,
     PrintJob,
+    PrintOptionHelp,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
@@ -66,6 +69,7 @@ from .serializers import (
     PrintExtraOptionSerializer,
     PrintJobCancelSerializer,
     PrintJobStatusSerializer,
+    PrintOptionHelpSerializer,
     PrintOrderAssignSerializer,
     PrintOrderCreateSerializer,
     PrintOrderNoteSerializer,
@@ -74,6 +78,7 @@ from .serializers import (
     PrintQueueJobSerializer,
     PrintQuoteSerializer,
     PrintStatusUpdateSerializer,
+    PublicPrintOptionHelpSerializer,
     PublicReadyProductSerializer,
     ReadyProductSerializer,
     SpiralWireSpecSerializer,
@@ -846,3 +851,63 @@ class PrintAgentHeartbeatView(APIView):
             request=request,
             code="PRINTER_HEARTBEAT",
         )
+
+
+# ---- option help ("توضيح") ---------------------------------------------------------------------------------------------------------
+
+
+class PrintOptionHelpListView(APIView):
+    """Active explanations for the print options. ``?topic=`` and ``?key=`` narrow the list; ``If-None-Match`` is honoured."""
+
+    @extend_schema(
+        tags=["Printing"],
+        parameters=[
+            OpenApiParameter("topic", OpenApiTypes.STR, required=False),
+            OpenApiParameter("key", OpenApiTypes.STR, required=False),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def get(self, request):
+        rows = PrintOptionHelp.objects.filter(is_active=True, is_deleted=False)
+        topic = request.query_params.get("topic")
+        if topic:
+            rows = rows.filter(topic=topic)
+        if "key" in request.query_params:
+            rows = rows.filter(key=request.query_params["key"])
+        ordered = list(rows.order_by("topic", "sort_order", "key", "id"))
+        latest = max((row.updated_at for row in ordered), default=None)
+        fingerprint = hashlib.sha256(
+            "|".join(f"{row.pk}:{row.updated_at.isoformat()}" for row in ordered).encode()
+        ).hexdigest()[:32]
+        etag = f'"{fingerprint}"'
+        if request.headers.get("If-None-Match") == etag:
+            response = Response(status=status.HTTP_304_NOT_MODIFIED)
+        else:
+            items = PublicPrintOptionHelpSerializer(ordered, many=True, context={"request": request}).data
+            grouped: dict[str, list] = {}
+            for item in items:
+                grouped.setdefault(item["topic"], []).append(item)
+            response = success_response(
+                data={"updated_at": latest, "count": len(ordered), "items": items, "by_topic": grouped},
+                message="Print option help",
+                request=request,
+                code="PRINT_OPTION_HELP",
+            )
+        response["ETag"] = etag
+        response["Cache-Control"] = "private, max-age=300"
+        return response
+
+
+class DashboardPrintOptionHelpViewSet(AuditedPrintConfigurationViewSet):
+    """Staff CRUD of the option explanations; send ``multipart/form-data`` to attach an image."""
+
+    permission_classes = [CanManagePrinting]
+    serializer_class = PrintOptionHelpSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["topic", "key", "is_active"]
+    ordering_fields = ["topic", "sort_order", "updated_at"]
+
+    def get_queryset(self):
+        return PrintOptionHelp.objects.filter(is_deleted=False)

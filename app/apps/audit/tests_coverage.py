@@ -149,6 +149,14 @@ def _cases(ctx):
             *(A.PRINT_PRICING_CHANGED,) * 3,
             ["price_per_copy"],
         ),
+        "print-option-help": _case(
+            "/api/v1/dashboard/printing/option-help/",
+            "PrintOptionHelp",
+            {"topic": "binding", "key": "spiral", "title": "Spiral", "body": "Long body text kept out of the trail"},
+            {"is_active": False},
+            *(A.PRINT_PRICING_CHANGED,) * 3,
+            ["is_active"],
+        ),
         "print-pickup-locations": _case(
             "/api/v1/dashboard/printing/pickup-locations/",
             "PrintPickupLocation",

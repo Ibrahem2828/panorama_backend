@@ -4,6 +4,7 @@ from .models import (
     PrintBindingPrice,
     PrintExtraOption,
     PrintItemAccessTicket,
+    PrintOptionHelp,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatusHistory,
@@ -60,3 +61,5 @@ admin.site.register(PrintBindingPrice)
 admin.site.register(PrintExtraOption)
 admin.site.register(PrintPickupLocation)
 admin.site.register(PrintItemAccessTicket)
+
+admin.site.register(PrintOptionHelp)

@@ -64,6 +64,7 @@ RESOURCE_NOUNS: dict[str, str] = {
     "dashboard/printing/extra-options": "خيار ورق",
     "dashboard/printing/pickup-locations": "موقع استلام",
     "dashboard/printing/pricing-rules": "قاعدة تسعير",
+    "dashboard/printing/option-help": "توضيح خيار طباعة",
     "dashboard/printing/printers": "طابعة",
     "dashboard/printing/products": "منتج طباعة",
     "dashboard/printing/wire-specs": "مواصفة سلك",

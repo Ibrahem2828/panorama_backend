@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import Any, cast
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.db.models import Sum
@@ -31,6 +32,7 @@ from .models import (
     PrintExtraOption,
     PrintExtraSection,
     PrintJob,
+    PrintOptionHelp,
     PrintOrder,
     PrintOrderItem,
     PrintOrderStatus,
@@ -41,6 +43,8 @@ from .models import (
     PrintSides,
     ReadyProduct,
     SpiralWireSpec,
+    validate_help_key,
+    validate_help_topic,
 )
 from .options import (
     MAX_COUNTER_PAGE_RANGE_LENGTH,
@@ -887,3 +891,84 @@ class PrinterHeartbeatSerializer(serializers.Serializer):
 
 class PrintJobCancelSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+
+class PrintOptionHelpSerializer(serializers.ModelSerializer):
+    """Staff view of a help entry; the image is uploaded as multipart ``image`` (send an empty value to remove it)."""
+
+    image = serializers.ImageField(required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PrintOptionHelp
+        fields = [
+            "id",
+            "topic",
+            "key",
+            "title",
+            "body",
+            "image",
+            "image_url",
+            "image_caption",
+            "sort_order",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+        validators: list = []
+
+    def get_image_url(self, obj) -> str | None:
+        return _help_image_url(obj, self.context.get("request"))
+
+    def validate_title(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("The title is required.")
+        return value
+
+    def validate_body(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("The explanation is required.")
+        if len(value) > 4000:
+            raise serializers.ValidationError("The explanation is too long (4000 characters at most).")
+        return value
+
+    def validate_image(self, value):
+        from apps.common.file_validation import validate_image_upload
+
+        return validate_image_upload(value, "image") if value else value
+
+    def validate(self, attrs):
+        topic = attrs.get("topic", self.instance.topic if self.instance else "")
+        key = attrs.get("key", self.instance.key if self.instance else "")
+        try:
+            validate_help_topic(topic)
+            validate_help_key(key)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"topic": exc.messages}) from exc
+        clash = PrintOptionHelp.objects.filter(topic=topic, key=key, is_deleted=False)
+        if self.instance:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError({"key": "A help entry for this option already exists."})
+        return attrs
+
+
+class PublicPrintOptionHelpSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PrintOptionHelp
+        fields = ["id", "topic", "key", "title", "body", "image_url", "image_caption", "sort_order", "updated_at"]
+        read_only_fields = fields
+
+    def get_image_url(self, obj) -> str | None:
+        return _help_image_url(obj, self.context.get("request"))
+
+
+def _help_image_url(obj, request) -> str | None:
+    if not obj.image:
+        return None
+    return request.build_absolute_uri(obj.image.url) if request else obj.image.url
