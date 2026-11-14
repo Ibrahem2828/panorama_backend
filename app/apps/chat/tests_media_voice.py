@@ -95,6 +95,51 @@ def test_voice_note_is_measured_by_the_server_and_exposes_metadata(chat):
     assert data["has_attachment"] is True
 
 
+#: ftyp + moov of a real recording made by Android's MediaRecorder (AAC-LC, 8.6 s). Its QuickTime-style ``meta`` box has no
+#: version/flags field, which makes mutagen lose the ``trak`` box and report an empty codec.
+ANDROID_M4A_HEAD_B64 = (
+    "AAAAGGZ0eXBtcDQyAAAAAGlzb21tcDQyAAAFyW1vb3YAAABsbXZoZAAAAADnHd5x5x3ecQAAJxAAAVCrAAEAAAEAAAAAAAAAAAAA"
+    "AAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAB2bWV0YQAA"
+    "ACFoZGxyAAAAAAAAAABtZHRhAAAAAAAAAAAAAAAAAAAAACtrZXlzAAAAAAAAAAEAAAAbbWR0YWNvbS5hbmRyb2lkLnZlcnNpb24A"
+    "AAAiaWxzdAAAABoAAAABAAAAEmRhdGEAAAABAAAAADE1AAAE33RyYWsAAABcdGtoZAAAAAfnHd5x5x3ecQAAAAEAAAAAAAFQqwAA"
+    "AAAAAAAAAAAAAAEAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAABHttZGlhAAAAIG1kaGQA"
+    "AAAA5x3ececd3nEAAF3AAAMoAAAAAAAAAAAsaGRscgAAAAAAAAAAc291bgAAAAAAAAAAAAAAAFNvdW5kSGFuZGxlAAAABCdtaW5m"
+    "AAAAEHNtaGQAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAA+tzdGJsAAAAW3N0c2QAAAAAAAAA"
+    "AQAAAEttcDRhAAAAAAAAAAEAAAAAAAAAAAABABAAAAAAXcAAAAAAACdlc2RzAAAAAAMZAAAABBFAFQADAAAAfQAAAH0ABQITCAYB"
+    "AgAAABhzdHRzAAAAAAAAAAEAAADKAAAEAAAAAzxzdHN6AAAAAAAAAAAAAADKAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAA"
+    "AKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsA"
+    "AACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACr"
+    "AAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAA"
+    "qgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAA"
+    "AKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsA"
+    "AACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACr"
+    "AAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAA"
+    "qgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAA"
+    "AKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsA"
+    "AACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAAKsAAACr"
+    "AAAAqgAAAKsAAACrAAAAqgAAAKsAAACrAAAAqgAAABxzdHNjAAAAAAAAAAEAAAABAAAAygAAAAEAAAAYY282NAAAAAAAAAABAAAA"
+    "AAAADKA="
+)
+
+
+def make_android_m4a() -> bytes:
+    import base64
+
+    head = base64.b64decode(ANDROID_M4A_HEAD_B64)
+    return head + b"\x00\x00\x00\x08free" + (2_000).to_bytes(4, "big") + b"mdat" + b"\x00" * 1_992
+
+
+def test_android_media_recorder_m4a_is_accepted_as_a_voice_note(chat):
+    _admin, student, group = chat
+    response = post_message(
+        student, group, message_type="voice", attachment=upload("voice-1.m4a", make_android_m4a(), "audio/mp4"), duration_ms=6000
+    )
+    assert response.status_code == 201, response.data
+    meta = response.data["data"]["attachment_meta"]
+    assert meta["mime"] == "audio/mp4" and meta["kind"] == "voice"
+    assert meta["duration_ms"] == 8619
+
+
 def test_voice_note_just_inside_limit_with_tolerance_is_accepted(chat):
     _admin, student, group = chat
     response = post_message(

@@ -212,6 +212,70 @@ def _length(parsed) -> float:
     return float(parsed.info.length)
 
 
+def _mp4_has_audio_track(raw) -> bool:
+    """True when the ISO base media file has a ``soun`` track, found by walking the boxes ourselves.
+
+    mutagen cannot read the codec of files written by Android's MediaRecorder (the QuickTime-style ``meta`` box with
+    no version/flags field makes it lose the ``trak`` sibling), so ``info.codec`` is empty for every phone recording.
+    """
+
+    def boxes(buf: bytes):
+        pos = 0
+        while pos + 8 <= len(buf):
+            size = int.from_bytes(buf[pos : pos + 4], "big")
+            kind = buf[pos + 4 : pos + 8]
+            header = 8
+            if size == 1:
+                size = int.from_bytes(buf[pos + 8 : pos + 16], "big")
+                header = 16
+            elif size == 0:
+                size = len(buf) - pos
+            if size < header or pos + size > len(buf):
+                return
+            yield kind, buf[pos + header : pos + size]
+            pos += size
+
+    try:
+        raw.seek(0)
+        top = 0
+        while True:
+            raw.seek(top)
+            head = raw.read(16)
+            if len(head) < 8:
+                return False
+            size = int.from_bytes(head[:4], "big")
+            kind = head[4:8]
+            header = 8
+            if size == 1 and len(head) == 16:
+                size = int.from_bytes(head[8:16], "big")
+                header = 16
+            if size < header:  # size 0 (to end of file) is only legal for the last box, which is never moov here
+                return False
+            if kind == b"moov":
+                if size > 8 * 1024 * 1024:
+                    return False
+                raw.seek(top + header)
+                moov = raw.read(size - header)
+                for child, body in boxes(moov):
+                    if child != b"trak":
+                        continue
+                    for tchild, tbody in boxes(body):
+                        if tchild != b"mdia":
+                            continue
+                        for mchild, mbody in boxes(tbody):
+                            if mchild == b"hdlr" and mbody[8:12] == b"soun":
+                                return True
+                return False
+            top += size
+    except Exception:  # noqa: BLE001 - unreadable structure simply means "not proven audio"
+        return False
+    finally:
+        try:
+            raw.seek(0)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def measure_audio_seconds(uploaded_file, family: str) -> float:
     """Real duration in seconds as parsed from the file. Raises ``ChatMediaError(AUDIO_INVALID)`` if unreadable."""
 
@@ -234,7 +298,8 @@ def measure_audio_seconds(uploaded_file, family: str) -> float:
             length = _length(WAVE(raw))
         elif family == "mp4":
             mp4 = MP4(raw)
-            if not str(getattr(mp4.info, "codec", "") or "").startswith(("mp4a", "alac")):
+            codec = str(getattr(mp4.info, "codec", "") or "")
+            if not codec.startswith(("mp4a", "alac")) and not _mp4_has_audio_track(raw):
                 raise ChatMediaError("AUDIO_INVALID")  # a video or empty container, not audio
             length = _length(mp4)
         else:
