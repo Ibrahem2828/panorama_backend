@@ -181,3 +181,71 @@ class LectureViewEvent(BaseModel):
 
     class Meta:
         indexes = [models.Index(fields=["lecture", "created_at"], name="lectures_view_event_idx")]
+
+
+class LectureOfflineBlob(BaseModel):
+    """One encrypted, cacheable offline package of a lecture's viewable PDF (one per lecture *version*).
+
+    The AES key is wrapped with the repo's Fernet field-encryption key; the ciphertext lives in private storage and is
+    only ever served to holders of a valid ``LectureOfflineLicense``. A new version is created when the viewable
+    document is replaced; retiring a blob revokes its licenses.
+    """
+
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="offline_blobs")
+    version = models.PositiveIntegerField()
+    key_id = models.UUIDField(default=uuid.uuid4, editable=False)
+    wrapped_key = models.TextField()
+    package = models.FileField(upload_to="lectures/offline/")
+    source_name = models.CharField(max_length=512, help_text="viewer_pdf storage name this blob was built from.")
+    plaintext_size = models.PositiveBigIntegerField()
+    package_size = models.PositiveBigIntegerField()
+    package_sha256 = models.CharField(max_length=64)
+    chunk_size = models.PositiveIntegerField()
+    retired_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["lecture_id", "-version"]
+        constraints = [
+            models.UniqueConstraint(fields=["lecture", "version"], name="lectures_offline_blob_version_uniq"),
+            models.UniqueConstraint(
+                fields=["lecture"],
+                condition=models.Q(retired_at__isnull=True),
+                name="lectures_offline_blob_one_live_uniq",
+            ),
+        ]
+
+
+class LectureOfflineLicense(BaseModel):
+    """Right of one (user, device) to keep one lecture version offline until ``expires_at``.
+
+    Validity is *derived*: a license only works while ``user_can_view_lecture`` still holds, i.e. an approved
+    membership of the lecture's group. Nothing payment-specific is consulted here.
+    """
+
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="lecture_offline_licenses")
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="offline_licenses")
+    blob = models.ForeignKey(LectureOfflineBlob, on_delete=models.PROTECT, related_name="licenses")
+    #: SHA-256 hex of the ``X-Panorama-Device-Id`` header; empty when the client sent none.
+    device_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    issued_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    last_renewed_at = models.DateTimeField(null=True, blank=True)
+    renew_count = models.PositiveIntegerField(default=0)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoke_reason = models.CharField(max_length=64, blank=True)
+    revoked_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-issued_at", "-id"]
+        indexes = [
+            models.Index(fields=["user", "revoked_at", "expires_at"], name="lectures_offlic_user_idx"),
+            models.Index(fields=["lecture", "revoked_at"], name="lectures_offlic_lecture_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "lecture", "device_hash"],
+                condition=models.Q(revoked_at__isnull=True),
+                name="lectures_offlic_one_active_uniq",
+            )
+        ]

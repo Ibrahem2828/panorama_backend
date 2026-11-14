@@ -190,6 +190,8 @@ REST_FRAMEWORK = {
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
         "lecture_viewer": config("THROTTLE_LECTURE_VIEWER", default="240/min"),
         "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
+        "lecture_offline_license": config("THROTTLE_LECTURE_OFFLINE_LICENSE", default="60/hour"),
+        "lecture_offline_package": config("THROTTLE_LECTURE_OFFLINE_PACKAGE", default="600/hour"),
         "search": config("THROTTLE_SEARCH", default="60/min"),
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
         "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
@@ -458,6 +460,11 @@ PRINT_CONVERSION_TTL_SECONDS = config("PRINT_CONVERSION_TTL_SECONDS", default=72
 PRINT_CONVERSION_WAIT_SECONDS = config("PRINT_CONVERSION_WAIT_SECONDS", default=60, cast=int)
 LECTURE_VIEWER_SESSION_TTL_SECONDS = config("LECTURE_VIEWER_SESSION_TTL_SECONDS", default=900, cast=int)
 LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS = config("LECTURE_VIEWER_SESSION_MAX_PAGE_REQUESTS", default=1200, cast=int)
+# Offline protected lecture packages (see docs/OFFLINE_LECTURE_PACKAGES.md).
+LECTURE_OFFLINE_LICENSE_DAYS = config("LECTURE_OFFLINE_LICENSE_DAYS", default=14, cast=int)
+LECTURE_OFFLINE_MAX_PER_DEVICE = config("LECTURE_OFFLINE_MAX_PER_DEVICE", default=40, cast=int)
+LECTURE_OFFLINE_MAX_PER_USER = config("LECTURE_OFFLINE_MAX_PER_USER", default=120, cast=int)
+LECTURE_OFFLINE_CHUNK_SIZE = config("LECTURE_OFFLINE_CHUNK_SIZE", default=64 * 1024, cast=int)
 DOCUMENT_CONVERSION_TIME_LIMIT = config("DOCUMENT_CONVERSION_TIME_LIMIT", default=180, cast=int)
 DOCUMENT_CONVERSION_SOFT_TIME_LIMIT = config("DOCUMENT_CONVERSION_SOFT_TIME_LIMIT", default=150, cast=int)
 DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=30 * 1024 * 1024, cast=int)

@@ -1,6 +1,15 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .offline_views import (
+    DashboardOfflineLicenseListView,
+    DashboardOfflineLicenseRevokeView,
+    LectureOfflineLicenseListView,
+    LectureOfflineLicenseRenewView,
+    LectureOfflineLicenseView,
+    LectureOfflinePackageView,
+    LectureOfflineSyncView,
+)
 from .views import (
     DashboardLectureOriginalView,
     DashboardLectureViewSet,
@@ -19,8 +28,28 @@ router = DefaultRouter()
 router.register("lectures", LectureViewSet, basename="lectures")
 router.register("dashboard/lectures", DashboardLectureViewSet, basename="dashboard-lectures")
 
+# Fixed-segment routes must precede the routers: ``lectures/<pk>/`` would otherwise swallow ``offline-licenses``.
 urlpatterns = [
+    path("lectures/offline-licenses/", LectureOfflineLicenseListView.as_view(), name="lecture-offline-licenses"),
+    path("lectures/offline-licenses/sync/", LectureOfflineSyncView.as_view(), name="lecture-offline-sync"),
+    path(
+        "dashboard/lectures/offline-licenses/",
+        DashboardOfflineLicenseListView.as_view(),
+        name="dashboard-lecture-offline-licenses",
+    ),
+    path(
+        "dashboard/lectures/offline-licenses/revoke/",
+        DashboardOfflineLicenseRevokeView.as_view(),
+        name="dashboard-lecture-offline-revoke",
+    ),
     *router.urls,
+    path("lectures/<int:pk>/offline-license/", LectureOfflineLicenseView.as_view(), name="lecture-offline-license"),
+    path(
+        "lectures/<int:pk>/offline-license/renew/",
+        LectureOfflineLicenseRenewView.as_view(),
+        name="lecture-offline-license-renew",
+    ),
+    path("lectures/<int:pk>/offline-package/", LectureOfflinePackageView.as_view(), name="lecture-offline-package"),
     path("lectures/<int:pk>/viewer/manifest/", LectureViewerManifestView.as_view(), name="lecture-viewer-manifest"),
     path("lectures/<int:pk>/viewer/session/", LectureViewerSessionView.as_view(), name="lecture-viewer-session"),
     path(
