@@ -478,11 +478,22 @@ class LoginSerializer(serializers.Serializer):
                 LoginFailureReason.UNVERIFIED, "Account verification is required before login.", credentials=False
             )
 
-        refresh = SessionVersionRefreshToken.for_user(user)
         attrs["user"] = user
-        attrs["access"] = str(refresh.access_token)
-        attrs["refresh"] = str(refresh)
+        if not self.context.get("defer_tokens"):
+            attrs.update(self.issue_tokens(user))
         return attrs
+
+    @staticmethod
+    def issue_tokens(user: User, device_hash: str | None = None) -> dict[str, str]:
+        """Mint the pair. ``LoginView`` defers this until the account-device check passed, so a refused login leaves no
+        outstanding token behind."""
+
+        refresh = SessionVersionRefreshToken.for_user(user, device_hash=device_hash)
+        return {"access": str(refresh.access_token), "refresh": str(refresh)}
+
+
+class DeviceSwitchSerializer(serializers.Serializer):
+    device_switch_token = serializers.CharField(max_length=2048)
 
 
 class ChangePasswordSerializer(serializers.Serializer):

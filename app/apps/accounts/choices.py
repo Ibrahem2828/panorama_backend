@@ -36,3 +36,24 @@ class OTPDeliveryChannel(models.TextChoices):
 class PermissionEffect(models.TextChoices):
     ALLOW = "allow", "Allow"
     DENY = "deny", "Deny"
+
+
+class AccountDeviceStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    REPLACED = "replaced", "Replaced"
+    REVOKED = "revoked", "Revoked"
+
+
+class AccountDeviceBoundVia(models.TextChoices):
+    FIRST_LOGIN = "first_login", "First login"
+    SELF_SWITCH = "self_switch", "Self-service switch"
+    LEGACY_SESSION = "legacy_session", "Existing session"
+
+
+class PhoneVerificationStatus(models.TextChoices):
+    PENDING_STAFF = "pending_staff", "Waiting for staff"
+    CODE_SENT = "code_sent", "Code sent"
+    VERIFIED = "verified", "Verified"
+    EXPIRED = "expired", "Expired"
+    CANCELLED = "cancelled", "Cancelled"
+    REJECTED = "rejected", "Rejected"

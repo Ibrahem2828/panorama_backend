@@ -352,6 +352,7 @@ class AccountDeletionService:
             suffix = hashlib.sha256(f"{user.pk}:{deletion.pk}".encode()).hexdigest()[:16]
             from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
+            from apps.accounts.devices import DeviceBindingService
             from apps.product.models import DeviceInstallation
 
             anonymization_counts = anonymize_user_data(
@@ -359,6 +360,7 @@ class AccountDeletionService:
             )
             for token in OutstandingToken.objects.filter(user=user):
                 BlacklistedToken.objects.get_or_create(token=token)
+            DeviceBindingService.revoke_for_deleted_account(user)
             DeviceInstallation.objects.filter(user=user, revoked_at__isnull=True).update(
                 push_token=None,
                 notifications_enabled=False,

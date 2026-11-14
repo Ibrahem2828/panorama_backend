@@ -430,6 +430,67 @@
           ]
         },
         {
+          "name": "v1_auth_device_switch_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/device/switch/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "device",
+                "switch"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/auth/device/switch/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_auth_invitations_accept_create",
           "request": {
             "method": "POST",
@@ -859,6 +920,232 @@
                 }
               }
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_auth_phone_verification_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/phone-verification/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "phone-verification"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/auth/phone-verification/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_auth_phone_verification_cancel_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/phone-verification/cancel/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "phone-verification",
+                "cancel"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/auth/phone-verification/cancel/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_auth_phone_verification_confirm_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/phone-verification/confirm/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "phone-verification",
+                "confirm"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/auth/phone-verification/confirm/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_auth_phone_verification_current_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/phone-verification/current/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "phone-verification",
+                "current"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/auth/phone-verification/current/. Permission and schema are authoritative in OpenAPI. "
           },
           "event": [
             {
@@ -1616,6 +1903,122 @@
               ]
             },
             "description": "العقد الفعلي: POST /api/v1/dashboard/users/{id}/unlock-login/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_users_account_devices_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/{{user_id}}/account-devices/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "{{user_id}}",
+                "account-devices"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/users/{user_id}/account-devices/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_users_account_devices_reset_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/users/{{user_id}}/account-devices/reset/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "users",
+                "{{user_id}}",
+                "account-devices",
+                "reset"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/users/{user_id}/account-devices/reset/. Permission and schema are authoritative in OpenAPI. ",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -12536,6 +12939,299 @@
               ]
             },
             "description": "العقد الفعلي: PUT /api/v1/dashboard/groups/{id}/whatsapp-channel/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_phone_verifications_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/phone-verifications/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "phone-verifications"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/phone-verifications/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_phone_verifications_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/phone-verifications/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "phone-verifications",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/phone-verifications/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_phone_verifications_claim_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/phone-verifications/{{id}}/claim/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "phone-verifications",
+                "{{id}}",
+                "claim"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/phone-verifications/{id}/claim/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_phone_verifications_mark_sent_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/phone-verifications/{{id}}/mark-sent/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "phone-verifications",
+                "{{id}}",
+                "mark-sent"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/phone-verifications/{id}/mark-sent/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_phone_verifications_reject_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/phone-verifications/{{id}}/reject/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "phone-verifications",
+                "{{id}}",
+                "reject"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/phone-verifications/{id}/reject/. Permission and schema are authoritative in OpenAPI. ",
             "body": {
               "mode": "raw",
               "raw": "{}",

@@ -60,6 +60,22 @@ def is_student_eligible_for_group(user, group: Group) -> bool:
     return True
 
 
+def level_group_q(prefix: str = "") -> Q:
+    """Subject-less groups pinned to a major, academic year or semester ("year groups"). They are no longer offered to
+    students (they cannot be browsed, joined or auto-joined); the rows and their memberships are kept, and members keep
+    seeing the groups they already belong to. Subject groups and the faculty-wide community are never level groups."""
+
+    return Q(**{f"{prefix}subject__isnull": True}) & (
+        Q(**{f"{prefix}major__isnull": False})
+        | Q(**{f"{prefix}academic_year__isnull": False})
+        | Q(**{f"{prefix}semester__isnull": False})
+    )
+
+
+def is_level_group(group: Group) -> bool:
+    return not group.subject_id and bool(group.major_id or group.academic_year_id or group.semester_id)
+
+
 def eligible_groups_filter(user) -> Q:
     """Database twin of ``is_student_eligible_for_group``: groups this student may see/join by hierarchy.
 
@@ -75,7 +91,7 @@ def eligible_groups_filter(user) -> Q:
         or not profile.university_id
     ):
         return Q(pk__in=[])
-    condition = Q(university_id=profile.university_id)
+    condition = Q(university_id=profile.university_id) & ~level_group_q()
     for field in ("faculty", "major", "academic_year", "semester"):
         value = getattr(profile, f"{field}_id")
         condition &= Q(**{f"{field}__isnull": True}) | (Q(**{f"{field}_id": value}) if value else Q(pk__in=[]))

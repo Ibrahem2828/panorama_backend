@@ -76,6 +76,8 @@ def dependency_error_response(exc: Exception, request) -> Response:
 def _default_message(exc: Exception) -> str:
     if isinstance(exc, exceptions.ValidationError):
         return "Validation error"
+    if getattr(exc, "api_message", None):
+        return str(exc.api_message)  # type: ignore[attr-defined]  # message chosen by the exception (already localized)
     if isinstance(exc, exceptions.AuthenticationFailed):
         return "Authentication failed"
     if isinstance(exc, exceptions.NotAuthenticated):

@@ -11,6 +11,7 @@ from apps.audit.activity import SystemActivityService
 from apps.audit.models import LoginFailureReason
 from apps.common.responses import error_response, success_response
 from apps.common.throttles import (
+    DeviceSwitchRateThrottle,
     LoginRateThrottle,
     OTPRequestAccountThrottle,
     OTPRequestRateThrottle,
@@ -23,10 +24,12 @@ from apps.common.throttles import (
 from apps.product.services import feature_enabled_or_raise
 
 from .authentication import SessionVersionTokenRefreshSerializer
+from .devices import DeviceBindingRefused, DeviceBindingService, device_refusal_response
 from .lockout import LoginLockoutService
 from .serializers import (
     ChangePasswordSerializer,
     ConfirmPasswordResetSerializer,
+    DeviceSwitchSerializer,
     LoginSerializer,
     LogoutSerializer,
     NormalUserRegisterSerializer,
@@ -108,7 +111,7 @@ class LoginView(APIView):
                     status_code=429,
                 )
                 raise
-        serializer = LoginSerializer(data=request.data)
+        serializer = LoginSerializer(data=request.data, context={"defer_tokens": True})
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError:
@@ -124,12 +127,19 @@ class LoginView(APIView):
                 )
             raise
         user = serializer.validated_data["user"]
+        try:
+            device_hash = DeviceBindingService.gate_login(user, request)
+        except DeviceBindingRefused as refusal:
+            # The password was right, so the failure counters restart; no tokens are issued for a refused device.
+            LoginLockoutService.clear_for_user(user)
+            return device_refusal_response(refusal, request)
         LoginLockoutService.record_success(user)
         SystemActivityService.record_login_success(request, user)
+        tokens = serializer.issue_tokens(user, device_hash)
         return success_response(
             data={
-                "access": serializer.validated_data["access"],
-                "refresh": serializer.validated_data["refresh"],
+                "access": tokens["access"],
+                "refresh": tokens["refresh"],
                 "user": UserSerializer(user).data,
             },
             message="Logged in successfully",
@@ -150,13 +160,47 @@ class TokenRefreshView(APIView):
     )
     def post(self, request):
         feature_enabled_or_raise("otp_email_enabled", request=request)
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = self.serializer_class(data=request.data, context={"request": request})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except DeviceBindingRefused as refusal:
+            return device_refusal_response(refusal, request)
         return success_response(
             data=serializer.validated_data,
             message="Token refreshed successfully",
             request=request,
             code="TOKEN_REFRESHED",
+        )
+
+
+class DeviceSwitchView(APIView):
+    """Take an account over on a new device using the ``device_switch_token`` a ``DEVICE_MISMATCH`` login returned."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []
+    throttle_classes = [DeviceSwitchRateThrottle]
+    serializer_class = DeviceSwitchSerializer
+
+    @extend_schema(
+        auth=[],
+        tags=["Auth"],
+        request=DeviceSwitchSerializer,
+        responses={200: OpenApiResponse(description="JWT login response for the new device")},
+    )
+    def post(self, request):
+        serializer = DeviceSwitchSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user, info = DeviceBindingService.switch(serializer.validated_data["device_switch_token"], request)
+        except DeviceBindingRefused as refusal:
+            return device_refusal_response(refusal, request)
+        SystemActivityService.record_login_success(request, user)
+        tokens = LoginSerializer.issue_tokens(user, info.device_hash)
+        return success_response(
+            data={"access": tokens["access"], "refresh": tokens["refresh"], "user": UserSerializer(user).data},
+            message="Device switched. Other sessions were signed out.",
+            request=request,
+            code="DEVICE_SWITCHED",
         )
 
 

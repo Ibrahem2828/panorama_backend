@@ -1,10 +1,17 @@
 from django.urls import path
 
+from .phone_views import (
+    MyPhoneVerificationView,
+    PhoneVerificationCancelView,
+    PhoneVerificationConfirmView,
+    PhoneVerificationView,
+)
 from .staff_views import AcceptInvitationView, InvitationInfoView
 from .views import (
     ChangePasswordView,
     ConfirmPasswordResetView,
     CurrentUserView,
+    DeviceSwitchView,
     LoginView,
     LogoutView,
     NormalUserRegisterView,
@@ -19,6 +26,11 @@ urlpatterns = [
     path("register/normal/", NormalUserRegisterView.as_view(), name="register-normal"),
     path("register/student/", StudentRegisterView.as_view(), name="register-student"),
     path("login/", LoginView.as_view(), name="login"),
+    path("phone-verification/", PhoneVerificationView.as_view(), name="phone-verification"),
+    path("phone-verification/current/", MyPhoneVerificationView.as_view(), name="phone-verification-current"),
+    path("phone-verification/confirm/", PhoneVerificationConfirmView.as_view(), name="phone-verification-confirm"),
+    path("phone-verification/cancel/", PhoneVerificationCancelView.as_view(), name="phone-verification-cancel"),
+    path("device/switch/", DeviceSwitchView.as_view(), name="device-switch"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("me/", CurrentUserView.as_view(), name="current-user"),

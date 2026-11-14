@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from celery.schedules import crontab
+from corsheaders.defaults import default_headers
 from decouple import config
 
 from .env import get_bool_env, get_csv_env
@@ -148,6 +149,8 @@ CORS_ALLOWED_ORIGINS = get_csv_env(
     default=["http://localhost:3000", "http://localhost:5173"],
 )
 CORS_ALLOW_CREDENTIALS = True
+# Browser clients (student PWA) send the account-device headers; see apps/accounts/devices.py.
+CORS_ALLOW_HEADERS = (*default_headers, "x-panorama-device-id", "x-panorama-device-name", "x-panorama-platform")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("apps.accounts.authentication.SessionVersionJWTAuthentication",),
@@ -190,6 +193,9 @@ REST_FRAMEWORK = {
         "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
         "print_convert": config("THROTTLE_PRINT_CONVERT", default="20/hour"),
         "print_agent": config("THROTTLE_PRINT_AGENT", default="120/min"),
+        "device_switch": config("THROTTLE_DEVICE_SWITCH", default="10/hour"),
+        "phone_verification_create": config("THROTTLE_PHONE_VERIFICATION_CREATE", default="3/day"),
+        "phone_verification_confirm": config("THROTTLE_PHONE_VERIFICATION_CONFIRM", default="20/hour"),
     },
 }
 
@@ -216,6 +222,8 @@ SPECTACULAR_SETTINGS = {
         "EnrollmentStatusEnum": "apps.enrollment.models.EnrollmentStatus",
         "EnrollmentItemStatusEnum": "apps.enrollment.models.EnrollmentItemStatus",
         "AccountDeletionStatusEnum": "apps.product.models.AccountDeletionStatus",
+        "PhoneVerificationStatusEnum": "apps.accounts.choices.PhoneVerificationStatus",
+        "AccountDeviceStatusEnum": "apps.accounts.choices.AccountDeviceStatus",
         "CategoryEnum": "apps.support.models.SupportTicketCategory",
         "FinanceCurrencyEnum": "apps.finance.models.FinanceCurrency",
         "InventoryCategoryEnum": "apps.finance.models.InventoryCategory",
@@ -378,6 +386,24 @@ EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)
 LOGIN_LOCKOUT_THRESHOLD = config("LOGIN_LOCKOUT_THRESHOLD", default=10, cast=int)
 LOGIN_LOCKOUT_WINDOW_MINUTES = config("LOGIN_LOCKOUT_WINDOW_MINUTES", default=15, cast=int)
 LOGIN_LOCKOUT_MINUTES = config("LOGIN_LOCKOUT_MINUTES", default=15, cast=int)
+
+# Account device binding (students only; see docs/API_SECURITY_AND_AUTH.md). While DEVICE_BINDING_ENFORCED is false the
+# backend only RECORDS bindings when the client sends X-Panorama-Device-Id and never blocks anyone, so the backend can be
+# deployed before the new app ships. Flip it on once the app sends the header.
+DEVICE_BINDING_ENFORCED = get_bool_env("DEVICE_BINDING_ENFORCED", default=False)
+# Self-service device switches allowed per rolling window; afterwards the student must contact an administrator.
+DEVICE_SWITCH_LIMIT_PER_TERM = config("DEVICE_SWITCH_LIMIT_PER_TERM", default=1, cast=int)
+# No academic-term dates exist in the data model, so a "term" is a rolling window of this many days.
+DEVICE_SWITCH_WINDOW_DAYS = config("DEVICE_SWITCH_WINDOW_DAYS", default=120, cast=int)
+DEVICE_SWITCH_TOKEN_TTL_SECONDS = config("DEVICE_SWITCH_TOKEN_TTL_SECONDS", default=300, cast=int)
+# Mismatching (right password, wrong device) logins allowed per account per hour before HTTP 429.
+DEVICE_MISMATCH_MAX_PER_HOUR = config("DEVICE_MISMATCH_MAX_PER_HOUR", default=10, cast=int)
+
+# Phone verification by a staff-sent WhatsApp code.
+PHONE_VERIFICATION_CODE_TTL_MINUTES = config("PHONE_VERIFICATION_CODE_TTL_MINUTES", default=10, cast=int)
+PHONE_VERIFICATION_MAX_ATTEMPTS = config("PHONE_VERIFICATION_MAX_ATTEMPTS", default=5, cast=int)
+# A request staff never handled expires after this many hours.
+PHONE_VERIFICATION_PENDING_TTL_HOURS = config("PHONE_VERIFICATION_PENDING_TTL_HOURS", default=48, cast=int)
 
 OTP_DEFAULT_CHANNEL = config("OTP_DEFAULT_CHANNEL", default="email")
 OTP_EXPIRY_MINUTES = config("OTP_EXPIRY_MINUTES", default=10, cast=int)
