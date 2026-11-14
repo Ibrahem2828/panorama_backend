@@ -111,14 +111,20 @@ def test_dental_student_also_joins_clinical_one(world):
 
 
 @pytest.mark.parametrize(
-    "name", ["السريرية 1", "السريريّة ١", "سريرية 1", "السريرية الأولى", "السريريه 1", "  السريرية  1 ", "السريرية-1"]
-)
+    "name", ["السريرية 1", "السريريّة ١", "سريرية 1", "السريرية الأولى", "السريريه 1", "  السريرية  1 ", "السريرية-1",
+     "السريرية I", "حالات سريرية (1)", "حالات سريرية 1", "حالات سريرية - 1", "حالات سريرية ١", "حالات سريرية (١)",
+     "حالات سريرية الأولى", "حالات سريرية (1) - كلية طب الاسنان"]
+)  # fmt: skip
 def test_clinical_one_is_matched_robustly(world, name):
     group = _group(world, name, world["dental"])
     assert dental_clinical_groups(world["dental"]) == [group]
 
 
-@pytest.mark.parametrize("name", ["السريرية 10", "السريرية 2", "السريرية", "علم الأسنان 1", "clinical 1"])
+@pytest.mark.parametrize(
+    "name",
+    ["السريرية 10", "السريرية 2", "السريرية", "علم الأسنان 1", "clinical 1", "سريرية 2", "السريرية 12",
+     "حالات سريرية (2)", "حالات سريرية (10)", "حالات سريرية (11)", "حالات سريرية 2", "حالات سريرية"],
+)  # fmt: skip
 def test_other_names_are_not_clinical_one(world, name):
     _group(world, name, world["dental"])
     assert dental_clinical_groups(world["dental"]) == []
@@ -299,3 +305,35 @@ def test_no_student_endpoint_serialises_the_invite(world):
         body = client.get(url).content.decode()
         assert "chat.whatsapp.com" not in body and "AbCdEfGhIjKlMnOp12" not in body, url
     assert client.get(f"/api/v1/groups/{group.id}/").data["data"]["has_whatsapp_channel"] is True
+
+
+def test_production_dental_names_clinical_one_only(world):
+    """Production shape: community + «حالات سريرية (1)» / «(2)» (no pins) + year groups, all in the dental faculty."""
+
+    dental = world["dental"]
+    community = _group(world, "مجتمع بانوراما - كلية طب الاسنان", dental)
+    clinical1 = _group(world, "حالات سريرية (1)", dental)
+    clinical2 = _group(world, "حالات سريرية (2)", dental)
+    year_group = _group(world, "دفعة السنة الأولى - كلية طب الاسنان", dental, academic_year=world["year1"])
+    law_clinical = _group(world, "حالات سريرية (1)", world["law"])
+    assert dental_clinical_groups(dental) == [clinical1]
+    user = _student(world, dental, status=StudentVerificationStatus.APPROVED)
+    assert FacultyCommunityService.groups_for(user) == [community, clinical1]
+    assert FacultyCommunityService.join(user) == 2
+    assert FacultyCommunityService.join(user) == 0  # idempotent
+    assert _member(user, community) and _member(user, clinical1)
+    assert not _member(user, clinical2) and not _member(user, year_group)
+    # a non-dental faculty is unaffected: its «حالات سريرية» group is just a pinless community group
+    law_user = _student(world, world["law"], n=2, status=StudentVerificationStatus.APPROVED)
+    assert FacultyCommunityService.groups_for(law_user) == [law_clinical]
+
+
+def test_unpinned_clinical_groups_stay_visible_to_a_dental_non_member(world):
+    dental = world["dental"]
+    clinical1 = _group(world, "حالات سريرية (1)", dental)
+    clinical2 = _group(world, "حالات سريرية (2)", dental)
+    year_group = _group(world, "دفعة السنة الأولى - كلية طب الاسنان", dental, academic_year=world["year1"])
+    user = _student(world, dental, status=StudentVerificationStatus.APPROVED)
+    ids = {row["id"] for row in _client(user).get("/api/v1/groups/available/").data["data"]["results"]}
+    assert {clinical1.id, clinical2.id} <= ids
+    assert year_group.id not in ids
