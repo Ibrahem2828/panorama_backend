@@ -4,12 +4,12 @@ import mimetypes
 from datetime import timedelta
 from pathlib import Path
 
+from django.core.files.base import ContentFile
 from django.db import IntegrityError, transaction
-from django.http import FileResponse, Http404
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.http import content_disposition_header
-from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import filters, permissions, serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
@@ -17,14 +17,17 @@ from rest_framework.views import APIView
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import success_response
 from apps.common.throttles import (
+    ChatAttachmentTicketBatchRateThrottle,
+    ChatAttachmentTicketRateThrottle,
     ChatMessageRateThrottle,
     ChatReportRateThrottle,
     ChatTicketRateThrottle,
-    FileTicketRateThrottle,
 )
 from apps.common.viewsets import StandardExplicitActionViewSet
 from apps.groups.models import Group, GroupMembershipStatus
 
+from .delivery import serve_inline
+from .media import make_thumbnail
 from .models import GroupChatPreference, Message, MessageAttachmentAccessTicket, MessageReport
 from .reactions import ChatReactionService
 from .receipts import ChatReceiptService, ChatUnreadService
@@ -35,6 +38,8 @@ from .serializers import (
     MessageSerializer,
 )
 from .services import ChatHandshakeTicketService, ChatMessageService, ChatPermissionService
+
+BATCH_TICKET_LIMIT = 20
 
 
 class GroupChatHandshakeTicketView(APIView):
@@ -196,8 +201,26 @@ class GroupMessageReportView(APIView):
         return run_idempotent(request, f"chat-message-report:{message.pk}", write)
 
 
+def _message_media_urls(request, ticket, message) -> dict:
+    """What the app needs to show an attachment: the ticket URLs plus enough metadata to avoid a second request."""
+
+    base = request.build_absolute_uri(f"/api/v1/protected-chat-attachments/{ticket.token}/")
+    return {
+        "message_id": message.pk,
+        "preview_url": base,
+        "thumb_url": f"{base}?variant=thumb" if (message.attachment_thumb or message.attachment_is_image) else None,
+        "expires_at": ticket.expires_at,
+        "download_allowed": False,
+        "kind": message.message_type,
+        "mime": message.attachment_mime or None,
+        "size": message.attachment_size,
+        "etag": message.attachment_sha256 or None,
+        "supports_range": True,
+    }
+
+
 class MessageAttachmentAccessTicketView(APIView):
-    throttle_classes = [FileTicketRateThrottle]
+    throttle_classes = [ChatAttachmentTicketRateThrottle]
 
     @extend_schema(tags=["Chat"], request=None, responses={201: OpenApiTypes.OBJECT})
     def post(self, request, group_id: int, message_id: int):
@@ -207,9 +230,8 @@ class MessageAttachmentAccessTicketView(APIView):
         if not message.attachment:
             raise Http404("This message does not have an attachment.")
         ticket = MessageAttachmentAccessTicket.issue(message, request.user)
-        preview_url = request.build_absolute_uri(f"/api/v1/protected-chat-attachments/{ticket.token}/")
         return success_response(
-            data={"preview_url": preview_url, "expires_at": ticket.expires_at, "download_allowed": False},
+            data=_message_media_urls(request, ticket, message),
             message="Protected attachment ticket issued",
             status_code=status.HTTP_201_CREATED,
             request=request,
@@ -217,11 +239,61 @@ class MessageAttachmentAccessTicketView(APIView):
         )
 
 
+class AttachmentTicketBatchSerializer(serializers.Serializer):
+    message_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), allow_empty=False, max_length=BATCH_TICKET_LIMIT
+    )
+
+
+class MessageAttachmentAccessTicketBatchView(APIView):
+    """Tickets for up to ``BATCH_TICKET_LIMIT`` messages at once, so a screen of thumbnails costs one request."""
+
+    throttle_classes = [ChatAttachmentTicketBatchRateThrottle]
+    serializer_class = AttachmentTicketBatchSerializer
+
+    @extend_schema(tags=["Chat"], request=AttachmentTicketBatchSerializer, responses={201: OpenApiTypes.OBJECT})
+    def post(self, request, group_id: int):
+        group = get_object_or_404(Group, pk=group_id, is_deleted=False)
+        ChatPermissionService.enforce_group_chat_access(request.user, group)
+        serializer = AttachmentTicketBatchSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ids = list(dict.fromkeys(serializer.validated_data["message_ids"]))
+        messages = {
+            message.pk: message
+            for message in Message.objects.filter(pk__in=ids, group=group, is_deleted=False).exclude(attachment="")
+            if message.attachment
+        }
+        tickets = [
+            _message_media_urls(request, MessageAttachmentAccessTicket.issue(messages[pk], request.user), messages[pk])
+            for pk in ids
+            if pk in messages
+        ]
+        return success_response(
+            data={"tickets": tickets, "missing": [pk for pk in ids if pk not in messages]},
+            message="Protected attachment tickets issued",
+            status_code=status.HTTP_201_CREATED,
+            request=request,
+            code="CHAT_ATTACHMENT_TICKETS_ISSUED",
+        )
+
+
 class ProtectedMessageAttachmentStreamView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Protected Assets"], responses={200: OpenApiResponse(description="Inline chat attachment")})
+    @extend_schema(
+        tags=["Protected Assets"],
+        parameters=[OpenApiParameter("variant", str, description="`thumb` for the <=480px WebP preview of an image.")],
+        responses={
+            200: OpenApiResponse(description="Inline chat attachment"),
+            206: OpenApiResponse(description="Byte range of the attachment (audio seeking)"),
+            304: OpenApiResponse(description="Unchanged (If-None-Match)"),
+            416: OpenApiResponse(description="Range not satisfiable"),
+        },
+    )
     def get(self, request, token):
+        variant = request.query_params.get("variant", "")
+        if variant not in {"", "thumb"}:
+            raise Http404("Unknown variant.")
         with transaction.atomic():
             ticket = (
                 MessageAttachmentAccessTicket.objects.select_for_update()
@@ -232,21 +304,47 @@ class ProtectedMessageAttachmentStreamView(APIView):
             if not ticket or not ticket.is_valid or ticket.requested_by_id != request.user.id:
                 raise Http404("The protected attachment link is invalid or expired.")
             ChatPermissionService.enforce_group_chat_access(request.user, ticket.message.group)
-            attachment = ticket.message.attachment
+            message = ticket.message
             ticket.use_count += 1
             ticket.save(update_fields=["use_count", "updated_at"])
-        filename = Path(attachment.name).name
-        content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-        response = FileResponse(attachment.open("rb"), content_type=content_type)
-        content_disposition = content_disposition_header(False, filename)
-        if content_disposition:
-            response["Content-Disposition"] = content_disposition
-        response["Cache-Control"] = "private, no-store, max-age=0"
-        response["X-Content-Type-Options"] = "nosniff"
-        response["Content-Security-Policy"] = (
-            "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+
+        if variant == "thumb":
+            return self._thumbnail(request, message)
+        attachment = message.attachment
+        filename = message.attachment_name or Path(attachment.name).name
+        content_type = message.attachment_mime or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+        try:
+            size = message.attachment_size if message.attachment_size is not None else attachment.size
+        except OSError:
+            raise Http404("The attachment file is missing.") from None
+        etag = f'"{message.attachment_sha256}"' if message.attachment_sha256 else f'W/"m{message.pk}-{size}"'
+        return serve_inline(request, attachment, content_type=content_type, filename=filename, etag=etag, size=size)
+
+    @staticmethod
+    def _thumbnail(request, message):
+        if not message.attachment_thumb:
+            if not message.attachment_is_image:
+                raise Http404("This attachment has no thumbnail.")
+            # Older messages predate stored thumbnails: build it once on first request, then it is cached on the row.
+            try:
+                with message.attachment.open("rb") as handle:
+                    data, width, height = make_thumbnail(handle)
+            except Exception:  # noqa: BLE001 - unreadable image: the client falls back to the original
+                raise Http404("This attachment has no thumbnail.") from None
+            message.attachment_thumb.save("thumb.webp", ContentFile(data), save=False)
+            message.attachment_width = message.attachment_width or width
+            message.attachment_height = message.attachment_height or height
+            message.save(update_fields=["attachment_thumb", "attachment_width", "attachment_height", "updated_at"])
+        thumb = message.attachment_thumb
+        key = message.attachment_sha256 or f"m{message.pk}"
+        return serve_inline(
+            request,
+            thumb,
+            content_type="image/webp",
+            filename="thumb.webp",
+            etag=f'"{key}-t{thumb.size}"',
+            size=thumb.size,
         )
-        return response
 
 
 class ReceiptSerializer(serializers.Serializer):

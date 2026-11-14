@@ -183,6 +183,8 @@ REST_FRAMEWORK = {
         "external_channel": config("THROTTLE_EXTERNAL_CHANNEL", default="20/hour"),
         "chat_message": config("THROTTLE_CHAT_MESSAGE", default="30/min"),
         "chat_ticket": config("THROTTLE_CHAT_TICKET", default="30/min"),
+        "chat_attachment_ticket": config("THROTTLE_CHAT_ATTACHMENT_TICKET", default="90/min"),
+        "chat_attachment_ticket_batch": config("THROTTLE_CHAT_ATTACHMENT_TICKET_BATCH", default="20/min"),
         "chat_report": config("THROTTLE_CHAT_REPORT", default="10/day"),
         "support_ticket": config("THROTTLE_SUPPORT_TICKET", default="5/hour"),
         "support_message": config("THROTTLE_SUPPORT_MESSAGE", default="30/hour"),
@@ -421,6 +423,18 @@ DASHBOARD_BASE_URL = config("DASHBOARD_BASE_URL", default="http://localhost:3100
 INVITATION_TTL_HOURS = config("INVITATION_TTL_HOURS", default=48, cast=int)
 FILE_ACCESS_TICKET_TTL_SECONDS = config("FILE_ACCESS_TICKET_TTL_SECONDS", default=120, cast=int)
 FILE_ACCESS_TICKET_MAX_USES = config("FILE_ACCESS_TICKET_MAX_USES", default=8, cast=int)
+# Chat media. Voice notes are capped by real (server-measured) duration; uploaded audio files only by size.
+CHAT_VOICE_MAX_SECONDS = config("CHAT_VOICE_MAX_SECONDS", default=300, cast=int)
+# Container rounding slack: a recording the app stopped at exactly 5:00 can measure a fraction over.
+CHAT_VOICE_DURATION_TOLERANCE_MS = config("CHAT_VOICE_DURATION_TOLERANCE_MS", default=1000, cast=int)
+CHAT_VOICE_MAX_BYTES = config("CHAT_VOICE_MAX_BYTES", default=5 * 1024 * 1024, cast=int)
+CHAT_AUDIO_FILE_MAX_BYTES = config("CHAT_AUDIO_FILE_MAX_BYTES", default=25 * 1024 * 1024, cast=int)
+CHAT_IMAGE_MAX_BYTES = config("CHAT_IMAGE_MAX_BYTES", default=10 * 1024 * 1024, cast=int)
+CHAT_IMAGE_MAX_PIXELS = config("CHAT_IMAGE_MAX_PIXELS", default=40_000_000, cast=int)
+CHAT_THUMBNAIL_MAX_PX = config("CHAT_THUMBNAIL_MAX_PX", default=480, cast=int)
+# Audio is seeked with many Range requests, so its tickets live longer and allow more requests than an image's.
+CHAT_MEDIA_TICKET_TTL_SECONDS = config("CHAT_MEDIA_TICKET_TTL_SECONDS", default=600, cast=int)
+CHAT_MEDIA_TICKET_MAX_USES = config("CHAT_MEDIA_TICKET_MAX_USES", default=128, cast=int)
 EXTERNAL_CHANNEL_TICKET_TTL_SECONDS = config("EXTERNAL_CHANNEL_TICKET_TTL_SECONDS", default=60, cast=int)
 WEBSOCKET_CHAT_TICKET_TTL_SECONDS = config("WEBSOCKET_CHAT_TICKET_TTL_SECONDS", default=45, cast=int)
 WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED = get_bool_env("WEBSOCKET_LEGACY_JWT_QUERY_AUTH_ENABLED", default=False)
