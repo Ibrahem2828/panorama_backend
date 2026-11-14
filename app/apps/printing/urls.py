@@ -28,6 +28,7 @@ from .views import (
     PrintConvertDetailView,
     PrintConvertView,
     PrintItemAccessTicketView,
+    PrintOptionHelpImageView,
     PrintOptionHelpListView,
     PrintOptionsView,
     PrintOrderCancelView,
@@ -65,6 +66,7 @@ router.register(
 urlpatterns = [
     path("printing/options/", PrintOptionsView.as_view(), name="print-options"),
     path("printing/option-help/", PrintOptionHelpListView.as_view(), name="print-option-help"),
+    path("printing/option-help/<int:pk>/image/", PrintOptionHelpImageView.as_view(), name="print-option-help-image"),
     path("printing/quote/", PrintQuoteView.as_view(), name="print-quote"),
     path(
         "dashboard/printing/orders/<int:pk>/print-jobs/",

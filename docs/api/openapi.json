@@ -23113,6 +23113,49 @@
                 }
             }
         },
+        "/api/v1/printing/option-help/{id}/image/": {
+            "get": {
+                "operationId": "v1_printing_option_help_image_retrieve",
+                "description": "The help image of one option, behind authentication (``/media/`` is not published). Staff may also see inactive rows.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Printing"
+                ],
+                "security": [
+                    {
+                        "jwtAuth": []
+                    },
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/*": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "304": {
+                        "description": "No response body"
+                    }
+                }
+            }
+        },
         "/api/v1/printing/options/": {
             "get": {
                 "operationId": "v1_printing_options_retrieve",

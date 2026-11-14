@@ -156,3 +156,50 @@ def test_seed_is_idempotent_covers_current_keys_and_keeps_edits(db):
     assert PrintOptionHelp.objects.get(pk=row.pk).title == "معدّل"
     for item in PrintOptionHelp.objects.all():
         item.full_clean()
+
+
+def _with_image(staff, **extra):
+    created = staff.post(DASH, {**_payload(**extra), "is_active": "true", "image": _png()}, format="multipart")
+    assert created.status_code == 201, created.content
+    return created.json()["data"]
+
+
+def test_image_url_is_the_authenticated_api_route_not_media(staff, student):
+    row = _with_image(staff)
+    assert f"/api/v1/printing/option-help/{row['id']}/image/?v=" in row["image_url"]
+    assert "/media/" not in row["image_url"]
+    item = student.get(PUBLIC).json()["data"]["items"][0]
+    assert f"/api/v1/printing/option-help/{item['id']}/image/?v=" in item["image_url"]
+
+
+def test_image_requires_authentication(staff):
+    row = _with_image(staff)
+    assert APIClient().get(f"{PUBLIC}{row['id']}/image/").status_code in (401, 403)
+
+
+def test_image_served_inline_with_headers_and_etag(staff, student):
+    pk = _with_image(staff)["id"]
+    response = student.get(f"{PUBLIC}{pk}/image/")
+    assert response.status_code == 200
+    assert response["Content-Type"] == "image/png"
+    assert response["X-Content-Type-Options"] == "nosniff"
+    assert response["Cache-Control"] == "private, max-age=3600"
+    assert b"".join(response.streaming_content).startswith(b"\x89PNG")
+    etag = response["ETag"]
+    again = student.get(f"{PUBLIC}{pk}/image/", HTTP_IF_NONE_MATCH=etag)
+    assert again.status_code == 304
+    assert again["ETag"] == etag
+
+
+def test_inactive_or_deleted_image_is_404_for_students_but_staff_can_see_inactive(staff, student):
+    pk = _with_image(staff)["id"]
+    assert staff.patch(f"{DASH}{pk}/", {"is_active": False}, format="json").status_code == 200
+    assert student.get(f"{PUBLIC}{pk}/image/").status_code == 404
+    assert staff.get(f"{PUBLIC}{pk}/image/").status_code == 200
+    assert staff.delete(f"{DASH}{pk}/").status_code in (200, 204)
+    assert staff.get(f"{PUBLIC}{pk}/image/").status_code == 404
+
+
+def test_entry_without_image_is_404(staff, student):
+    pk = staff.post(DASH, _payload(), format="json").json()["data"]["id"]
+    assert student.get(f"{PUBLIC}{pk}/image/").status_code == 404

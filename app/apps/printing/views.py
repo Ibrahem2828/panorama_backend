@@ -11,7 +11,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import DecimalField, Q, Sum, Value
 from django.db.models.functions import Coalesce
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
@@ -895,6 +895,52 @@ class PrintOptionHelpListView(APIView):
             )
         response["ETag"] = etag
         response["Cache-Control"] = "private, max-age=300"
+        return response
+
+
+PNG_MAGIC = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+JPEG_MAGIC = bytes([0xFF, 0xD8, 0xFF])
+
+
+def _sniff_image_type(handle) -> str:
+    head = handle.read(16)
+    handle.seek(0)
+    if head.startswith(PNG_MAGIC):
+        return "image/png"
+    if head[:3] == JPEG_MAGIC:
+        return "image/jpeg"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    raise Http404
+
+
+class PrintOptionHelpImageView(APIView):
+    """The help image of one option, behind authentication (``/media/`` is not published). Staff may also see inactive rows."""
+
+    @extend_schema(tags=["Printing"], responses={(200, "image/*"): OpenApiTypes.BINARY, 304: None})
+    def get(self, request, pk: int):
+        rows = PrintOptionHelp.objects.filter(pk=pk, is_deleted=False).exclude(image="")
+        if not PermissionService.has(request.user, Capability.PRINTING_MANAGE):
+            rows = rows.filter(is_active=True)
+        row = rows.first()
+        if row is None or not row.image:
+            raise Http404
+        etag = (
+            '"'
+            + hashlib.sha256(f"{row.pk}:{row.image.name}:{row.updated_at.isoformat()}".encode()).hexdigest()[:32]
+            + '"'
+        )
+        if request.headers.get("If-None-Match") == etag:
+            response: HttpResponse | FileResponse = HttpResponse(status=status.HTTP_304_NOT_MODIFIED)
+        else:
+            try:
+                handle = row.image.open("rb")
+            except (FileNotFoundError, ValueError) as exc:
+                raise Http404 from exc
+            response = FileResponse(handle, content_type=_sniff_image_type(handle))
+        response["ETag"] = etag
+        response["Cache-Control"] = "private, max-age=3600"
+        response["X-Content-Type-Options"] = "nosniff"
         return response
 
 

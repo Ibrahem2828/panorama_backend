@@ -79,3 +79,12 @@ mapping and are preserved.
 - The additive chat handshake endpoint is Mobile-facing:
   `POST /api/v1/groups/{group_id}/chat-ticket/`. Dashboard clients should not
   send an access JWT in a WebSocket query string.
+
+## Print option help images
+
+`image_url` of `/dashboard/printing/option-help/` and `/printing/option-help/` is now
+`/api/v1/printing/option-help/{id}/image/?v=<updated_at epoch>` (authenticated, not `/media/`). A browser `<img src>` cannot
+send the Bearer token and the dashboard CSP must allow the origin, so load it through the dashboard BFF (a route that
+forwards the call with the session token and streams the bytes) or fetch it with the token and show a blob URL. Staff
+(`printing.manage`) may also read inactive entries. Note: a multipart create without `is_active` stores `false`; send
+`is_active=true` explicitly when uploading an image with the form.

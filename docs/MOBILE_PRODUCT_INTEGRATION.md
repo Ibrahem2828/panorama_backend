@@ -163,3 +163,12 @@ The stream is `Content-Disposition: inline`, `nosniff`, `Cache-Control: private,
 with a fresh ticket without re-downloading. Tickets are bound to the requesting member and re-check membership on every
 use. "No download" is enforced by the app (no share/save intents, screen-capture protection, encrypted app-private cache);
 the server can only keep links short-lived, member-bound and non-enumerable.
+
+## Print option help images
+
+`GET /api/v1/printing/option-help/` returns `image_url` per entry: an absolute URL of
+`GET /api/v1/printing/option-help/{id}/image/?v=<updated_at epoch>`. The `/media/` path is not published in production, so
+the image must be fetched **with the `Authorization: Bearer` header** (a plain image widget without headers gets 401).
+The response is inline with the real image type, `ETag` (send `If-None-Match` to receive 304), `Cache-Control: private,
+max-age=3600` and `X-Content-Type-Options: nosniff`. Inactive or deleted entries answer 404 to students. `?v=` changes
+whenever the entry changes, so an HTTP cache keyed by URL stays correct.

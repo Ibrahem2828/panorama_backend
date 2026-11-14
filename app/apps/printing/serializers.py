@@ -969,6 +969,8 @@ class PublicPrintOptionHelpSerializer(serializers.ModelSerializer):
 
 
 def _help_image_url(obj, request) -> str | None:
+    """Authenticated API URL of the help image (production does not serve /media/); ``v`` busts client caches."""
     if not obj.image:
         return None
-    return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+    path = f"/api/v1/printing/option-help/{obj.pk}/image/?v={int(obj.updated_at.timestamp())}"
+    return request.build_absolute_uri(path) if request else path

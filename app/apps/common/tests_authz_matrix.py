@@ -192,6 +192,7 @@ ROUTE_KINDS: dict[str, str] = {
     "printing/pickup-locations/{pk}/": AUTH,
     "printing/options/": AUTH,
     "printing/option-help/": AUTH,
+    "printing/option-help/{pk}/image/": AUTH,
     "printing/products/": AUTH,
     "printing/products/{pk}/": AUTH,
     "printing/orders/{pk}/cancel/": AUTH,
