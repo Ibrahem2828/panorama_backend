@@ -28,6 +28,7 @@ STAFF_KINDS = frozenset(
         "purchase_reminder",
         "support_ticket",
         "print_order",
+        "store_order",
         "verification_request",
         "phone_verification_request",
     }
@@ -39,6 +40,7 @@ _KIND_TO_CATEGORY = {
     "purchase_reminder": PURCHASES,
     "support_ticket": SUPPORT,
     "print_order": PRINTING,
+    "store_order": PRINTING,
     "verification_request": VERIFICATION,
     "phone_verification_request": VERIFICATION,
     "chat": CHAT,

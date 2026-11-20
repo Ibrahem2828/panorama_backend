@@ -18145,6 +18145,2187 @@
           ]
         },
         {
+          "name": "v1_dashboard_store_brands_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/brands/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "brands"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/brands/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_brands_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/brands/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "brands"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/brands/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_brands_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/brands/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "brands",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/store/brands/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_brands_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/brands/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "brands",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/brands/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_brands_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/brands/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "brands",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/store/brands/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_brands_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/brands/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "brands",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/store/brands/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_categories_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/categories/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "categories"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/categories/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_categories_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/categories/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "categories"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/categories/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_categories_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/categories/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "categories",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/store/categories/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_categories_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/categories/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "categories",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/categories/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_categories_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/categories/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "categories",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/store/categories/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_categories_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/categories/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "categories",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/store/categories/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_images_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/images/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "images"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/images/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_images_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/images/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "images"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/images/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_images_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/images/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "images",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/store/images/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_images_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/images/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "images",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/images/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_images_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/images/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "images",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/store/images/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_images_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/images/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "images",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/store/images/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_orders_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/orders/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "orders"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/orders/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_orders_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/orders/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "orders",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/orders/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_orders_status_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/orders/{{id}}/status/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "orders",
+                "{{id}}",
+                "status"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/store/orders/{id}/status/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_products_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/products/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "products"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/products/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_products_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/products/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "products"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/products/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_products_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/store/products/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_products_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/products/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_products_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/store/products/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_products_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/products/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "products",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/store/products/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_reviews_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/reviews/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "reviews"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/reviews/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_reviews_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/reviews/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "reviews",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/reviews/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_reviews_hide_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/reviews/{{id}}/hide/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "reviews",
+                "{{id}}",
+                "hide"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/reviews/{id}/hide/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_reviews_unhide_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/reviews/{{id}}/unhide/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "reviews",
+                "{{id}}",
+                "unhide"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/reviews/{id}/unhide/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_summary_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/summary/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "summary"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/summary/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_list",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/variants/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/variants/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: DELETE /api/v1/dashboard/store/variants/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: GET /api/v1/dashboard/store/variants/{id}/. Permission and schema are authoritative in OpenAPI. "
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PATCH /api/v1/dashboard/store/variants/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/{{id}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants",
+                "{{id}}"
+              ]
+            },
+            "description": "العقد الفعلي: PUT /api/v1/dashboard/store/variants/{id}/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "v1_dashboard_store_variants_stock_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/dashboard/store/variants/{{id}}/stock/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "store",
+                "variants",
+                "{{id}}",
+                "stock"
+              ]
+            },
+            "description": "العقد الفعلي: POST /api/v1/dashboard/store/variants/{id}/stock/. Permission and schema are authoritative in OpenAPI. ",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('JSON response when present', function () { pm.expect(pm.response.headers.get('Content-Type') || '').to.include('application/json'); });",
+                  "pm.test('request correlation header', function () { pm.expect(pm.response.headers.has('X-Request-ID')).to.eql(true); });",
+                  "pm.test('no stack trace is exposed', function () { pm.expect(pm.response.text()).to.not.include('Traceback'); });",
+                  "if (pm.response.code >= 400) { pm.test('stable error envelope', function () { var b=pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.code).to.be.a('string'); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "v1_dashboard_students_list",
           "request": {
             "method": "GET",

@@ -172,3 +172,26 @@ the image must be fetched **with the `Authorization: Bearer` header** (a plain i
 The response is inline with the real image type, `ETag` (send `If-None-Match` to receive 304), `Cache-Control: private,
 max-age=3600` and `X-Content-Type-Options: nosniff`. Inactive or deleted entries answer 404 to students. `?v=` changes
 whenever the entry changes, so an HTTP cache keyed by URL stays correct.
+
+## Stationery store (additive, from this release)
+
+Full reference: `docs/STORE.md`. Everything is under `/api/v1/store/`, needs a login, and changes nothing that the
+2.12.0 / 2.13.0 contract already uses.
+
+* Browse: `GET brands/`, `GET categories/`, `GET products/?brand=&category=&search=&in_stock=true&ordering=popular|newest|rating|price_asc|price_desc&currency=SYP|USD&page=`.
+  A card has `image_url`, `thumb_url`, `rating_avg`, `rating_count`, `price_from {SYP, USD}` and `in_stock`.
+* Product page: `GET products/{id}/` gives `variants[]` (colour name + `#RRGGBB`, size, `prices`, `available`, `max_per_order`),
+  `images[]`, `specs[]`, `description`, `can_review`. Prices are strings; a currency the shop does not sell is `null`.
+* Pictures are **authenticated** URLs (`/api/v1/store/images/{id}/?v=...`, add `&variant=thumb` for the <=480 px WebP).
+  Send the same `Authorization` header as for any API call; honour `ETag`/`304`. They are never under `/media/`.
+* Cart (server side): `GET cart/`, `POST cart/items/ {variant, quantity}`, `PATCH cart/items/{id}/ {quantity}`,
+  `DELETE cart/items/{id}/`, `DELETE cart/`. `totals.SYP|USD` is `null` when a line has no price in that currency.
+* Checkout: `POST checkout/ {currency, notes?}` with an optional `Idempotency-Key` header; the stock is reserved at once.
+  Payment is cash at pickup. SYP totals are rounded to tens; read `rounding_adjustment`.
+* Orders: `GET orders/`, `GET orders/{id}/`, `POST orders/{id}/cancel/` (pending only). Status flow:
+  `pending -> confirmed -> ready_for_pickup -> picked_up`, or `cancelled`.
+* Notifications: type `printing`, `data.kind = "store_order_status"`, `data.store_order_id`, `data.status`.
+* Reviews (only after `picked_up`): `GET/POST products/{id}/reviews/`, `GET/PATCH products/{id}/reviews/mine/` (one edit).
+* Error codes to handle: `INSUFFICIENT_STOCK` (409, `errors.available`), `QUANTITY_LIMIT`, `VARIANT_UNAVAILABLE`,
+  `PRICE_UNAVAILABLE`, `CART_EMPTY`, `CART_FULL`, `TOO_MANY_OPEN_ORDERS`, `ORDER_NOT_CANCELLABLE`,
+  `REVIEW_NOT_ELIGIBLE`, `REVIEW_EXISTS`, `REVIEW_EDIT_LIMIT`.

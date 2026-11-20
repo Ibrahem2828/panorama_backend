@@ -187,6 +187,22 @@ class PrintConvertRateThrottle(FileTicketRateThrottle):
     scope = "print_convert"
 
 
+class StoreCartRateThrottle(FileTicketRateThrottle):
+    scope = "store_cart"
+
+
+class StoreCheckoutRateThrottle(FileTicketRateThrottle):
+    scope = "store_checkout"
+
+
+class StoreReviewRateThrottle(FileTicketRateThrottle):
+    scope = "store_review"
+
+
+class StoreImageRateThrottle(FileTicketRateThrottle):
+    scope = "store_image"
+
+
 class PrintAgentRateThrottle(FileTicketRateThrottle):
     """The silent-print agent heartbeat (a few per minute per printer)."""
 
