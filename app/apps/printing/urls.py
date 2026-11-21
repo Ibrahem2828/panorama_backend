@@ -34,6 +34,7 @@ from .views import (
     PrintOrderCancelView,
     PrintOrderCreateView,
     PrintPickupLocationViewSet,
+    PrintProductImageView,
     PrintProductViewSet,
     PrintQuoteView,
     ProtectedPrintItemStreamView,
@@ -67,6 +68,7 @@ urlpatterns = [
     path("printing/options/", PrintOptionsView.as_view(), name="print-options"),
     path("printing/option-help/", PrintOptionHelpListView.as_view(), name="print-option-help"),
     path("printing/option-help/<int:pk>/image/", PrintOptionHelpImageView.as_view(), name="print-option-help-image"),
+    path("printing/products/<int:pk>/image/", PrintProductImageView.as_view(), name="print-product-image"),
     path("printing/quote/", PrintQuoteView.as_view(), name="print-quote"),
     path(
         "dashboard/printing/orders/<int:pk>/print-jobs/",

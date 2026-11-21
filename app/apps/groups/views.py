@@ -7,7 +7,7 @@ from typing import cast
 
 import django_filters
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
@@ -16,11 +16,19 @@ from rest_framework.exceptions import APIException
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
-from apps.accounts.permissions import CanManageExternalChannels, CanManageGroups, IsStudent, IsVerifiedStudent
+from apps.accounts.permissions import (
+    CanManageExternalChannels,
+    CanManageGroups,
+    Capability,
+    IsStudent,
+    IsVerifiedStudent,
+    PermissionService,
+)
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.filters import DateBoundFilter, PositiveIntegerFilter, StrictBooleanFilter, count_subquery
 from apps.common.idempotency import run_idempotent
+from apps.common.image_delivery import image_etag, serve_stored_image
 from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
 from apps.common.throttles import ExternalChannelRateThrottle
@@ -164,6 +172,35 @@ class GroupDetailViewSet(StandardReadOnlyModelViewSet):
 
             raise PermissionDenied("You are not eligible to view this group.")
         return group
+
+
+class GroupImageView(APIView):
+    """The image of one group, behind authentication (``/media/`` is not published).
+
+    Students get it under the same rules as ``GET groups/{id}/``: a verified student, an active group the student is
+    eligible for (and, for year/major/semester level groups, only as an approved member). Staff with ``groups.manage``
+    see every non-deleted group. Anything else is a 404 so the existence of a group is not disclosed."""
+
+    @extend_schema(tags=["Groups"], responses={(200, "image/*"): OpenApiTypes.BINARY, 304: None})
+    def get(self, request, pk: int):
+        group = Group.objects.filter(pk=pk, is_deleted=False).exclude(image="").first()
+        if group is None or not group.image:
+            raise Http404
+        if not PermissionService.has(request.user, Capability.GROUPS_MANAGE):
+            user = cast(User, request.user)
+            if not IsVerifiedStudent().has_permission(request, self) or not group.is_active:
+                raise Http404
+            if not is_student_eligible_for_group(user, group):
+                raise Http404
+            if (
+                is_level_group(group)
+                and not GroupMembership.objects.filter(
+                    group=group, user=user, status=GroupMembershipStatus.APPROVED, is_deleted=False
+                ).exists()
+            ):
+                raise Http404
+        etag = image_etag(group.pk, group.image.name, group.updated_at.isoformat())
+        return serve_stored_image(request, group.image, etag)
 
 
 GROUP_KINDS = ("subject", "faculty", "general")

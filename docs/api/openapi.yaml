@@ -331,6 +331,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/Announcement'
           description: ''
+  /api/v1/announcements/{id}/image/:
+    get:
+      operationId: v1_announcements_image_retrieve
+      description: |-
+        The image of one announcement, behind authentication (``/media/`` is not published).
+
+        Readers get it only when the announcement is in their own feed (``announcements_for_user``: active, in its date
+        window, targeting their role and academic level); staff with ``announcements.manage`` see every non-deleted one.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Announcements
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '304':
+          description: No response body
   /api/v1/auth/change-password/:
     post:
       operationId: v1_auth_change_password_create
@@ -14382,6 +14411,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
           description: ''
+  /api/v1/groups/{id}/image/:
+    get:
+      operationId: v1_groups_image_retrieve
+      description: |-
+        The image of one group, behind authentication (``/media/`` is not published).
+
+        Students get it under the same rules as ``GET groups/{id}/``: a verified student, an active group the student is
+        eligible for (and, for year/major/semester level groups, only as an approved member). Staff with ``groups.manage``
+        see every non-deleted group. Anything else is a 404 so the existence of a group is not disclosed.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Groups
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '304':
+          description: No response body
   /api/v1/groups/{id}/join/:
     post:
       operationId: v1_groups_join_create
@@ -16155,6 +16214,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicReadyProduct'
           description: ''
+  /api/v1/printing/products/{id}/image/:
+    get:
+      operationId: v1_printing_products_image_retrieve
+      description: |-
+        The image of one ready-made product, behind authentication (``/media/`` is not published).
+
+        Customers see active products only; staff with ``printing.manage`` also see inactive ones. Deleted rows are 404.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Printing
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '304':
+          description: No response body
   /api/v1/printing/quote/:
     post:
       operationId: v1_printing_quote_create

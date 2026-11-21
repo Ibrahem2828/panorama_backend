@@ -17,6 +17,7 @@ from rest_framework import serializers
 from apps.accounts.choices import UserRole
 from apps.accounts.models import User
 from apps.common.file_validation import validate_document_upload
+from apps.common.image_delivery import authenticated_image_url
 from apps.files.models import FileResource
 from apps.files.services import accessible_files_for_user
 from apps.finance.models import FinanceCurrency, PaymentMethod
@@ -716,6 +717,13 @@ class PrintExtraOptionSerializer(serializers.ModelSerializer):
         return attrs
 
 
+def _ready_product_image_url(obj, request) -> str | None:
+    """Authenticated API URL of the product image (production does not serve /media/)."""
+    if not obj.image:
+        return None
+    return authenticated_image_url(request, f"/api/v1/printing/products/{obj.pk}/image/", obj.updated_at)
+
+
 class ReadyProductSerializer(serializers.ModelSerializer):
     """Staff view of a product (all fields) used by the dashboard catalog."""
 
@@ -728,10 +736,13 @@ class ReadyProductSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
 
     def get_image_url(self, obj) -> str | None:
-        request = self.context.get("request")
-        if not obj.image:
-            return None
-        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return _ready_product_image_url(obj, self.context.get("request"))
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # ``/media/`` is not published in production: the raw field value would be a dead link
+        data["image"] = _ready_product_image_url(instance, self.context.get("request"))
+        return data
 
     def validate_image(self, value):
         from apps.common.file_validation import validate_image_upload
@@ -770,10 +781,7 @@ class PublicReadyProductSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_image_url(self, obj) -> str | None:
-        request = self.context.get("request")
-        if not obj.image:
-            return None
-        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+        return _ready_product_image_url(obj, self.context.get("request"))
 
 
 class PrintQueueJobSerializer(serializers.ModelSerializer):

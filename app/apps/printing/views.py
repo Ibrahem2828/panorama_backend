@@ -898,6 +898,23 @@ class PrintOptionHelpListView(APIView):
         return response
 
 
+class PrintProductImageView(APIView):
+    """The image of one ready-made product, behind authentication (``/media/`` is not published).
+
+    Customers see active products only; staff with ``printing.manage`` also see inactive ones. Deleted rows are 404."""
+
+    @extend_schema(tags=["Printing"], responses={(200, "image/*"): OpenApiTypes.BINARY, 304: None})
+    def get(self, request, pk: int):
+        rows = ReadyProduct.objects.filter(pk=pk, is_deleted=False).exclude(image="")
+        if not PermissionService.has(request.user, Capability.PRINTING_MANAGE):
+            rows = rows.filter(is_active=True)
+        row = rows.first()
+        if row is None or not row.image:
+            raise Http404
+        etag = image_etag(row.pk, row.image.name, row.updated_at.isoformat())
+        return serve_stored_image(request, row.image, etag)
+
+
 class PrintOptionHelpImageView(APIView):
     """The help image of one option, behind authentication (``/media/`` is not published). Staff may also see inactive rows."""
 

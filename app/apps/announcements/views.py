@@ -1,9 +1,13 @@
+from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import OpenApiTypes, extend_schema
 from rest_framework import filters
+from rest_framework.views import APIView
 
-from apps.accounts.permissions import CanManageAnnouncements
+from apps.accounts.permissions import CanManageAnnouncements, Capability, PermissionService
 from apps.audit.mixins import AuditedModelWriteMixin
 from apps.audit.models import AuditAction
+from apps.common.image_delivery import image_etag, serve_stored_image
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
 
 from .models import Announcement
@@ -37,6 +41,25 @@ class AnnouncementViewSet(StandardReadOnlyModelViewSet):
             "target_academic_year",
             "target_semester",
         )
+
+
+class AnnouncementImageView(APIView):
+    """The image of one announcement, behind authentication (``/media/`` is not published).
+
+    Readers get it only when the announcement is in their own feed (``announcements_for_user``: active, in its date
+    window, targeting their role and academic level); staff with ``announcements.manage`` see every non-deleted one."""
+
+    @extend_schema(tags=["Announcements"], responses={(200, "image/*"): OpenApiTypes.BINARY, 304: None})
+    def get(self, request, pk: int):
+        if PermissionService.has(request.user, Capability.ANNOUNCEMENTS_MANAGE):
+            rows = Announcement.objects.filter(is_deleted=False)
+        else:
+            rows = announcements_for_user(request.user)
+        row = rows.filter(pk=pk).exclude(image="").first()
+        if row is None or not row.image:
+            raise Http404
+        etag = image_etag(row.pk, row.image.name, row.updated_at.isoformat())
+        return serve_stored_image(request, row.image, etag)
 
 
 class DashboardAnnouncementViewSet(AuditedModelWriteMixin, StandardModelViewSet):
