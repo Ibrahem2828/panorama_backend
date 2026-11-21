@@ -13,8 +13,12 @@ Rules
   short-lived ``device_switch_token``. ``POST auth/device/switch/`` with that token takes the account over: the old
   binding becomes ``replaced``, every session of the account is invalidated (``User.invalidate_sessions``: refresh tokens
   blacklisted, ``session_version`` bumped, so access tokens and chat WebSockets stop working) and the new device is bound.
-* Self-service switches are limited (``DEVICE_SWITCH_LIMIT_PER_TERM`` per rolling ``DEVICE_SWITCH_WINDOW_DAYS``); beyond
-  that the student must contact an administrator who can reset the binding from the dashboard.
+* Self-service switches are limited to ``DEVICE_SWITCH_LIMIT_PER_TERM`` (default 1) per ACADEMIC TERM: switches are
+  counted since ``CurrentTerm.started_at`` (the moment an administrator set the current semester or ran "end
+  semester"), so the allowance resets when the term changes. ``Semester`` itself is just a label (no dates), so when no
+  ``CurrentTerm`` row exists the count falls back to the rolling ``DEVICE_SWITCH_WINDOW_DAYS`` window. Beyond the limit
+  the student must contact an administrator who can reset the binding from the dashboard.
+* Switching or resetting the binding revokes every offline license (lectures and library files) of the account.
 * Refresh from another device is refused with ``DEVICE_MISMATCH`` and NO switch token: a refresh token alone does not
   prove the password, so the app must send the user back to the login screen.
 * ``DEVICE_BINDING_ENFORCED=False`` (default) only records bindings when the header is present and never blocks.
@@ -157,24 +161,50 @@ def _window_start():
     return timezone.now() - timedelta(days=int(settings.DEVICE_SWITCH_WINDOW_DAYS))
 
 
-def switches_used(user: User) -> int:
+def counting_window() -> tuple[Any, str]:
+    """Where the switch count starts and which rule produced it: ``("term", term start)`` while an administrator-set
+    current term exists, else ``("rolling", now - DEVICE_SWITCH_WINDOW_DAYS)``."""
+
+    from apps.universities.terms import get_current_term
+
+    term = get_current_term()
+    now = timezone.now()
+    if term is not None and term.started_at <= now:
+        return term.started_at, "term"
+    return _window_start(), "rolling"
+
+
+def switches_used(user: User, window_start=None) -> int:
+    start = window_start if window_start is not None else counting_window()[0]
     return AccountDevice.objects.filter(
         user=user,
         bound_via=AccountDeviceBoundVia.SELF_SWITCH,
         counts_toward_limit=True,
-        bound_at__gte=_window_start(),
+        bound_at__gte=start,
     ).count()
 
 
-def switch_state(user: User) -> dict[str, int]:
+def switch_state(user: User) -> dict[str, Any]:
     limit = int(settings.DEVICE_SWITCH_LIMIT_PER_TERM)
-    used = switches_used(user)
+    start, scope = counting_window()
+    used = switches_used(user, start)
     return {
         "switch_limit": limit,
         "switches_used": used,
         "switches_remaining": max(0, limit - used),
         "window_days": int(settings.DEVICE_SWITCH_WINDOW_DAYS),
+        "limit_scope": scope,
+        "term_started_at": start.isoformat() if scope == "term" else None,
     }
+
+
+def _revoke_offline_licenses(user: User, reason: str, *, actor, request) -> None:
+    """The old device loses its offline lectures and files. Offline licenses key on the raw ``X-Panorama-Device-Id``
+    while bindings key on a UUID hash, so every license of the account is revoked (the new device holds none yet)."""
+
+    from apps.common.offline import revoke_all_user_offline_licenses
+
+    revoke_all_user_offline_licenses(user, reason, actor=actor, request=request)
 
 
 class DeviceBindingService:
@@ -438,6 +468,7 @@ class DeviceBindingService:
             )
             # Old device: refresh tokens blacklisted, access tokens and chat sockets fail on the session version.
             user.invalidate_sessions()
+            _revoke_offline_licenses(user, "device_replaced", actor=None, request=request)
             AuditLogService.log(
                 actor=user,
                 action=AuditAction.ACCOUNT_DEVICE_SWITCHED,
@@ -486,6 +517,7 @@ class DeviceBindingService:
                 counts_toward_limit=False, updated_at=now
             )
             locked.invalidate_sessions()
+            _revoke_offline_licenses(locked, "revoked_by_staff", actor=actor, request=request)
             AuditLogService.log(
                 actor=actor,
                 action=AuditAction.ACCOUNT_DEVICE_RESET,

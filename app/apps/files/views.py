@@ -25,6 +25,7 @@ from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
 from apps.common.filters import DateBoundFilter, StrictBooleanFilter, StrictIntegerFilter
 from apps.common.negotiation import IgnoreClientContentNegotiation
+from apps.common.offline import parse_single_range, range_chunks
 from apps.common.responses import success_response
 from apps.common.throttles import FileTicketRateThrottle, LectureViewerRateThrottle
 from apps.common.viewsets import StandardModelViewSet, StandardReadOnlyModelViewSet
@@ -49,47 +50,8 @@ from .services import (
 )
 from .tasks import dispatch_file_processing
 
-FILE_RANGE_CHUNK_SIZE = 64 * 1024
-
-
-def _parse_single_range(range_header: str, file_size: int) -> tuple[int, int] | None:
-    """Parse one RFC 7233 byte range without accepting multi-range responses."""
-
-    if not range_header:
-        return None
-    if not range_header.startswith("bytes=") or "," in range_header:
-        raise ValueError("Unsupported range")
-    start_text, separator, end_text = range_header.removeprefix("bytes=").partition("-")
-    if not separator or (not start_text and not end_text):
-        raise ValueError("Invalid range")
-    try:
-        if start_text:
-            start = int(start_text)
-            end = int(end_text) if end_text else file_size - 1
-        else:
-            suffix_length = int(end_text)
-            if suffix_length <= 0:
-                raise ValueError("Invalid suffix range")
-            start = max(file_size - suffix_length, 0)
-            end = file_size - 1
-    except ValueError as exc:
-        raise ValueError("Invalid range") from exc
-    if start < 0 or start >= file_size or end < start:
-        raise ValueError("Unsatisfiable range")
-    return start, min(end, file_size - 1)
-
-
-def _range_chunks(file_handle, length: int):
-    try:
-        remaining = length
-        while remaining:
-            chunk = file_handle.read(min(FILE_RANGE_CHUNK_SIZE, remaining))
-            if not chunk:
-                break
-            remaining -= len(chunk)
-            yield chunk
-    finally:
-        file_handle.close()
+_parse_single_range = parse_single_range
+_range_chunks = range_chunks
 
 
 class FileResourceViewSet(StandardReadOnlyModelViewSet):

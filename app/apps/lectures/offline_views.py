@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import serializers, status
@@ -14,7 +14,7 @@ from apps.accounts.permissions import CanManageLectures
 from apps.common.negotiation import IgnoreClientContentNegotiation
 from apps.common.responses import success_response
 from apps.common.throttles import LectureOfflineLicenseRateThrottle, LectureOfflinePackageRateThrottle
-from apps.files.views import _parse_single_range, _range_chunks
+from apps.common.offline import no_store, package_response
 from apps.product.services import feature_enabled_or_raise
 
 from . import offline_services as offline
@@ -34,11 +34,7 @@ class StaffRevokeSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=200, required=False, allow_blank=True)
 
 
-def _no_store(response):
-    response["Cache-Control"] = "private, no-store, max-age=0"
-    response["Pragma"] = "no-cache"
-    response["X-Content-Type-Options"] = "nosniff"
-    return response
+_no_store = no_store
 
 
 class LectureOfflineLicenseView(APIView):
@@ -100,39 +96,7 @@ class LectureOfflinePackageView(APIView):
     def get(self, request, pk: int):
         feature_enabled_or_raise("lecture_offline_enabled", request=request)
         license_ = offline.get_license(request.user, pk, offline.device_hash_from_request(request))
-        blob = license_.blob
-        etag = '"' + blob.package_sha256 + '"'
-        size = blob.package_size
-        if request.headers.get("If-None-Match", "") == etag:
-            return _no_store(HttpResponse(status=status.HTTP_304_NOT_MODIFIED, headers={"ETag": etag}))
-        range_header = request.headers.get("Range", "")
-        if_range = request.headers.get("If-Range", "")
-        if if_range and if_range != etag:
-            range_header = ""  # the validator no longer matches: send the whole (new) representation
-        try:
-            byte_range = _parse_single_range(range_header, size)
-        except ValueError:
-            unsatisfiable = HttpResponse(status=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE)
-            unsatisfiable["Content-Range"] = f"bytes */{size}"
-            return _no_store(unsatisfiable)
-        handle = blob.package.open("rb")
-        response: HttpResponse | FileResponse | StreamingHttpResponse
-        if byte_range is None:
-            response = FileResponse(handle, content_type="application/octet-stream")
-            response["Content-Length"] = str(size)
-        else:
-            start, end = byte_range
-            handle.seek(start)
-            response = StreamingHttpResponse(
-                _range_chunks(handle, end - start + 1), status=206, content_type="application/octet-stream"
-            )
-            response["Content-Range"] = f"bytes {start}-{end}/{size}"
-            response["Content-Length"] = str(end - start + 1)
-        response["Accept-Ranges"] = "bytes"
-        response["ETag"] = etag
-        response["Content-Disposition"] = f'attachment; filename="lecture-{pk}.pnof"'
-        response["X-Package-Key-Id"] = str(blob.key_id)
-        return _no_store(response)
+        return package_response(request, license_.blob, f"lecture-{pk}.pnof")
 
 
 class LectureOfflineLicenseListView(APIView):
