@@ -112,3 +112,33 @@ def dispatch_file_processing(file_id: int) -> None:
             logger.exception("file_processing_dispatch_failed", extra={"file_id": file_id})
 
     transaction.on_commit(send)
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(OSError,),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 2},
+    soft_time_limit=1500,
+    time_limit=1560,
+)
+def build_file_offline_package(self, file_id: int) -> str:
+    """Build the encrypted offline package of a big file on the conversion queue (idempotent)."""
+
+    from .offline_services import ensure_blob
+
+    try:
+        ensure_blob(file_id, allow_deferral=False)
+    except Exception as exc:  # noqa: BLE001 - not ready/too large: the next license request reports it
+        logger.warning("file_offline_build_skipped", extra={"file_id": file_id, "error": type(exc).__name__})
+        return "skipped"
+    return "built"
+
+
+def dispatch_offline_build(file_id: int) -> None:
+    """Queue the package build; a broker outage must not fail the request (the app simply retries)."""
+
+    try:
+        build_file_offline_package.delay(file_id)
+    except Exception:
+        logger.exception("file_offline_dispatch_failed", extra={"file_id": file_id})

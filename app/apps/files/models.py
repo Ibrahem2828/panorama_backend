@@ -272,3 +272,70 @@ class FileVisibilityTemplate(BaseModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+class FileOfflineBlob(BaseModel):
+    """One encrypted, cacheable offline package (PNOF v1) of a library file's rendered pages, as a PDF.
+
+    Same design as ``lectures.LectureOfflineBlob`` (one random AES key per file *version*, wrapped with the Fernet
+    field key, ciphertext in private storage). ``source_marker`` identifies the rendered document the blob was built
+    from, so re-processing or replacing the upload bumps the version and revokes the old licenses.
+    """
+
+    file_resource = models.ForeignKey(FileResource, on_delete=models.CASCADE, related_name="offline_blobs")
+    version = models.PositiveIntegerField()
+    key_id = models.UUIDField(default=uuid.uuid4, editable=False)
+    wrapped_key = models.TextField()
+    package = models.FileField(upload_to="files/offline/")
+    source_marker = models.CharField(max_length=600)
+    plaintext_size = models.PositiveBigIntegerField()
+    package_size = models.PositiveBigIntegerField()
+    package_sha256 = models.CharField(max_length=64)
+    chunk_size = models.PositiveIntegerField()
+    retired_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["file_resource_id", "-version"]
+        constraints = [
+            models.UniqueConstraint(fields=["file_resource", "version"], name="files_offline_blob_version_uniq"),
+            models.UniqueConstraint(
+                fields=["file_resource"],
+                condition=models.Q(retired_at__isnull=True),
+                name="files_offline_blob_one_live_uniq",
+            ),
+        ]
+
+
+class FileOfflineLicense(BaseModel):
+    """Right of one (user, device) to keep one library-file version offline until ``expires_at``.
+
+    Validity is *derived* live from ``user_can_access_file`` (the online viewer's rule) plus the file being ready.
+    """
+
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="file_offline_licenses")
+    file_resource = models.ForeignKey(FileResource, on_delete=models.CASCADE, related_name="offline_licenses")
+    blob = models.ForeignKey(FileOfflineBlob, on_delete=models.PROTECT, related_name="licenses")
+    #: SHA-256 hex of the ``X-Panorama-Device-Id`` header; empty when the client sent none.
+    device_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    issued_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    last_renewed_at = models.DateTimeField(null=True, blank=True)
+    renew_count = models.PositiveIntegerField(default=0)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoke_reason = models.CharField(max_length=64, blank=True)
+    revoked_by = models.ForeignKey("accounts.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-issued_at", "-id"]
+        indexes = [
+            models.Index(fields=["user", "revoked_at", "expires_at"], name="files_offlic_user_idx"),
+            models.Index(fields=["file_resource", "revoked_at"], name="files_offlic_file_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "file_resource", "device_hash"],
+                condition=models.Q(revoked_at__isnull=True),
+                name="files_offlic_one_active_uniq",
+            )
+        ]
