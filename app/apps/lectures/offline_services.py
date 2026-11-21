@@ -9,11 +9,7 @@ approved*.
 from __future__ import annotations
 
 import base64
-import hashlib
 import logging
-import os
-import tempfile
-import uuid
 from datetime import timedelta
 from typing import Any
 
@@ -26,26 +22,27 @@ from rest_framework.exceptions import APIException, NotFound
 
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
-from apps.common.crypto import decrypt_text, encrypt_text
+from apps.common import offline as shared
+from apps.common.offline import (  # noqa: F401 - re-exported: lecture code and tests import these names from here
+    DEVICE_HEADER,
+    REASON_ACCESS_LOST,
+    REASON_ACCOUNT_DISABLED,
+    REASON_DEVICE_REPLACED,
+    REASON_EXPIRED,
+    REASON_LECTURE_REPLACED,
+    REASON_LECTURE_UNAVAILABLE,
+    REASON_MEMBERSHIP_ENDED,
+    REASON_RELEASED,
+    REASON_STAFF,
+    device_hash_from_request,
+    license_state,
+)
 
 from . import offline_crypto
 from .models import Lecture, LectureOfflineBlob, LectureOfflineLicense
 from .services import user_can_view_lecture
 
 logger = logging.getLogger(__name__)
-
-DEVICE_HEADER = "X-Panorama-Device-Id"
-
-# Revocation reasons (stored in ``revoke_reason``; the app may show or log them).
-REASON_MEMBERSHIP_ENDED = "membership_ended"
-REASON_ACCESS_LOST = "access_lost"
-REASON_LECTURE_UNAVAILABLE = "lecture_unavailable"
-REASON_LECTURE_REPLACED = "lecture_replaced"
-REASON_RELEASED = "released_by_device"
-REASON_STAFF = "revoked_by_staff"
-REASON_DEVICE_REPLACED = "device_replaced"
-REASON_ACCOUNT_DISABLED = "account_disabled"
-REASON_EXPIRED = "expired"
 
 
 class OfflineLimitReached(APIException):
@@ -66,20 +63,6 @@ def max_per_user() -> int:
     return max(1, int(getattr(settings, "LECTURE_OFFLINE_MAX_PER_USER", 120)))
 
 
-def device_hash_from_request(request) -> str:
-    """SHA-256 of the optional ``X-Panorama-Device-Id`` header (same convention as the device binding)."""
-
-    raw = (request.headers.get(DEVICE_HEADER, "") or "").strip()[:256]
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest() if raw else ""
-
-
-def _safe_uuid(value: object) -> uuid.UUID | None:
-    try:
-        return uuid.UUID(str(value))
-    except ValueError:
-        return None
-
-
 # -- blobs --------------------------------------------------------------------------------------------------------------
 
 
@@ -90,24 +73,20 @@ def retire_blob(blob: LectureOfflineBlob, reason: str) -> int:
 
 
 def _build_blob(lecture: Lecture, version: int) -> LectureOfflineBlob:
-    key = os.urandom(offline_crypto.KEY_SIZE)
-    key_id = uuid.uuid4()
     source = lecture.viewer_pdf
-    with source.open("rb") as plain, tempfile.TemporaryFile() as cipher:
-        info = offline_crypto.encrypt_stream(
+    with source.open("rb") as plain:
+        package = shared.encrypt_source(
             plain,
-            cipher,
-            key=key,
-            key_id=key_id,
-            plaintext_size=source.size,
-            chunk_size=int(getattr(settings, "LECTURE_OFFLINE_CHUNK_SIZE", offline_crypto.DEFAULT_CHUNK_SIZE)),
+            source.size,
+            int(getattr(settings, "LECTURE_OFFLINE_CHUNK_SIZE", offline_crypto.DEFAULT_CHUNK_SIZE)),
         )
-        cipher.seek(0)
+    with package.cipher as cipher:
+        info = package.info
         blob = LectureOfflineBlob(
             lecture=lecture,
             version=version,
-            key_id=key_id,
-            wrapped_key=encrypt_text(base64.b64encode(key).decode("ascii")),
+            key_id=package.key_id,
+            wrapped_key=package.wrapped_key,
             source_name=source.name,
             plaintext_size=info.plaintext_size,
             package_size=info.size,
@@ -140,7 +119,7 @@ def ensure_blob(lecture_id: int) -> LectureOfflineBlob:
 
 
 def blob_content_key(blob: LectureOfflineBlob) -> bytes:
-    return base64.b64decode(decrypt_text(blob.wrapped_key))
+    return shared.unwrap_key(blob.wrapped_key)
 
 
 # -- evaluation ---------------------------------------------------------------------------------------------------------
@@ -352,12 +331,6 @@ def release_license(user, lecture_id: int, device_hash: str, *, request=None) ->
 # -- payload helpers ----------------------------------------------------------------------------------------------------
 
 
-def license_state(license_: LectureOfflineLicense) -> str:
-    if license_.revoked_at:
-        return "revoked"
-    return "expired" if license_.expires_at <= timezone.now() else "active"
-
-
 def license_summary(license_: LectureOfflineLicense) -> dict[str, Any]:
     blob = license_.blob
     return {
@@ -403,31 +376,17 @@ def sync_inventory(user, device_hash: str, license_ids: list[str]) -> dict[str, 
     a license that lost access is revoked on the spot (audited).
     """
 
-    parsed = {raw: _safe_uuid(raw) for raw in license_ids}
+    parsed = [value for value in (shared.safe_uuid(raw) for raw in license_ids) if value]
     owned = {
         item.public_id: item
         for item in LectureOfflineLicense.objects.select_related("blob", "lecture", "lecture__subject", "user").filter(
-            user=user, public_id__in=[value for value in parsed.values() if value]
+            user=user, public_id__in=parsed
         )
     }
-    keep: list[str] = []
-    renew: list[str] = []
-    purge: list[str] = []
-    for raw, value in parsed.items():
-        item = owned.get(value) if value else None
-        if item is None or item.device_hash != device_hash:
-            purge.append(raw)
-            continue
-        reason = license_denial_reason(item)
-        if reason is None:
-            keep.append(raw)
-            continue
-        if reason == REASON_EXPIRED:
-            if license_denial_reason(item, check_expiry=False) is None:
-                renew.append(raw)
-                continue
-            reason = license_denial_reason(item, check_expiry=False) or REASON_ACCESS_LOST
-        if item.revoked_at is None:
-            revoke_licenses(LectureOfflineLicense.objects.filter(pk=item.pk), reason)
-        purge.append(raw)
-    return {"keep": keep, "renew": renew, "purge": purge}
+    return shared.reconcile_inventory(
+        owned,
+        license_ids,
+        device_hash,
+        denial_reason=lambda item, check_expiry=True: license_denial_reason(item, check_expiry=check_expiry),
+        revoke=lambda item, reason: revoke_licenses(LectureOfflineLicense.objects.filter(pk=item.pk), reason),
+    )

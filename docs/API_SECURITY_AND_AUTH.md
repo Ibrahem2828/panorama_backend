@@ -50,7 +50,7 @@ becoming paid). Implemented in `apps/accounts/devices.py`; staff and normal user
   session of the account ends (`User.invalidate_sessions`: refresh tokens blacklisted, `session_version` bumped, so access
   tokens and chat WebSockets/handshake tickets stop working), the new device is bound and a fresh token pair is returned
   (`200 DEVICE_SWITCHED`). Errors: `400 DEVICE_SWITCH_TOKEN_INVALID` (expired, replayed, wrong device),
-  `400 DEVICE_ID_REQUIRED`, `403 DEVICE_SWITCH_LIMIT_REACHED` (`contact_admin: true`).
+  `400 DEVICE_ID_REQUIRED`, `403 DEVICE_SWITCH_LIMIT_REACHED` (`errors`: `switch_limit`, `switches_used`, `switches_remaining`, `window_days`, `limit_scope` = `term`|`rolling`, `term_started_at`, `contact_admin: true`). A switch (and a staff reset) also revokes every offline license (lectures and library files) of the account: reasons `device_replaced` / `revoked_by_staff`.
 - Refresh from another device: `409 DEVICE_MISMATCH` with `device_switch_token: null` (a refresh token does not prove the
   password); the app must send the user to the login screen. An access token used with another device id: `401
   DEVICE_MISMATCH`; no header while enforced: `401/400 DEVICE_ID_REQUIRED`.
@@ -66,8 +66,8 @@ Settings (defaults; the owner did not specify the policy):
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `DEVICE_BINDING_ENFORCED` | `false` | Grace mode: bindings are only RECORDED when the header is present; nobody is blocked. Turn on after the app that sends the header is released. |
-| `DEVICE_SWITCH_LIMIT_PER_TERM` | `1` | Self-service switches per window. |
-| `DEVICE_SWITCH_WINDOW_DAYS` | `120` | There is no academic-term date model, so a "term" is a rolling window. |
+| `DEVICE_SWITCH_LIMIT_PER_TERM` | `1` | Self-service switches per ACADEMIC TERM: counted since `CurrentTerm.started_at` (set when an administrator sets the current semester or runs "end semester"), so the allowance resets at the next term. |
+| `DEVICE_SWITCH_WINDOW_DAYS` | `120` | Fallback only: `Semester` is a label without dates, so while no `CurrentTerm` row exists (or its start is in the future) the count uses this rolling window. |
 | `DEVICE_SWITCH_TOKEN_TTL_SECONDS` | `300` | Lifetime of the switch token. |
 | `DEVICE_MISMATCH_MAX_PER_HOUR` | `10` | Wrong-device logins per account per hour. |
 

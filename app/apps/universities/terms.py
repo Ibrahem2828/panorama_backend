@@ -22,6 +22,7 @@ from apps.accounts.choices import UserRole
 from apps.accounts.models import StudentProfile
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.files.offline_services import revoke_memberships_licenses as revoke_file_memberships_licenses
 from apps.groups.models import (
     ExternalChannelAccessTicket,
     ExternalChannelType,
@@ -232,6 +233,7 @@ def _end_term_locked(*, actor, next_semester_id, label, disable_whatsapp_links: 
         )
         # ``update`` bypasses signals: offline lecture licenses of the ended memberships die with them.
         revoke_memberships_licenses(ids[start : start + CHUNK])
+        revoke_file_memberships_licenses(ids[start : start + CHUNK])
     if disable_whatsapp_links and whatsapp_ids:
         channels = GroupExternalChannel.objects.filter(
             group_id__in=whatsapp_ids, channel_type=ExternalChannelType.WHATSAPP, is_active=True, is_deleted=False

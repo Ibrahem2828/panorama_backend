@@ -484,3 +484,15 @@ def test_feature_flag_disables_offline_issue(api_client, student, ready_lecture)
     api_client.force_authenticate(student)
     assert issue(api_client, ready_lecture, **DEVICE).status_code >= 400
     assert not LectureOfflineLicense.objects.exists()
+
+
+@pytest.mark.django_db
+def test_combined_helper_revokes_lecture_licenses_for_device_flows(api_client, student, ready_lecture):
+    from apps.common.offline import revoke_all_user_offline_licenses
+
+    api_client.force_authenticate(student)
+    issue(api_client, ready_lecture, **DEVICE)
+    assert revoke_all_user_offline_licenses(student, offline.REASON_DEVICE_REPLACED) == 1
+    row = LectureOfflineLicense.objects.get()
+    assert row.revoked_at is not None and row.revoke_reason == "device_replaced"
+    assert fetch_package(api_client, ready_lecture, **DEVICE).status_code == 404

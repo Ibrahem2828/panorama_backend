@@ -193,6 +193,8 @@ REST_FRAMEWORK = {
         "lecture_notes": config("THROTTLE_LECTURE_NOTES", default="90/min"),
         "lecture_offline_license": config("THROTTLE_LECTURE_OFFLINE_LICENSE", default="60/hour"),
         "lecture_offline_package": config("THROTTLE_LECTURE_OFFLINE_PACKAGE", default="600/hour"),
+        "file_offline_license": config("THROTTLE_FILE_OFFLINE_LICENSE", default="60/hour"),
+        "file_offline_package": config("THROTTLE_FILE_OFFLINE_PACKAGE", default="600/hour"),
         "search": config("THROTTLE_SEARCH", default="60/min"),
         "mobile_device": config("THROTTLE_MOBILE_DEVICE", default="20/hour"),
         "web_push": config("THROTTLE_WEB_PUSH", default="30/hour"),
@@ -471,6 +473,18 @@ LECTURE_OFFLINE_LICENSE_DAYS = config("LECTURE_OFFLINE_LICENSE_DAYS", default=14
 LECTURE_OFFLINE_MAX_PER_DEVICE = config("LECTURE_OFFLINE_MAX_PER_DEVICE", default=40, cast=int)
 LECTURE_OFFLINE_MAX_PER_USER = config("LECTURE_OFFLINE_MAX_PER_USER", default=120, cast=int)
 LECTURE_OFFLINE_CHUNK_SIZE = config("LECTURE_OFFLINE_CHUNK_SIZE", default=64 * 1024, cast=int)
+
+# Offline protected packages of library files (docs/OFFLINE_FILES.md). Defaults reuse the lecture values.
+FILE_OFFLINE_LICENSE_DAYS = config("FILE_OFFLINE_LICENSE_DAYS", default=LECTURE_OFFLINE_LICENSE_DAYS, cast=int)
+FILE_OFFLINE_MAX_PER_DEVICE = config("FILE_OFFLINE_MAX_PER_DEVICE", default=LECTURE_OFFLINE_MAX_PER_DEVICE, cast=int)
+FILE_OFFLINE_MAX_PER_USER = config("FILE_OFFLINE_MAX_PER_USER", default=LECTURE_OFFLINE_MAX_PER_USER, cast=int)
+FILE_OFFLINE_CHUNK_SIZE = config("FILE_OFFLINE_CHUNK_SIZE", default=LECTURE_OFFLINE_CHUNK_SIZE, cast=int)
+#: Largest PDF (built from the rendered pages) that may be packaged; bigger files answer 409 offline_package_too_large.
+FILE_OFFLINE_MAX_PDF_BYTES = config("FILE_OFFLINE_MAX_PDF_BYTES", default=250 * 1024 * 1024, cast=int)
+#: JPEG quality of the page images inside the generated PDF.
+FILE_OFFLINE_JPEG_QUALITY = config("FILE_OFFLINE_JPEG_QUALITY", default=82, cast=int)
+#: Files with more pages than this are packaged by a Celery task (the request answers 202 ``preparing``).
+FILE_OFFLINE_INLINE_BUILD_MAX_PAGES = config("FILE_OFFLINE_INLINE_BUILD_MAX_PAGES", default=80, cast=int)
 DOCUMENT_CONVERSION_TIME_LIMIT = config("DOCUMENT_CONVERSION_TIME_LIMIT", default=180, cast=int)
 DOCUMENT_CONVERSION_SOFT_TIME_LIMIT = config("DOCUMENT_CONVERSION_SOFT_TIME_LIMIT", default=150, cast=int)
 DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=30 * 1024 * 1024, cast=int)
@@ -490,6 +504,7 @@ CELERY_RESULT_EXPIRES = config("CELERY_RESULT_EXPIRES_SECONDS", default=3600, ca
 CELERY_TASK_ROUTES = {
     "apps.lectures.tasks.*": {"queue": "conversion"},
     "apps.files.tasks.process_file_resource": {"queue": "conversion"},
+    "apps.files.tasks.build_file_offline_package": {"queue": "conversion"},
     "apps.printing.tasks.convert_print_document": {"queue": "conversion"},
 }
 # Redelivery window for unacknowledged tasks; must exceed the longest task (lecture conversion).
