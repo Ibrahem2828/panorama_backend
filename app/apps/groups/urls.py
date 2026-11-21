@@ -12,6 +12,7 @@ from .views import (
     DashboardWhatsAppChannelView,
     ExternalChannelRedirectView,
     GroupDetailViewSet,
+    GroupImageView,
     GroupJoinView,
     GroupLeaveView,
     GroupWhatsAppLaunchView,
@@ -31,6 +32,7 @@ dashboard_router.register("dashboard/groups", DashboardGroupViewSet, basename="d
 
 urlpatterns = [
     *mobile_router.urls,
+    path("groups/<int:pk>/image/", GroupImageView.as_view(), name="group-image"),
     path("groups/<int:pk>/join/", GroupJoinView.as_view(), name="group-join"),
     path("groups/<int:pk>/leave/", GroupLeaveView.as_view(), name="group-leave"),
     path("groups/<int:pk>/whatsapp-ticket/", GroupWhatsAppTicketView.as_view(), name="group-whatsapp-ticket"),

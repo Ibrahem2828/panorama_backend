@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.common.image_delivery import authenticated_image_url
 from apps.universities.models import validate_academic_hierarchy
 
 from .models import Announcement
@@ -31,6 +32,18 @@ class AnnouncementSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_by", "created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # ``/media/`` is not published in production: serve the image through the authenticated API route instead
+        data["image"] = (
+            authenticated_image_url(
+                self.context.get("request"), f"/api/v1/announcements/{instance.pk}/image/", instance.updated_at
+            )
+            if instance.image
+            else None
+        )
+        return data
 
     def validate(self, attrs):
         instance = self.instance

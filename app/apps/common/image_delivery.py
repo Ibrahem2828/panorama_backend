@@ -51,3 +51,10 @@ def serve_stored_image(request, field_file, etag: str, *, max_age: int = 3600) -
     response["Cache-Control"] = f"private, max-age={max_age}"
     response["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+def authenticated_image_url(request, path: str, updated_at) -> str:
+    """Absolute URL of an authenticated image route; ``v`` (the row's ``updated_at`` epoch) busts client caches."""
+
+    versioned = f"{path}?v={int(updated_at.timestamp())}"
+    return request.build_absolute_uri(versioned) if request else versioned

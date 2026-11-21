@@ -6,6 +6,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.common.file_validation import validate_image_upload
+from apps.common.image_delivery import authenticated_image_url
 from apps.universities.models import validate_academic_hierarchy
 
 from .models import (
@@ -110,6 +111,18 @@ class GroupSerializer(serializers.ModelSerializer):
             is_active=True,
             is_deleted=False,
         ).exists()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # ``/media/`` is not published in production: serve the image through the authenticated API route instead
+        data["image"] = (
+            authenticated_image_url(
+                self.context.get("request"), f"/api/v1/groups/{instance.pk}/image/", instance.updated_at
+            )
+            if instance.image
+            else None
+        )
+        return data
 
     def validate_image(self, value):
         return validate_image_upload(value, "image") if value else value
