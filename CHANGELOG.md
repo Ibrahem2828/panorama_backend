@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased - offline library files, per-semester device switch
+
+- **Files:** offline study for library files (`FileResource`): `POST/DELETE /files/{id}/offline-license/`, `.../renew/`,
+  `GET /files/{id}/offline-package/` (PNOF v1 ciphertext, Range/ETag), `GET /files/offline-licenses/`,
+  `POST /files/offline-licenses/sync/`, staff `GET/POST /dashboard/files/offline-licenses/[revoke/]`. Shared machinery in
+  `apps.common.offline` (lecture endpoints unchanged). Migrations `files.0005`, `audit.0022`. See `docs/OFFLINE_FILES.md`.
+- **Accounts:** the device-switch allowance (`DEVICE_SWITCH_LIMIT_PER_TERM`) now counts per academic term
+  (`CurrentTerm.started_at`), falling back to the rolling window; switching or resetting a device revokes all offline
+  licenses (lectures and files).
+
 ## Unreleased - stationery store
 
 - **Store:** new `apps.store` (additive): brands, categories, products with colour/size variants, pictures (authenticated

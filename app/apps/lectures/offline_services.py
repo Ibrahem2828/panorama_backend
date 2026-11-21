@@ -44,6 +44,7 @@ from .services import user_can_view_lecture
 
 logger = logging.getLogger(__name__)
 
+
 class OfflineLimitReached(APIException):
     status_code = status.HTTP_409_CONFLICT
     default_detail = "The offline lecture limit was reached. Remove a downloaded lecture first."

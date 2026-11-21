@@ -236,7 +236,7 @@ def reconcile_inventory(
     device_hash: str,
     *,
     denial_reason: Callable[..., str | None],
-    revoke: Callable[[Any, str], None],
+    revoke: Callable[[Any, str], object],
 ) -> dict[str, list[str]]:
     """``keep`` / ``renew`` / ``purge`` for the app's local inventory (see the lecture docs for the semantics)."""
 

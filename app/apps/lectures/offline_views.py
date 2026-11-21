@@ -12,9 +12,9 @@ from rest_framework.views import APIView
 from apps.accounts.models import User
 from apps.accounts.permissions import CanManageLectures
 from apps.common.negotiation import IgnoreClientContentNegotiation
+from apps.common.offline import no_store, package_response
 from apps.common.responses import success_response
 from apps.common.throttles import LectureOfflineLicenseRateThrottle, LectureOfflinePackageRateThrottle
-from apps.common.offline import no_store, package_response
 from apps.product.services import feature_enabled_or_raise
 
 from . import offline_services as offline

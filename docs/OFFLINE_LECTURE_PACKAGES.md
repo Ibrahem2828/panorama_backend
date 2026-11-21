@@ -8,6 +8,9 @@ study it offline inside the app. The file is never a plain PDF on public storage
 by another app or shared. Access (online *and* offline) hinges **only** on an active approved membership of the
 lecture's group (term not ended, account active). Nothing here knows about payment.
 
+> Library files (الملفات) have the same capability: see [OFFLINE_FILES.md](OFFLINE_FILES.md). The shared code lives in
+> `apps/common/offline.py`; the device switch/reset flows now call `revoke_all_user_offline_licenses` (lectures + files).
+
 ## What exists today (audit)
 
 * `Lecture.original_file` (private storage, staff-only via `GET /dashboard/lectures/{id}/original/`) is converted by the

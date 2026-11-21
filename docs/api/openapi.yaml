@@ -1556,6 +1556,9 @@ paths:
           - feedback_workflow_updated
           - file_access_ticket_issued
           - file_deleted
+          - file_offline_license_issued
+          - file_offline_license_renewed
+          - file_offline_license_revoked
           - file_updated
           - file_uploaded
           - finance_expense_changed
@@ -1696,6 +1699,9 @@ paths:
           * `lecture_offline_license_issued` - Lecture Offline License Issued
           * `lecture_offline_license_renewed` - Lecture Offline License Renewed
           * `lecture_offline_license_revoked` - Lecture Offline License Revoked
+          * `file_offline_license_issued` - File Offline License Issued
+          * `file_offline_license_renewed` - File Offline License Renewed
+          * `file_offline_license_revoked` - File Offline License Revoked
           * `announcement_created` - Announcement Created
           * `announcement_updated` - Announcement Updated
           * `announcement_deleted` - Announcement Deleted
@@ -3596,6 +3602,52 @@ paths:
       - bearerAuth: []
       responses:
         '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/files/offline-licenses/:
+    get:
+      operationId: v1_dashboard_files_offline_licenses_retrieve
+      description: 'Staff view of one student''s (or one file''s) offline licenses.
+        Capability: ``files.manage``.'
+      tags:
+      - Dashboard
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/dashboard/files/offline-licenses/revoke/:
+    post:
+      operationId: v1_dashboard_files_offline_licenses_revoke_create
+      tags:
+      - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileOfflineStaffRevokeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FileOfflineStaffRevokeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileOfflineStaffRevokeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
@@ -13446,6 +13498,110 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /api/v1/files/{id}/offline-license/:
+    post:
+      operationId: v1_files_offline_license_create
+      description: '``POST`` issues or refreshes the license for this device and returns
+        the content key; ``DELETE`` releases it.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File offline
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: v1_files_offline_license_destroy
+      description: '``POST`` issues or refreshes the license for this device and returns
+        the content key; ``DELETE`` releases it.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File offline
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/files/{id}/offline-license/renew/:
+    post:
+      operationId: v1_files_offline_license_renew_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File offline
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/files/{id}/offline-package/:
+    get:
+      operationId: v1_files_offline_package_retrieve
+      description: Streams the AES-GCM *ciphertext* package. Plaintext never leaves
+        the server on this route.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - File offline
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Encrypted package
+        '206':
+          description: Range
   /api/v1/files/{id}/viewer/manifest/:
     get:
       operationId: v1_files_viewer_manifest_retrieve
@@ -13555,6 +13711,52 @@ paths:
       - bearerAuth: []
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/files/offline-licenses/:
+    get:
+      operationId: v1_files_offline_licenses_retrieve
+      description: The caller's licenses on this device (state included) so the app
+        can see what must be purged.
+      tags:
+      - File offline
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/files/offline-licenses/sync/:
+    post:
+      operationId: v1_files_offline_licenses_sync_create
+      tags:
+      - File offline
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileOfflineSyncRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FileOfflineSyncRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileOfflineSyncRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - bearerAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
@@ -17981,6 +18183,9 @@ components:
       - lecture_offline_license_issued
       - lecture_offline_license_renewed
       - lecture_offline_license_revoked
+      - file_offline_license_issued
+      - file_offline_license_renewed
+      - file_offline_license_revoked
       - announcement_created
       - announcement_updated
       - announcement_deleted
@@ -18103,6 +18308,9 @@ components:
         * `lecture_offline_license_issued` - Lecture Offline License Issued
         * `lecture_offline_license_renewed` - Lecture Offline License Renewed
         * `lecture_offline_license_revoked` - Lecture Offline License Revoked
+        * `file_offline_license_issued` - File Offline License Issued
+        * `file_offline_license_renewed` - File Offline License Renewed
+        * `file_offline_license_revoked` - File Offline License Revoked
         * `announcement_created` - Announcement Created
         * `announcement_updated` - Announcement Updated
         * `announcement_deleted` - Announcement Deleted
@@ -21909,6 +22117,32 @@ components:
         * `resolved` - Resolved
         * `rejected` - Rejected
         * `duplicate` - Duplicate
+    FileOfflineStaffRevokeRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          minimum: 1
+        file_id:
+          type: integer
+          minimum: 1
+        note:
+          type: string
+          maxLength: 200
+      required:
+      - user_id
+    FileOfflineSyncRequest:
+      type: object
+      properties:
+        license_ids:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 64
+          maxItems: 500
+      required:
+      - license_ids
     FileResource:
       type: object
       properties:

@@ -73,7 +73,9 @@ def write_pdf_from_pages(pages, out: IO[bytes], *, quality: int = 82, max_bytes:
         pt_width, pt_height = width * POINTS_PER_PIXEL, height * POINTS_PER_PIXEL
         content = f"q {pt_width:.2f} 0 0 {pt_height:.2f} 0 0 cm /Im0 Do Q".encode()
         content_id = start_object()
-        emit(f"{content_id} 0 obj\n<< /Length {len(content)} >>\nstream\n".encode() + content + b"\nendstream\nendobj\n")
+        emit(
+            f"{content_id} 0 obj\n<< /Length {len(content)} >>\nstream\n".encode() + content + b"\nendstream\nendobj\n"
+        )
         page_id = start_object()
         emit(
             f"{page_id} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {pt_width:.2f} {pt_height:.2f}] "

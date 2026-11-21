@@ -22,6 +22,7 @@ from apps.accounts.choices import UserRole
 from apps.accounts.models import StudentProfile
 from apps.audit.models import AuditAction
 from apps.audit.services import AuditLogService
+from apps.files.offline_services import revoke_memberships_licenses as revoke_file_memberships_licenses
 from apps.groups.models import (
     ExternalChannelAccessTicket,
     ExternalChannelType,
@@ -31,7 +32,6 @@ from apps.groups.models import (
     GroupMembershipRole,
     GroupMembershipStatus,
 )
-from apps.files.offline_services import revoke_memberships_licenses as revoke_file_memberships_licenses
 from apps.lectures.offline_services import revoke_memberships_licenses
 
 from .models import AcademicYear, CurrentTerm, Semester, TermRollover

@@ -29,11 +29,11 @@ MAX_LIST = 500
 FEATURE = "file_offline_enabled"
 
 
-class OfflineSyncSerializer(serializers.Serializer):
+class FileOfflineSyncSerializer(serializers.Serializer):
     license_ids = serializers.ListField(child=serializers.CharField(max_length=64), max_length=MAX_SYNC_IDS)
 
 
-class StaffRevokeSerializer(serializers.Serializer):
+class FileOfflineStaffRevokeSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(min_value=1)
     file_id = serializers.IntegerField(min_value=1, required=False)
     note = serializers.CharField(max_length=200, required=False, allow_blank=True)
@@ -141,9 +141,9 @@ class FileOfflineLicenseListView(APIView):
 class FileOfflineSyncView(APIView):
     throttle_classes = [FileOfflineLicenseRateThrottle]
 
-    @extend_schema(tags=["File offline"], request=OfflineSyncSerializer, responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(tags=["File offline"], request=FileOfflineSyncSerializer, responses={200: OpenApiTypes.OBJECT})
     def post(self, request):
-        serializer = OfflineSyncSerializer(data=request.data)
+        serializer = FileOfflineSyncSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         result = offline.sync_inventory(
             request.user, offline.device_hash_from_request(request), list(serializer.validated_data["license_ids"])
@@ -185,9 +185,9 @@ class DashboardFileOfflineLicenseListView(APIView):
 class DashboardFileOfflineLicenseRevokeView(APIView):
     permission_classes = [CanManageFiles]
 
-    @extend_schema(tags=["Dashboard"], request=StaffRevokeSerializer, responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(tags=["Dashboard"], request=FileOfflineStaffRevokeSerializer, responses={200: OpenApiTypes.OBJECT})
     def post(self, request):
-        serializer = StaffRevokeSerializer(data=request.data)
+        serializer = FileOfflineStaffRevokeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         user = get_object_or_404(User, pk=data["user_id"])

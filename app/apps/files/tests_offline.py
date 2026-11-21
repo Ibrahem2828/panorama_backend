@@ -6,6 +6,7 @@ import base64
 import io
 import struct
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from cryptography.exceptions import InvalidTag
@@ -19,16 +20,16 @@ from apps.accounts.models import StudentProfile, User
 from apps.audit.models import AuditAction, AuditLog
 from apps.common import offline as shared
 from apps.files import offline_services as offline
-from apps.files.offline_pdf import POINTS_PER_PIXEL
 from apps.files.models import FileOfflineBlob, FileOfflineLicense, FilePage, FileProcessingStatus, FileResource
+from apps.files.offline_pdf import POINTS_PER_PIXEL
 from apps.groups.models import Group, GroupMembership, GroupMembershipStatus
 from apps.lectures.tests_offline import reference_decrypt
 from apps.product.models import FeatureFlag
 
 from .tests_viewer import _client, _ready_file, world  # noqa: F401  (fixture `world`)
 
-DEVICE = {"HTTP_X_PANORAMA_DEVICE_ID": "device-aaaa"}
-OTHER_DEVICE = {"HTTP_X_PANORAMA_DEVICE_ID": "device-bbbb"}
+DEVICE: dict[str, Any] = {"HTTP_X_PANORAMA_DEVICE_ID": "device-aaaa"}
+OTHER_DEVICE: dict[str, Any] = {"HTTP_X_PANORAMA_DEVICE_ID": "device-bbbb"}
 
 
 @pytest.fixture(autouse=True)
@@ -99,7 +100,7 @@ def test_tampering_truncation_and_reordering_fail(world, resource):  # noqa: F81
     with pytest.raises(InvalidTag):
         reference_decrypt(bytes(flipped), key)
     with pytest.raises((InvalidTag, AssertionError)):
-        reference_decrypt(package[:-(256 + 16)], key)
+        reference_decrypt(package[: -(256 + 16)], key)
     record = 256 + 16
     swapped = bytearray(package)
     swapped[40 : 40 + record], swapped[40 + record : 40 + 2 * record] = (
@@ -284,7 +285,9 @@ def test_staff_can_list_and_revoke_and_students_cannot(world, resource):  # noqa
     assert "content_key" not in listing.data["data"][0]
     assert staff.get("/api/v1/dashboard/files/offline-licenses/").status_code == 400
     assert _client(student).get(f"/api/v1/dashboard/files/offline-licenses/?user={student.pk}").status_code == 403
-    denied = _client(student).post("/api/v1/dashboard/files/offline-licenses/revoke/", {"user_id": student.pk}, format="json")
+    denied = _client(student).post(
+        "/api/v1/dashboard/files/offline-licenses/revoke/", {"user_id": student.pk}, format="json"
+    )
     assert denied.status_code == 403
     revoked = staff.post(
         "/api/v1/dashboard/files/offline-licenses/revoke/",
@@ -296,7 +299,12 @@ def test_staff_can_list_and_revoke_and_students_cannot(world, resource):  # noqa
     assert row.revoke_reason == offline.REASON_STAFF and row.revoked_by == world["admin"]
     audit = AuditLog.objects.get(action=AuditAction.FILE_OFFLINE_LICENSE_REVOKED)
     assert audit.actor == world["admin"]
-    assert staff.post("/api/v1/dashboard/files/offline-licenses/revoke/", {"user_id": student.pk, "file_id": 99999}, format="json").status_code == 404
+    assert (
+        staff.post(
+            "/api/v1/dashboard/files/offline-licenses/revoke/", {"user_id": student.pk, "file_id": 99999}, format="json"
+        ).status_code
+        == 404
+    )
 
 
 def test_feature_flag_disables_issue(world, resource):  # noqa: F811
