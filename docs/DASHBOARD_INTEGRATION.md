@@ -89,6 +89,15 @@ forwards the call with the session token and streams the bytes) or fetch it with
 (`printing.manage`) may also read inactive entries. Note: a multipart create without `is_active` stores `false`; send
 `is_active=true` explicitly when uploading an image with the form.
 
+## Group, announcement and ready-product images
+
+`image` (groups, announcements) and `image`/`image_url` (ready products) are no longer `/media/` URLs (production does not
+serve them). They are `/api/v1/groups/{id}/image/`, `/api/v1/announcements/{id}/image/` and
+`/api/v1/printing/products/{id}/image/` with `?v=<updated_at epoch>`, `null` when there is no image. They need the Bearer
+token: a plain `<img src>` gets 401, so the dashboard must load them through its BFF (forward with the session token and
+stream the bytes, honouring `ETag`) exactly like the option-help images. Field names are unchanged; uploads still use
+multipart `image`. Staff with the owning capability can read inactive/hidden rows.
+
 ## Stationery store management
 
 Full reference: `docs/STORE.md`. New capability **`store.manage`** (admin, print staff, IT support; overridable per

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - authenticated group/announcement/ready-product images
+
+- **Media:** `Group.image`, `Announcement.image` and `ReadyProduct.image`/`image_url` returned dead `/media/` URLs (not
+  published in production). They now return `/api/v1/groups/{id}/image/`, `/api/v1/announcements/{id}/image/` and
+  `/api/v1/printing/products/{id}/image/` (`?v=<updated_at epoch>`; `null` without image), served by the shared
+  `apps.common.image_delivery` helper under the owning resource's visibility rules. Field names unchanged; no migration.
+
 ## Unreleased - offline library files, per-semester device switch
 
 - **Files:** offline study for library files (`FileResource`): `POST/DELETE /files/{id}/offline-license/`, `.../renew/`,

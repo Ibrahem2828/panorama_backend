@@ -173,6 +173,14 @@ The response is inline with the real image type, `ETag` (send `If-None-Match` to
 max-age=3600` and `X-Content-Type-Options: nosniff`. Inactive or deleted entries answer 404 to students. `?v=` changes
 whenever the entry changes, so an HTTP cache keyed by URL stays correct.
 
+## Group, announcement and ready-product images
+
+`image` of groups (`/groups/`, `/groups/my/`, `/groups/available/`, `/groups/{id}/`), `image` of `/announcements/` and
+`image_url` of `/printing/products/` are absolute URLs of `/api/v1/groups/{id}/image/`,
+`/api/v1/announcements/{id}/image/` and `/api/v1/printing/products/{id}/image/` (each with `?v=<updated_at epoch>`),
+or `null`. Same contract as the option-help images: fetch **with `Authorization: Bearer`**, honour `ETag`/304; a request
+for something the user may not see is a 404. Field names did not change.
+
 ## Stationery store (additive, from this release)
 
 Full reference: `docs/STORE.md`. Everything is under `/api/v1/store/`, needs a login, and changes nothing that the

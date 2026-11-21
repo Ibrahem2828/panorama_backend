@@ -128,6 +128,22 @@ path. Responses set inline disposition where appropriate, `private, no-store`,
 static media route is guarded by `DEBUG` and cannot be enabled by production
 settings.
 
+### Authenticated image routes (no `/media/` URLs in any response)
+
+Every image a serializer exposes is an absolute API URL with a `?v=<updated_at epoch>` cache-buster, never a `/media/`
+path. All routes need `Authorization: Bearer`, answer inline with the real image type (magic bytes), `ETag`/304,
+`Cache-Control: private` and `nosniff`; anything the caller may not see is a 404 (existence is not disclosed).
+
+| Route | Fields carrying it | Visibility |
+| --- | --- | --- |
+| `GET /api/v1/groups/{id}/image/` | `Group.image` (student and dashboard group serializers) | Same rules as `GET groups/{id}/`: verified student, active group, eligible by hierarchy, level groups only for approved members. `groups.manage` staff: every non-deleted group. |
+| `GET /api/v1/announcements/{id}/image/` | `Announcement.image` | Only announcements in the caller's own feed (`announcements_for_user`: active, in date window, role/level targeting). `announcements.manage` staff: every non-deleted one. |
+| `GET /api/v1/printing/products/{id}/image/` | `ReadyProduct.image` and `image_url` (public and staff serializers) | Active products for everyone; `printing.manage` staff also inactive. Deleted: 404. |
+| `GET /api/v1/printing/option-help/{id}/image/`, `GET /api/v1/store/images/{id}/` | option help, store pictures/brand logos | unchanged |
+
+Private student documents (card images, enrollment screenshots, chat/support attachments) are never returned as URLs
+of a file: they are reached through short-lived access tickets (`*-ticket/` endpoints).
+
 ## WebSocket chat handshake
 
 WebSocket connections do **not** accept access JWTs in the final contract.
